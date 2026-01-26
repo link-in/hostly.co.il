@@ -45,15 +45,29 @@ export async function middleware(request: NextRequest) {
       secret: process.env.NEXTAUTH_SECRET 
     })
 
+    // Temporary debug logging
+    console.log('🔍 [Middleware Debug]', {
+      path,
+      hasToken: !!token,
+      tokenRole: token?.role,
+      email: token?.email,
+      secretExists: !!process.env.NEXTAUTH_SECRET,
+      secretLength: process.env.NEXTAUTH_SECRET?.length
+    })
+
     // Not authenticated
     if (!token) {
+      console.log('❌ No token found - redirecting to login')
       return NextResponse.redirect(new URL('/dashboard/login', request.url))
     }
 
     // Not admin
     if (token.role !== 'admin') {
+      console.log('❌ Not admin role:', token.role, '- redirecting to dashboard')
       return NextResponse.redirect(new URL('/dashboard', request.url))
     }
+    
+    console.log('✅ Admin access granted')
   }
 
   return NextResponse.next()
