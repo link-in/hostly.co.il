@@ -29,7 +29,7 @@ export const getUserByEmail = async (email: string): Promise<User | null> => {
     }
 
     // Map database columns to User interface
-    const user = {
+    return {
       id: data.id,
       email: data.email,
       passwordHash: data.password_hash,
@@ -45,16 +45,6 @@ export const getUserByEmail = async (email: string): Promise<User | null> => {
       beds24Token: data.beds24_token || undefined,
       beds24RefreshToken: data.beds24_refresh_token || undefined,
     }
-    
-    // Debug logging
-    console.log('[DB] User fetched from database:', {
-      email: user.email,
-      role: user.role,
-      dbRole: data.role,
-      hasRole: !!data.role
-    })
-    
-    return user
   } catch (error) {
     console.error('Failed to fetch user:', error)
     return null

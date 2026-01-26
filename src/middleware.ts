@@ -37,7 +37,7 @@ export async function middleware(request: NextRequest) {
   }
   
   // =========================================
-  // Admin Protection (existing)
+  // Admin Protection
   // =========================================
   if (path.startsWith('/admin')) {
     const token = await getToken({ 
@@ -45,28 +45,15 @@ export async function middleware(request: NextRequest) {
       secret: process.env.NEXTAUTH_SECRET 
     })
 
-    // Debug logging (remove after testing)
-    console.log('[Middleware] Admin access attempt:', {
-      path,
-      hasToken: !!token,
-      email: token?.email,
-      role: token?.role,
-      tokenKeys: token ? Object.keys(token) : []
-    })
-
     // Not authenticated
     if (!token) {
-      console.log('[Middleware] No token - redirecting to login')
       return NextResponse.redirect(new URL('/dashboard/login', request.url))
     }
 
     // Not admin
     if (token.role !== 'admin') {
-      console.log('[Middleware] Not admin - redirecting to dashboard. Role:', token.role)
       return NextResponse.redirect(new URL('/dashboard', request.url))
     }
-    
-    console.log('[Middleware] Admin access granted')
   }
 
   return NextResponse.next()

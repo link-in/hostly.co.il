@@ -73,12 +73,6 @@ export const authOptions: NextAuthOptions = {
         token.beds24Token = user.beds24Token
         token.beds24RefreshToken = user.beds24RefreshToken
         token.issuedAt = Date.now()
-        
-        // Debug logging
-        console.log('[Auth] JWT callback - Initial sign in:', {
-          email: user.email,
-          role: user.role
-        })
       }
       
       // Handle session updates (from update() call)
@@ -100,12 +94,8 @@ export const authOptions: NextAuthOptions = {
         }
         if (session.role !== undefined) {
           token.role = session.role
-          console.log('[Auth] JWT callback - Role updated:', session.role)
         }
       }
-      
-      // Debug: Log current token role on every request
-      console.log('[Auth] JWT token role:', token.role)
       
       return token
     },
