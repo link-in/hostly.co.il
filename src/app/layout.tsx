@@ -5,6 +5,7 @@ import './globals.css'
 export const metadata: Metadata = {
   title: 'Hostly - מערכת ניהול נכסים',
   description: 'מערכת ניהול מתקדמת לנכסי השכרה לטווח קצר',
+  manifest: '/manifest.json',
 }
 
 export default function RootLayout({
