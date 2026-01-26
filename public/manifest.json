@@ -2,11 +2,54 @@
   "name": "Hostly - מערכת ניהול נכסים",
   "short_name": "Hostly",
   "description": "מערכת ניהול מתקדמת לנכסי השכרה לטווח קצר",
-  "start_url": "/",
+  "start_url": "/dashboard",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#667eea",
-  "orientation": "portrait",
+  "orientation": "portrait-primary",
+  "dir": "rtl",
+  "lang": "he",
+  "categories": ["business", "productivity"],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "דשבורד",
+      "short_name": "דשבורד",
+      "description": "גישה מהירה לדשבורד",
+      "url": "/dashboard",
+      "icons": [
+        {
+          "src": "/photos/hostly-logo.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "הזמנות",
+      "short_name": "הזמנות",
+      "description": "צפייה בהזמנות",
+      "url": "/dashboard/reservations",
+      "icons": [
+        {
+          "src": "/photos/hostly-logo.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "פרופיל",
+      "short_name": "פרופיל",
+      "description": "איזור אישי",
+      "url": "/dashboard/profile",
+      "icons": [
+        {
+          "src": "/photos/hostly-logo.png",
+          "sizes": "96x96"
+        }
+      ]
+    }
+  ],
   "icons": [
     {
       "src": "/photos/hostly-logo.png",
