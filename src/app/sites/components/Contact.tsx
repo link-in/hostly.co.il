@@ -1,7 +1,4 @@
-import earth from '@/assets/images/icons/earth.png'
-import mobilepay from '@/assets/images/icons/mobilepay.png'
 import { Icon } from '@iconify/react'
-import Image from 'next/image'
 import { Col, Container, Row } from 'react-bootstrap'
 
 interface ContactProps {
@@ -37,16 +34,16 @@ const Contact = ({ content, metaSettings }: ContactProps) => {
             </Col>
             <Col lg={4}>
               <div className="text-center mt-4">
-                <div className="services-img">
-                  <Image width={50} height={50} className="img-fluid" src={mobilepay} alt="" />
+                <div className="services-img" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                  <Icon icon="mdi:phone" style={{ fontSize: '50px', color: '#2e2e2e' }} />
                 </div>
                 <h6 className="mt-4">{phone}</h6>
               </div>
             </Col>
             <Col lg={4}>
               <div className="text-center mt-4">
-                <div className="services-img">
-                  <Image width={50} height={50} className="img-fluid" src={earth} alt="" />
+                <div className="services-img" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                  <Icon icon="mdi:email" style={{ fontSize: '50px', color: '#2e2e2e' }} />
                 </div>
                 <h6 className="mt-4">{email}</h6>
               </div>
