@@ -819,6 +819,19 @@ const DashboardClient = () => {
                 <Link className="dropdown-item py-2" href="/dashboard/payments" onClick={() => setMenuOpen(false)}>
                   סליקת אשראי
                 </Link>
+                {session?.user?.role === 'admin' ? (
+                  <>
+                    <hr className="my-2" />
+                    <Link 
+                      className="dropdown-item py-2 fw-bold" 
+                      href="/admin" 
+                      onClick={() => setMenuOpen(false)}
+                      style={{ color: '#dc3545' }}
+                    >
+                      🛡️ איזור ניהול
+                    </Link>
+                  </>
+                ) : null}
               </div>
             ) : null}
           </div>
