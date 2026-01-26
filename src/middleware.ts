@@ -40,9 +40,14 @@ export async function middleware(request: NextRequest) {
   // Admin Protection
   // =========================================
   if (path.startsWith('/admin')) {
+    // Try to get token with explicit cookie name
     const token = await getToken({ 
       req: request,
-      secret: process.env.NEXTAUTH_SECRET 
+      secret: process.env.NEXTAUTH_SECRET,
+      secureCookie: process.env.NODE_ENV === 'production',
+      cookieName: process.env.NODE_ENV === 'production' 
+        ? '__Secure-next-auth.session-token' 
+        : 'next-auth.session-token'
     })
 
     // Temporary debug logging
@@ -52,7 +57,12 @@ export async function middleware(request: NextRequest) {
       tokenRole: token?.role,
       email: token?.email,
       secretExists: !!process.env.NEXTAUTH_SECRET,
-      secretLength: process.env.NEXTAUTH_SECRET?.length
+      secretLength: process.env.NEXTAUTH_SECRET?.length,
+      nodeEnv: process.env.NODE_ENV,
+      cookieName: process.env.NODE_ENV === 'production' 
+        ? '__Secure-next-auth.session-token' 
+        : 'next-auth.session-token',
+      allCookies: request.cookies.getAll().map(c => c.name)
     })
 
     // Not authenticated
