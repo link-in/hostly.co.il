@@ -1231,37 +1231,37 @@ const DashboardClient = () => {
               <div className="text-muted">טוען נתונים...</div>
             ) : priceSummary ? (
               <div className="row g-3">
-                <div className="col-md-4">
+                <div className="col-4 col-md-4">
                   <StatCard title="חודש" value={priceSummary.monthLabel} helper={priceSummary.monthRange} />
                 </div>
-                <div className="col-md-4">
+                <div className="col-4 col-md-4">
                   <StatCard
                     title="סה״כ הכנסה"
                     value={formatCurrency(bookingSummary?.monthRevenue ?? 0)}
                     helper="הזמנות בחודש הנוכחי"
                   />
                 </div>
-                <div className="col-md-4">
+                <div className="col-4 col-md-4">
                   <StatCard 
                     title="הכנסות נטו" 
                     value={formatCurrency(stats.netRevenue)} 
                     helper="אחרי ניכוי עמלות"
                   />
                 </div>
-                <div className="col-md-4">
+                <div className="col-4 col-md-4">
                   <StatCard title="ימים פנויים" value={`${bookingSummary?.availableDays ?? 0}`} helper="ללא הזמנה" />
                 </div>
-                <div className="col-md-4">
+                <div className="col-4 col-md-4">
                   <StatCard title="מחיר מינימום" value={formatCurrency(priceSummary.minPrice)} />
                 </div>
-                <div className="col-md-4">
+                <div className="col-4 col-md-4">
                   <StatCard 
                     title="הכנסות חודשיות" 
                     value={formatCurrency(bookingSummary?.monthRevenue ?? 0)} 
                     helper="סה״כ החודש"
                   />
                 </div>
-                <div className="col-md-4">
+                <div className="col-4 col-md-4">
                   <StatCard title="מחיר מקסימום" value={formatCurrency(priceSummary.maxPrice)} />
                 </div>
               </div>
