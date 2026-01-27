@@ -131,7 +131,7 @@ type ReservationsTableProps = {
 
 const ReservationsTable = ({ reservations, onReservationViewed }: ReservationsTableProps) => {
   const [expandedId, setExpandedId] = useState<string | null>(null)
-  const [mobileVisibleCount, setMobileVisibleCount] = useState(3)
+  const [mobileVisibleCount, setMobileVisibleCount] = useState(6)
   const [viewedReservations, setViewedReservations] = useState<Set<string>>(new Set())
 
   if (!reservations.length) {
@@ -354,12 +354,12 @@ const ReservationsTable = ({ reservations, onReservationViewed }: ReservationsTa
         <div className="d-flex justify-content-center mt-3">
           <button
             type="button"
-            onClick={() => setMobileVisibleCount(prev => prev + 3)}
+            onClick={() => setMobileVisibleCount(prev => prev + 6)}
             className="btn btn-sm"
             style={{
               background: 'transparent',
               border: '1px solid rgba(102, 126, 234, 0.3)',
-              color: 'rgba(249, 147, 251, 0.9)',
+              color: 'white',
               padding: '8px 16px',
               fontSize: '0.85rem',
               borderRadius: '8px',
@@ -374,7 +374,7 @@ const ReservationsTable = ({ reservations, onReservationViewed }: ReservationsTa
               e.currentTarget.style.borderColor = 'rgba(102, 126, 234, 0.3)'
             }}
           >
-            הצג עוד ({reservations.length - mobileVisibleCount} נוספות)
+            הצג עוד
           </button>
         </div>
       )}

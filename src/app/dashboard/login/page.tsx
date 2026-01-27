@@ -12,6 +12,23 @@ const LoginForm = () => {
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [progress, setProgress] = useState(0)
+
+  // Progress animation during login
+  React.useEffect(() => {
+    if (loading) {
+      setProgress(0)
+      const interval = setInterval(() => {
+        setProgress((prev) => {
+          if (prev >= 90) return prev
+          return prev + Math.random() * 15
+        })
+      }, 150)
+      return () => clearInterval(interval)
+    } else {
+      setProgress(0)
+    }
+  }, [loading])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -69,6 +86,21 @@ const LoginForm = () => {
         @keyframes spin {
           0% { transform: rotate(0deg); }
           100% { transform: rotate(360deg); }
+        }
+
+        @keyframes slideIn {
+          from {
+            opacity: 0;
+            transform: translateY(-10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        .progress-container {
+          animation: slideIn 0.3s ease-out forwards;
         }
 
         .card-login {
@@ -308,6 +340,55 @@ const LoginForm = () => {
                       '🔐 התחבר'
                     )}
                   </button>
+
+                  {/* Progress Bar */}
+                  {loading && (
+                    <div className="progress-container" style={{
+                      marginTop: '16px',
+                      padding: '12px',
+                      background: 'linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%)',
+                      borderRadius: '12px',
+                      border: '1px solid #e5e7eb'
+                    }}>
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        marginBottom: '8px'
+                      }}>
+                        <span style={{
+                          fontSize: '13px',
+                          fontWeight: '600',
+                          color: '#667eea'
+                        }}>
+                          מתחבר...
+                        </span>
+                        <span style={{
+                          fontSize: '13px',
+                          fontWeight: '600',
+                          color: '#667eea'
+                        }}>
+                          {Math.round(progress)}%
+                        </span>
+                      </div>
+                      <div style={{
+                        height: '6px',
+                        background: '#f3f4f6',
+                        borderRadius: '3px',
+                        overflow: 'hidden',
+                        position: 'relative'
+                      }}>
+                        <div style={{
+                          height: '100%',
+                          background: 'linear-gradient(90deg, #667eea 0%, #764ba2 100%)',
+                          width: `${progress}%`,
+                          transition: 'width 0.3s ease',
+                          boxShadow: '0 0 10px rgba(102, 126, 234, 0.5)',
+                          borderRadius: '3px'
+                        }} />
+                      </div>
+                    </div>
+                  )}
                 </form>
 
                 {/* Demo Mode Link */}
