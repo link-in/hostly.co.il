@@ -834,36 +834,6 @@ const DashboardClient = () => {
                 <option value="oldest">קרובות תחילה</option>
                 <option value="newest">רחוקות תחילה</option>
               </select>
-              {meta.isMock && session?.user?.isDemo && (
-                <button
-                  type="button"
-                  className="btn btn-sm d-flex align-items-center justify-content-center"
-                  style={{ 
-                    backgroundColor: 'transparent',
-                    border: '1px solid #dc3545',
-                    color: '#dc3545',
-                    padding: '0.25rem 0.5rem',
-                    height: '31px',
-                    lineHeight: '1.5',
-                    fontSize: '0.875rem',
-                    whiteSpace: 'nowrap',
-                    flex: '1 0 auto',
-                    minWidth: '80px',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = '#dc3545'
-                    e.currentTarget.style.color = 'white'
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = 'transparent'
-                    e.currentTarget.style.color = '#dc3545'
-                  }}
-                  onClick={handleClearMockReservations}
-                  disabled={loadingReservations}
-                >
-                  נקה הכל
-                </button>
-              )}
             </div>
 
             {/* Desktop: Title + All Controls */}
