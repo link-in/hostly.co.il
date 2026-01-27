@@ -703,21 +703,21 @@ const DashboardClient = () => {
         ) : null}
 
         <div className="row g-3 mb-4">
-          <div className="col-md-4">
+          <div className="col-4 col-md-4">
             <StatCard 
               title="שנה נוכחית" 
               value={new Date().getFullYear().toString()} 
               helper="נתוני ההזמנות בשנה זו"
             />
           </div>
-          <div className="col-md-4">
+          <div className="col-4 col-md-4">
             <StatCard 
               title="הכנסות ברוטו" 
               value={formatCurrency(stats.totalRevenue)} 
               helper="סה״כ כל ההזמנות בשנה" 
             />
           </div>
-          <div className="col-md-4">
+          <div className="col-4 col-md-4">
             <StatCard 
               title="תשלום צפוי" 
               value={formatCurrency(stats.netRevenue)} 
