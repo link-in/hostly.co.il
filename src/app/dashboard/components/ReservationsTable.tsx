@@ -131,7 +131,7 @@ type ReservationsTableProps = {
 
 const ReservationsTable = ({ reservations, onReservationViewed }: ReservationsTableProps) => {
   const [expandedId, setExpandedId] = useState<string | null>(null)
-  const [mobileVisibleCount, setMobileVisibleCount] = useState(6)
+  const [mobileVisibleCount, setMobileVisibleCount] = useState(3)
   const [viewedReservations, setViewedReservations] = useState<Set<string>>(new Set())
 
   if (!reservations.length) {
@@ -354,7 +354,7 @@ const ReservationsTable = ({ reservations, onReservationViewed }: ReservationsTa
         <div className="d-flex justify-content-center mt-3">
           <button
             type="button"
-            onClick={() => setMobileVisibleCount(prev => prev + 6)}
+            onClick={() => setMobileVisibleCount(prev => prev + 3)}
             className="btn btn-sm"
             style={{
               background: 'transparent',
