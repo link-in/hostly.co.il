@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react'
+import React, { useMemo, useState, useRef, useEffect } from 'react'
 import type { Reservation, RoomPrice } from '@/lib/dashboard/types'
 import { formatCurrency } from '@/lib/dashboard/utils'
 
@@ -171,7 +171,18 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated }: CalendarPric
   const [saveSuccess, setSaveSuccess] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null)
+  const reservationDetailsRef = useRef<HTMLDivElement>(null)
   const todayKey = toKey(normalizeDate(new Date()))
+
+  // Auto-scroll to reservation details when a reservation is selected
+  useEffect(() => {
+    if (selectedReservation && reservationDetailsRef.current) {
+      reservationDetailsRef.current.scrollIntoView({ 
+        behavior: 'smooth', 
+        block: 'nearest'
+      })
+    }
+  }, [selectedReservation])
 
   const bookingMap = useMemo(() => buildBookingMap(reservations), [reservations])
   const priceMap = useMemo(() => {
@@ -619,7 +630,7 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated }: CalendarPric
                 </div>
               </div>
             </div>
-            <div className="mt-4">
+            <div className="mt-4" ref={reservationDetailsRef}>
               <div className="small fw-semibold mb-2" style={{ color: 'rgba(249, 147, 251, 0.9)' }}>פרטי הזמנה</div>
               {selectedReservation ? (
                 <div className="rounded-3 p-3" style={{ background: 'rgba(0, 0, 0, 0.3)', border: '1px solid rgba(102, 126, 234, 0.3)' }}>
