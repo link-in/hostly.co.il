@@ -169,13 +169,62 @@ const ReservationsTable = ({ reservations, onReservationViewed }: ReservationsTa
   
   const isReservationViewed = (id: string) => viewedReservations.has(id)
 
-  // Get initials from guest name
-  const getInitials = (name: string) => {
-    const parts = name.trim().split(' ')
-    if (parts.length >= 2) {
-      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+  // Get platform logo/icon based on reservation source
+  const getPlatformIcon = (source: string | null | undefined, size: number = 24) => {
+    const sourceLower = (source || '').toLowerCase()
+    const emojiSize = Math.floor(size * 1.2)
+    
+    if (sourceLower.includes('airbnb')) {
+      // Airbnb logo
+      return (
+        <img 
+          src="/airbnb-logo.png" 
+          alt="Airbnb" 
+          width={size} 
+          height={size}
+          style={{ 
+            display: 'inline-block', 
+            verticalAlign: 'middle',
+            borderRadius: '50%',
+            objectFit: 'cover'
+          }} 
+        />
+      )
     }
-    return name.substring(0, 2).toUpperCase()
+    if (sourceLower.includes('booking')) {
+      // Booking.com logo
+      return (
+        <img 
+          src="/booking-logo.png" 
+          alt="Booking.com" 
+          width={size} 
+          height={size}
+          style={{ 
+            display: 'inline-block', 
+            verticalAlign: 'middle',
+            borderRadius: '50%',
+            objectFit: 'cover'
+          }} 
+        />
+      )
+    }
+    if (sourceLower.includes('agoda')) {
+      return <span style={{ fontSize: `${emojiSize}px`, display: 'inline-block', verticalAlign: 'middle' }}>🗺️</span>
+    }
+    if (sourceLower.includes('expedia')) {
+      return <span style={{ fontSize: `${emojiSize}px`, display: 'inline-block', verticalAlign: 'middle' }}>✈️</span>
+    }
+    if (sourceLower.includes('vrbo') || sourceLower.includes('homeaway')) {
+      return <span style={{ fontSize: `${emojiSize}px`, display: 'inline-block', verticalAlign: 'middle' }}>🏡</span>
+    }
+    if (sourceLower.includes('tripadvisor')) {
+      return <span style={{ fontSize: `${emojiSize}px`, display: 'inline-block', verticalAlign: 'middle' }}>🦉</span>
+    }
+    if (sourceLower.includes('hotels.com')) {
+      return <span style={{ fontSize: `${emojiSize}px`, display: 'inline-block', verticalAlign: 'middle' }}>🏨</span>
+    }
+    // הזמנה ישירה או לא מוכר
+    return <span style={{ fontSize: `${emojiSize}px`, display: 'inline-block', verticalAlign: 'middle' }}>🌐</span>
   }
 
   // Mobile List View Component
@@ -198,7 +247,7 @@ const ReservationsTable = ({ reservations, onReservationViewed }: ReservationsTa
             <div className="d-flex align-items-start gap-3">
               {/* Avatar */}
               <div className="reservation-avatar">
-                {getInitials(reservation.guestName)}
+                {getPlatformIcon(reservation.source, 32)}
               </div>
               
               {/* Main Content */}
@@ -207,19 +256,6 @@ const ReservationsTable = ({ reservations, onReservationViewed }: ReservationsTa
                   <h6 className="mb-0 fw-bold" style={{ fontSize: '1rem', color: 'white' }}>
                     {reservation.guestName}
                   </h6>
-                  {reservation.isNew && !isReservationViewed(reservation.id) && (
-                    <span 
-                      className="badge" 
-                      style={{
-                        background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                        color: 'white',
-                        fontSize: '0.7rem',
-                        padding: '2px 6px',
-                      }}
-                    >
-                      חדש ✨
-                    </span>
-                  )}
                 </div>
                 <div className="small mb-2" style={{ color: 'rgba(249, 147, 251, 0.8)' }}>
                   {formatDate(reservation.checkIn)} - {formatDate(reservation.checkOut)}
@@ -228,8 +264,18 @@ const ReservationsTable = ({ reservations, onReservationViewed }: ReservationsTa
                   <span className="small" style={{ color: 'rgba(255, 255, 255, 0.8)' }}>
                     <strong style={{ color: 'white' }}>{reservation.nights}</strong> לילות
                   </span>
-                  <span className="small" style={{ color: 'rgba(255, 255, 255, 0.6)' }}>
-                    {reservation.source ?? 'לא צוין'}
+                  <span className="small" style={{ color: 'rgba(255, 255, 255, 0.8)' }}>
+                    <strong style={{ color: 'white' }}>
+                      {reservation.adults && reservation.children ? (
+                        <>
+                          {reservation.adults + reservation.children}
+                        </>
+                      ) : reservation.guests ? (
+                        reservation.guests
+                      ) : (
+                        '—'
+                      )}
+                    </strong> אורחים
                   </span>
                   <span className="fw-bold" style={{ color: '#f093fb' }}>
                     {formatCurrency(reservation.total)}
@@ -237,22 +283,40 @@ const ReservationsTable = ({ reservations, onReservationViewed }: ReservationsTa
                 </div>
               </div>
               
-              {/* Chevron Icon */}
-              <div style={{ transition: 'transform 0.2s', transform: isExpanded ? 'rotate(90deg)' : 'rotate(180deg)' }}>
-                <svg 
-                  xmlns="http://www.w3.org/2000/svg" 
-                  width="20" 
-                  height="20" 
-                  viewBox="0 0 24 24" 
-                  fill="none" 
-                  stroke="currentColor" 
-                  strokeWidth="2" 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round"
-                  style={{ color: '#f093fb' }}
-                >
-                  <polyline points="9 18 15 12 9 6" />
-                </svg>
+              {/* New Badge and Chevron Icon */}
+              <div className="d-flex align-items-center gap-2">
+                {reservation.isNew && !isReservationViewed(reservation.id) && (
+                  <span 
+                    className="badge" 
+                    style={{
+                      background: 'linear-gradient(135deg, #a855f7 0%, #f093fb 100%)',
+                      color: 'white',
+                      fontSize: '0.7rem',
+                      padding: '2px 6px',
+                      boxShadow: '0 2px 8px rgba(168, 85, 247, 0.3)',
+                    }}
+                  >
+                    חדש ✨
+                  </span>
+                )}
+                
+                {/* Chevron Icon */}
+                <div style={{ transition: 'transform 0.2s', transform: isExpanded ? 'rotate(90deg)' : 'rotate(180deg)' }}>
+                  <svg 
+                    xmlns="http://www.w3.org/2000/svg" 
+                    width="20" 
+                    height="20" 
+                    viewBox="0 0 24 24" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    strokeWidth="2" 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round"
+                    style={{ color: '#f093fb' }}
+                  >
+                    <polyline points="9 18 15 12 9 6" />
+                  </svg>
+                </div>
               </div>
             </div>
             
@@ -318,7 +382,10 @@ const ReservationsTable = ({ reservations, onReservationViewed }: ReservationsTa
                 
                 <div className="reservation-detail-row">
                   <span className="reservation-detail-label">מקור הזמנה</span>
-                  <span className="reservation-detail-value">{reservation.source ?? '—'}</span>
+                  <span className="reservation-detail-value" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    {getPlatformIcon(reservation.source, 20)}
+                    <span>{reservation.source ?? '—'}</span>
+                  </span>
                 </div>
                 
                 <div className="reservation-detail-row">
@@ -412,47 +479,53 @@ const ReservationsTable = ({ reservations, onReservationViewed }: ReservationsTa
                 className={`${expandedId === reservation.id ? 'table-active' : ''} ${isNearestReservation(reservation.id) ? 'nearest-reservation' : ''}`}
               >
                 <td>
-                  <svg 
-                    xmlns="http://www.w3.org/2000/svg" 
-                    width="16" 
-                    height="16" 
-                    viewBox="0 0 24 24" 
-                    fill="none" 
-                    stroke="currentColor" 
-                    strokeWidth="2" 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round"
-                    style={{
-                      transform: expandedId === reservation.id ? 'rotate(90deg)' : 'rotate(180deg)',
-                      transition: 'transform 0.2s',
-                    }}
-                  >
-                    <polyline points="9 18 15 12 9 6" />
-                  </svg>
-                </td>
-                <td>
                   <div className="d-flex align-items-center gap-2">
-                    <span className="fw-semibold">{reservation.guestName}</span>
                     {reservation.isNew && !isReservationViewed(reservation.id) && (
                       <span 
                         className="badge" 
                         style={{
-                          background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                          background: 'linear-gradient(135deg, #a855f7 0%, #f093fb 100%)',
                           color: 'white',
                           fontSize: '0.7rem',
                           padding: '2px 6px',
+                          boxShadow: '0 2px 8px rgba(168, 85, 247, 0.3)',
                         }}
                       >
                         חדש ✨
                       </span>
                     )}
+                    <svg 
+                      xmlns="http://www.w3.org/2000/svg" 
+                      width="16" 
+                      height="16" 
+                      viewBox="0 0 24 24" 
+                      fill="none" 
+                      stroke="currentColor" 
+                      strokeWidth="2" 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round"
+                      style={{
+                        transform: expandedId === reservation.id ? 'rotate(90deg)' : 'rotate(180deg)',
+                        transition: 'transform 0.2s',
+                      }}
+                    >
+                      <polyline points="9 18 15 12 9 6" />
+                    </svg>
                   </div>
+                </td>
+                <td>
+                  <span className="fw-semibold">{reservation.guestName}</span>
                 </td>
                 <td className="small">
                   {formatDate(reservation.checkIn)} - {formatDate(reservation.checkOut)}
                 </td>
                 <td>{reservation.nights}</td>
-                <td className="small">{reservation.source ?? '—'}</td>
+                <td className="small">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    {getPlatformIcon(reservation.source, 18)}
+                    <span>{reservation.source ?? '—'}</span>
+                  </div>
+                </td>
                 <td className="fw-semibold">{formatCurrency(reservation.total)}</td>
                 <td>
                   <span className={`badge ${getStatusClass(reservation.status)}`}>
@@ -523,7 +596,10 @@ const ReservationsTable = ({ reservations, onReservationViewed }: ReservationsTa
                         ) : null}
                         <div className="col-md-6">
                           <div className="small text-muted mb-1">מקור הזמנה</div>
-                          <div>{reservation.source ?? '—'}</div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            {getPlatformIcon(reservation.source, 20)}
+                            <span>{reservation.source ?? '—'}</span>
+                          </div>
                         </div>
                         <div className="col-md-6">
                           <div className="small text-muted mb-1">סכום כולל</div>
