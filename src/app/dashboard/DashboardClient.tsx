@@ -163,12 +163,16 @@ const DashboardClient = () => {
     setNewReservation((prev) => {
       const updated = { ...prev, [field]: value }
       
-      // אם מעדכנים את תאריך הכניסה ותאריך היציאה כבר לא תקין, נאפס אותו
-      if (field === 'arrival' && typeof value === 'string' && prev.departure) {
+      // אם מעדכנים את תאריך הכניסה, נציע אוטומטית תאריך יציאה ליום למחרת
+      if (field === 'arrival' && typeof value === 'string') {
         const newArrival = new Date(value)
-        const currentDeparture = new Date(prev.departure)
-        if (currentDeparture <= newArrival) {
-          updated.departure = ''
+        const currentDeparture = prev.departure ? new Date(prev.departure) : null
+        
+        // אם אין תאריך יציאה או שהוא לא תקין, נציע יום למחרת
+        if (!currentDeparture || currentDeparture <= newArrival) {
+          const nextDay = new Date(newArrival)
+          nextDay.setDate(nextDay.getDate() + 1)
+          updated.departure = nextDay.toISOString().split('T')[0]
         }
       }
       
