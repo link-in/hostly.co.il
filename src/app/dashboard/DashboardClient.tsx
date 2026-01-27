@@ -154,6 +154,7 @@ const DashboardClient = () => {
   const [sendWhatsApp, setSendWhatsApp] = useState(true) // Default: send WhatsApp
   const [selectedMonth, setSelectedMonth] = useState<string>('all')
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('oldest') // מיון לפי הקרוב ביותר
+  const [showMobileFilters, setShowMobileFilters] = useState(false) // Mobile filter menu state
   const [commissionRates, setCommissionRates] = useState<Record<string, number>>({
     booking: 0.15, // Default fallback
     airbnb: 0.16,  // Default fallback
@@ -360,6 +361,22 @@ const DashboardClient = () => {
       setSavingReservation(false)
     }
   }
+
+  // Close mobile filters when clicking outside
+  useEffect(() => {
+    if (!showMobileFilters) return
+
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement
+      // Check if click is outside the filter dropdown and filter button
+      if (!target.closest('[data-mobile-filter]') && !target.closest('[aria-label="פילטרים"]')) {
+        setShowMobileFilters(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [showMobileFilters])
 
   // Check authentication - redirect to login if not authenticated
   useEffect(() => {
@@ -730,114 +747,298 @@ const DashboardClient = () => {
           </div>
         </div>
 
-        <div className="card border-0 shadow-sm mb-4" style={{ borderRadius: '12px' }}>
+        <div className="card border-0 shadow-sm mb-4 reservations-section" style={{ borderRadius: '12px' }}>
+          <style>{`
+            @media (max-width: 768px) {
+              .reservations-section {
+                background: transparent !important;
+                box-shadow: none !important;
+                border: none !important;
+              }
+              .reservations-section .card-body {
+                background: transparent !important;
+                padding-left: 0 !important;
+                padding-right: 0 !important;
+              }
+            }
+          `}</style>
           <div 
             className="card-body"
             style={{
               background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(249, 147, 251, 0.05) 100%)',
             }}
           >
-            {/* Mobile: Title + New Reservation Button */}
-            <div className="d-flex d-md-none align-items-center justify-content-between mb-3">
-              <div className="d-flex align-items-center gap-2">
-                <h2 
-                  className="h5 fw-bold mb-0"
-                  style={{
-                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    backgroundClip: 'text',
-                  }}
-                >
-                  הזמנות
-                </h2>
-                {loadingReservations && reservations.length ? (
-                  <span className="text-muted small">מרענן...</span>
-                ) : null}
-              </div>
+            {/* Mobile: CTA Bar with Filter Icon, New Reservation, and All Reservations Buttons */}
+            <div className="d-flex d-md-none align-items-center justify-content-between mb-3 gap-2" style={{ position: 'relative' }}>
+              {/* Filter Icon Button */}
               <button
                 type="button"
                 className="btn btn-sm d-flex align-items-center justify-content-center"
                 style={{ 
-                  background: showNewReservation 
-                    ? '#dc3545' 
+                  background: showMobileFilters 
+                    ? 'linear-gradient(135deg, #8b9aee 0%, #9b6bba 100%)' 
                     : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                   border: 'none',
                   color: 'white',
-                  padding: '0.25rem 0.75rem',
-                  height: '31px',
-                  lineHeight: '1.5',
-                  fontSize: '0.875rem',
-                  fontWeight: '600',
-                  whiteSpace: 'nowrap',
-                  boxShadow: '0 2px 4px rgba(102, 126, 234, 0.3)',
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '8px',
+                  boxShadow: showMobileFilters 
+                    ? '0 4px 12px rgba(139, 154, 238, 0.4)' 
+                    : '0 2px 8px rgba(102, 126, 234, 0.3)',
+                  transition: 'all 0.2s ease',
+                  flexShrink: 0,
                 }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.opacity = '0.9'
-                  e.currentTarget.style.transform = 'translateY(-1px)'
-                  e.currentTarget.style.boxShadow = '0 4px 8px rgba(102, 126, 234, 0.4)'
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.opacity = '1'
-                  e.currentTarget.style.transform = 'translateY(0)'
-                  e.currentTarget.style.boxShadow = '0 2px 4px rgba(102, 126, 234, 0.3)'
-                }}
-                onClick={() => setShowNewReservation((prev) => !prev)}
+                onClick={() => setShowMobileFilters((prev) => !prev)}
+                aria-label="פילטרים"
               >
-                {showNewReservation ? 'סגור טופס' : 'הזמנה חדשה'}
+                <svg 
+                  xmlns="http://www.w3.org/2000/svg" 
+                  width="18" 
+                  height="18" 
+                  fill="currentColor" 
+                  viewBox="0 0 16 16"
+                  style={{ transition: 'transform 0.2s ease', transform: showMobileFilters ? 'rotate(180deg)' : 'rotate(0deg)' }}
+                >
+                  <path d="M1.5 1.5A.5.5 0 0 1 2 1h12a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-.128.334L10 8.692V13.5a.5.5 0 0 1-.342.474l-3 1A.5.5 0 0 1 6 14.5V8.692L1.628 3.834A.5.5 0 0 1 1.5 3.5v-2z"/>
+                </svg>
               </button>
-            </div>
 
-            {/* Mobile: Filter Controls */}
-            <div className="d-flex d-md-none align-items-center justify-content-center gap-1 mb-3">
-              <select
-                className="form-select form-select-sm"
-                style={{
-                  width: 'auto',
-                  minWidth: '95px',
-                  maxWidth: '140px',
-                  height: '31px',
-                  border: '1px solid #667eea',
-                  color: '#667eea',
-                  padding: '0.25rem 2rem 0.25rem 0.5rem',
-                  fontSize: '0.875rem',
-                  direction: 'rtl',
-                }}
-                value={selectedMonth}
-                onChange={(e) => setSelectedMonth(e.target.value)}
-              >
-                <option value="all">כל החודשים</option>
-                {availableMonths.map((monthKey) => {
-                  const [year, month] = monthKey.split('-')
-                  const monthName = new Intl.DateTimeFormat('he-IL', { month: 'long', year: 'numeric' }).format(
-                    new Date(parseInt(year), parseInt(month) - 1)
-                  )
-                  return (
-                    <option key={monthKey} value={monthKey}>
-                      {monthName}
-                    </option>
-                  )
-                })}
-              </select>
-              <select
-                className="form-select form-select-sm"
-                style={{
-                  width: 'auto',
-                  minWidth: '95px',
-                  maxWidth: '140px',
-                  height: '31px',
-                  border: '1px solid #764ba2',
-                  color: '#764ba2',
-                  padding: '0.25rem 2rem 0.25rem 0.5rem',
-                  fontSize: '0.875rem',
-                  direction: 'rtl',
-                }}
-                value={sortOrder}
-                onChange={(e) => setSortOrder(e.target.value as 'newest' | 'oldest')}
-              >
-                <option value="oldest">קרובות תחילה</option>
-                <option value="newest">רחוקות תחילה</option>
-              </select>
+              {/* Right Side CTA Buttons */}
+              <div className="d-flex align-items-center gap-2" style={{ flex: 1, justifyContent: 'flex-end' }}>
+                {/* All Reservations Button */}
+                <Link href="/dashboard/reservations" style={{ textDecoration: 'none' }}>
+                  <button
+                    type="button"
+                    className="btn btn-sm d-flex align-items-center justify-content-center gap-1"
+                    style={{ 
+                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                      border: 'none',
+                      color: 'white',
+                      padding: '0.375rem 0.625rem',
+                      height: '36px',
+                      fontSize: '0.75rem',
+                      fontWeight: '600',
+                      whiteSpace: 'nowrap',
+                      borderRadius: '8px',
+                      boxShadow: '0 4px 12px rgba(102, 126, 234, 0.4)',
+                      transition: 'all 0.2s ease',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = 'linear-gradient(135deg, #8b9aee 0%, #9b6bba 100%)'
+                      e.currentTarget.style.transform = 'translateY(-1px)'
+                      e.currentTarget.style.boxShadow = '0 6px 16px rgba(102, 126, 234, 0.5)'
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+                      e.currentTarget.style.transform = 'translateY(0)'
+                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.4)'
+                    }}
+                  >
+                    <svg 
+                      xmlns="http://www.w3.org/2000/svg" 
+                      width="14" 
+                      height="14" 
+                      fill="currentColor" 
+                      viewBox="0 0 16 16"
+                    >
+                      <path d="M1 2.5A1.5 1.5 0 0 1 2.5 1h3A1.5 1.5 0 0 1 7 2.5v3A1.5 1.5 0 0 1 5.5 7h-3A1.5 1.5 0 0 1 1 5.5v-3zM2.5 2a.5.5 0 0 0-.5.5v3a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 .5-.5v-3a.5.5 0 0 0-.5-.5h-3zm6.5.5A1.5 1.5 0 0 1 10.5 1h3A1.5 1.5 0 0 1 15 2.5v3A1.5 1.5 0 0 1 13.5 7h-3A1.5 1.5 0 0 1 9 5.5v-3zm1.5-.5a.5.5 0 0 0-.5.5v3a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 .5-.5v-3a.5.5 0 0 0-.5-.5h-3zM1 10.5A1.5 1.5 0 0 1 2.5 9h3A1.5 1.5 0 0 1 7 10.5v3A1.5 1.5 0 0 1 5.5 15h-3A1.5 1.5 0 0 1 1 13.5v-3zm1.5-.5a.5.5 0 0 0-.5.5v3a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 .5-.5v-3a.5.5 0 0 0-.5-.5h-3zm6.5.5A1.5 1.5 0 0 1 10.5 9h3a1.5 1.5 0 0 1 1.5 1.5v3a1.5 1.5 0 0 1-1.5 1.5h-3A1.5 1.5 0 0 1 9 13.5v-3zm1.5-.5a.5.5 0 0 0-.5.5v3a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 .5-.5v-3a.5.5 0 0 0-.5-.5h-3z"/>
+                    </svg>
+                    <span>כל ההזמנות</span>
+                  </button>
+                </Link>
+
+                {/* New Reservation Button - Enhanced CTA */}
+                <button
+                  type="button"
+                  className="btn btn-sm d-flex align-items-center justify-content-center gap-1"
+                  style={{ 
+                    background: showNewReservation 
+                      ? 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)' 
+                      : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    border: 'none',
+                    color: 'white',
+                    padding: '0.375rem 0.75rem',
+                    height: '36px',
+                    fontSize: '0.8125rem',
+                    fontWeight: '700',
+                    whiteSpace: 'nowrap',
+                    borderRadius: '8px',
+                    boxShadow: showNewReservation 
+                      ? '0 4px 12px rgba(220, 53, 69, 0.4)' 
+                      : '0 4px 12px rgba(102, 126, 234, 0.4)',
+                    transition: 'all 0.2s ease',
+                    flexShrink: 0,
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!showNewReservation) {
+                      e.currentTarget.style.transform = 'translateY(-2px) scale(1.02)'
+                      e.currentTarget.style.boxShadow = '0 6px 16px rgba(102, 126, 234, 0.5)'
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0) scale(1)'
+                    e.currentTarget.style.boxShadow = showNewReservation 
+                      ? '0 4px 12px rgba(220, 53, 69, 0.4)' 
+                      : '0 4px 12px rgba(102, 126, 234, 0.4)'
+                  }}
+                  onClick={() => setShowNewReservation((prev) => !prev)}
+                >
+                  {showNewReservation ? (
+                    <>
+                      <svg 
+                        xmlns="http://www.w3.org/2000/svg" 
+                        width="14" 
+                        height="14" 
+                        fill="currentColor" 
+                        viewBox="0 0 16 16"
+                      >
+                        <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z"/>
+                      </svg>
+                      <span>סגור</span>
+                    </>
+                  ) : (
+                    <>
+                      <svg 
+                        xmlns="http://www.w3.org/2000/svg" 
+                        width="16" 
+                        height="16" 
+                        fill="currentColor" 
+                        viewBox="0 0 16 16"
+                      >
+                        <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+                      </svg>
+                      <span>הזמנה חדשה</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {/* Mobile Filter Dropdown */}
+              {showMobileFilters && (
+                <div 
+                  data-mobile-filter
+                  style={{
+                    position: 'absolute',
+                    top: '45px',
+                    left: '0',
+                    right: '0',
+                    background: 'linear-gradient(135deg, #1e293b 0%, #334155 50%, #475569 100%)',
+                    border: '1px solid rgba(249, 147, 251, 0.2)',
+                    borderRadius: '12px',
+                    padding: '1rem',
+                    boxShadow: '0 8px 24px rgba(0, 0, 0, 0.3)',
+                    zIndex: 1000,
+                    animation: 'slideDown 0.2s ease',
+                  }}
+                >
+                  <style>{`
+                    @keyframes slideDown {
+                      from {
+                        opacity: 0;
+                        transform: translateY(-10px);
+                      }
+                      to {
+                        opacity: 1;
+                        transform: translateY(0);
+                      }
+                    }
+                  `}</style>
+                  
+                  {/* Filter Title */}
+                  <div style={{ 
+                    marginBottom: '0.75rem', 
+                    color: 'rgba(249, 147, 251, 0.9)',
+                    fontSize: '0.875rem',
+                    fontWeight: '600',
+                    textAlign: 'right',
+                  }}>
+                    סינון והצגה
+                  </div>
+
+                  {/* Month Filter */}
+                  <div style={{ marginBottom: '0.75rem' }}>
+                    <label 
+                      htmlFor="mobile-month-filter"
+                      style={{ 
+                        display: 'block',
+                        marginBottom: '0.375rem',
+                        color: 'rgba(255, 255, 255, 0.7)',
+                        fontSize: '0.75rem',
+                        textAlign: 'right',
+                      }}
+                    >
+                      בחירת חודש
+                    </label>
+                    <select
+                      id="mobile-month-filter"
+                      className="form-select form-select-sm"
+                      style={{
+                        width: '100%',
+                        height: '38px',
+                        background: 'rgba(0, 0, 0, 0.3)',
+                        border: '1px solid rgba(102, 126, 234, 0.5)',
+                        color: 'white',
+                        padding: '0.375rem 0.75rem',
+                        fontSize: '0.875rem',
+                        direction: 'rtl',
+                        borderRadius: '8px',
+                      }}
+                      value={selectedMonth}
+                      onChange={(e) => setSelectedMonth(e.target.value)}
+                    >
+                      <option value="all" style={{ background: '#1e293b', color: 'white' }}>כל החודשים</option>
+                      {availableMonths.map((monthKey) => {
+                        const [year, month] = monthKey.split('-')
+                        const monthName = new Intl.DateTimeFormat('he-IL', { month: 'long', year: 'numeric' }).format(
+                          new Date(parseInt(year), parseInt(month) - 1)
+                        )
+                        return (
+                          <option key={monthKey} value={monthKey} style={{ background: '#1e293b', color: 'white' }}>
+                            {monthName}
+                          </option>
+                        )
+                      })}
+                    </select>
+                  </div>
+
+                  {/* Sort Order Filter */}
+                  <div>
+                    <label 
+                      htmlFor="mobile-sort-filter"
+                      style={{ 
+                        display: 'block',
+                        marginBottom: '0.375rem',
+                        color: 'rgba(255, 255, 255, 0.7)',
+                        fontSize: '0.75rem',
+                        textAlign: 'right',
+                      }}
+                    >
+                      סדר תצוגה
+                    </label>
+                    <select
+                      id="mobile-sort-filter"
+                      className="form-select form-select-sm"
+                      style={{
+                        width: '100%',
+                        height: '38px',
+                        background: 'rgba(0, 0, 0, 0.3)',
+                        border: '1px solid rgba(118, 75, 162, 0.5)',
+                        color: 'white',
+                        padding: '0.375rem 0.75rem',
+                        fontSize: '0.875rem',
+                        direction: 'rtl',
+                        borderRadius: '8px',
+                      }}
+                      value={sortOrder}
+                      onChange={(e) => setSortOrder(e.target.value as 'newest' | 'oldest')}
+                    >
+                      <option value="oldest" style={{ background: '#1e293b', color: 'white' }}>קרובות תחילה</option>
+                      <option value="newest" style={{ background: '#1e293b', color: 'white' }}>רחוקות תחילה</option>
+                    </select>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Desktop: Title + All Controls */}
@@ -846,16 +1047,13 @@ const DashboardClient = () => {
                 <h2 
                   className="h5 fw-bold mb-0"
                   style={{
-                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    backgroundClip: 'text',
+                    color: 'rgba(249, 147, 251, 0.9)',
                   }}
                 >
                   הזמנות
                 </h2>
                 {loadingReservations && reservations.length ? (
-                  <span className="text-muted small">מרענן...</span>
+                  <span className="small" style={{ color: 'rgba(255, 255, 255, 0.6)' }}>מרענן...</span>
                 ) : null}
               </div>
               <div className="d-flex align-items-center justify-content-center gap-1 gap-md-2">
@@ -979,9 +1177,45 @@ const DashboardClient = () => {
             </div>
             {showNewReservation ? (
               <form
-                className="border rounded-3 p-3 mb-3 bg-white"
+                className="rounded-3 p-3 mb-3 dark-form"
+                style={{
+                  background: 'linear-gradient(135deg, #1e293b 0%, #334155 50%, #475569 100%)',
+                  border: '1px solid rgba(249, 147, 251, 0.2)',
+                }}
                 onSubmit={(event) => event.preventDefault()}
               >
+                <style>{`
+                  .dark-form label {
+                    color: rgba(249, 147, 251, 0.9) !important;
+                  }
+                  .dark-form .form-control,
+                  .dark-form .form-select {
+                    background: rgba(0, 0, 0, 0.2) !important;
+                    border: 1px solid rgba(249, 147, 251, 0.2) !important;
+                    color: white !important;
+                  }
+                  .dark-form .form-control::placeholder {
+                    color: rgba(255, 255, 255, 0.5) !important;
+                  }
+                  .dark-form .form-control:focus,
+                  .dark-form .form-select:focus {
+                    background: rgba(0, 0, 0, 0.3) !important;
+                    border-color: #f093fb !important;
+                    box-shadow: 0 0 0 0.25rem rgba(240, 147, 251, 0.25) !important;
+                    color: white !important;
+                  }
+                  .dark-form .form-check-label {
+                    color: rgba(255, 255, 255, 0.9) !important;
+                  }
+                  .dark-form .form-check-input {
+                    background-color: rgba(0, 0, 0, 0.2) !important;
+                    border: 1px solid rgba(249, 147, 251, 0.3) !important;
+                  }
+                  .dark-form .form-check-input:checked {
+                    background-color: #f093fb !important;
+                    border-color: #f093fb !important;
+                  }
+                `}</style>
                 <div className="row g-2">
                   <div className="col-12 col-md-6">
                     <label className="form-label small fw-semibold">
@@ -1153,14 +1387,15 @@ const DashboardClient = () => {
               </form>
             ) : null}
             {loadingReservations && !reservations.length ? (
-              <div className="text-muted">טוען נתונים...</div>
+              <div style={{ color: 'rgba(255, 255, 255, 0.7)' }}>טוען נתונים...</div>
             ) : filteredReservations.length > 0 ? (
               <>
                 <ReservationsTable 
                   reservations={filteredReservations} 
                   onReservationViewed={markReservationAsViewed}
                 />
-                <div className="text-center mt-4 pt-3" style={{ borderTop: '1px solid rgba(102, 126, 234, 0.15)' }}>
+                {/* Desktop Only: View All Reservations Button */}
+                <div className="d-none d-md-block text-center mt-4 pt-3" style={{ borderTop: '1px solid rgba(102, 126, 234, 0.15)' }}>
                   <Link href="/dashboard/reservations">
                     <button
                       type="button"
@@ -1189,28 +1424,23 @@ const DashboardClient = () => {
                 </div>
               </>
             ) : (
-              <div className="text-muted text-center py-4">
+              <div className="text-center py-4" style={{ color: 'rgba(255, 255, 255, 0.7)' }}>
                 {selectedMonth === 'all' ? 'אין הזמנות להצגה' : 'אין הזמנות בחודש זה'}
               </div>
             )}
           </div>
         </div>
 
-        <div className="card border-0 shadow-sm mb-4" style={{ borderRadius: '12px' }}>
-          <div 
-            className="card-body"
-            style={{
-              background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(249, 147, 251, 0.05) 100%)',
-            }}
-          >
+        <div className="card border-0 shadow-lg mb-4" style={{ 
+          borderRadius: '12px',
+          background: 'linear-gradient(135deg, #1e293b 0%, #334155 50%, #475569 100%)',
+        }}>
+          <div className="card-body">
             <div className="mb-3">
               <h2 
                 className="h5 fw-bold mb-0"
                 style={{
-                  background: 'linear-gradient(135deg, #667eea 0%, #f093fb 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
+                  color: 'rgba(249, 147, 251, 0.9)',
                 }}
               >
                 לוח שנה ותמחור
@@ -1222,17 +1452,20 @@ const DashboardClient = () => {
               </div>
             ) : null}
             {loadingRoomPrices ? (
-              <div className="text-muted">טוען מחירי לילה...</div>
+              <div style={{ color: 'rgba(255, 255, 255, 0.7)' }}>טוען מחירי לילה...</div>
             ) : (
               <CalendarPricing reservations={reservations} prices={roomPrices} onPricesUpdated={refreshRoomPrices} />
             )}
           </div>
         </div>
 
-        <div className="card border-0 shadow-sm" style={{ borderRadius: '12px', background: 'transparent' }}>
+        <div className="card border-0 shadow-lg" style={{ 
+          borderRadius: '12px', 
+          background: 'linear-gradient(135deg, #1e293b 0%, #334155 50%, #475569 100%)',
+        }}>
           <div className="card-body">
             {loadingRoomPrices ? (
-              <div className="text-muted">טוען נתונים...</div>
+              <div style={{ color: 'rgba(255, 255, 255, 0.7)' }}>טוען נתונים...</div>
             ) : priceSummary ? (
               <div className="row g-3">
                 <div className="col-4 col-md-4">
@@ -1270,7 +1503,7 @@ const DashboardClient = () => {
                 </div>
               </div>
             ) : (
-              <div className="text-muted">אין מחירים להצגה.</div>
+              <div style={{ color: 'rgba(255, 255, 255, 0.7)' }}>אין מחירים להצגה.</div>
             )}
           </div>
         </div>

@@ -298,7 +298,7 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated }: CalendarPric
     <div className="row g-4">
       <div className="col-lg-8">
         <div className="d-flex align-items-center justify-content-between mb-3">
-          <div className="fw-semibold">{monthLabel}</div>
+          <div className="fw-semibold" style={{ color: 'rgba(249, 147, 251, 0.9)', fontSize: '1.1rem' }}>{monthLabel}</div>
           <div className="d-flex align-items-center gap-1">
             <button
               type="button"
@@ -373,18 +373,20 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated }: CalendarPric
           </div>
         </div>
         <div
-          className="border rounded-4 bg-white"
+          className="rounded-4"
           style={{
             overflowX: 'auto',
             overflowY: 'hidden',
             WebkitOverflowScrolling: 'touch',
             touchAction: 'pan-x',
+            background: 'linear-gradient(135deg, #1e293b 0%, #334155 50%, #475569 100%)',
+            border: '1px solid rgba(102, 126, 234, 0.2)',
           }}
         >
           <div style={{ minWidth: '520px', paddingBottom: '6px' }}>
             <div className="d-grid" style={{ gridTemplateColumns: 'repeat(7, 1fr)', direction: 'rtl' }}>
               {['א׳', 'ב׳', 'ג׳', 'ד׳', 'ה׳', 'ו׳', 'ש׳'].map((day) => (
-                <div key={day} className="text-center py-2 border-bottom text-muted small fw-semibold">
+                <div key={day} className="text-center py-2 small fw-semibold" style={{ borderBottom: '1px solid rgba(102, 126, 234, 0.2)', color: 'rgba(249, 147, 251, 0.8)' }}>
                   {day}
                 </div>
               ))}
@@ -415,30 +417,49 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated }: CalendarPric
                     style={{
                       position: 'relative',
                       minHeight: '90px',
-                      background: isSelected ? 'rgba(13, 148, 136, 0.18)' : showTodayHighlight ? 'rgba(13, 148, 136, 0.12)' : 'transparent',
-                      color: isSelected ? '#0f172a' : 'inherit',
+                      background: isSelected 
+                        ? 'rgba(102, 126, 234, 0.3)' 
+                        : showTodayHighlight 
+                        ? 'rgba(102, 126, 234, 0.15)' 
+                        : 'transparent',
+                      color: 'rgba(255, 255, 255, 0.9)',
                       opacity: isCurrentMonth ? 1 : 0.4,
                       cursor: isBooked ? 'not-allowed' : 'pointer',
-                      border: isToday ? '2px solid #0d9488' : '1px solid transparent',
+                      border: isToday ? '2px solid rgba(102, 126, 234, 0.6)' : '1px solid transparent',
                       borderRadius: bookingRadius,
+                      transition: 'all 0.2s ease',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isBooked) {
+                        e.currentTarget.style.background = 'rgba(102, 126, 234, 0.2)'
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isBooked) {
+                        e.currentTarget.style.background = isSelected 
+                          ? 'rgba(102, 126, 234, 0.3)' 
+                          : showTodayHighlight 
+                          ? 'rgba(102, 126, 234, 0.15)' 
+                          : 'transparent'
+                      }
                     }}
                     onClick={() => handleDateToggle(date)}
                   >
                     <span
                       className="fw-semibold"
-                      style={{ position: 'absolute', top: '8px', left: '8px', fontSize: '14px' }}
+                      style={{ position: 'absolute', top: '8px', left: '8px', fontSize: '14px', color: 'rgba(255, 255, 255, 0.9)' }}
                     >
                       {date.getDate()}
                     </span>
                     {isToday ? (
                       <span
-                        className="badge bg-success"
-                        style={{ position: 'absolute', top: '8px', right: '8px' }}
+                        className="badge"
+                        style={{ position: 'absolute', top: '8px', right: '8px', background: 'rgba(102, 126, 234, 0.8)', color: 'white' }}
                       >
                         היום
                       </span>
                     ) : null}
-                    <div className="small text-muted mt-1">{formatCurrency(price)}</div>
+                    <div className="small mt-1" style={{ color: 'rgba(249, 147, 251, 0.8)' }}>{formatCurrency(price)}</div>
                   </button>
                 )
                 })}
@@ -464,13 +485,15 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated }: CalendarPric
                       alignSelf: 'center',
                       justifySelf: 'stretch',
                       height: '20px',
-                      background: 'rgba(239, 68, 68, 0.12)',
+                      background: 'rgba(239, 68, 68, 0.3)',
+                      border: '1px solid rgba(239, 68, 68, 0.5)',
                       borderRadius: '999px',
                       padding: '0 10px',
                       display: 'flex',
                       alignItems: 'center',
                       fontSize: '12px',
-                      color: '#991b1b',
+                      color: 'rgba(255, 200, 200, 0.95)',
+                      fontWeight: '600',
                       overflow: 'hidden',
                       whiteSpace: 'nowrap',
                       textOverflow: 'ellipsis',
@@ -486,32 +509,42 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated }: CalendarPric
         </div>
       </div>
       <div className="col-lg-4">
-        <div className="card border-0 shadow-sm h-100">
+        <div className="card border-0 h-100" style={{ background: 'linear-gradient(135deg, #1e293b 0%, #334155 50%, #475569 100%)', border: '1px solid rgba(102, 126, 234, 0.2)' }}>
           <div className="card-body">
-            <h3 className="h6 fw-bold mb-3">שינוי מחיר לפי תאריך</h3>
-            <div className="small text-muted mb-3">
+            <h3 className="h6 fw-bold mb-3" style={{ color: 'rgba(249, 147, 251, 0.9)' }}>שינוי מחיר לפי תאריך</h3>
+            <div className="small mb-3" style={{ color: 'rgba(255, 255, 255, 0.7)' }}>
               בחר תאריכים בלוח משמאל, ועדכן מחיר ללילה.
             </div>
             <div className="row g-2 mb-3">
               <div className="col-6">
-                <label className="form-label small fw-semibold">
+                <label className="form-label small fw-semibold" style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
                   מחיר ללילה (₪) <span className="text-danger">*</span>
                 </label>
                 <input
                   type="number"
                   min={0}
                   className="form-control"
+                  style={{
+                    background: 'rgba(0, 0, 0, 0.3)',
+                    border: '1px solid rgba(102, 126, 234, 0.3)',
+                    color: 'white',
+                  }}
                   value={priceInput}
                   onChange={(event) => setPriceInput(event.target.value)}
                   required
                 />
               </div>
               <div className="col-6">
-                <label className="form-label small fw-semibold">מינימום לילות</label>
+                <label className="form-label small fw-semibold" style={{ color: 'rgba(255, 255, 255, 0.9)' }}>מינימום לילות</label>
                 <input
                   type="number"
                   min={1}
                   className="form-control"
+                  style={{
+                    background: 'rgba(0, 0, 0, 0.3)',
+                    border: '1px solid rgba(102, 126, 234, 0.3)',
+                    color: 'white',
+                  }}
                   value={minStayInput}
                   onChange={(event) => setMinStayInput(Math.max(1, Number(event.target.value)))}
                 />
@@ -542,15 +575,15 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated }: CalendarPric
             </button>
             <div className="mt-4">
               <div className="d-flex align-items-center justify-content-between mb-2">
-                <div className="small fw-semibold">תאריכים שנבחרו</div>
+                <div className="small fw-semibold" style={{ color: 'rgba(249, 147, 251, 0.9)' }}>תאריכים שנבחרו</div>
                 {selectedDates.length ? (
                   <button
                     type="button"
                     className="btn btn-sm"
                     style={{
-                      border: '1px solid #cbd5e1',
-                      color: '#64748b',
-                      backgroundColor: 'transparent',
+                      border: '1px solid rgba(102, 126, 234, 0.5)',
+                      color: 'rgba(255, 255, 255, 0.8)',
+                      backgroundColor: 'rgba(102, 126, 234, 0.2)',
                       fontSize: '0.7rem',
                       padding: '0.15rem 0.4rem',
                     }}
@@ -564,58 +597,58 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated }: CalendarPric
               {selectedDates.length ? (
                 <div className="d-flex flex-wrap gap-2">
                   {selectedDates.map((date) => (
-                    <span key={toKey(date)} className="badge bg-secondary">
+                    <span key={toKey(date)} className="badge" style={{ background: 'rgba(102, 126, 234, 0.6)', color: 'white' }}>
                       {new Intl.DateTimeFormat('he-IL', { day: '2-digit', month: 'short' }).format(date)}
                     </span>
                   ))}
                 </div>
               ) : (
-                <div className="small text-muted">לא נבחרו תאריכים.</div>
+                <div className="small" style={{ color: 'rgba(255, 255, 255, 0.6)' }}>לא נבחרו תאריכים.</div>
               )}
             </div>
             <div className="mt-4">
-              <div className="small fw-semibold mb-2">מקרא</div>
-              <div className="d-flex flex-column gap-2 small">
+              <div className="small fw-semibold mb-2" style={{ color: 'rgba(249, 147, 251, 0.9)' }}>מקרא</div>
+              <div className="d-flex flex-column gap-2 small" style={{ color: 'rgba(255, 255, 255, 0.8)' }}>
                 <div>
-                  <span className="badge bg-danger me-2">תפוס</span>
+                  <span className="badge me-2" style={{ background: 'rgba(239, 68, 68, 0.6)' }}>תפוס</span>
                   תאריך עם הזמנה קיימת
                 </div>
                 <div>
-                  <span className="badge bg-success me-2">נבחר</span>
+                  <span className="badge me-2" style={{ background: 'rgba(102, 126, 234, 0.6)' }}>נבחר</span>
                   תאריך שנבחר לעדכון מחיר
                 </div>
               </div>
             </div>
             <div className="mt-4">
-              <div className="small fw-semibold mb-2">פרטי הזמנה</div>
+              <div className="small fw-semibold mb-2" style={{ color: 'rgba(249, 147, 251, 0.9)' }}>פרטי הזמנה</div>
               {selectedReservation ? (
-                <div className="border rounded-3 p-3 bg-light">
-                  <div className="fw-semibold">{selectedReservation.guestName}</div>
-                  <div className="small text-muted">
+                <div className="rounded-3 p-3" style={{ background: 'rgba(0, 0, 0, 0.3)', border: '1px solid rgba(102, 126, 234, 0.3)' }}>
+                  <div className="fw-semibold" style={{ color: 'rgba(255, 255, 255, 0.9)' }}>{selectedReservation.guestName}</div>
+                  <div className="small" style={{ color: 'rgba(255, 255, 255, 0.7)' }}>
                     {selectedReservation.checkIn} - {selectedReservation.checkOut}
                   </div>
-                  <div className="small mt-2">
+                  <div className="small mt-2" style={{ color: 'rgba(255, 255, 255, 0.8)' }}>
                     <span className="fw-semibold">סטטוס:</span> {selectedReservation.status}
                   </div>
-                  <div className="small">
+                  <div className="small" style={{ color: 'rgba(255, 255, 255, 0.8)' }}>
                     <span className="fw-semibold">לילות:</span> {selectedReservation.nights}
                   </div>
-                  <div className="small">
+                  <div className="small" style={{ color: 'rgba(255, 255, 255, 0.8)' }}>
                     <span className="fw-semibold">סה״כ:</span> {formatCurrency(selectedReservation.total)}
                   </div>
                   {selectedReservation.source ? (
-                    <div className="small">
+                    <div className="small" style={{ color: 'rgba(255, 255, 255, 0.8)' }}>
                       <span className="fw-semibold">מקור:</span> {selectedReservation.source}
                     </div>
                   ) : null}
                   {selectedReservation.unitName ? (
-                    <div className="small">
+                    <div className="small" style={{ color: 'rgba(255, 255, 255, 0.8)' }}>
                       <span className="fw-semibold">יחידה:</span> {selectedReservation.unitName}
                     </div>
                   ) : null}
                 </div>
               ) : (
-                <div className="small text-muted">בחר תאריך עם הזמנה כדי לראות פרטים.</div>
+                <div className="small" style={{ color: 'rgba(255, 255, 255, 0.6)' }}>בחר תאריך עם הזמנה כדי לראות פרטים.</div>
               )}
             </div>
           </div>
