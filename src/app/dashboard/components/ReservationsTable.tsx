@@ -179,7 +179,7 @@ const ReservationsTable = ({ reservations, onReservationViewed }: ReservationsTa
 
   // Mobile List View Component
   const MobileListView = () => (
-    <div className="d-md-none" style={{ maxHeight: '50vh', overflowY: 'auto' }}>
+    <div className="d-md-none" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
       {reservations.map((reservation) => {
         const isExpanded = expandedId === reservation.id
         const isNearest = isNearestReservation(reservation.id)
