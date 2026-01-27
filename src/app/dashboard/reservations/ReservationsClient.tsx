@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import type { Reservation } from '@/lib/dashboard/types'
 import { formatCurrency } from '@/lib/dashboard/utils'
 import { getDashboardProvider } from '@/lib/dashboard/getDashboardProvider'
+import DashboardHeader from '@/components/DashboardHeader'
 
 // LocalStorage key for viewed reservations
 const VIEWED_RESERVATIONS_KEY = 'hostly_viewed_reservations'
@@ -78,9 +79,6 @@ export default function ReservationsClient() {
     airbnb: 0.16,
     direct: 0,
   })
-  const [logoSrc, setLogoSrc] = useState('/photos/hostly-logo.png')
-  const [logoVisible, setLogoVisible] = useState(true)
-  const [menuOpen, setMenuOpen] = useState(false)
   const [viewedReservations, setViewedReservations] = useState<Set<string>>(new Set())
 
   const { provider, meta } = useMemo(() => getDashboardProvider(session?.user), [session?.user])
@@ -131,16 +129,6 @@ export default function ReservationsClient() {
       isActive = false
     }
   }, [provider])
-
-  // Logo error handling
-  const handleLogoError = () => {
-    if (logoSrc === '/photos/hostly-logo.png') {
-      setLogoSrc('/hostly-logo.png')
-    } else {
-      setLogoVisible(false)
-    }
-  }
-
   // Filtered and sorted reservations
   const filteredReservations = useMemo(() => {
     let filtered = [...reservations]
@@ -285,223 +273,20 @@ export default function ReservationsClient() {
     return null
   }
 
-  const handleLogout = async () => {
-    await signOut({ redirect: false })
-    window.location.href = '/dashboard/login'
-  }
-
   return (
     <div dir="rtl" style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)' }}>
       <style dangerouslySetInnerHTML={{ __html: styles }} />
       
       {/* Header */}
-      <div className="container py-5">
-        <div
-          className="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between mb-4 gap-3"
-          style={{
-            backgroundColor: 'white',
-            padding: '1.5rem',
-            borderRadius: '12px',
-            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-          }}
-        >
-              <div className="d-flex align-items-center gap-3">
-                {logoVisible ? (
-                  <img
-                    src={logoSrc}
-                    alt="Hostly"
-                    style={{ height: '48px', objectFit: 'contain' }}
-                    onError={handleLogoError}
-                  />
-                ) : null}
-                <div>
-                  <h1
-                    className="fw-bold mb-1"
-                    style={{
-                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
-                      WebkitBackgroundClip: 'text',
-                      WebkitTextFillColor: 'transparent',
-                      backgroundClip: 'text',
-                      fontSize: '1.5rem',
-                    }}
-                  >
-                    {session?.user?.displayName ?? 'Hostly'}
-                  </h1>
-                  {session?.user?.firstName && session?.user?.lastName ? (
-                    <p className="small mb-0" style={{ color: '#667eea', fontWeight: '500' }}>
-                      שלום {session.user.firstName} {session.user.lastName}
-                    </p>
-                  ) : null}
-                  <p className="small mb-0 text-muted">כל ההזמנות</p>
-                </div>
-              </div>
-              <div className="d-flex align-items-center gap-2 position-relative justify-content-center justify-content-lg-start">
-                <Link href="/dashboard">
-                  <button
-                    type="button"
-                    className="btn btn-sm d-flex align-items-center justify-content-center"
-                    style={{
-                      width: '36px',
-                      height: '36px',
-                      border: '1px solid #667eea',
-                      color: '#667eea',
-                      backgroundColor: 'transparent',
-                      padding: 0,
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = '#667eea'
-                      e.currentTarget.style.color = 'white'
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = 'transparent'
-                      e.currentTarget.style.color = '#667eea'
-                    }}
-                    title="דף הבית"
-                    aria-label="דף הבית"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="18"
-                      height="18"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-                      <polyline points="9 22 9 12 15 12 15 22" />
-                    </svg>
-                  </button>
-                </Link>
-                {session?.user?.landingPageUrl ? (
-                  <button
-                    type="button"
-                    className="btn btn-sm d-flex align-items-center justify-content-center"
-                    style={{
-                      width: '36px',
-                      height: '36px',
-                      border: '1px solid #f093fb',
-                      color: '#f093fb',
-                      backgroundColor: 'transparent',
-                      padding: 0,
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = '#f093fb'
-                      e.currentTarget.style.color = 'white'
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = 'transparent'
-                      e.currentTarget.style.color = '#f093fb'
-                    }}
-                    onClick={() => window.open(session.user.landingPageUrl, '_blank')}
-                    title="צפייה באתר"
-                    aria-label="צפייה באתר"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="18"
-                      height="18"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                      <polyline points="15 3 21 3 21 9" />
-                      <line x1="10" y1="14" x2="21" y2="3" />
-                    </svg>
-                  </button>
-                ) : null}
-                <button
-                  type="button"
-                  className="btn btn-sm d-flex align-items-center justify-content-center"
-                  style={{
-                    width: '36px',
-                    height: '36px',
-                    border: '1px solid #dc3545',
-                    color: '#dc3545',
-                    backgroundColor: 'transparent',
-                    padding: 0,
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = '#dc3545'
-                    e.currentTarget.style.color = 'white'
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = 'transparent'
-                    e.currentTarget.style.color = '#dc3545'
-                  }}
-                  onClick={handleLogout}
-                  title="התנתק"
-                  aria-label="התנתק"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="18"
-                    height="18"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                    <polyline points="16 17 21 12 16 7" />
-                    <line x1="21" y1="12" x2="9" y2="12" />
-                  </svg>
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-sm d-flex align-items-center justify-content-center"
-                  style={{
-                    width: '36px',
-                    height: '36px',
-                    border: '1px solid #667eea',
-                    color: '#667eea',
-                    backgroundColor: 'transparent',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = '#667eea'
-                    e.currentTarget.style.color = 'white'
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = 'transparent'
-                    e.currentTarget.style.color = '#667eea'
-                  }}
-                  aria-label="תפריט"
-                  onClick={() => setMenuOpen((prev) => !prev)}
-                >
-                  <span style={{ display: 'inline-block', lineHeight: 1 }}>☰</span>
-                </button>
-                {menuOpen ? (
-                  <div
-                    className="position-absolute bg-white border rounded-3 shadow-sm p-2"
-                    style={{ top: '46px', right: 0, minWidth: '200px', zIndex: 10 }}
-                  >
-                    <Link className="dropdown-item py-2" href="/dashboard" onClick={() => setMenuOpen(false)}>
-                      ניהול זמינות/מחירים
-                    </Link>
-                    <Link className="dropdown-item py-2" href="/dashboard/reservations" onClick={() => setMenuOpen(false)}>
-                      כל ההזמנות
-                    </Link>
-                    <Link className="dropdown-item py-2" href="/dashboard/profile" onClick={() => setMenuOpen(false)}>
-                      איזור אישי
-                    </Link>
-                    <Link className="dropdown-item py-2" href="/dashboard/landing" onClick={() => setMenuOpen(false)}>
-                      ניהול דף נחיתה
-                    </Link>
-                    <Link className="dropdown-item py-2" href="/dashboard/payments" onClick={() => setMenuOpen(false)}>
-                      סליקת אשראי
-                    </Link>
-                  </div>
-                ) : null}
-              </div>
-            </div>
+      <div className="container py-3 py-md-5">
+        <div className="mb-3 mb-md-4">
+          <DashboardHeader 
+            session={session}
+            subtitle="כל ההזמנות"
+            showLandingPageButton={true}
+            currentPage="reservations"
+          />
+        </div>
       </div>
 
       {/* Main Content */}
@@ -535,12 +320,12 @@ export default function ReservationsClient() {
 
             {/* Statistics Cards */}
             <div className="row g-3 mb-4">
-              <div className="col-md-3">
-                <div className="card border-0 shadow-sm" style={{ borderRadius: '12px' }}>
-                  <div className="card-body text-center">
+              <div className="col-4 col-md-3">
+                <div className="card border-0 shadow-sm h-100" style={{ borderRadius: '12px' }}>
+                  <div className="card-body text-center d-flex flex-column justify-content-center" style={{ minHeight: '85px' }}>
                     <div className="small text-muted mb-1">סה"כ הזמנות</div>
                     <div
-                      className="h3 fw-bold mb-0"
+                      className="h5 fw-bold mb-0"
                       style={{
                         background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                         WebkitBackgroundClip: 'text',
@@ -553,12 +338,12 @@ export default function ReservationsClient() {
                   </div>
                 </div>
               </div>
-              <div className="col-md-3">
-                <div className="card border-0 shadow-sm" style={{ borderRadius: '12px' }}>
-                  <div className="card-body text-center">
+              <div className="col-4 col-md-3 d-none d-md-block">
+                <div className="card border-0 shadow-sm h-100" style={{ borderRadius: '12px' }}>
+                  <div className="card-body text-center d-flex flex-column justify-content-center" style={{ minHeight: '85px' }}>
                     <div className="small text-muted mb-1">סה"כ לילות</div>
                     <div
-                      className="h3 fw-bold mb-0"
+                      className="h5 fw-bold mb-0"
                       style={{
                         background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                         WebkitBackgroundClip: 'text',
@@ -571,12 +356,12 @@ export default function ReservationsClient() {
                   </div>
                 </div>
               </div>
-              <div className="col-md-3">
-                <div className="card border-0 shadow-sm" style={{ borderRadius: '12px' }}>
-                  <div className="card-body text-center">
+              <div className="col-4 col-md-3">
+                <div className="card border-0 shadow-sm h-100" style={{ borderRadius: '12px' }}>
+                  <div className="card-body text-center d-flex flex-column justify-content-center" style={{ minHeight: '85px' }}>
                     <div className="small text-muted mb-1">מחיר ממוצע ללילה</div>
                     <div
-                      className="h4 fw-bold mb-0"
+                      className="h5 fw-bold mb-0"
                       style={{
                         background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                         WebkitBackgroundClip: 'text',
@@ -589,12 +374,12 @@ export default function ReservationsClient() {
                   </div>
                 </div>
               </div>
-              <div className="col-md-3">
-                <div className="card border-0 shadow-sm" style={{ borderRadius: '12px' }}>
-                  <div className="card-body text-center">
+              <div className="col-4 col-md-3">
+                <div className="card border-0 shadow-sm h-100" style={{ borderRadius: '12px' }}>
+                  <div className="card-body text-center d-flex flex-column justify-content-center" style={{ minHeight: '85px' }}>
                     <div className="small text-muted mb-1">ממוצע להזמנה</div>
                     <div
-                      className="h4 fw-bold mb-0"
+                      className="h5 fw-bold mb-0"
                       style={{
                         background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                         WebkitBackgroundClip: 'text',
@@ -611,35 +396,32 @@ export default function ReservationsClient() {
 
             {/* Revenue Cards */}
             <div className="row g-3 mb-4">
-              <div className="col-md-4">
-                <div className="card border-0 shadow-sm" style={{ borderRadius: '12px' }}>
-                  <div className="card-body">
+              <div className="col-4 col-md-4">
+                <div className="card border-0 shadow-sm h-100" style={{ borderRadius: '12px' }}>
+                  <div className="card-body d-flex flex-column justify-content-center" style={{ minHeight: '85px' }}>
                     <div className="small text-muted mb-2">💰 הכנסות ברוטו</div>
-                    <div className="h3 fw-bold text-success mb-0">
+                    <div className="h5 fw-bold text-success mb-0">
                       {formatCurrency(stats.totalRevenue)}
                     </div>
                   </div>
                 </div>
               </div>
-              <div className="col-md-4">
-                <div className="card border-0 shadow-sm" style={{ borderRadius: '12px' }}>
-                  <div className="card-body">
+              <div className="col-4 col-md-4">
+                <div className="card border-0 shadow-sm h-100" style={{ borderRadius: '12px' }}>
+                  <div className="card-body d-flex flex-column justify-content-center" style={{ minHeight: '85px' }}>
                     <div className="small text-muted mb-2">💸 סה"כ עמלות</div>
-                    <div className="h3 fw-bold text-danger mb-0">
+                    <div className="h5 fw-bold text-danger mb-0">
                       {formatCurrency(stats.totalCommission)}
-                    </div>
-                    <div className="small text-muted mt-1">
-                      Booking {(commissionRates.booking * 100).toFixed(0)}% • Airbnb {(commissionRates.airbnb * 100).toFixed(0)}%
                     </div>
                   </div>
                 </div>
               </div>
-              <div className="col-md-4">
-                <div className="card border-0 shadow-sm" style={{ borderRadius: '12px' }}>
-                  <div className="card-body">
+              <div className="col-4 col-md-4">
+                <div className="card border-0 shadow-sm h-100" style={{ borderRadius: '12px' }}>
+                  <div className="card-body d-flex flex-column justify-content-center" style={{ minHeight: '85px' }}>
                     <div className="small text-muted mb-2">✅ תשלום צפוי (נטו)</div>
                     <div
-                      className="h3 fw-bold mb-0"
+                      className="h5 fw-bold mb-0"
                       style={{
                         background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                         WebkitBackgroundClip: 'text',

@@ -4,12 +4,10 @@ import { useState, useEffect } from 'react'
 import { useSession, signOut } from 'next-auth/react'
 import Link from 'next/link'
 import Image from 'next/image'
+import DashboardHeader from '@/components/DashboardHeader'
 
 export default function LandingEditor() {
   const { data: session } = useSession()
-  const [logoSrc, setLogoSrc] = useState('/photos/hostly-logo.png')
-  const [logoVisible, setLogoVisible] = useState(true)
-  const [menuOpen, setMenuOpen] = useState(false)
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('meta')
   const [saving, setSaving] = useState(false)
@@ -396,15 +394,15 @@ export default function LandingEditor() {
     <div dir="rtl" style={{ 
       minHeight: '100vh', 
       background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
-      padding: '40px 20px'
+      padding: '20px 20px 40px'
     }}>
-      {/* Notification Toast */}
-      {notification.show && (
-        <div 
-          style={{
-            position: 'fixed',
-            top: '20px',
-            right: '20px',
+        {/* Notification Toast */}
+        {notification.show && (
+          <div 
+            style={{
+              position: 'fixed',
+              top: '20px',
+              right: '20px',
             zIndex: 9999,
             minWidth: '300px',
             maxWidth: '500px',
@@ -455,212 +453,13 @@ export default function LandingEditor() {
       `}</style>
       
       {/* Header */}
-      <div style={{ maxWidth: '1296px', margin: '0 auto 20px' }}>
-        <div 
-          className="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between mb-3 gap-3"
-          style={{
-            backgroundColor: 'white',
-            padding: '1.5rem',
-            borderRadius: '12px',
-            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
-          }}
-        >
-          <div className="d-flex align-items-center gap-3">
-            {logoVisible ? (
-              <img
-                src={logoSrc}
-                alt="Hostly"
-                style={{ height: '48px', objectFit: 'contain' }}
-                onError={() => setLogoVisible(false)}
-              />
-            ) : null}
-            <div>
-              <h1 
-                className="fw-bold mb-1"
-                style={{
-                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
-                  fontSize: '1.75rem'
-                }}
-              >
-                ניהול דף נחיתה
-              </h1>
-              {session?.user?.firstName && session?.user?.lastName ? (
-                <p className="small mb-0" style={{ color: '#667eea', fontWeight: '500' }}>
-                  שלום {session.user.firstName} {session.user.lastName}
-                </p>
-              ) : null}
-            </div>
-          </div>
-          <div className="d-flex align-items-center gap-2 position-relative justify-content-center justify-content-lg-start">
-            <Link href="/dashboard">
-              <button
-                type="button"
-                className="btn btn-sm d-flex align-items-center justify-content-center"
-                style={{ 
-                  width: '36px',
-                  height: '36px',
-                  border: '1px solid #667eea',
-                  color: '#667eea',
-                  backgroundColor: 'transparent',
-                  padding: 0,
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#667eea'
-                  e.currentTarget.style.color = 'white'
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = 'transparent'
-                  e.currentTarget.style.color = '#667eea'
-                }}
-                title="דף הבית"
-                aria-label="דף הבית"
-              >
-                <svg 
-                  xmlns="http://www.w3.org/2000/svg" 
-                  width="18" 
-                  height="18" 
-                  viewBox="0 0 24 24" 
-                  fill="none" 
-                  stroke="currentColor" 
-                  strokeWidth="2" 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round"
-                >
-                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-                  <polyline points="9 22 9 12 15 12 15 22" />
-                </svg>
-              </button>
-            </Link>
-            {previewUrl && (
-              <a 
-                href={previewUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn btn-sm d-flex align-items-center justify-content-center"
-                style={{ 
-                  width: '36px',
-                  height: '36px',
-                  border: '1px solid #28a745',
-                  color: '#28a745',
-                  backgroundColor: 'transparent',
-                  padding: 0,
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#28a745'
-                  e.currentTarget.style.color = 'white'
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = 'transparent'
-                  e.currentTarget.style.color = '#28a745'
-                }}
-                title="תצוגה מקדימה"
-                aria-label="תצוגה מקדימה"
-              >
-                <svg 
-                  xmlns="http://www.w3.org/2000/svg" 
-                  width="18" 
-                  height="18" 
-                  viewBox="0 0 24 24" 
-                  fill="none" 
-                  stroke="currentColor" 
-                  strokeWidth="2" 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round"
-                >
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                  <circle cx="12" cy="12" r="3"/>
-                </svg>
-              </a>
-            )}
-            <button
-              type="button"
-              className="btn btn-sm d-flex align-items-center justify-content-center"
-              style={{ 
-                width: '36px',
-                height: '36px',
-                border: '1px solid #764ba2',
-                color: '#764ba2',
-                backgroundColor: 'transparent',
-                padding: 0,
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#764ba2'
-                e.currentTarget.style.color = 'white'
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = 'transparent'
-                e.currentTarget.style.color = '#764ba2'
-              }}
-              onClick={async () => {
-                await signOut({ redirect: false })
-                window.location.href = '/dashboard/login'
-              }}
-              title="התנתק"
-              aria-label="התנתק"
-            >
-              <svg 
-                xmlns="http://www.w3.org/2000/svg" 
-                width="18" 
-                height="18" 
-                viewBox="0 0 24 24" 
-                fill="none" 
-                stroke="currentColor" 
-                strokeWidth="2" 
-                strokeLinecap="round" 
-                strokeLinejoin="round"
-              >
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                <polyline points="16 17 21 12 16 7" />
-                <line x1="21" y1="12" x2="9" y2="12" />
-              </svg>
-            </button>
-            <button
-              type="button"
-              className="btn btn-sm d-flex align-items-center justify-content-center"
-              style={{ 
-                width: '36px', 
-                height: '36px',
-                border: '1px solid #667eea',
-                color: '#667eea',
-                backgroundColor: 'transparent',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#667eea'
-                e.currentTarget.style.color = 'white'
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = 'transparent'
-                e.currentTarget.style.color = '#667eea'
-              }}
-              aria-label="תפריט"
-              onClick={() => setMenuOpen((prev) => !prev)}
-            >
-              <span style={{ display: 'inline-block', lineHeight: 1 }}>☰</span>
-            </button>
-            {menuOpen ? (
-              <div
-                className="position-absolute bg-white border rounded-3 shadow-sm p-2"
-                style={{ top: '46px', right: 0, minWidth: '200px', zIndex: 10 }}
-              >
-                <Link className="dropdown-item py-2" href="/dashboard" onClick={() => setMenuOpen(false)}>
-                  ניהול זמינות/מחירים
-                </Link>
-                <Link className="dropdown-item py-2" href="/dashboard/profile" onClick={() => setMenuOpen(false)}>
-                  איזור אישי
-                </Link>
-                <Link className="dropdown-item py-2" href="/dashboard/landing" onClick={() => setMenuOpen(false)}>
-                  ניהול דף נחיתה
-                </Link>
-                <Link className="dropdown-item py-2" href="/dashboard/payments" onClick={() => setMenuOpen(false)}>
-                  סליקת אשראי
-                </Link>
-              </div>
-            ) : null}
-          </div>
-        </div>
+      <div style={{ maxWidth: '1296px', margin: '0 auto 10px' }}>
+        <DashboardHeader 
+          session={session}
+          title="ניהול דף נחיתה"
+          showLandingPageButton={false}
+          currentPage="landing"
+        />
       </div>
 
       {/* Tabs */}

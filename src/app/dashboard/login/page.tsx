@@ -43,51 +43,140 @@ const LoginForm = () => {
   }
 
   return (
-    <main 
-      style={{ 
-        minHeight: '100vh',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '20px'
-      }} 
-      dir="rtl"
-    >
-      <div className="container">
-        <div className="row justify-content-center">
-          <div className="col-12 col-md-6 col-lg-4">
-            <div 
-              className="card border-0"
-              style={{
-                backgroundColor: 'white',
-                borderRadius: '16px',
-                boxShadow: '0 10px 40px rgba(0, 0, 0, 0.15)',
-              }}
-            >
+    <>
+      {/* Custom Animations */}
+      <style jsx>{`
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(30px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        @keyframes floating {
+          0%, 100% {
+            transform: translateY(0px);
+          }
+          50% {
+            transform: translateY(-10px);
+          }
+        }
+
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+
+        .card-login {
+          animation: fadeInUp 0.8s ease-out forwards;
+        }
+
+        .hover-lift {
+          transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .hover-lift:hover {
+          transform: translateY(-3px);
+          box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15) !important;
+        }
+
+        .floating-logo {
+          animation: floating 3s ease-in-out infinite;
+        }
+
+        input.form-control {
+          transition: all 0.3s ease;
+        }
+
+        input.form-control:focus {
+          border-color: #667eea !important;
+          box-shadow: 0 0 0 0.25rem rgba(102, 126, 234, 0.15) !important;
+          transform: translateY(-2px);
+        }
+      `}</style>
+
+      <main 
+        style={{ 
+          minHeight: '100vh',
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '20px',
+          position: 'relative',
+          overflow: 'hidden'
+        }} 
+        dir="rtl"
+      >
+        {/* Animated Background Elements */}
+        <div style={{
+          position: 'absolute',
+          top: '10%',
+          right: '10%',
+          width: '300px',
+          height: '300px',
+          background: 'rgba(255, 255, 255, 0.1)',
+          borderRadius: '50%',
+          filter: 'blur(60px)',
+          animation: 'floating 6s ease-in-out infinite'
+        }} />
+        <div style={{
+          position: 'absolute',
+          bottom: '10%',
+          left: '10%',
+          width: '250px',
+          height: '250px',
+          background: 'rgba(255, 255, 255, 0.08)',
+          borderRadius: '50%',
+          filter: 'blur(50px)',
+          animation: 'floating 8s ease-in-out infinite',
+          animationDelay: '1s'
+        }} />
+
+        <div className="container" style={{ position: 'relative', zIndex: 1 }}>
+          <div className="row justify-content-center">
+            <div className="col-12 col-md-6 col-lg-4">
+              <div 
+                className="card border-0 card-login hover-lift"
+                style={{
+                  backgroundColor: 'white',
+                  borderRadius: '20px',
+                  boxShadow: '0 20px 60px rgba(0, 0, 0, 0.2)',
+                }}
+              >
               <div className="card-body p-4 p-md-5">
                 <div className="text-center mb-4">
-                  <div className="mb-3">
+                  <div className="mb-3 floating-logo">
                     <img
                       src="/photos/hostly-logo.png"
                       alt="Hostly Logo"
-                      width={80}
-                      height={80}
-                      style={{ objectFit: 'contain' }}
+                      width={90}
+                      height={90}
+                      style={{ 
+                        objectFit: 'contain',
+                        filter: 'drop-shadow(0 4px 12px rgba(102, 126, 234, 0.15))'
+                      }}
                     />
                   </div>
                   <h1 
-                    className="h4 fw-bold mb-2"
+                    className="h3 fw-bold mb-2"
                     style={{
                       background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                       WebkitBackgroundClip: 'text',
                       WebkitTextFillColor: 'transparent',
                       backgroundClip: 'text',
+                      fontSize: 'clamp(1.5rem, 5vw, 2rem)'
                     }}
                   >
                     התחברות למערכת
                   </h1>
-                  <p className="text-muted small mb-0">הזן את פרטי ההתחברות שלך</p>
+                  <p className="text-muted mb-0" style={{ fontSize: '14px' }}>
+                    הזן את פרטי ההתחברות שלך
+                  </p>
                 </div>
 
                 {error ? (
@@ -95,29 +184,31 @@ const LoginForm = () => {
                     className="alert alert-danger mb-4" 
                     role="alert"
                     style={{
-                      borderRadius: '8px',
-                      padding: '12px 16px',
+                      borderRadius: '12px',
+                      padding: '14px 16px',
                       fontSize: '14px',
-                      border: '1px solid #f8d7da',
-                      backgroundColor: '#f8d7da',
-                      color: '#721c24'
+                      border: '1px solid #fecaca',
+                      background: 'linear-gradient(135deg, #fee2e215 0%, #fecaca15 100%)',
+                      color: '#991b1b',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      animation: 'fadeInUp 0.4s ease-out'
                     }}
                   >
-                    {error}
+                    <span style={{ fontSize: '18px' }}>⚠️</span>
+                    <span>{error}</span>
                   </div>
                 ) : null}
 
-                <style jsx>{`
-                  input.form-control:focus {
-                    border-color: #667eea !important;
-                    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25) !important;
-                  }
-                `}</style>
-
                 <form onSubmit={handleSubmit}>
                   <div className="mb-3">
-                    <label htmlFor="email" className="form-label small fw-semibold">
-                      אימייל <span className="text-danger">*</span>
+                    <label htmlFor="email" className="form-label fw-semibold" style={{ 
+                      fontSize: '14px',
+                      color: '#374151',
+                      marginBottom: '8px'
+                    }}>
+                      אימייל <span style={{ color: '#dc2626' }}>*</span>
                     </label>
                     <input
                       id="email"
@@ -130,16 +221,22 @@ const LoginForm = () => {
                       autoComplete="email"
                       disabled={loading}
                       style={{
-                        padding: '12px',
-                        borderRadius: '8px',
-                        fontSize: '15px'
+                        padding: '14px 16px',
+                        borderRadius: '12px',
+                        fontSize: '15px',
+                        border: '2px solid #e5e7eb',
+                        backgroundColor: loading ? '#f9fafb' : 'white'
                       }}
                     />
                   </div>
 
                   <div className="mb-4">
-                    <label htmlFor="password" className="form-label small fw-semibold">
-                      סיסמה <span className="text-danger">*</span>
+                    <label htmlFor="password" className="form-label fw-semibold" style={{ 
+                      fontSize: '14px',
+                      color: '#374151',
+                      marginBottom: '8px'
+                    }}>
+                      סיסמה <span style={{ color: '#dc2626' }}>*</span>
                     </label>
                     <input
                       id="password"
@@ -152,9 +249,11 @@ const LoginForm = () => {
                       autoComplete="current-password"
                       disabled={loading}
                       style={{
-                        padding: '12px',
-                        borderRadius: '8px',
-                        fontSize: '15px'
+                        padding: '14px 16px',
+                        borderRadius: '12px',
+                        fontSize: '15px',
+                        border: '2px solid #e5e7eb',
+                        backgroundColor: loading ? '#f9fafb' : 'white'
                       }}
                     />
                   </div>
@@ -165,39 +264,135 @@ const LoginForm = () => {
                     disabled={loading}
                     style={{
                       background: loading 
-                        ? '#cbd5e1' 
+                        ? 'linear-gradient(135deg, #cbd5e1 0%, #94a3b8 100%)' 
                         : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                       border: 'none',
                       color: 'white',
-                      padding: '12px',
+                      padding: '14px',
                       fontSize: '16px',
                       fontWeight: '600',
-                      borderRadius: '8px',
+                      borderRadius: '12px',
                       transition: 'all 0.3s ease',
                       cursor: loading ? 'not-allowed' : 'pointer',
+                      boxShadow: loading ? 'none' : '0 4px 12px rgba(102, 126, 234, 0.3)',
+                      position: 'relative',
+                      overflow: 'hidden'
                     }}
                     onMouseEnter={(e) => {
                       if (!loading) {
                         e.currentTarget.style.transform = 'translateY(-2px)'
-                        e.currentTarget.style.boxShadow = '0 8px 16px rgba(102, 126, 234, 0.4)'
+                        e.currentTarget.style.boxShadow = '0 8px 20px rgba(102, 126, 234, 0.4)'
                       }
                     }}
                     onMouseLeave={(e) => {
                       if (!loading) {
                         e.currentTarget.style.transform = 'translateY(0)'
-                        e.currentTarget.style.boxShadow = 'none'
+                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.3)'
                       }
                     }}
                   >
-                    {loading ? 'מתחבר...' : 'התחבר'}
+                    {loading ? (
+                      <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                        <span style={{ 
+                          width: '18px', 
+                          height: '18px', 
+                          border: '2px solid white',
+                          borderTop: '2px solid transparent',
+                          borderRadius: '50%',
+                          animation: 'spin 0.8s linear infinite',
+                          display: 'inline-block'
+                        }} />
+                        מתחבר...
+                      </span>
+                    ) : (
+                      '🔐 התחבר'
+                    )}
                   </button>
                 </form>
+
+                {/* Demo Mode Link */}
+                <div className="text-center mt-4">
+                  <div style={{
+                    position: 'relative',
+                    marginBottom: '16px'
+                  }}>
+                    <hr style={{ 
+                      margin: '0',
+                      border: 'none',
+                      borderTop: '1px solid #e5e7eb'
+                    }} />
+                    <span style={{
+                      position: 'absolute',
+                      top: '50%',
+                      left: '50%',
+                      transform: 'translate(-50%, -50%)',
+                      background: 'white',
+                      padding: '0 12px',
+                      fontSize: '13px',
+                      color: '#9ca3af',
+                      fontWeight: '500'
+                    }}>
+                      או
+                    </span>
+                  </div>
+
+                  <div style={{
+                    background: 'linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%)',
+                    padding: '16px',
+                    borderRadius: '12px',
+                    marginBottom: '12px',
+                    border: '1px solid #e5e7eb'
+                  }}>
+                    <p className="mb-2" style={{ 
+                      fontSize: '13px',
+                      color: '#6b7280',
+                      fontWeight: '500'
+                    }}>
+                      💡 רוצה לנסות את המערכת?
+                    </p>
+                    <a 
+                      href="/demo"
+                      className="btn w-100"
+                      style={{
+                        background: 'white',
+                        border: '2px solid #e5e7eb',
+                        color: '#667eea',
+                        padding: '12px',
+                        fontSize: '15px',
+                        fontWeight: '600',
+                        borderRadius: '10px',
+                        textDecoration: 'none',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '8px',
+                        transition: 'all 0.3s ease',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.borderColor = '#667eea'
+                        e.currentTarget.style.background = 'linear-gradient(135deg, #667eea05 0%, #764ba205 100%)'
+                        e.currentTarget.style.transform = 'translateY(-2px)'
+                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.15)'
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.borderColor = '#e5e7eb'
+                        e.currentTarget.style.background = 'white'
+                        e.currentTarget.style.transform = 'translateY(0)'
+                        e.currentTarget.style.boxShadow = 'none'
+                      }}
+                    >
+                      <span style={{ fontSize: '18px' }}>🎭</span>
+                      <span>כניסה מהירה למצב דמו</span>
+                    </a>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </main>
+      </main>
+    </>
   )
 }
 

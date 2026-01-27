@@ -10,6 +10,7 @@ import { getDashboardProvider } from '@/lib/dashboard/getDashboardProvider'
 import ReservationsTable from './components/ReservationsTable'
 import StatCard from './components/StatCard'
 import CalendarPricing from './components/CalendarPricing'
+import DashboardHeader from '@/components/DashboardHeader'
 
 const toLocalKey = (value: Date) => {
   const year = value.getFullYear()
@@ -136,9 +137,6 @@ const DashboardClient = () => {
   const [loadingRoomPrices, setLoadingRoomPrices] = useState(true)
   const [reservationsError, setReservationsError] = useState<string | null>(null)
   const [roomPricesError, setRoomPricesError] = useState<string | null>(null)
-  const [logoSrc, setLogoSrc] = useState('/photos/hostly-logo.png')
-  const [logoVisible, setLogoVisible] = useState(true)
-  const [menuOpen, setMenuOpen] = useState(false)
   const [showNewReservation, setShowNewReservation] = useState(false)
   const [savingReservation, setSavingReservation] = useState(false)
   const [saveReservationError, setSaveReservationError] = useState<string | null>(null)
@@ -654,187 +652,13 @@ const DashboardClient = () => {
       }} 
       dir="rtl"
     >
-      <div className="container py-5">
-        <div 
-          className="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between mb-4 gap-3"
-          style={{
-            backgroundColor: 'white',
-            padding: '1.5rem',
-            borderRadius: '12px',
-            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
-          }}
-        >
-          <div className="d-flex align-items-center gap-3">
-            {logoVisible ? (
-              <img
-                src={logoSrc}
-                alt="Hostly"
-                style={{ height: '48px', objectFit: 'contain' }}
-                onError={() => {
-                  setLogoVisible(false)
-                }}
-              />
-            ) : null}
-            <div>
-              <h1 
-                className="fw-bold mb-1"
-                style={{
-                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
-                }}
-              >
-                {session?.user?.displayName ?? 'נוף הרים בדפנה'}
-              </h1>
-              {session?.user?.firstName && session?.user?.lastName ? (
-                <p className="small mb-0" style={{ color: '#667eea', fontWeight: '500' }}>
-                  שלום {session.user.firstName} {session.user.lastName}
-                </p>
-              ) : null}
-            </div>
-          </div>
-          <div className="d-flex align-items-center gap-2 position-relative justify-content-center justify-content-lg-start">
-            {session?.user?.landingPageUrl ? (
-              <button
-                type="button"
-                className="btn btn-sm d-flex align-items-center justify-content-center"
-                style={{ 
-                  width: '36px',
-                  height: '36px',
-                  border: '1px solid #f093fb',
-                  color: '#f093fb',
-                  backgroundColor: 'transparent',
-                  padding: 0,
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#f093fb'
-                  e.currentTarget.style.color = 'white'
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = 'transparent'
-                  e.currentTarget.style.color = '#f093fb'
-                }}
-                onClick={() => window.open(session.user.landingPageUrl, '_blank')}
-                title="צפה באתר"
-                aria-label="צפה באתר"
-              >
-                <svg 
-                  xmlns="http://www.w3.org/2000/svg" 
-                  width="18" 
-                  height="18" 
-                  viewBox="0 0 24 24" 
-                  fill="none" 
-                  stroke="currentColor" 
-                  strokeWidth="2" 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round"
-                >
-                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                  <polyline points="15 3 21 3 21 9" />
-                  <line x1="10" y1="14" x2="21" y2="3" />
-                </svg>
-              </button>
-            ) : null}
-            <button
-              type="button"
-              className="btn btn-sm d-flex align-items-center justify-content-center"
-              style={{ 
-                width: '36px',
-                height: '36px',
-                border: '1px solid #764ba2',
-                color: '#764ba2',
-                backgroundColor: 'transparent',
-                padding: 0,
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#764ba2'
-                e.currentTarget.style.color = 'white'
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = 'transparent'
-                e.currentTarget.style.color = '#764ba2'
-              }}
-              onClick={async () => {
-                await signOut({ redirect: false })
-                // Clear any cached data
-                window.location.href = '/dashboard/login'
-              }}
-              title="התנתק"
-              aria-label="התנתק"
-            >
-              <svg 
-                xmlns="http://www.w3.org/2000/svg" 
-                width="18" 
-                height="18" 
-                viewBox="0 0 24 24" 
-                fill="none" 
-                stroke="currentColor" 
-                strokeWidth="2" 
-                strokeLinecap="round" 
-                strokeLinejoin="round"
-              >
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                <polyline points="16 17 21 12 16 7" />
-                <line x1="21" y1="12" x2="9" y2="12" />
-              </svg>
-            </button>
-            <button
-              type="button"
-              className="btn btn-sm d-flex align-items-center justify-content-center"
-              style={{ 
-                width: '36px', 
-                height: '36px',
-                border: '1px solid #667eea',
-                color: '#667eea',
-                backgroundColor: 'transparent',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#667eea'
-                e.currentTarget.style.color = 'white'
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = 'transparent'
-                e.currentTarget.style.color = '#667eea'
-              }}
-              aria-label="תפריט"
-              onClick={() => setMenuOpen((prev) => !prev)}
-            >
-              <span style={{ display: 'inline-block', lineHeight: 1 }}>☰</span>
-            </button>
-            {menuOpen ? (
-              <div
-                className="position-absolute bg-white border rounded-3 shadow-sm p-2"
-                style={{ top: '46px', right: 0, minWidth: '200px', zIndex: 10 }}
-              >
-                <Link className="dropdown-item py-2" href="/dashboard" onClick={() => setMenuOpen(false)}>
-                  ניהול זמינות/מחירים
-                </Link>
-                <Link className="dropdown-item py-2" href="/dashboard/profile" onClick={() => setMenuOpen(false)}>
-                  איזור אישי
-                </Link>
-                <Link className="dropdown-item py-2" href="/dashboard/landing" onClick={() => setMenuOpen(false)}>
-                  ניהול דף נחיתה
-                </Link>
-                <Link className="dropdown-item py-2" href="/dashboard/payments" onClick={() => setMenuOpen(false)}>
-                  סליקת אשראי
-                </Link>
-                {session?.user?.role === 'admin' ? (
-                  <>
-                    <hr className="my-2" />
-                    <Link 
-                      className="dropdown-item py-2 fw-bold" 
-                      href="/admin" 
-                      onClick={() => setMenuOpen(false)}
-                      style={{ color: '#dc3545' }}
-                    >
-                      🛡️ איזור ניהול
-                    </Link>
-                  </>
-                ) : null}
-              </div>
-            ) : null}
-          </div>
+      <div className="container py-3 py-md-5">
+        <div className="mb-3 mb-md-4">
+          <DashboardHeader 
+            session={session} 
+            showLandingPageButton={true}
+            currentPage="dashboard"
+          />
         </div>
 
         {/* Demo Mode Banner */}
@@ -909,7 +733,141 @@ const DashboardClient = () => {
               background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(249, 147, 251, 0.05) 100%)',
             }}
           >
-            <div className="d-flex flex-column flex-md-row align-items-center align-items-md-center justify-content-between mb-3 gap-3">
+            {/* Mobile: Title + New Reservation Button */}
+            <div className="d-flex d-md-none align-items-center justify-content-between mb-3">
+              <div className="d-flex align-items-center gap-2">
+                <h2 
+                  className="h5 fw-bold mb-0"
+                  style={{
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text',
+                  }}
+                >
+                  הזמנות
+                </h2>
+                {loadingReservations && reservations.length ? (
+                  <span className="text-muted small">מרענן...</span>
+                ) : null}
+              </div>
+              <button
+                type="button"
+                className="btn btn-sm d-flex align-items-center justify-content-center"
+                style={{ 
+                  background: showNewReservation 
+                    ? '#dc3545' 
+                    : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  border: 'none',
+                  color: 'white',
+                  padding: '0.25rem 0.75rem',
+                  height: '31px',
+                  lineHeight: '1.5',
+                  fontSize: '0.875rem',
+                  fontWeight: '600',
+                  whiteSpace: 'nowrap',
+                  boxShadow: '0 2px 4px rgba(102, 126, 234, 0.3)',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.opacity = '0.9'
+                  e.currentTarget.style.transform = 'translateY(-1px)'
+                  e.currentTarget.style.boxShadow = '0 4px 8px rgba(102, 126, 234, 0.4)'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.opacity = '1'
+                  e.currentTarget.style.transform = 'translateY(0)'
+                  e.currentTarget.style.boxShadow = '0 2px 4px rgba(102, 126, 234, 0.3)'
+                }}
+                onClick={() => setShowNewReservation((prev) => !prev)}
+              >
+                {showNewReservation ? 'סגור טופס' : 'הזמנה חדשה'}
+              </button>
+            </div>
+
+            {/* Mobile: Filter Controls */}
+            <div className="d-flex d-md-none align-items-center justify-content-center gap-1 mb-3">
+              <select
+                className="form-select form-select-sm"
+                style={{
+                  width: 'auto',
+                  minWidth: '95px',
+                  maxWidth: '140px',
+                  height: '31px',
+                  border: '1px solid #667eea',
+                  color: '#667eea',
+                  padding: '0.25rem 2rem 0.25rem 0.5rem',
+                  fontSize: '0.875rem',
+                  direction: 'rtl',
+                }}
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(e.target.value)}
+              >
+                <option value="all">כל החודשים</option>
+                {availableMonths.map((monthKey) => {
+                  const [year, month] = monthKey.split('-')
+                  const monthName = new Intl.DateTimeFormat('he-IL', { month: 'long', year: 'numeric' }).format(
+                    new Date(parseInt(year), parseInt(month) - 1)
+                  )
+                  return (
+                    <option key={monthKey} value={monthKey}>
+                      {monthName}
+                    </option>
+                  )
+                })}
+              </select>
+              <select
+                className="form-select form-select-sm"
+                style={{
+                  width: 'auto',
+                  minWidth: '95px',
+                  maxWidth: '140px',
+                  height: '31px',
+                  border: '1px solid #764ba2',
+                  color: '#764ba2',
+                  padding: '0.25rem 2rem 0.25rem 0.5rem',
+                  fontSize: '0.875rem',
+                  direction: 'rtl',
+                }}
+                value={sortOrder}
+                onChange={(e) => setSortOrder(e.target.value as 'newest' | 'oldest')}
+              >
+                <option value="oldest">קרובות תחילה</option>
+                <option value="newest">רחוקות תחילה</option>
+              </select>
+              {meta.isMock && session?.user?.isDemo && (
+                <button
+                  type="button"
+                  className="btn btn-sm d-flex align-items-center justify-content-center"
+                  style={{ 
+                    backgroundColor: 'transparent',
+                    border: '1px solid #dc3545',
+                    color: '#dc3545',
+                    padding: '0.25rem 0.5rem',
+                    height: '31px',
+                    lineHeight: '1.5',
+                    fontSize: '0.875rem',
+                    whiteSpace: 'nowrap',
+                    flex: '1 0 auto',
+                    minWidth: '80px',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = '#dc3545'
+                    e.currentTarget.style.color = 'white'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'transparent'
+                    e.currentTarget.style.color = '#dc3545'
+                  }}
+                  onClick={handleClearMockReservations}
+                  disabled={loadingReservations}
+                >
+                  נקה הכל
+                </button>
+              )}
+            </div>
+
+            {/* Desktop: Title + All Controls */}
+            <div className="d-none d-md-flex align-items-center justify-content-between mb-3 gap-3">
               <div className="d-flex align-items-center gap-2">
                 <h2 
                   className="h5 fw-bold mb-0"
@@ -972,31 +930,37 @@ const DashboardClient = () => {
                   value={sortOrder}
                   onChange={(e) => setSortOrder(e.target.value as 'newest' | 'oldest')}
                 >
-                  <option value="oldest">הזמנות קרובות תחילה ⏰</option>
-                  <option value="newest">הזמנות רחוקות תחילה 📅</option>
+                  <option value="oldest">קרובות תחילה</option>
+                  <option value="newest">רחוקות תחילה</option>
                 </select>
                 <button
                   type="button"
                   className="btn btn-sm d-flex align-items-center justify-content-center"
                   style={{ 
-                    backgroundColor: 'transparent',
-                    border: '1px solid #764ba2',
-                    color: '#764ba2',
-                    padding: '0.25rem 0.5rem',
+                    background: showNewReservation 
+                      ? '#dc3545' 
+                      : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    border: 'none',
+                    color: 'white',
+                    padding: '0.25rem 0.75rem',
                     height: '31px',
                     lineHeight: '1.5',
                     fontSize: '0.875rem',
+                    fontWeight: '600',
                     whiteSpace: 'nowrap',
                     flex: '1 0 auto',
-                    minWidth: '90px',
+                    minWidth: '110px',
+                    boxShadow: '0 2px 4px rgba(102, 126, 234, 0.3)',
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = '#764ba2'
-                    e.currentTarget.style.color = 'white'
+                    e.currentTarget.style.opacity = '0.9'
+                    e.currentTarget.style.transform = 'translateY(-1px)'
+                    e.currentTarget.style.boxShadow = '0 4px 8px rgba(102, 126, 234, 0.4)'
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = 'transparent'
-                    e.currentTarget.style.color = '#764ba2'
+                    e.currentTarget.style.opacity = '1'
+                    e.currentTarget.style.transform = 'translateY(0)'
+                    e.currentTarget.style.boxShadow = '0 2px 4px rgba(102, 126, 234, 0.3)'
                   }}
                   onClick={() => setShowNewReservation((prev) => !prev)}
                 >
