@@ -131,6 +131,7 @@ type ReservationsTableProps = {
 
 const ReservationsTable = ({ reservations, onReservationViewed }: ReservationsTableProps) => {
   const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [mobileVisibleCount, setMobileVisibleCount] = useState(6)
   const [viewedReservations, setViewedReservations] = useState<Set<string>>(new Set())
 
   if (!reservations.length) {
@@ -178,9 +179,13 @@ const ReservationsTable = ({ reservations, onReservationViewed }: ReservationsTa
   }
 
   // Mobile List View Component
-  const MobileListView = () => (
-    <div className="d-md-none" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
-      {reservations.map((reservation) => {
+  const MobileListView = () => {
+    const visibleReservations = reservations.slice(0, mobileVisibleCount)
+    const hasMore = reservations.length > mobileVisibleCount
+    
+    return (
+      <div className="d-md-none">
+        {visibleReservations.map((reservation) => {
         const isExpanded = expandedId === reservation.id
         const isNearest = isNearestReservation(reservation.id)
         
@@ -343,8 +348,39 @@ const ReservationsTable = ({ reservations, onReservationViewed }: ReservationsTa
           </div>
         )
       })}
+      
+      {/* Show More Button */}
+      {hasMore && (
+        <div className="d-flex justify-content-center mt-3">
+          <button
+            type="button"
+            onClick={() => setMobileVisibleCount(prev => prev + 6)}
+            className="btn btn-sm"
+            style={{
+              background: 'transparent',
+              border: '1px solid rgba(102, 126, 234, 0.3)',
+              color: 'rgba(249, 147, 251, 0.9)',
+              padding: '8px 16px',
+              fontSize: '0.85rem',
+              borderRadius: '8px',
+              transition: 'all 0.2s ease',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'rgba(102, 126, 234, 0.1)'
+              e.currentTarget.style.borderColor = 'rgba(102, 126, 234, 0.5)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'transparent'
+              e.currentTarget.style.borderColor = 'rgba(102, 126, 234, 0.3)'
+            }}
+          >
+            הצג עוד ({reservations.length - mobileVisibleCount} נוספות)
+          </button>
+        </div>
+      )}
     </div>
-  )
+    )
+  }
 
   return (
     <>
