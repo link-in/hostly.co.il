@@ -88,27 +88,71 @@ export default function DashboardHeader({
             line-height: 1.2 !important;
           }
         }
+        
+        @keyframes slideDown {
+          from {
+            opacity: 0;
+            transform: translateY(-10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        
+        .menu-item {
+          transition: all 0.2s ease;
+          border-radius: 8px;
+          margin: 4px 8px;
+        }
+        
+        .menu-item:hover {
+          background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(249, 147, 251, 0.08) 100%);
+          padding-right: 16px !important;
+        }
+        
+        .menu-item-active {
+          background: linear-gradient(135deg, rgba(102, 126, 234, 0.12) 0%, rgba(249, 147, 251, 0.12) 100%);
+        }
+        
+        .menu-divider {
+          height: 1px;
+          background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.2), transparent);
+          margin: 8px 0;
+        }
       `}</style>
 
       <div 
         className="dashboard-header-card d-flex align-items-center justify-content-between gap-2 gap-md-3"
         style={{
-          backgroundColor: 'white',
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
           borderRadius: '12px',
-          boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+          boxShadow: '0 6px 20px rgba(102, 126, 234, 0.3)',
           position: 'relative'
         }}
       >
         {/* Right: Logo */}
         <div className="d-flex align-items-center gap-2 gap-md-3">
           {logoVisible && (
-            <img
-              src={logoSrc}
-              alt="Hostly"
-              className="dashboard-header-logo"
-              style={{ objectFit: 'contain' }}
-              onError={() => setLogoVisible(false)}
-            />
+            <div
+              style={{
+                backgroundColor: 'white',
+                borderRadius: '10px',
+                padding: '8px 12px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)'
+              }}
+            >
+              <img
+                src={logoSrc}
+                alt="Hostly"
+                className="dashboard-header-logo"
+                style={{ objectFit: 'contain' }}
+                onError={() => setLogoVisible(false)}
+              />
+            </div>
           )}
         </div>
 
@@ -117,21 +161,19 @@ export default function DashboardHeader({
           <h1 
             className="dashboard-header-title fw-bold mb-0"
             style={{
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
+              color: 'white',
+              textShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
             }}
           >
             {displayTitle}
           </h1>
           {session?.user?.firstName && session?.user?.lastName && (
-            <p className="small mb-0 d-none d-md-block" style={{ color: '#667eea', fontWeight: '500' }}>
+            <p className="small mb-0 d-none d-md-block" style={{ color: 'rgba(255, 255, 255, 0.95)', fontWeight: '500' }}>
               שלום {session.user.firstName} {session.user.lastName}
             </p>
           )}
           {subtitle && (
-            <p className="small mb-0 text-muted d-none d-md-block">{subtitle}</p>
+            <p className="small mb-0 d-none d-md-block" style={{ color: 'rgba(255, 255, 255, 0.85)' }}>{subtitle}</p>
           )}
         </div>
 
@@ -147,18 +189,18 @@ export default function DashboardHeader({
                   style={{
                     width: '36px',
                     height: '36px',
-                    border: '1px solid #667eea',
-                    color: '#667eea',
-                    backgroundColor: 'transparent',
+                    border: '2px solid rgba(255, 255, 255, 0.5)',
+                    color: 'white',
+                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
                     padding: 0,
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = '#667eea'
-                    e.currentTarget.style.color = 'white'
+                    e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.25)'
+                    e.currentTarget.style.borderColor = 'white'
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = 'transparent'
-                    e.currentTarget.style.color = '#667eea'
+                    e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)'
+                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.5)'
                   }}
                   title="דף הבית"
                   aria-label="דף הבית"
@@ -188,18 +230,18 @@ export default function DashboardHeader({
                 style={{
                   width: '36px',
                   height: '36px',
-                  border: '1px solid #f093fb',
-                  color: '#f093fb',
-                  backgroundColor: 'transparent',
+                  border: '2px solid rgba(255, 255, 255, 0.5)',
+                  color: 'white',
+                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
                   padding: 0,
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#f093fb'
-                  e.currentTarget.style.color = 'white'
+                  e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.25)'
+                  e.currentTarget.style.borderColor = 'white'
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = 'transparent'
-                  e.currentTarget.style.color = '#f093fb'
+                  e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)'
+                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.5)'
                 }}
                 onClick={() => window.open(session.user.landingPageUrl, '_blank')}
                 title="צפה באתר"
@@ -229,18 +271,18 @@ export default function DashboardHeader({
               style={{
                 width: '36px',
                 height: '36px',
-                border: '1px solid #764ba2',
-                color: '#764ba2',
-                backgroundColor: 'transparent',
+                border: '2px solid rgba(255, 255, 255, 0.5)',
+                color: 'white',
+                backgroundColor: 'rgba(255, 255, 255, 0.1)',
                 padding: 0,
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#764ba2'
-                e.currentTarget.style.color = 'white'
+                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.25)'
+                e.currentTarget.style.borderColor = 'white'
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.backgroundColor = 'transparent'
-                e.currentTarget.style.color = '#764ba2'
+                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.5)'
               }}
               onClick={handleLogout}
               title="התנתק"
@@ -271,17 +313,17 @@ export default function DashboardHeader({
             style={{
               width: '36px',
               height: '36px',
-              border: '1px solid #667eea',
-              color: '#667eea',
-              backgroundColor: 'transparent',
+              border: '2px solid rgba(255, 255, 255, 0.5)',
+              color: 'white',
+              backgroundColor: 'rgba(255, 255, 255, 0.1)',
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = '#667eea'
-              e.currentTarget.style.color = 'white'
+              e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.25)'
+              e.currentTarget.style.borderColor = 'white'
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = 'transparent'
-              e.currentTarget.style.color = '#667eea'
+              e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)'
+              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.5)'
             }}
             aria-label="תפריט"
             onClick={() => setMenuOpen((prev) => !prev)}
@@ -301,6 +343,7 @@ export default function DashboardHeader({
               
               <div
                 className="position-absolute bg-white rounded-3 shadow-lg overflow-hidden"
+                dir="rtl"
                 style={{ 
                   top: '46px', 
                   left: 0, 
@@ -310,51 +353,16 @@ export default function DashboardHeader({
                   animation: 'slideDown 0.2s ease-out'
                 }}
               >
-                <style jsx>{`
-                  @keyframes slideDown {
-                    from {
-                      opacity: 0;
-                      transform: translateY(-10px);
-                    }
-                    to {
-                      opacity: 1;
-                      transform: translateY(0);
-                    }
-                  }
-                  
-                  .menu-item {
-                    transition: all 0.2s ease;
-                    border-radius: 8px;
-                    margin: 4px 8px;
-                  }
-                  
-                  .menu-item:hover {
-                    background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(249, 147, 251, 0.08) 100%);
-                    transform: translateX(-4px);
-                  }
-                  
-                  .menu-item-active {
-                    background: linear-gradient(135deg, rgba(102, 126, 234, 0.12) 0%, rgba(249, 147, 251, 0.12) 100%);
-                  }
-                  
-                  .menu-divider {
-                    height: 1px;
-                    background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.2), transparent);
-                    margin: 8px 0;
-                  }
-                `}</style>
-
                 {/* Mobile-only buttons */}
                 <div className="d-md-none pt-2">
                   {showLandingPageButton && session?.user?.landingPageUrl && (
                     <button
-                      className="menu-item w-100 border-0 bg-transparent py-3 px-3 text-end d-flex align-items-center justify-content-end gap-3"
+                      className="menu-item w-100 border-0 bg-transparent py-3 px-3 d-flex align-items-center justify-content-start gap-3"
                       onClick={() => {
                         window.open(session.user.landingPageUrl, '_blank')
                         setMenuOpen(false)
                       }}
                     >
-                      <span style={{ fontSize: '15px', fontWeight: '500', color: '#333' }}>צפה באתר</span>
                       <div 
                         className="d-flex align-items-center justify-content-center"
                         style={{
@@ -381,16 +389,16 @@ export default function DashboardHeader({
                           <line x1="10" y1="14" x2="21" y2="3" />
                         </svg>
                       </div>
+                      <span style={{ fontSize: '15px', fontWeight: '500', color: '#333' }}>צפה באתר</span>
                     </button>
                   )}
                   <button
-                    className="menu-item w-100 border-0 bg-transparent py-3 px-3 text-end d-flex align-items-center justify-content-end gap-3"
+                    className="menu-item w-100 border-0 bg-transparent py-3 px-3 d-flex align-items-center justify-content-start gap-3"
                     onClick={() => {
                       handleLogout()
                       setMenuOpen(false)
                     }}
                   >
-                    <span style={{ fontSize: '15px', fontWeight: '500', color: '#dc3545' }}>התנתק</span>
                     <div 
                       className="d-flex align-items-center justify-content-center"
                       style={{
@@ -417,6 +425,7 @@ export default function DashboardHeader({
                         <line x1="21" y1="12" x2="9" y2="12" />
                       </svg>
                     </div>
+                    <span style={{ fontSize: '15px', fontWeight: '500', color: '#dc3545' }}>התנתק</span>
                   </button>
                   
                   <div className="menu-divider" />
@@ -425,11 +434,10 @@ export default function DashboardHeader({
                 {/* Navigation Links */}
                 <div className="py-2">
                   <Link 
-                    className={`menu-item w-100 border-0 bg-transparent py-3 px-3 text-end d-flex align-items-center justify-content-end gap-3 text-decoration-none ${currentPage === 'dashboard' ? 'menu-item-active' : ''}`}
+                    className={`menu-item w-100 border-0 bg-transparent py-3 px-3 d-flex align-items-center justify-content-start gap-3 text-decoration-none ${currentPage === 'dashboard' ? 'menu-item-active' : ''}`}
                     href="/dashboard" 
                     onClick={() => setMenuOpen(false)}
                   >
-                    <span style={{ fontSize: '15px', fontWeight: '500', color: '#333' }}>ניהול זמינות/מחירים</span>
                     <div 
                       className="d-flex align-items-center justify-content-center"
                       style={{
@@ -457,14 +465,14 @@ export default function DashboardHeader({
                         <line x1="3" y1="10" x2="21" y2="10" />
                       </svg>
                     </div>
+                    <span style={{ fontSize: '15px', fontWeight: '500', color: '#333' }}>ניהול זמינות/מחירים</span>
                   </Link>
                   
                   <Link 
-                    className={`menu-item w-100 border-0 bg-transparent py-3 px-3 text-end d-flex align-items-center justify-content-end gap-3 text-decoration-none ${currentPage === 'reservations' ? 'menu-item-active' : ''}`}
+                    className={`menu-item w-100 border-0 bg-transparent py-3 px-3 d-flex align-items-center justify-content-start gap-3 text-decoration-none ${currentPage === 'reservations' ? 'menu-item-active' : ''}`}
                     href="/dashboard/reservations" 
                     onClick={() => setMenuOpen(false)}
                   >
-                    <span style={{ fontSize: '15px', fontWeight: '500', color: '#333' }}>כל ההזמנות</span>
                     <div 
                       className="d-flex align-items-center justify-content-center"
                       style={{
@@ -493,14 +501,14 @@ export default function DashboardHeader({
                         <polyline points="10 9 9 9 8 9" />
                       </svg>
                     </div>
+                    <span style={{ fontSize: '15px', fontWeight: '500', color: '#333' }}>כל ההזמנות</span>
                   </Link>
                   
                   <Link 
-                    className={`menu-item w-100 border-0 bg-transparent py-3 px-3 text-end d-flex align-items-center justify-content-end gap-3 text-decoration-none ${currentPage === 'profile' ? 'menu-item-active' : ''}`}
+                    className={`menu-item w-100 border-0 bg-transparent py-3 px-3 d-flex align-items-center justify-content-start gap-3 text-decoration-none ${currentPage === 'profile' ? 'menu-item-active' : ''}`}
                     href="/dashboard/profile" 
                     onClick={() => setMenuOpen(false)}
                   >
-                    <span style={{ fontSize: '15px', fontWeight: '500', color: '#333' }}>איזור אישי</span>
                     <div 
                       className="d-flex align-items-center justify-content-center"
                       style={{
@@ -526,14 +534,14 @@ export default function DashboardHeader({
                         <circle cx="12" cy="7" r="4" />
                       </svg>
                     </div>
+                    <span style={{ fontSize: '15px', fontWeight: '500', color: '#333' }}>איזור אישי</span>
                   </Link>
                   
                   <Link 
-                    className={`menu-item w-100 border-0 bg-transparent py-3 px-3 text-end d-flex align-items-center justify-content-end gap-3 text-decoration-none ${currentPage === 'landing' ? 'menu-item-active' : ''}`}
+                    className={`menu-item w-100 border-0 bg-transparent py-3 px-3 d-flex align-items-center justify-content-start gap-3 text-decoration-none ${currentPage === 'landing' ? 'menu-item-active' : ''}`}
                     href="/dashboard/landing" 
                     onClick={() => setMenuOpen(false)}
                   >
-                    <span style={{ fontSize: '15px', fontWeight: '500', color: '#333' }}>ניהול דף נחיתה</span>
                     <div 
                       className="d-flex align-items-center justify-content-center"
                       style={{
@@ -560,6 +568,7 @@ export default function DashboardHeader({
                         <path d="M2 12l10 5 10-5" />
                       </svg>
                     </div>
+                    <span style={{ fontSize: '15px', fontWeight: '500', color: '#333' }}>ניהול דף נחיתה</span>
                   </Link>
                 </div>
               </div>
