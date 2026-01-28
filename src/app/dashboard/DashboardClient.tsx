@@ -747,7 +747,10 @@ const DashboardClient = () => {
           </div>
         </div>
 
-        <div className="card border-0 shadow-sm mb-4 reservations-section" style={{ borderRadius: '12px' }}>
+        <div className="card border-0 shadow-lg mb-4 reservations-section" style={{ 
+          borderRadius: '12px',
+          background: 'linear-gradient(135deg, #1e293b 0%, #334155 50%, #475569 100%)',
+        }}>
           <style>{`
             @media (max-width: 768px) {
               .reservations-section {
@@ -761,11 +764,16 @@ const DashboardClient = () => {
                 padding-right: 0 !important;
               }
             }
+            @media (min-width: 769px) {
+              .reservations-section {
+                background: linear-gradient(135deg, #1e293b 0%, #334155 50%, #475569 100%) !important;
+              }
+            }
           `}</style>
           <div 
             className="card-body"
             style={{
-              background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(249, 147, 251, 0.05) 100%)',
+              background: 'transparent',
             }}
           >
             {/* Mobile: CTA Bar with Filter Icon, New Reservation, and All Reservations Buttons */}

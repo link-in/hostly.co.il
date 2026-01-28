@@ -45,31 +45,37 @@ const styles = `
     position: sticky;
     top: 0;
     z-index: 5;
-    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+    background: linear-gradient(135deg, #1e293b 0%, #334155 100%) !important;
     box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  }
+  .dashboard-table-scroll-container thead tr {
+    background: linear-gradient(135deg, #1e293b 0%, #334155 100%) !important;
   }
   .dashboard-table-scroll-container thead th {
     color: rgba(249, 147, 251, 0.9) !important;
+    background: transparent !important;
     border-bottom: 2px solid rgba(249, 147, 251, 0.2) !important;
+    border-top: none !important;
   }
   .dashboard-table-scroll-container .table {
     background: transparent;
   }
   .dashboard-table-scroll-container tbody tr {
-    background: linear-gradient(135deg, #1e293b 0%, #334155 50%, #475569 100%);
-    color: white;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    background: linear-gradient(135deg, #1e293b 0%, #334155 50%, #475569 100%) !important;
+    color: white !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
   }
   .dashboard-table-scroll-container tbody tr:hover {
-    background: linear-gradient(135deg, #2d1b3d 0%, #3d2952 100%);
-    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+    background: linear-gradient(135deg, #2d1b3d 0%, #3d2952 100%) !important;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3) !important;
   }
   .dashboard-table-scroll-container tbody tr.table-active {
-    background: linear-gradient(135deg, #2d1b3d 0%, #3d2952 100%);
+    background: linear-gradient(135deg, #2d1b3d 0%, #3d2952 100%) !important;
   }
   .dashboard-table-scroll-container tbody td {
-    color: rgba(255, 255, 255, 0.95);
-    border: none;
+    color: rgba(255, 255, 255, 0.95) !important;
+    border: none !important;
+    background: transparent !important;
   }
   
   /* Mobile stacked list styles - Dark gradient theme */
@@ -560,32 +566,35 @@ const ReservationsTable = ({ reservations, onReservationViewed }: ReservationsTa
               </tr>
               {expandedId === reservation.id ? (
                 <tr>
-                  <td colSpan={7} style={{ backgroundColor: '#f8f9fa' }}>
+                  <td colSpan={7} style={{ 
+                    background: 'rgba(0, 0, 0, 0.3)',
+                    borderTop: '1px solid rgba(249, 147, 251, 0.2)',
+                  }}>
                     <div className="p-3">
                       <div className="row g-3">
                         <div className="col-md-6">
-                          <div className="small text-muted mb-1">מזהה הזמנה</div>
-                          <div className="fw-semibold">{reservation.id}</div>
+                          <div className="small mb-1" style={{ color: 'rgba(249, 147, 251, 0.8)' }}>מזהה הזמנה</div>
+                          <div className="fw-semibold" style={{ color: 'white' }}>{reservation.id}</div>
                         </div>
                         <div className="col-md-6">
-                          <div className="small text-muted mb-1">שם אורח מלא</div>
-                          <div className="fw-semibold">{reservation.guestName}</div>
+                          <div className="small mb-1" style={{ color: 'rgba(249, 147, 251, 0.8)' }}>שם אורח מלא</div>
+                          <div className="fw-semibold" style={{ color: 'white' }}>{reservation.guestName}</div>
                         </div>
                         <div className="col-md-6">
-                          <div className="small text-muted mb-1">תאריך כניסה</div>
-                          <div>{formatDate(reservation.checkIn)}</div>
+                          <div className="small mb-1" style={{ color: 'rgba(249, 147, 251, 0.8)' }}>תאריך כניסה</div>
+                          <div style={{ color: 'rgba(255, 255, 255, 0.9)' }}>{formatDate(reservation.checkIn)}</div>
                         </div>
                         <div className="col-md-6">
-                          <div className="small text-muted mb-1">תאריך יציאה</div>
-                          <div>{formatDate(reservation.checkOut)}</div>
+                          <div className="small mb-1" style={{ color: 'rgba(249, 147, 251, 0.8)' }}>תאריך יציאה</div>
+                          <div style={{ color: 'rgba(255, 255, 255, 0.9)' }}>{formatDate(reservation.checkOut)}</div>
                         </div>
                         <div className="col-md-6">
-                          <div className="small text-muted mb-1">מספר לילות</div>
-                          <div>{reservation.nights}</div>
+                          <div className="small mb-1" style={{ color: 'rgba(249, 147, 251, 0.8)' }}>מספר לילות</div>
+                          <div style={{ color: 'rgba(255, 255, 255, 0.9)' }}>{reservation.nights}</div>
                         </div>
                         <div className="col-md-6">
-                          <div className="small text-muted mb-1">מספר אורחים</div>
-                          <div>
+                          <div className="small mb-1" style={{ color: 'rgba(249, 147, 251, 0.8)' }}>מספר אורחים</div>
+                          <div style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
                             {reservation.adults || reservation.children ? (
                               <>
                                 {reservation.adults ? `${reservation.adults} מבוגרים` : ''}
@@ -601,9 +610,9 @@ const ReservationsTable = ({ reservations, onReservationViewed }: ReservationsTa
                         </div>
                         {reservation.phone ? (
                           <div className="col-md-6">
-                            <div className="small text-muted mb-1">טלפון</div>
+                            <div className="small mb-1" style={{ color: 'rgba(249, 147, 251, 0.8)' }}>טלפון</div>
                             <div>
-                              <a href={`tel:${reservation.phone}`} className="text-decoration-none">
+                              <a href={`tel:${reservation.phone}`} className="text-decoration-none" style={{ color: '#f093fb' }}>
                                 {reservation.phone}
                               </a>
                             </div>
@@ -611,29 +620,33 @@ const ReservationsTable = ({ reservations, onReservationViewed }: ReservationsTa
                         ) : null}
                         {reservation.email ? (
                           <div className="col-md-6">
-                            <div className="small text-muted mb-1">אימייל</div>
+                            <div className="small mb-1" style={{ color: 'rgba(249, 147, 251, 0.8)' }}>אימייל</div>
                             <div>
-                              <a href={`mailto:${reservation.email}`} className="text-decoration-none">
+                              <a href={`mailto:${reservation.email}`} className="text-decoration-none" style={{ color: '#f093fb' }}>
                                 {reservation.email}
                               </a>
                             </div>
                           </div>
                         ) : null}
                         <div className="col-md-6">
-                          <div className="small text-muted mb-1">מקור הזמנה</div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <div className="small mb-1" style={{ color: 'rgba(249, 147, 251, 0.8)' }}>מקור הזמנה</div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'rgba(255, 255, 255, 0.9)' }}>
                             {getPlatformIcon(reservation.source, 20)}
                             <span>{reservation.source ?? '—'}</span>
                           </div>
                         </div>
                         <div className="col-md-6">
-                          <div className="small text-muted mb-1">סכום כולל</div>
-                          <div className="fw-bold">{formatCurrency(reservation.total)}</div>
+                          <div className="small mb-1" style={{ color: 'rgba(249, 147, 251, 0.8)' }}>סכום כולל</div>
+                          <div className="fw-bold" style={{ color: '#f093fb' }}>{formatCurrency(reservation.total)}</div>
                         </div>
                         {reservation.notes ? (
                           <div className="col-12">
-                            <div className="small text-muted mb-1">הערות</div>
-                            <div className="border rounded p-2 bg-white">{reservation.notes}</div>
+                            <div className="small mb-1" style={{ color: 'rgba(249, 147, 251, 0.8)' }}>הערות</div>
+                            <div className="border rounded p-2" style={{ 
+                              background: 'rgba(0, 0, 0, 0.2)', 
+                              borderColor: 'rgba(249, 147, 251, 0.2)',
+                              color: 'rgba(255, 255, 255, 0.9)'
+                            }}>{reservation.notes}</div>
                           </div>
                         ) : null}
                       </div>
