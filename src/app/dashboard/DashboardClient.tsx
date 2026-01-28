@@ -145,6 +145,7 @@ const DashboardClient = () => {
     firstName: '',
     lastName: '',
     contact: '',
+    email: '',
     arrival: '',
     departure: '',
     guests: 2,
@@ -186,6 +187,7 @@ const DashboardClient = () => {
       firstName: '',
       lastName: '',
       contact: '',
+      email: '',
       arrival: '',
       departure: '',
       guests: 2,
@@ -245,7 +247,7 @@ const DashboardClient = () => {
       return
     }
     if (!newReservation.contact.trim()) {
-      setSaveReservationError('יש להזין טלפון או אימייל.')
+      setSaveReservationError('יש להזין מספר טלפון.')
       return
     }
     if (!newReservation.arrival || !newReservation.departure) {
@@ -282,9 +284,9 @@ const DashboardClient = () => {
       return
     }
 
-    // Detect if contact is phone or email
-    const contact = newReservation.contact.trim()
-    const isPhone = /^[\d\s\-\+\(\)]+$/.test(contact)
+    // Contact is always phone, email is optional separate field
+    const phone = newReservation.contact.trim()
+    const email = newReservation.email.trim()
     
     const payload = [
       {
@@ -295,8 +297,8 @@ const DashboardClient = () => {
         status: 'confirmed',
         notes: newReservation.notes.trim() || undefined,
         numAdult: newReservation.guests || 1,
-        // Add phone or email based on format
-        ...(isPhone ? { mobile: contact } : { email: contact }),
+        mobile: phone, // Phone is required
+        ...(email ? { email } : {}), // Email is optional
         invoice: [
           {
             description: 'Total Room Price',
@@ -341,8 +343,8 @@ const DashboardClient = () => {
           total: Number(newReservation.total),
           status: 'confirmed',
           source: 'Demo (הזמנה ידנית)',
-          phone: isPhone ? contact : undefined,
-          email: isPhone ? undefined : contact,
+          phone,
+          email: email || undefined,
           notes: newReservation.notes.trim() || undefined,
           isNew: true, // Flag for visual indication
         }
@@ -1252,7 +1254,7 @@ const DashboardClient = () => {
                       </div>
                     </div>
                   </div>
-                  <div className="col-12 col-md-6">
+                  <div className="col-12 col-md-3">
                     <label className="form-label small fw-semibold">
                       טלפון נייד <span className="text-danger">*</span>
                     </label>
@@ -1266,7 +1268,20 @@ const DashboardClient = () => {
                       title="מספר טלפון נייד (לדוגמה: 052-1234567)"
                       required
                     />
-                    <small className="text-muted">לדוגמה: 052-1234567 או 050-1234567</small>
+                    <small className="text-muted">052-1234567</small>
+                  </div>
+                  <div className="col-12 col-md-3">
+                    <label className="form-label small fw-semibold">
+                      אימייל
+                    </label>
+                    <input
+                      type="email"
+                      className="form-control"
+                      placeholder="guest@example.com"
+                      value={newReservation.email}
+                      onChange={(event) => updateReservationField('email', event.target.value)}
+                    />
+                    <small className="text-muted">אופציונלי</small>
                   </div>
                   <div className="col-6 col-md-3">
                     <label className="form-label small fw-semibold">
