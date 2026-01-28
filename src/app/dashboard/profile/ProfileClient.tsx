@@ -279,11 +279,11 @@ const ProfileClient = () => {
                       value={phoneNumber}
                       onChange={(e) => setPhoneNumber(e.target.value)}
                       disabled={!editing}
-                      placeholder="0528676516 או +972528676516"
+                      placeholder="0528676516"
                       dir="ltr"
                     />
                     <small className="text-muted">
-                      הכנס מספר בפורמט ישראלי (052...) או בינלאומי (+972...) - לקבלת התראות על הזמנות חדשות
+                      הכנס מספר טלפון ישראלי - המערכת תמיר אוטומטית לפורמט בינלאומי
                     </small>
                   </div>
 
