@@ -1283,19 +1283,19 @@ const DashboardTestClient = () => {
                   </div>
                   <div className="col-12 col-md-6">
                     <label className="form-label small fw-semibold">
-                      טלפון <span className="text-danger">*</span>
+                      טלפון נייד <span className="text-danger">*</span>
                     </label>
                     <input
                       type="tel"
                       className="form-control"
-                      placeholder="+972501234567"
+                      placeholder="052-1234567"
                       value={newReservation.contact}
                       onChange={(event) => updateReservationField('contact', event.target.value)}
-                      pattern="^\+?[1-9]\d{1,14}$"
-                      title="מספר טלפון בפורמט בינלאומי (לדוגמה: +972501234567)"
+                      pattern="^(0[2-9]\d{7,8}|(\+?972)?[2-9]\d{7,8})$"
+                      title="מספר טלפון נייד (לדוגמה: 052-1234567)"
                       required
                     />
-                    <small className="text-muted">פורמט: +972501234567</small>
+                    <small className="text-muted">לדוגמה: 052-1234567 או 050-1234567</small>
                   </div>
                   <div className="col-6 col-md-3">
                     <label className="form-label small fw-semibold">

@@ -5,6 +5,7 @@ import { fetchWithTokenRefresh } from '@/lib/beds24/tokenManager'
 import { sendWhatsAppMessage } from '@/lib/whatsapp'
 import { createServerClient } from '@/lib/supabase/server'
 import { getUserByEmail } from '@/lib/auth/getUsersDb'
+import { normalizePhoneNumber } from '@/lib/utils/phoneFormatter'
 
 export const dynamic = 'force-dynamic'  // Allow POST requests for creating bookings
 export const revalidate = 0
@@ -230,12 +231,13 @@ export async function POST(request: Request) {
     
     const firstBooking = normalizedPayload[0]
     const guestName = `${String(firstBooking.firstName || '')} ${String(firstBooking.lastName || '')}`.trim()
-    const guestPhone = String(firstBooking.mobile || firstBooking.phone || '')
+    const guestPhoneRaw = String(firstBooking.mobile || firstBooking.phone || '')
+    const guestPhone = guestPhoneRaw ? normalizePhoneNumber(guestPhoneRaw) : ''
     const checkInDate = String(firstBooking.arrival || '')
     const checkOutDate = String(firstBooking.departure || '')
     const numAdult = Number(firstBooking.numAdult) || 1
     
-    console.log(`👤 Guest: ${guestName}, Phone: ${guestPhone}`)
+    console.log(`👤 Guest: ${guestName}, Phone: ${guestPhoneRaw} → ${guestPhone}`)
     
     // Get booking ID from Beds24 response
     const bookingId = Array.isArray(data) && data[0]?.new?.id 

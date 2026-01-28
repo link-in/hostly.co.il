@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/client'
 import { createServerClient } from '@/lib/supabase/server'
 import { sendWhatsAppMessage } from '@/lib/whatsapp'
+import { normalizePhoneNumber } from '@/lib/utils/phoneFormatter'
 
 // Force dynamic rendering for webhooks
 export const dynamic = 'force-dynamic'
@@ -146,10 +147,13 @@ export async function POST(request: NextRequest) {
 
     // Build guest name
     const guestName = `${booking.firstName} ${booking.lastName}`.trim()
-    const guestPhone = booking.mobile || booking.phone || ''
+    const guestPhoneRaw = booking.mobile || booking.phone || ''
+    const guestPhone = guestPhoneRaw ? normalizePhoneNumber(guestPhoneRaw) : ''
     
     if (!guestPhone) {
       console.warn('⚠️  No phone number in booking')
+    } else {
+      console.log(`📞 Phone normalized: ${guestPhoneRaw} → ${guestPhone}`)
     }
 
     // Save to Supabase notifications_log table
