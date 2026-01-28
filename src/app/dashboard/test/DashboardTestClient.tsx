@@ -1,3 +1,7 @@
+// 🧪 TEST ENVIRONMENT - Dashboard Client Copy for UI Experiments
+// This is a copy of DashboardClient.tsx for testing new designs
+// Changes here do NOT affect the production dashboard
+
 'use client'
 
 import React, { useEffect, useMemo, useState } from 'react'
@@ -8,8 +12,8 @@ import type { Reservation, RoomPrice } from '@/lib/dashboard/types'
 import { formatCurrency } from '@/lib/dashboard/utils'
 import { getDashboardProvider } from '@/lib/dashboard/getDashboardProvider'
 import ReservationsTable from './components/ReservationsTable'
-import StatCard from './components/StatCard'
-import CalendarPricing from './components/CalendarPricing'
+import StatCard from '../components/StatCard'
+import CalendarPricing from '../components/CalendarPricing'
 import DashboardHeader from '@/components/DashboardHeader'
 
 const toLocalKey = (value: Date) => {
@@ -124,7 +128,7 @@ const clearDemoReservations = () => {
   console.log('🗑️ Demo reservations cleared')
 }
 
-const DashboardClient = () => {
+const DashboardTestClient = () => {
   const { data: session, status } = useSession()
   const router = useRouter()
   
@@ -680,6 +684,39 @@ const DashboardClient = () => {
             showLandingPageButton={true}
             currentPage="dashboard"
           />
+        </div>
+
+        {/* TEST ENVIRONMENT BANNER */}
+        <div 
+          className="alert mb-4 d-flex align-items-center justify-content-between"
+          style={{
+            background: 'linear-gradient(135deg, rgba(255, 107, 107, 0.15) 0%, rgba(255, 68, 68, 0.15) 100%)',
+            border: '2px solid #ff6b6b',
+            borderRadius: '12px',
+            padding: '1rem 1.5rem',
+          }}
+          role="alert"
+        >
+          <div className="d-flex align-items-center gap-3">
+            <span style={{ fontSize: '2rem' }}>🧪</span>
+            <div>
+              <h5 className="mb-1 fw-bold" style={{ color: '#ff6b6b' }}>
+                סביבת בדיקה (Test Environment)
+              </h5>
+              <p className="mb-0" style={{ color: '#666', fontSize: '0.9rem' }}>
+                זהו עותק של הדשבורד למטרות ניסוי ועיצוב. שינויים כאן לא משפיעים על הדשבורד האמיתי.
+              </p>
+            </div>
+          </div>
+          <div className="badge" style={{
+            background: 'linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%)',
+            color: 'white',
+            padding: '0.5rem 1rem',
+            fontSize: '0.9rem',
+            fontWeight: '600',
+          }}>
+            TEST MODE
+          </div>
         </div>
 
         {/* Demo Mode Banner */}
@@ -1459,11 +1496,11 @@ const DashboardClient = () => {
           </div>
         </div>
 
-        <div className="card border-0 shadow-sm" style={{ 
+        <div className="card border-0 shadow-lg" style={{ 
           borderRadius: '12px', 
-          background: 'transparent',
+          background: 'linear-gradient(135deg, #1e293b 0%, #334155 50%, #475569 100%)',
         }}>
-          <div className="card-body" style={{ padding: 0 }}>
+          <div className="card-body">
             {loadingRoomPrices ? (
               <div style={{ color: 'rgba(255, 255, 255, 0.7)' }}>טוען נתונים...</div>
             ) : priceSummary ? (
@@ -1513,4 +1550,4 @@ const DashboardClient = () => {
   )
 }
 
-export default DashboardClient
+export default DashboardTestClient

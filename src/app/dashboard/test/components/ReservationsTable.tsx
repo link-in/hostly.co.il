@@ -7,14 +7,12 @@ import { formatCurrency, formatDate, formatStatus } from '@/lib/dashboard/utils'
 // Add styles for nearest reservation, table scrolling, and mobile list
 const styles = `
   .nearest-reservation {
-    background: linear-gradient(135deg, #2d1b3d 0%, #3d2952 50%, #4f3869 100%) !important;
-    border-left: 4px solid #f093fb !important;
-    box-shadow: 0 2px 12px rgba(249, 147, 251, 0.4) !important;
+    background-color: #e3f2fd !important;
+    border-left: 4px solid #764ba2 !important;
   }
   .nearest-reservation td {
-    background: transparent !important;
+    background-color: #e3f2fd !important;
     font-weight: 500 !important;
-    color: white !important;
   }
   .dashboard-table-scroll-container {
     max-height: 60vh;
@@ -31,7 +29,7 @@ const styles = `
     height: 8px;
   }
   .dashboard-table-scroll-container::-webkit-scrollbar-track {
-    background: rgba(30, 41, 59, 0.5);
+    background: #f1f1f1;
     border-radius: 4px;
   }
   .dashboard-table-scroll-container::-webkit-scrollbar-thumb {
@@ -45,31 +43,8 @@ const styles = `
     position: sticky;
     top: 0;
     z-index: 5;
-    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+    background: white;
     box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-  }
-  .dashboard-table-scroll-container thead th {
-    color: rgba(249, 147, 251, 0.9) !important;
-    border-bottom: 2px solid rgba(249, 147, 251, 0.2) !important;
-  }
-  .dashboard-table-scroll-container .table {
-    background: transparent;
-  }
-  .dashboard-table-scroll-container tbody tr {
-    background: linear-gradient(135deg, #1e293b 0%, #334155 50%, #475569 100%);
-    color: white;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  }
-  .dashboard-table-scroll-container tbody tr:hover {
-    background: linear-gradient(135deg, #2d1b3d 0%, #3d2952 100%);
-    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
-  }
-  .dashboard-table-scroll-container tbody tr.table-active {
-    background: linear-gradient(135deg, #2d1b3d 0%, #3d2952 100%);
-  }
-  .dashboard-table-scroll-container tbody td {
-    color: rgba(255, 255, 255, 0.95);
-    border: none;
   }
   
   /* Mobile stacked list styles - Dark gradient theme */
@@ -156,7 +131,6 @@ type ReservationsTableProps = {
 
 const ReservationsTable = ({ reservations, onReservationViewed }: ReservationsTableProps) => {
   const [expandedId, setExpandedId] = useState<string | null>(null)
-  const [mobileVisibleCount, setMobileVisibleCount] = useState(6)
   const [viewedReservations, setViewedReservations] = useState<Set<string>>(new Set())
 
   if (!reservations.length) {
@@ -194,72 +168,19 @@ const ReservationsTable = ({ reservations, onReservationViewed }: ReservationsTa
   
   const isReservationViewed = (id: string) => viewedReservations.has(id)
 
-  // Get platform logo/icon based on reservation source
-  const getPlatformIcon = (source: string | null | undefined, size: number = 24) => {
-    const sourceLower = (source || '').toLowerCase()
-    const emojiSize = Math.floor(size * 1.2)
-    
-    if (sourceLower.includes('airbnb')) {
-      // Airbnb logo
-      return (
-        <img 
-          src="/airbnb-logo.png" 
-          alt="Airbnb" 
-          width={size} 
-          height={size}
-          style={{ 
-            display: 'inline-block', 
-            verticalAlign: 'middle',
-            borderRadius: '50%',
-            objectFit: 'cover'
-          }} 
-        />
-      )
+  // Get initials from guest name
+  const getInitials = (name: string) => {
+    const parts = name.trim().split(' ')
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
     }
-    if (sourceLower.includes('booking')) {
-      // Booking.com logo
-      return (
-        <img 
-          src="/booking-logo.png" 
-          alt="Booking.com" 
-          width={size} 
-          height={size}
-          style={{ 
-            display: 'inline-block', 
-            verticalAlign: 'middle',
-            borderRadius: '50%',
-            objectFit: 'cover'
-          }} 
-        />
-      )
-    }
-    if (sourceLower.includes('agoda')) {
-      return <span style={{ fontSize: `${emojiSize}px`, display: 'inline-block', verticalAlign: 'middle' }}>🗺️</span>
-    }
-    if (sourceLower.includes('expedia')) {
-      return <span style={{ fontSize: `${emojiSize}px`, display: 'inline-block', verticalAlign: 'middle' }}>✈️</span>
-    }
-    if (sourceLower.includes('vrbo') || sourceLower.includes('homeaway')) {
-      return <span style={{ fontSize: `${emojiSize}px`, display: 'inline-block', verticalAlign: 'middle' }}>🏡</span>
-    }
-    if (sourceLower.includes('tripadvisor')) {
-      return <span style={{ fontSize: `${emojiSize}px`, display: 'inline-block', verticalAlign: 'middle' }}>🦉</span>
-    }
-    if (sourceLower.includes('hotels.com')) {
-      return <span style={{ fontSize: `${emojiSize}px`, display: 'inline-block', verticalAlign: 'middle' }}>🏨</span>
-    }
-    // הזמנה ישירה או לא מוכר
-    return <span style={{ fontSize: `${emojiSize}px`, display: 'inline-block', verticalAlign: 'middle' }}>🌐</span>
+    return name.substring(0, 2).toUpperCase()
   }
 
   // Mobile List View Component
-  const MobileListView = () => {
-    const visibleReservations = reservations.slice(0, mobileVisibleCount)
-    const hasMore = reservations.length > mobileVisibleCount
-    
-    return (
-      <div className="d-md-none">
-        {visibleReservations.map((reservation) => {
+  const MobileListView = () => (
+    <div className="d-md-none" style={{ maxHeight: '50vh', overflowY: 'auto' }}>
+      {reservations.map((reservation) => {
         const isExpanded = expandedId === reservation.id
         const isNearest = isNearestReservation(reservation.id)
         
@@ -272,7 +193,7 @@ const ReservationsTable = ({ reservations, onReservationViewed }: ReservationsTa
             <div className="d-flex align-items-start gap-3">
               {/* Avatar */}
               <div className="reservation-avatar">
-                {getPlatformIcon(reservation.source, 32)}
+                {getInitials(reservation.guestName)}
               </div>
               
               {/* Main Content */}
@@ -281,6 +202,19 @@ const ReservationsTable = ({ reservations, onReservationViewed }: ReservationsTa
                   <h6 className="mb-0 fw-bold" style={{ fontSize: '1rem', color: 'white' }}>
                     {reservation.guestName}
                   </h6>
+                  {reservation.isNew && !isReservationViewed(reservation.id) && (
+                    <span 
+                      className="badge" 
+                      style={{
+                        background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                        color: 'white',
+                        fontSize: '0.7rem',
+                        padding: '2px 6px',
+                      }}
+                    >
+                      חדש ✨
+                    </span>
+                  )}
                 </div>
                 <div className="small mb-2" style={{ color: 'rgba(249, 147, 251, 0.8)' }}>
                   {formatDate(reservation.checkIn)} - {formatDate(reservation.checkOut)}
@@ -289,18 +223,8 @@ const ReservationsTable = ({ reservations, onReservationViewed }: ReservationsTa
                   <span className="small" style={{ color: 'rgba(255, 255, 255, 0.8)' }}>
                     <strong style={{ color: 'white' }}>{reservation.nights}</strong> לילות
                   </span>
-                  <span className="small" style={{ color: 'rgba(255, 255, 255, 0.8)' }}>
-                    <strong style={{ color: 'white' }}>
-                      {reservation.adults && reservation.children ? (
-                        <>
-                          {reservation.adults + reservation.children}
-                        </>
-                      ) : reservation.guests ? (
-                        reservation.guests
-                      ) : (
-                        '—'
-                      )}
-                    </strong> אורחים
+                  <span className="small" style={{ color: 'rgba(255, 255, 255, 0.6)' }}>
+                    {reservation.source ?? 'לא צוין'}
                   </span>
                   <span className="fw-bold" style={{ color: '#f093fb' }}>
                     {formatCurrency(reservation.total)}
@@ -308,40 +232,22 @@ const ReservationsTable = ({ reservations, onReservationViewed }: ReservationsTa
                 </div>
               </div>
               
-              {/* New Badge and Chevron Icon */}
-              <div className="d-flex align-items-center gap-2">
-                {reservation.isNew && !isReservationViewed(reservation.id) && (
-                  <span 
-                    className="badge" 
-                    style={{
-                      background: 'linear-gradient(135deg, #a855f7 0%, #f093fb 100%)',
-                      color: 'white',
-                      fontSize: '0.7rem',
-                      padding: '2px 6px',
-                      boxShadow: '0 2px 8px rgba(168, 85, 247, 0.3)',
-                    }}
-                  >
-                    חדש ✨
-                  </span>
-                )}
-                
-                {/* Chevron Icon */}
-                <div style={{ transition: 'transform 0.2s', transform: isExpanded ? 'rotate(90deg)' : 'rotate(180deg)' }}>
-                  <svg 
-                    xmlns="http://www.w3.org/2000/svg" 
-                    width="20" 
-                    height="20" 
-                    viewBox="0 0 24 24" 
-                    fill="none" 
-                    stroke="currentColor" 
-                    strokeWidth="2" 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round"
-                    style={{ color: '#f093fb' }}
-                  >
-                    <polyline points="9 18 15 12 9 6" />
-                  </svg>
-                </div>
+              {/* Chevron Icon */}
+              <div style={{ transition: 'transform 0.2s', transform: isExpanded ? 'rotate(90deg)' : 'rotate(180deg)' }}>
+                <svg 
+                  xmlns="http://www.w3.org/2000/svg" 
+                  width="20" 
+                  height="20" 
+                  viewBox="0 0 24 24" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  strokeWidth="2" 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round"
+                  style={{ color: '#f093fb' }}
+                >
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
               </div>
             </div>
             
@@ -407,10 +313,7 @@ const ReservationsTable = ({ reservations, onReservationViewed }: ReservationsTa
                 
                 <div className="reservation-detail-row">
                   <span className="reservation-detail-label">מקור הזמנה</span>
-                  <span className="reservation-detail-value" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    {getPlatformIcon(reservation.source, 20)}
-                    <span>{reservation.source ?? '—'}</span>
-                  </span>
+                  <span className="reservation-detail-value">{reservation.source ?? '—'}</span>
                 </div>
                 
                 <div className="reservation-detail-row">
@@ -440,39 +343,8 @@ const ReservationsTable = ({ reservations, onReservationViewed }: ReservationsTa
           </div>
         )
       })}
-      
-      {/* Show More Button */}
-      {hasMore && (
-        <div className="d-flex justify-content-center mt-3">
-          <button
-            type="button"
-            onClick={() => setMobileVisibleCount(prev => prev + 6)}
-            className="btn btn-sm"
-            style={{
-              background: 'transparent',
-              border: '1px solid rgba(102, 126, 234, 0.3)',
-              color: 'white',
-              padding: '8px 16px',
-              fontSize: '0.85rem',
-              borderRadius: '8px',
-              transition: 'all 0.2s ease',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'rgba(102, 126, 234, 0.1)'
-              e.currentTarget.style.borderColor = 'rgba(102, 126, 234, 0.5)'
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'transparent'
-              e.currentTarget.style.borderColor = 'rgba(102, 126, 234, 0.3)'
-            }}
-          >
-            הצג עוד
-          </button>
-        </div>
-      )}
     </div>
-    )
-  }
+  )
 
   return (
     <>
@@ -504,53 +376,47 @@ const ReservationsTable = ({ reservations, onReservationViewed }: ReservationsTa
                 className={`${expandedId === reservation.id ? 'table-active' : ''} ${isNearestReservation(reservation.id) ? 'nearest-reservation' : ''}`}
               >
                 <td>
+                  <svg 
+                    xmlns="http://www.w3.org/2000/svg" 
+                    width="16" 
+                    height="16" 
+                    viewBox="0 0 24 24" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    strokeWidth="2" 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round"
+                    style={{
+                      transform: expandedId === reservation.id ? 'rotate(90deg)' : 'rotate(180deg)',
+                      transition: 'transform 0.2s',
+                    }}
+                  >
+                    <polyline points="9 18 15 12 9 6" />
+                  </svg>
+                </td>
+                <td>
                   <div className="d-flex align-items-center gap-2">
+                    <span className="fw-semibold">{reservation.guestName}</span>
                     {reservation.isNew && !isReservationViewed(reservation.id) && (
                       <span 
                         className="badge" 
                         style={{
-                          background: 'linear-gradient(135deg, #a855f7 0%, #f093fb 100%)',
+                          background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
                           color: 'white',
                           fontSize: '0.7rem',
                           padding: '2px 6px',
-                          boxShadow: '0 2px 8px rgba(168, 85, 247, 0.3)',
                         }}
                       >
                         חדש ✨
                       </span>
                     )}
-                    <svg 
-                      xmlns="http://www.w3.org/2000/svg" 
-                      width="16" 
-                      height="16" 
-                      viewBox="0 0 24 24" 
-                      fill="none" 
-                      stroke="currentColor" 
-                      strokeWidth="2" 
-                      strokeLinecap="round" 
-                      strokeLinejoin="round"
-                      style={{
-                        transform: expandedId === reservation.id ? 'rotate(90deg)' : 'rotate(180deg)',
-                        transition: 'transform 0.2s',
-                      }}
-                    >
-                      <polyline points="9 18 15 12 9 6" />
-                    </svg>
                   </div>
-                </td>
-                <td>
-                  <span className="fw-semibold">{reservation.guestName}</span>
                 </td>
                 <td className="small">
                   {formatDate(reservation.checkIn)} - {formatDate(reservation.checkOut)}
                 </td>
                 <td>{reservation.nights}</td>
-                <td className="small">
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    {getPlatformIcon(reservation.source, 18)}
-                    <span>{reservation.source ?? '—'}</span>
-                  </div>
-                </td>
+                <td className="small">{reservation.source ?? '—'}</td>
                 <td className="fw-semibold">{formatCurrency(reservation.total)}</td>
                 <td>
                   <span className={`badge ${getStatusClass(reservation.status)}`}>
@@ -621,10 +487,7 @@ const ReservationsTable = ({ reservations, onReservationViewed }: ReservationsTa
                         ) : null}
                         <div className="col-md-6">
                           <div className="small text-muted mb-1">מקור הזמנה</div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            {getPlatformIcon(reservation.source, 20)}
-                            <span>{reservation.source ?? '—'}</span>
-                          </div>
+                          <div>{reservation.source ?? '—'}</div>
                         </div>
                         <div className="col-md-6">
                           <div className="small text-muted mb-1">סכום כולל</div>

@@ -295,40 +295,8 @@ export default function DashboardHeader({
               className="position-absolute bg-white border rounded-3 shadow-sm p-2"
               style={{ top: '46px', left: 0, minWidth: '200px', zIndex: 10 }}
             >
-              {/* Logo Header - Mobile only */}
-              <div className="d-md-none text-center pb-3 mb-2 border-bottom">
-                {logoVisible && (
-                  <img
-                    src={logoSrc}
-                    alt="Hostly"
-                    style={{ 
-                      height: '48px', 
-                      width: 'auto',
-                      objectFit: 'contain', 
-                      marginBottom: '8px',
-                      display: 'block',
-                      margin: '0 auto 8px'
-                    }}
-                    onError={() => setLogoVisible(false)}
-                  />
-                )}
-                <div 
-                  style={{
-                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    backgroundClip: 'text',
-                    fontSize: '1.2rem',
-                    fontWeight: 'bold',
-                    letterSpacing: '0.5px'
-                  }}
-                >
-                  Hostly
-                </div>
-              </div>
-
               {/* Mobile-only buttons */}
-              <div className="d-md-none border-bottom pb-2 mb-2">
+              <div className="d-md-none pb-2 mb-2">
                 {showLandingPageButton && session?.user?.landingPageUrl && (
                   <button
                     className="dropdown-item py-2 text-end d-flex align-items-center justify-content-end gap-2"
