@@ -23,4 +23,4 @@ export interface WhatsAppProvider {
   validateConfig(): boolean
 }
 
-export type WhatsAppProviderType = 'ultramsg' | 'waha' | 'whapi' | 'mock'
+export type WhatsAppProviderType = 'whapi' | 'waha' | 'mock'

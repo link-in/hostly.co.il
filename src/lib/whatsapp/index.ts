@@ -6,7 +6,7 @@ import type { WhatsAppMessage, WhatsAppResponse } from './types'
 
 /**
  * Send a WhatsApp message
- * Automatically uses the configured provider (UltraMsg, WAHA, Whapi, or Mock)
+ * Automatically uses the configured provider (Whapi, WAHA, or Mock)
  */
 export async function sendWhatsAppMessage(
   message: WhatsAppMessage

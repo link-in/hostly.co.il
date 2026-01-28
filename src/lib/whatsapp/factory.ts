@@ -2,14 +2,14 @@
 // Returns the appropriate provider based on environment configuration
 
 import type { WhatsAppProvider, WhatsAppProviderType } from './types'
-import { UltraMsgProvider } from './providers/ultramsg'
+import { WhapiProvider } from './providers/whapi'
 import { MockProvider } from './providers/mock'
 
 /**
  * Get the WhatsApp provider based on environment configuration
  * 
  * Priority:
- * 1. WHATSAPP_PROVIDER env var (ultramsg, waha, whapi, mock)
+ * 1. WHATSAPP_PROVIDER env var (whapi, waha, mock)
  * 2. Auto-detect based on available credentials
  * 3. Default to mock if no credentials found
  */
@@ -22,18 +22,13 @@ export function getWhatsAppProvider(): WhatsAppProvider {
   }
 
   // Auto-detect based on available credentials
-  if (process.env.ULTRAMSG_INSTANCE_ID && process.env.ULTRAMSG_TOKEN) {
-    return createProvider('ultramsg')
+  if (process.env.WHAPI_TOKEN) {
+    return createProvider('whapi')
   }
 
   // TODO: Add WAHA detection
   // if (process.env.WAHA_BASE_URL && process.env.WAHA_SESSION) {
   //   return createProvider('waha')
-  // }
-
-  // TODO: Add Whapi detection
-  // if (process.env.WHAPI_TOKEN) {
-  //   return createProvider('whapi')
   // }
 
   // Default to mock in development
@@ -43,15 +38,13 @@ export function getWhatsAppProvider(): WhatsAppProvider {
 
 function createProvider(type: WhatsAppProviderType): WhatsAppProvider {
   switch (type) {
-    case 'ultramsg':
-      return new UltraMsgProvider()
+    case 'whapi':
+      return new WhapiProvider()
     case 'mock':
       return new MockProvider()
     // TODO: Add more providers as needed
     // case 'waha':
     //   return new WahaProvider()
-    // case 'whapi':
-    //   return new WhapiProvider()
     default:
       console.warn(`⚠️  Unknown provider type: ${type}. Using mock provider.`)
       return new MockProvider()
