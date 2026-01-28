@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/client'
 import { createServerClient } from '@/lib/supabase/server'
 import { sendWhatsAppMessage } from '@/lib/whatsapp'
 import { normalizePhoneNumber } from '@/lib/utils/phoneFormatter'
@@ -184,7 +183,6 @@ export async function POST(request: NextRequest) {
     }
 
     // Save to Supabase notifications_log table
-    const supabase = createClient()
     const { data, error } = await supabase
       .from('notifications_log')
       .insert({
