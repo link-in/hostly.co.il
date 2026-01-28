@@ -347,8 +347,8 @@ const DashboardTestClient = () => {
           total: Number(newReservation.total),
           status: 'confirmed',
           source: 'Demo (הזמנה ידנית)',
-          phone: isPhone ? contact : undefined,
-          email: isPhone ? undefined : contact,
+          phone,
+          email: email || undefined,
           notes: newReservation.notes.trim() || undefined,
           isNew: true, // Flag for visual indication
         }
