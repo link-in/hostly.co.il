@@ -291,94 +291,279 @@ export default function DashboardHeader({
 
           {/* Dropdown Menu */}
           {menuOpen && (
-            <div
-              className="position-absolute bg-white border rounded-3 shadow-sm p-2"
-              style={{ top: '46px', left: 0, minWidth: '200px', zIndex: 10 }}
-            >
-              {/* Mobile-only buttons */}
-              <div className="d-md-none pb-2 mb-2">
-                {showLandingPageButton && session?.user?.landingPageUrl && (
+            <>
+              {/* Backdrop */}
+              <div
+                className="position-fixed top-0 start-0 w-100 h-100"
+                style={{ zIndex: 998 }}
+                onClick={() => setMenuOpen(false)}
+              />
+              
+              <div
+                className="position-absolute bg-white rounded-3 shadow-lg overflow-hidden"
+                style={{ 
+                  top: '46px', 
+                  left: 0, 
+                  minWidth: '280px', 
+                  zIndex: 999,
+                  border: '1px solid rgba(102, 126, 234, 0.1)',
+                  animation: 'slideDown 0.2s ease-out'
+                }}
+              >
+                <style jsx>{`
+                  @keyframes slideDown {
+                    from {
+                      opacity: 0;
+                      transform: translateY(-10px);
+                    }
+                    to {
+                      opacity: 1;
+                      transform: translateY(0);
+                    }
+                  }
+                  
+                  .menu-item {
+                    transition: all 0.2s ease;
+                    border-radius: 8px;
+                    margin: 4px 8px;
+                  }
+                  
+                  .menu-item:hover {
+                    background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(249, 147, 251, 0.08) 100%);
+                    transform: translateX(-4px);
+                  }
+                  
+                  .menu-item-active {
+                    background: linear-gradient(135deg, rgba(102, 126, 234, 0.12) 0%, rgba(249, 147, 251, 0.12) 100%);
+                  }
+                  
+                  .menu-divider {
+                    height: 1px;
+                    background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.2), transparent);
+                    margin: 8px 0;
+                  }
+                `}</style>
+
+                {/* Mobile-only buttons */}
+                <div className="d-md-none pt-2">
+                  {showLandingPageButton && session?.user?.landingPageUrl && (
+                    <button
+                      className="menu-item w-100 border-0 bg-transparent py-3 px-3 text-end d-flex align-items-center justify-content-end gap-3"
+                      onClick={() => {
+                        window.open(session.user.landingPageUrl, '_blank')
+                        setMenuOpen(false)
+                      }}
+                    >
+                      <span style={{ fontSize: '15px', fontWeight: '500', color: '#333' }}>צפה באתר</span>
+                      <div 
+                        className="d-flex align-items-center justify-content-center"
+                        style={{
+                          width: '36px',
+                          height: '36px',
+                          borderRadius: '10px',
+                          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                          color: 'white'
+                        }}
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="18"
+                          height="18"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                          <polyline points="15 3 21 3 21 9" />
+                          <line x1="10" y1="14" x2="21" y2="3" />
+                        </svg>
+                      </div>
+                    </button>
+                  )}
                   <button
-                    className="dropdown-item py-2 text-end d-flex align-items-center justify-content-end gap-2"
+                    className="menu-item w-100 border-0 bg-transparent py-3 px-3 text-end d-flex align-items-center justify-content-end gap-3"
                     onClick={() => {
-                      window.open(session.user.landingPageUrl, '_blank')
+                      handleLogout()
                       setMenuOpen(false)
                     }}
                   >
-                    <span>צפה באתר</span>
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
+                    <span style={{ fontSize: '15px', fontWeight: '500', color: '#dc3545' }}>התנתק</span>
+                    <div 
+                      className="d-flex align-items-center justify-content-center"
+                      style={{
+                        width: '36px',
+                        height: '36px',
+                        borderRadius: '10px',
+                        background: 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)',
+                        color: 'white'
+                      }}
                     >
-                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                      <polyline points="15 3 21 3 21 9" />
-                      <line x1="10" y1="14" x2="21" y2="3" />
-                    </svg>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="18"
+                        height="18"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                        <polyline points="16 17 21 12 16 7" />
+                        <line x1="21" y1="12" x2="9" y2="12" />
+                      </svg>
+                    </div>
                   </button>
-                )}
-                <button
-                  className="dropdown-item py-2 text-end d-flex align-items-center justify-content-end gap-2"
-                  onClick={() => {
-                    handleLogout()
-                    setMenuOpen(false)
-                  }}
-                >
-                  <span>התנתק</span>
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                    <polyline points="16 17 21 12 16 7" />
-                    <line x1="21" y1="12" x2="9" y2="12" />
-                  </svg>
-                </button>
-              </div>
+                  
+                  <div className="menu-divider" />
+                </div>
 
-              {/* Navigation Links */}
-              <Link 
-                className="dropdown-item py-2 text-end" 
-                href="/dashboard" 
-                onClick={() => setMenuOpen(false)}
-              >
-                ניהול זמינות/מחירים
-              </Link>
-              <Link 
-                className="dropdown-item py-2 text-end" 
-                href="/dashboard/reservations" 
-                onClick={() => setMenuOpen(false)}
-              >
-                כל ההזמנות
-              </Link>
-              <Link 
-                className="dropdown-item py-2 text-end" 
-                href="/dashboard/profile" 
-                onClick={() => setMenuOpen(false)}
-              >
-                איזור אישי
-              </Link>
-              <Link 
-                className="dropdown-item py-2 text-end" 
-                href="/dashboard/landing" 
-                onClick={() => setMenuOpen(false)}
-              >
-                ניהול דף נחיתה
-              </Link>
-            </div>
+                {/* Navigation Links */}
+                <div className="py-2">
+                  <Link 
+                    className={`menu-item w-100 border-0 bg-transparent py-3 px-3 text-end d-flex align-items-center justify-content-end gap-3 text-decoration-none ${currentPage === 'dashboard' ? 'menu-item-active' : ''}`}
+                    href="/dashboard" 
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    <span style={{ fontSize: '15px', fontWeight: '500', color: '#333' }}>ניהול זמינות/מחירים</span>
+                    <div 
+                      className="d-flex align-items-center justify-content-center"
+                      style={{
+                        width: '36px',
+                        height: '36px',
+                        borderRadius: '10px',
+                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                        color: 'white'
+                      }}
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="18"
+                        height="18"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                        <line x1="16" y1="2" x2="16" y2="6" />
+                        <line x1="8" y1="2" x2="8" y2="6" />
+                        <line x1="3" y1="10" x2="21" y2="10" />
+                      </svg>
+                    </div>
+                  </Link>
+                  
+                  <Link 
+                    className={`menu-item w-100 border-0 bg-transparent py-3 px-3 text-end d-flex align-items-center justify-content-end gap-3 text-decoration-none ${currentPage === 'reservations' ? 'menu-item-active' : ''}`}
+                    href="/dashboard/reservations" 
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    <span style={{ fontSize: '15px', fontWeight: '500', color: '#333' }}>כל ההזמנות</span>
+                    <div 
+                      className="d-flex align-items-center justify-content-center"
+                      style={{
+                        width: '36px',
+                        height: '36px',
+                        borderRadius: '10px',
+                        background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+                        color: 'white'
+                      }}
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="18"
+                        height="18"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                        <polyline points="14 2 14 8 20 8" />
+                        <line x1="16" y1="13" x2="8" y2="13" />
+                        <line x1="16" y1="17" x2="8" y2="17" />
+                        <polyline points="10 9 9 9 8 9" />
+                      </svg>
+                    </div>
+                  </Link>
+                  
+                  <Link 
+                    className={`menu-item w-100 border-0 bg-transparent py-3 px-3 text-end d-flex align-items-center justify-content-end gap-3 text-decoration-none ${currentPage === 'profile' ? 'menu-item-active' : ''}`}
+                    href="/dashboard/profile" 
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    <span style={{ fontSize: '15px', fontWeight: '500', color: '#333' }}>איזור אישי</span>
+                    <div 
+                      className="d-flex align-items-center justify-content-center"
+                      style={{
+                        width: '36px',
+                        height: '36px',
+                        borderRadius: '10px',
+                        background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+                        color: 'white'
+                      }}
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="18"
+                        height="18"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                        <circle cx="12" cy="7" r="4" />
+                      </svg>
+                    </div>
+                  </Link>
+                  
+                  <Link 
+                    className={`menu-item w-100 border-0 bg-transparent py-3 px-3 text-end d-flex align-items-center justify-content-end gap-3 text-decoration-none ${currentPage === 'landing' ? 'menu-item-active' : ''}`}
+                    href="/dashboard/landing" 
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    <span style={{ fontSize: '15px', fontWeight: '500', color: '#333' }}>ניהול דף נחיתה</span>
+                    <div 
+                      className="d-flex align-items-center justify-content-center"
+                      style={{
+                        width: '36px',
+                        height: '36px',
+                        borderRadius: '10px',
+                        background: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
+                        color: 'white'
+                      }}
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="18"
+                        height="18"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                        <path d="M2 17l10 5 10-5" />
+                        <path d="M2 12l10 5 10-5" />
+                      </svg>
+                    </div>
+                  </Link>
+                </div>
+              </div>
+            </>
           )}
         </div>
       </div>
