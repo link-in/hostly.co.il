@@ -279,11 +279,11 @@ const ProfileClient = () => {
                       value={phoneNumber}
                       onChange={(e) => setPhoneNumber(e.target.value)}
                       disabled={!editing}
-                      placeholder="+972501234567"
+                      placeholder="0528676516 או +972528676516"
                       dir="ltr"
                     />
                     <small className="text-muted">
-                      מספר טלפון עם קידומת מדינה (לדוגמה: +972501234567) לקבלת התראות על הזמנות חדשות ב-WhatsApp
+                      הכנס מספר בפורמט ישראלי (052...) או בינלאומי (+972...) - לקבלת התראות על הזמנות חדשות
                     </small>
                   </div>
 
