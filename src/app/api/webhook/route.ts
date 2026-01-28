@@ -217,16 +217,19 @@ export async function POST(request: NextRequest) {
     let ownerNotificationResult = null
     
     if (ownerInfo.phoneNumber) {
+      console.log(`📞 Sending owner notification to: ${ownerInfo.phoneNumber}`)
       ownerNotificationResult = await sendWhatsAppMessage({
         to: ownerInfo.phoneNumber,
         message: `🔔 הזמנה חדשה!\n\n👤 אורח: ${guestName}\n📱 טלפון: ${guestPhone || 'לא צוין'}\n📅 כניסה: ${booking.arrival}${booking.departure ? `\n📅 יציאה: ${booking.departure}` : ''}${ownerInfo.roomName ? `\n🏠 יחידה: ${ownerInfo.roomName}` : ''}${booking.numAdult ? `\n👥 מספר אורחים: ${booking.numAdult}` : ''}\n🔖 מספר הזמנה: ${booking.id}`,
       })
       
       if (ownerNotificationResult.success) {
-        console.log('✅ Owner notification sent successfully')
+        console.log(`✅ Owner notification sent successfully to ${ownerInfo.phoneNumber}`)
       } else {
-        console.error('❌ Failed to send owner notification:', ownerNotificationResult.error)
+        console.error(`❌ Failed to send owner notification to ${ownerInfo.phoneNumber}:`, ownerNotificationResult.error)
       }
+    } else {
+      console.warn('⚠️  No owner phone number found - skipping owner notification')
     }
 
     // Update database with WhatsApp status
