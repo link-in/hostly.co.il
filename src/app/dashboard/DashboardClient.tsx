@@ -1254,16 +1254,19 @@ const DashboardClient = () => {
                   </div>
                   <div className="col-12 col-md-6">
                     <label className="form-label small fw-semibold">
-                      טלפון / אימייל <span className="text-danger">*</span>
+                      טלפון <span className="text-danger">*</span>
                     </label>
                     <input
-                      type="text"
+                      type="tel"
                       className="form-control"
-                      placeholder="טלפון או אימייל"
+                      placeholder="+972501234567"
                       value={newReservation.contact}
                       onChange={(event) => updateReservationField('contact', event.target.value)}
+                      pattern="^\+?[1-9]\d{1,14}$"
+                      title="מספר טלפון בפורמט בינלאומי (לדוגמה: +972501234567)"
                       required
                     />
+                    <small className="text-muted">פורמט: +972501234567</small>
                   </div>
                   <div className="col-6 col-md-3">
                     <label className="form-label small fw-semibold">
