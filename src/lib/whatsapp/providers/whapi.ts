@@ -27,11 +27,14 @@ export class WhapiProvider implements WhatsAppProvider {
     }
 
     try {
+      // Whapi requires phone number WITHOUT the + sign
+      const phoneNumber = message.to.replace(/^\+/, '')
+      
       const url = `${this.baseUrl}/messages/text`
       
       const body: any = {
         typing_time: 0,
-        to: message.to,
+        to: phoneNumber,
         body: message.message,
       }
 
@@ -40,7 +43,7 @@ export class WhapiProvider implements WhatsAppProvider {
         const imageUrl = `${this.baseUrl}/messages/image`
         const imageBody = {
           typing_time: 0,
-          to: message.to,
+          to: phoneNumber,
           media: message.image,
           caption: message.caption || message.message,
         }
@@ -76,7 +79,7 @@ export class WhapiProvider implements WhatsAppProvider {
         const docUrl = `${this.baseUrl}/messages/document`
         const docBody = {
           typing_time: 0,
-          to: message.to,
+          to: phoneNumber,
           media: message.document,
           caption: message.caption,
         }
