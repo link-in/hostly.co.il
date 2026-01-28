@@ -316,23 +316,9 @@ export async function POST(request: Request) {
       console.warn('⚠️  Skipping guest WhatsApp - no phone number')
     }
     
-    // Send WhatsApp to owner
+    // Skip owner notification for manual bookings (owner already knows - they created it!)
+    console.log('⏭️  Skipping owner WhatsApp for manual booking - owner created this booking themselves')
     let ownerNotificationResult = null
-    
-    if (ownerInfo.phoneNumber) {
-      ownerNotificationResult = await sendWhatsAppMessage({
-        to: ownerInfo.phoneNumber,
-        message: `🔔 הזמנה חדשה!\n\n👤 אורח: ${guestName}\n📱 טלפון: ${guestPhone || 'לא צוין'}\n📅 כניסה: ${checkInDate}${
-          checkOutDate ? `\n📅 יציאה: ${checkOutDate}` : ''
-        }${ownerInfo.roomName ? `\n🏠 יחידה: ${ownerInfo.roomName}` : ''}${
-          numAdult ? `\n👥 מספר אורחים: ${numAdult}` : ''
-        }\n🔖 מספר הזמנה: ${bookingId}`,
-      })
-      
-      console.log(`📱 Owner WhatsApp (${ownerInfo.phoneNumber}):`, ownerNotificationResult.success ? '✅ Sent' : `❌ Failed - ${ownerNotificationResult.error}`)
-    } else {
-      console.warn('⚠️  Skipping owner WhatsApp - phone not configured in profile')
-    }
     
     // Update database with WhatsApp status
     if (recordId) {
