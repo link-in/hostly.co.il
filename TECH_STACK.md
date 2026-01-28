@@ -116,12 +116,17 @@ Log to notifications_log
 ```sql
 - id (UUID)
 - booking_id
-- guest_name, guest_phone
+- guest_name
+- phone (guest phone - normalized)
+- guest_email (optional)
 - owner_email, owner_phone
 - property_id, room_id
-- check_in, check_out
-- status (success/failed)
-- whatsapp_status
+- check_in_date, check_out
+- status (received/sent/failed)
+- whatsapp_sent_at
+- whatsapp_error
+- raw_payload (JSONB)
+- created_at
 ```
 
 #### **subscription_plans**

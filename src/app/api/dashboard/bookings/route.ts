@@ -233,11 +233,15 @@ export async function POST(request: Request) {
     const guestName = `${String(firstBooking.firstName || '')} ${String(firstBooking.lastName || '')}`.trim()
     const guestPhoneRaw = String(firstBooking.mobile || firstBooking.phone || '')
     const guestPhone = guestPhoneRaw ? normalizePhoneNumber(guestPhoneRaw) : ''
+    const guestEmail = String(firstBooking.email || '')
     const checkInDate = String(firstBooking.arrival || '')
     const checkOutDate = String(firstBooking.departure || '')
     const numAdult = Number(firstBooking.numAdult) || 1
     
     console.log(`👤 Guest: ${guestName}, Phone: ${guestPhoneRaw} → ${guestPhone}`)
+    if (guestEmail) {
+      console.log(`📧 Email: ${guestEmail}`)
+    }
     
     // Get booking ID from Beds24 response
     const bookingId = Array.isArray(data) && data[0]?.new?.id 
@@ -254,6 +258,7 @@ export async function POST(request: Request) {
       .insert({
         guest_name: guestName,
         phone: guestPhone,
+        guest_email: guestEmail || null,
         check_in_date: checkInDate,
         raw_payload: {
           source: 'dashboard',

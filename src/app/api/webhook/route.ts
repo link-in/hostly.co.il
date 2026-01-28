@@ -149,11 +149,16 @@ export async function POST(request: NextRequest) {
     const guestName = `${booking.firstName} ${booking.lastName}`.trim()
     const guestPhoneRaw = booking.mobile || booking.phone || ''
     const guestPhone = guestPhoneRaw ? normalizePhoneNumber(guestPhoneRaw) : ''
+    const guestEmail = booking.email || ''
     
     if (!guestPhone) {
       console.warn('⚠️  No phone number in booking')
     } else {
       console.log(`📞 Phone normalized: ${guestPhoneRaw} → ${guestPhone}`)
+    }
+    
+    if (guestEmail) {
+      console.log(`📧 Email: ${guestEmail}`)
     }
 
     // Save to Supabase notifications_log table
@@ -163,6 +168,7 @@ export async function POST(request: NextRequest) {
       .insert({
         guest_name: guestName,
         phone: guestPhone,
+        guest_email: guestEmail || null,
         check_in_date: booking.arrival,
         raw_payload: webhookData,  // Save the entire webhook for reference
         status: 'received',
