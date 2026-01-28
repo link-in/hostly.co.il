@@ -102,8 +102,10 @@ async function getOwnerInfo(booking: Beds24Booking): Promise<OwnerInfo> {
 
     if (data && data.phone_number && data.phone_number.trim()) {
       console.log('✅ Found owner from Supabase:', data.display_name)
+      const normalizedOwnerPhone = normalizePhoneNumber(data.phone_number)
+      console.log(`📱 Owner phone: ${data.phone_number} → ${normalizedOwnerPhone}`)
       return {
-        phoneNumber: data.phone_number,
+        phoneNumber: normalizedOwnerPhone,
         roomName: data.display_name,
       }
     }
@@ -130,7 +132,27 @@ export async function POST(request: NextRequest) {
     console.log('Phone/Mobile:', booking.mobile || booking.phone)
     console.log('Arrival:', booking.arrival)
     console.log('Property/Room:', `${booking.propertyId}/${booking.roomId}`)
+    console.log('Retries:', webhookData.retries || 0)
     console.log('Full booking:', JSON.stringify(booking, null, 2))
+
+    // Check for duplicate webhooks - Beds24 may retry on timeout
+    const supabase = createServerClient()
+    const { data: existingNotification } = await supabase
+      .from('notifications_log')
+      .select('id, created_at')
+      .eq('booking_id', String(booking.id))
+      .single()
+
+    if (existingNotification) {
+      console.log(`⚠️  Duplicate webhook detected for booking ${booking.id} - already processed at ${existingNotification.created_at}`)
+      return NextResponse.json(
+        { 
+          success: true,
+          message: `Booking ${booking.id} already processed - duplicate webhook ignored`,
+        },
+        { status: 200 }
+      )
+    }
 
     // Filter: Only process confirmed bookings (skip cancelled, etc.)
     const validStatuses = ['confirmed', 'new', '1']  // Beds24 uses different status values
