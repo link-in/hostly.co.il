@@ -9,7 +9,7 @@ interface DashboardHeaderProps {
   title?: string
   subtitle?: string
   showLandingPageButton?: boolean
-  currentPage?: 'dashboard' | 'reservations' | 'profile' | 'landing'
+  currentPage?: 'dashboard' | 'reservations' | 'profile' | 'landing' | 'pricing-demo'
 }
 
 export default function DashboardHeader({ 
@@ -502,6 +502,39 @@ export default function DashboardHeader({
                       </svg>
                     </div>
                     <span style={{ fontSize: '15px', fontWeight: '500', color: '#333' }}>כל ההזמנות</span>
+                  </Link>
+                  
+                  <Link 
+                    className={`menu-item w-100 border-0 bg-transparent py-3 px-3 d-flex align-items-center justify-content-start gap-3 text-decoration-none ${currentPage === 'pricing-demo' ? 'menu-item-active' : ''}`}
+                    href="/dashboard/pricing-demo" 
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    <div 
+                      className="d-flex align-items-center justify-content-center"
+                      style={{
+                        width: '36px',
+                        height: '36px',
+                        borderRadius: '10px',
+                        background: 'linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%)',
+                        color: 'white'
+                      }}
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="18"
+                        height="18"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <line x1="12" y1="1" x2="12" y2="23" />
+                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                      </svg>
+                    </div>
+                    <span style={{ fontSize: '15px', fontWeight: '500', color: '#333' }}>מחשבון מחירים</span>
                   </Link>
                   
                   <Link 
