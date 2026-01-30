@@ -36,6 +36,7 @@ export interface RoomPrice {
   date: string
   price: number
   roomId?: string | null
+  numAvail?: number // 0 = blocked, >0 = available
 }
 
 export interface DashboardProvider {

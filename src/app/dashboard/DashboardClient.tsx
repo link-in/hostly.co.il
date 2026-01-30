@@ -264,6 +264,7 @@ const DashboardClient = () => {
       setSaveReservationError('תאריך היציאה חייב להיות אחרי תאריך הכניסה.')
       return
     }
+    const conflictingReservations: Reservation[] = []
     const hasConflict = reservations.some((reservation) => {
       if (reservation.status === 'cancelled' || !reservation.checkIn || !reservation.checkOut) {
         return false
@@ -273,10 +274,28 @@ const DashboardClient = () => {
       if (Number.isNaN(checkIn.getTime()) || Number.isNaN(checkOut.getTime())) {
         return false
       }
-      return arrivalDate < checkOut && departureDate > checkIn
+      // A room is occupied from checkin (inclusive) to checkout (exclusive)
+      // So checkout day is available for next checkin
+      // Conflict exists if: newArrival < existingCheckout AND newDeparture > existingCheckin
+      // BUT we need to allow: existingCheckout === newArrival (same day checkout/checkin)
+      const hasOverlap = arrivalDate < checkOut && departureDate > checkIn
+      
+      // Allow same-day checkout/checkin (checkout at 12pm, checkin at 2pm)
+      const isSameDayTurnover = arrivalDate.getTime() === checkOut.getTime() || departureDate.getTime() === checkIn.getTime()
+      
+      const isConflict = hasOverlap && !isSameDayTurnover
+      
+      if (isConflict) {
+        conflictingReservations.push(reservation)
+      }
+      
+      return isConflict
     })
     if (hasConflict) {
-      setSaveReservationError('קיימת הזמנה בתאריכים שנבחרו.')
+      const conflictDetails = conflictingReservations
+        .map((r) => `${r.guestName || 'אורח'} (${new Date(r.checkIn!).toLocaleDateString('he-IL')} - ${new Date(r.checkOut!).toLocaleDateString('he-IL')})`)
+        .join(', ')
+      setSaveReservationError(`קיימת הזמנה בתאריכים שנבחרו: ${conflictDetails}`)
       return
     }
     if (!newReservation.total) {

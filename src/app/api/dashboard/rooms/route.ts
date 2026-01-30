@@ -27,7 +27,7 @@ const buildDefaultRange = () => {
   const start = new Date()
   start.setHours(0, 0, 0, 0)
   const end = new Date(start)
-  end.setMonth(end.getMonth() + 1)
+  end.setMonth(end.getMonth() + 3) // Get 3 months ahead instead of 1
   const toDateString = (value: Date) => value.toISOString().slice(0, 10)
   return {
     startDate: toDateString(start),
@@ -199,6 +199,7 @@ export async function GET() {
         return rows.flatMap((row: unknown) => {
           const date = getString(row, ['date', 'day', 'startDate'])
           const price = extractRowPrice(row)
+          const numAvail = getNumber(row, ['numAvail', 'avail', 'available', 'availability', 'units'])
 
           if (!date || price === undefined) {
             return []
@@ -209,6 +210,7 @@ export async function GET() {
               date,
               price,
               roomId: roomId ?? calendarId ?? null,
+              numAvail: numAvail !== undefined ? numAvail : 1, // Only default if truly undefined
             },
           ]
         })
@@ -217,6 +219,7 @@ export async function GET() {
       const from = getString(calendar, ['from', 'startDate'])
       const to = getString(calendar, ['to', 'endDate'])
       const price = extractRowPrice(calendar)
+      const numAvail = getNumber(calendar, ['numAvail', 'avail', 'available', 'availability', 'units'])
 
       if (!from || !to || price === undefined) {
         return []
@@ -229,13 +232,14 @@ export async function GET() {
         return []
       }
 
-      const entries: { date: string; price: number; roomId: string | null }[] = []
+      const entries: { date: string; price: number; roomId: string | null; numAvail: number }[] = []
       let cursor = start
       while (cursor <= end) {
         entries.push({
           date: formatLocalDate(cursor),
           price,
           roomId: roomId ?? calendarId ?? null,
+          numAvail: numAvail !== undefined ? numAvail : 1, // Only default if truly undefined
         })
         cursor = addDays(cursor, 1)
       }

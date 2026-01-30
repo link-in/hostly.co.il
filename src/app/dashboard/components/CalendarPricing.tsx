@@ -201,6 +201,18 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated }: CalendarPric
     return map
   }, [prices])
 
+  const availabilityMap = useMemo(() => {
+    const map: Record<string, number> = {}
+    prices.forEach((entry) => {
+      if (!entry?.date) {
+        return
+      }
+      // numAvail: 0 = blocked, >0 = available
+      map[entry.date] = entry.numAvail ?? 1
+    })
+    return map
+  }, [prices])
+
   const days = useMemo(() => {
     const start = startOfMonth(currentMonth)
     const end = endOfMonth(currentMonth)
@@ -221,11 +233,21 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated }: CalendarPric
 
   const handleDateToggle = (date: Date) => {
     const key = toKey(date)
+    const numAvail = availabilityMap[key] ?? 1
+    
+    // Check if date has a reservation
     if (bookingMap.has(key)) {
       const list = bookingMap.get(key)
       setSelectedReservation(list?.[0] ?? null)
       return
     }
+    
+    // Check if date is blocked (numAvail === 0)
+    if (numAvail === 0) {
+      // Don't allow selection of blocked dates
+      return
+    }
+    
     setSelectedReservation(null)
     setSelectedDates((prev) => {
       const exists = prev.some((item) => isSameDay(item, date))
@@ -408,10 +430,12 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated }: CalendarPric
                 const isCurrentMonth = date.getMonth() === currentMonth.getMonth()
                 const key = toKey(date)
                 const isBooked = bookingMap.has(key)
+                const numAvail = availabilityMap[key] ?? 1
+                const isBlocked = numAvail === 0 && !isBooked
                 const isSelected = selectedDates.some((item) => isSameDay(item, date))
                 const price = priceOverrides[key] ?? priceMap[key] ?? DEFAULT_PRICE
                 const isToday = key === todayKey
-                const showTodayHighlight = isToday && !isSelected
+                const showTodayHighlight = isToday && !isSelected && !isBlocked
                 const isBookingStart = isBooked && !isBookedOn(bookingMap, addDays(date, -1))
                 const isBookingEnd = isBooked && !isBookedOn(bookingMap, addDays(date, 1))
                 const bookingRadius = isBooked
@@ -428,25 +452,27 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated }: CalendarPric
                     style={{
                       position: 'relative',
                       minHeight: '90px',
-                      background: isSelected 
+                      background: isBlocked
+                        ? 'repeating-linear-gradient(45deg, rgba(255, 152, 0, 0.1), rgba(255, 152, 0, 0.1) 10px, rgba(255, 152, 0, 0.15) 10px, rgba(255, 152, 0, 0.15) 20px)'
+                        : isSelected 
                         ? 'rgba(102, 126, 234, 0.3)' 
                         : showTodayHighlight 
                         ? 'rgba(102, 126, 234, 0.15)' 
                         : 'transparent',
                       color: 'rgba(255, 255, 255, 0.9)',
-                      opacity: isCurrentMonth ? 1 : 0.4,
-                      cursor: isBooked ? 'not-allowed' : 'pointer',
-                      border: isToday ? '2px solid rgba(102, 126, 234, 0.6)' : '1px solid transparent',
+                      opacity: isCurrentMonth ? (isBlocked ? 0.6 : 1) : 0.4,
+                      cursor: isBooked || isBlocked ? 'not-allowed' : 'pointer',
+                      border: isToday ? '2px solid rgba(102, 126, 234, 0.6)' : isBlocked ? '1px solid rgba(255, 152, 0, 0.3)' : '1px solid transparent',
                       borderRadius: bookingRadius,
                       transition: 'all 0.2s ease',
                     }}
                     onMouseEnter={(e) => {
-                      if (!isBooked) {
+                      if (!isBooked && !isBlocked) {
                         e.currentTarget.style.background = 'rgba(102, 126, 234, 0.2)'
                       }
                     }}
                     onMouseLeave={(e) => {
-                      if (!isBooked) {
+                      if (!isBooked && !isBlocked) {
                         e.currentTarget.style.background = isSelected 
                           ? 'rgba(102, 126, 234, 0.3)' 
                           : showTodayHighlight 
@@ -458,7 +484,7 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated }: CalendarPric
                   >
                     <span
                       className="fw-semibold"
-                      style={{ position: 'absolute', top: '8px', left: '8px', fontSize: '14px', color: 'rgba(255, 255, 255, 0.9)' }}
+                      style={{ position: 'absolute', top: '8px', left: '8px', fontSize: '14px', color: isBlocked ? 'rgba(255, 152, 0, 0.9)' : 'rgba(255, 255, 255, 0.9)' }}
                     >
                       {date.getDate()}
                     </span>
@@ -470,7 +496,17 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated }: CalendarPric
                         היום
                       </span>
                     ) : null}
-                    <div className="small mt-1" style={{ color: 'rgba(249, 147, 251, 0.8)' }}>{formatCurrency(price)}</div>
+                    {isBlocked ? (
+                      <span
+                        className="badge"
+                        style={{ position: 'absolute', top: '8px', right: '8px', background: 'rgba(255, 152, 0, 0.8)', color: 'white', fontSize: '10px' }}
+                      >
+                        חסום
+                      </span>
+                    ) : null}
+                    <div className="small mt-1" style={{ color: isBlocked ? 'rgba(255, 152, 0, 0.7)' : 'rgba(249, 147, 251, 0.8)' }}>
+                      {isBlocked ? 'לא זמין' : formatCurrency(price)}
+                    </div>
                   </button>
                 )
                 })}
@@ -625,8 +661,17 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated }: CalendarPric
                   תאריך עם הזמנה קיימת
                 </div>
                 <div>
+                  <span className="badge me-2" style={{ background: 'rgba(255, 152, 0, 0.6)' }}>חסום</span>
+                  תאריך חסום ב-Beds24
+                </div>
+                <div>
                   <span className="badge me-2" style={{ background: 'rgba(102, 126, 234, 0.6)' }}>נבחר</span>
                   תאריך שנבחר לעדכון מחיר
+                </div>
+                <div className="mt-2 pt-2" style={{ borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                  <small className="text-muted">
+                    💡 ניתן להזמין checkout/checkin באותו יום
+                  </small>
                 </div>
               </div>
             </div>
