@@ -389,10 +389,9 @@ export async function PUT(request: Request) {
   const { bookingId, ...updates } = requestBody as Record<string, unknown>
 
   // Build update payload for Beds24
+  // Note: Beds24 API v2 expects 'id' (not 'bookId') for updates
   const updatePayload: Record<string, unknown> = {
-    bookId: bookingId,
-    propertyId: Number(propertyId),
-    roomId: Number(roomId),
+    id: bookingId,
   }
 
   // Add fields that can be updated
