@@ -390,8 +390,11 @@ export async function PUT(request: Request) {
 
   // Build update payload for Beds24
   // Note: Beds24 uses POST (not PUT) for updates. If bookId exists, it updates; otherwise creates new.
+  // Must include roomId and propertyId for Beds24 to identify which booking to update
   const updatePayload: Record<string, unknown> = {
     bookId: bookingId,
+    propertyId: Number(propertyId),
+    roomId: Number(roomId),
   }
 
   // Add fields that can be updated
@@ -458,6 +461,24 @@ export async function PUT(request: Request) {
     const data = await response.json()
     
     console.log('✅ Beds24 update response:', JSON.stringify(data, null, 2))
+    
+    // Check if Beds24 returned success: false
+    if (Array.isArray(data) && data.length > 0) {
+      const firstResult = data[0]
+      if (firstResult.success === false) {
+        const errors = firstResult.errors || []
+        const errorMessages = errors.map((e: any) => `${e.field}: ${e.message}`).join(', ')
+        console.error('❌ Beds24 returned success: false -', errorMessages)
+        return NextResponse.json(
+          { 
+            error: 'Beds24 update failed', 
+            details: errorMessages || 'Unknown error',
+            beds24Response: firstResult,
+          },
+          { status: 400 }
+        )
+      }
+    }
     
     return NextResponse.json({ success: true, data })
   } catch (error) {
