@@ -353,3 +353,89 @@ export async function POST(request: Request) {
   }
   return NextResponse.json(data)
 }
+
+// PUT endpoint for updating existing bookings (Direct bookings only)
+export async function PUT(request: Request) {
+  let requestBody: unknown
+  try {
+    requestBody = await request.json()
+  } catch (error) {
+    return NextResponse.json({ error: 'Invalid JSON payload' }, { status: 400 })
+  }
+
+  if (!requestBody || typeof requestBody !== 'object' || !('bookingId' in requestBody)) {
+    return NextResponse.json({ error: 'Missing bookingId in request' }, { status: 400 })
+  }
+
+  const session = await getServerSession(authOptions)
+  
+  // 🎭 Demo Mode Protection
+  if (session?.user?.isDemo) {
+    console.log('🎭 Demo user attempted to update booking - returning fake success')
+    return NextResponse.json({
+      success: true,
+      message: 'Demo Mode: הזמנה עודכנה בהצלחה (סימולציה בלבד)',
+      demo: true,
+    })
+  }
+  
+  const propertyId = session?.user?.propertyId ?? process.env.BEDS24_PROPERTY_ID
+  const roomId = session?.user?.roomId ?? process.env.BEDS24_ROOM_ID
+
+  if (!propertyId || !roomId) {
+    return NextResponse.json({ error: 'Missing BEDS24_PROPERTY_ID or BEDS24_ROOM_ID' }, { status: 500 })
+  }
+
+  const { bookingId, ...updates } = requestBody as Record<string, unknown>
+
+  // Build update payload for Beds24
+  const updatePayload: Record<string, unknown> = {
+    bookId: bookingId,
+  }
+
+  // Add fields that can be updated
+  if (updates.arrival) updatePayload.arrival = updates.arrival
+  if (updates.departure) updatePayload.departure = updates.departure
+  if (updates.firstName) updatePayload.firstName = updates.firstName
+  if (updates.lastName) updatePayload.lastName = updates.lastName
+  if (updates.mobile) updatePayload.mobile = updates.mobile
+  if (updates.phone) updatePayload.phone = updates.phone
+  if (updates.email) updatePayload.email = updates.email
+  if (updates.numAdult !== undefined) updatePayload.numAdult = updates.numAdult
+  if (updates.numChild !== undefined) updatePayload.numChild = updates.numChild
+  if (updates.notes) updatePayload.notes = updates.notes
+  if (updates.status) updatePayload.status = updates.status
+  if (updates.price !== undefined) updatePayload.price = updates.price
+
+  console.log('📝 Updating booking in Beds24:', bookingId, updatePayload)
+
+  // Prepare user-specific tokens if available
+  const userTokens = session?.user?.beds24Token && session?.user?.beds24RefreshToken
+    ? {
+        accessToken: session.user.beds24Token,
+        refreshToken: session.user.beds24RefreshToken,
+      }
+    : undefined
+
+  const response = await fetchWithTokenRefresh(`${getBaseUrl()}/bookings`, {
+    method: 'PUT',
+    headers: {
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify([updatePayload]),
+  }, userTokens)
+
+  if (!response.ok) {
+    const details = await response.text()
+    return NextResponse.json(
+      { error: 'Beds24 update failed', status: response.status, details },
+      { status: 502 }
+    )
+  }
+
+  const data = await response.json()
+  
+  console.log('✅ Beds24 update response:', JSON.stringify(data, null, 2))
+  
+  return NextResponse.json({ success: true, data })
+}

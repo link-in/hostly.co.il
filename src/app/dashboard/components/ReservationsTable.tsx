@@ -158,9 +158,10 @@ const getStatusClass = (status: Reservation['status']) => {
 type ReservationsTableProps = {
   reservations: Reservation[]
   onReservationViewed?: (reservationId: string) => void
+  onEditReservation?: (reservation: Reservation) => void
 }
 
-const ReservationsTable = ({ reservations, onReservationViewed }: ReservationsTableProps) => {
+const ReservationsTable = ({ reservations, onReservationViewed, onEditReservation }: ReservationsTableProps) => {
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [mobileVisibleCount, setMobileVisibleCount] = useState(6)
   const [viewedReservations, setViewedReservations] = useState<Set<string>>(new Set())
@@ -649,6 +650,25 @@ const ReservationsTable = ({ reservations, onReservationViewed }: ReservationsTa
                             }}>{reservation.notes}</div>
                           </div>
                         ) : null}
+                        {onEditReservation && reservation.source && reservation.source.toLowerCase().includes('direct') && (
+                          <div className="col-12 mt-3 pt-3" style={{ borderTop: '1px solid rgba(249, 147, 251, 0.2)' }}>
+                            <button
+                              type="button"
+                              className="btn btn-sm"
+                              style={{
+                                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                border: 'none',
+                                color: 'white',
+                              }}
+                              onClick={() => onEditReservation(reservation)}
+                            >
+                              ✏️ ערוך הזמנה
+                            </button>
+                            <p className="small text-muted mt-2 mb-0">
+                              ניתן לערוך רק הזמנות שנוצרו ישירות במערכת
+                            </p>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </td>

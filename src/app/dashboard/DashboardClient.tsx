@@ -141,6 +141,8 @@ const DashboardClient = () => {
   const [savingReservation, setSavingReservation] = useState(false)
   const [saveReservationError, setSaveReservationError] = useState<string | null>(null)
   const [saveReservationSuccess, setSaveReservationSuccess] = useState<string | null>(null)
+  const [editingReservation, setEditingReservation] = useState<Reservation | null>(null)
+  const [isEditing, setIsEditing] = useState(false)
   const [newReservation, setNewReservation] = useState({
     firstName: '',
     lastName: '',
@@ -195,6 +197,37 @@ const DashboardClient = () => {
       notes: '',
     })
     setSendWhatsApp(true) // Reset to default: send WhatsApp
+    setIsEditing(false)
+    setEditingReservation(null)
+  }
+
+  const startEditReservation = (reservation: Reservation) => {
+    // Only allow editing Direct bookings (created in our system)
+    if (!reservation.source || !reservation.source.toLowerCase().includes('direct')) {
+      alert('ניתן לערוך רק הזמנות שנוצרו ישירות במערכת')
+      return
+    }
+
+    // Parse guest name
+    const [firstName = '', ...lastNameParts] = (reservation.guestName || '').split(' ')
+    const lastName = lastNameParts.join(' ')
+
+    setEditingReservation(reservation)
+    setIsEditing(true)
+    setNewReservation({
+      firstName,
+      lastName,
+      contact: reservation.phone || '',
+      email: reservation.email || '',
+      arrival: reservation.checkIn,
+      departure: reservation.checkOut,
+      guests: reservation.guests || reservation.adults || 2,
+      total: String(reservation.total),
+      notes: reservation.notes || '',
+    })
+    setShowNewReservation(true)
+    setSaveReservationError(null)
+    setSaveReservationSuccess(null)
   }
 
   const refreshRoomPrices = async () => {
@@ -378,6 +411,151 @@ const DashboardClient = () => {
       setShowNewReservation(false)
     } catch (error) {
       setSaveReservationError(error instanceof Error ? error.message : 'שמירת ההזמנה נכשלה')
+    } finally {
+      setSavingReservation(false)
+    }
+  }
+
+  const handleUpdateReservation = async () => {
+    if (savingReservation || !editingReservation) {
+      return
+    }
+
+    setSavingReservation(true)
+    setSaveReservationError(null)
+    setSaveReservationSuccess(null)
+
+    if (!newReservation.firstName.trim() || !newReservation.lastName.trim()) {
+      setSaveReservationError('יש להזין שם מלא.')
+      setSavingReservation(false)
+      return
+    }
+    if (!newReservation.contact.trim()) {
+      setSaveReservationError('יש להזין מספר טלפון.')
+      setSavingReservation(false)
+      return
+    }
+    if (!newReservation.arrival || !newReservation.departure) {
+      setSaveReservationError('יש לבחור תאריכי כניסה ויציאה.')
+      setSavingReservation(false)
+      return
+    }
+    const arrivalDate = normalizeDate(new Date(newReservation.arrival))
+    const departureDate = normalizeDate(new Date(newReservation.departure))
+    if (Number.isNaN(arrivalDate.getTime()) || Number.isNaN(departureDate.getTime())) {
+      setSaveReservationError('תאריכים לא תקינים.')
+      setSavingReservation(false)
+      return
+    }
+    if (departureDate <= arrivalDate) {
+      setSaveReservationError('תאריך היציאה חייב להיות אחרי תאריך הכניסה.')
+      setSavingReservation(false)
+      return
+    }
+
+    // Check conflicts (excluding the current reservation being edited)
+    const conflictingReservations: Reservation[] = []
+    const hasConflict = reservations.some((reservation) => {
+      // Skip the current reservation being edited
+      if (reservation.id === editingReservation.id) {
+        return false
+      }
+      
+      if (reservation.status === 'cancelled' || !reservation.checkIn || !reservation.checkOut) {
+        return false
+      }
+      const checkIn = normalizeDate(new Date(reservation.checkIn))
+      const checkOut = normalizeDate(new Date(reservation.checkOut))
+      if (Number.isNaN(checkIn.getTime()) || Number.isNaN(checkOut.getTime())) {
+        return false
+      }
+      
+      const hasOverlap = arrivalDate < checkOut && departureDate > checkIn
+      const isSameDayTurnover = arrivalDate.getTime() === checkOut.getTime() || departureDate.getTime() === checkIn.getTime()
+      const isConflict = hasOverlap && !isSameDayTurnover
+      
+      if (isConflict) {
+        conflictingReservations.push(reservation)
+      }
+      
+      return isConflict
+    })
+
+    if (hasConflict) {
+      const conflictDetails = conflictingReservations
+        .map((r) => `${r.guestName || 'אורח'} (${new Date(r.checkIn!).toLocaleDateString('he-IL')} - ${new Date(r.checkOut!).toLocaleDateString('he-IL')})`)
+        .join(', ')
+      setSaveReservationError(`קיימת הזמנה בתאריכים שנבחרו: ${conflictDetails}`)
+      setSavingReservation(false)
+      return
+    }
+
+    if (!newReservation.total) {
+      setSaveReservationError('יש להזין סכום לתשלום.')
+      setSavingReservation(false)
+      return
+    }
+
+    const phone = newReservation.contact.trim()
+    const email = newReservation.email.trim()
+    
+    const payload = {
+      bookingId: editingReservation.id,
+      arrival: newReservation.arrival,
+      departure: newReservation.departure,
+      firstName: newReservation.firstName.trim(),
+      lastName: newReservation.lastName.trim(),
+      notes: newReservation.notes.trim() || undefined,
+      numAdult: newReservation.guests || 1,
+      mobile: phone,
+      ...(email ? { email } : {}),
+      price: Number(newReservation.total),
+    }
+
+    try {
+      const response = await fetch('/api/dashboard/bookings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+
+      if (!response.ok) {
+        throw new Error('עדכון ההזמנה נכשל')
+      }
+
+      const result = await response.json()
+      
+      if (result.demo) {
+        // Update demo reservation in session storage
+        const demoReservations = loadDemoReservations()
+        const updated = demoReservations.map(r => 
+          r.id === editingReservation.id 
+            ? {
+                ...r,
+                guestName: `${newReservation.firstName} ${newReservation.lastName}`,
+                checkIn: newReservation.arrival,
+                checkOut: newReservation.departure,
+                guests: newReservation.guests,
+                total: Number(newReservation.total),
+                phone,
+                email: email || undefined,
+                notes: newReservation.notes.trim() || undefined,
+              }
+            : r
+        )
+        if (typeof window !== 'undefined') {
+          sessionStorage.setItem(DEMO_RESERVATIONS_KEY, JSON.stringify(updated))
+        }
+        setSaveReservationSuccess('🎭 מצב דמו: ההזמנה עודכנה בהצלחה!')
+      } else {
+        setSaveReservationSuccess('ההזמנה עודכנה בהצלחה.')
+      }
+      
+      await refreshReservations()
+      resetReservationForm()
+      setShowNewReservation(false)
+    } catch (error) {
+      setSaveReservationError(error instanceof Error ? error.message : 'עדכון ההזמנה נכשל')
     } finally {
       setSavingReservation(false)
     }
@@ -1365,25 +1543,27 @@ const DashboardClient = () => {
                       onChange={(event) => updateReservationField('notes', event.target.value)}
                     ></textarea>
                   </div>
-                  <div className="col-12">
-                    <div className="form-check d-flex align-items-center" dir="rtl">
-                      <input
-                        className="form-check-input ms-0 me-2"
-                        type="checkbox"
-                        id="sendWhatsAppCheckbox"
-                        checked={sendWhatsApp}
-                        onChange={(e) => setSendWhatsApp(e.target.checked)}
-                        style={{ cursor: 'pointer' }}
-                      />
-                      <label 
-                        className="form-check-label small mb-0" 
-                        htmlFor="sendWhatsAppCheckbox"
-                        style={{ cursor: 'pointer' }}
-                      >
-                        שלח הודעת WhatsApp לאורח ולבעל הנכס על ההזמנה החדשה
-                      </label>
+                  {!isEditing && (
+                    <div className="col-12">
+                      <div className="form-check d-flex align-items-center" dir="rtl">
+                        <input
+                          className="form-check-input ms-0 me-2"
+                          type="checkbox"
+                          id="sendWhatsAppCheckbox"
+                          checked={sendWhatsApp}
+                          onChange={(e) => setSendWhatsApp(e.target.checked)}
+                          style={{ cursor: 'pointer' }}
+                        />
+                        <label 
+                          className="form-check-label small mb-0" 
+                          htmlFor="sendWhatsAppCheckbox"
+                          style={{ cursor: 'pointer' }}
+                        >
+                          שלח הודעת WhatsApp לאורח ולבעל הנכס על ההזמנה החדשה
+                        </label>
+                      </div>
                     </div>
-                  </div>
+                  )}
                   {saveReservationError ? (
                     <div className="col-12">
                       <div className="alert alert-danger py-2 mb-0" role="alert">
@@ -1407,10 +1587,13 @@ const DashboardClient = () => {
                         border: 'none',
                         color: 'white',
                       }}
-                      onClick={handleCreateReservation} 
+                      onClick={isEditing ? handleUpdateReservation : handleCreateReservation} 
                       disabled={savingReservation}
                     >
-                      {savingReservation ? 'שומר הזמנה...' : 'שמירת הזמנה'}
+                      {savingReservation 
+                        ? (isEditing ? 'מעדכן הזמנה...' : 'שומר הזמנה...') 
+                        : (isEditing ? 'עדכן הזמנה' : 'שמירת הזמנה')
+                      }
                     </button>
                     <button
                       type="button"
@@ -1438,6 +1621,7 @@ const DashboardClient = () => {
                 <ReservationsTable 
                   reservations={filteredReservations} 
                   onReservationViewed={markReservationAsViewed}
+                  onEditReservation={startEditReservation}
                 />
                 {/* Desktop Only: View All Reservations Button */}
                 <div className="d-none d-md-block text-center mt-4 pt-3" style={{ borderTop: '1px solid rgba(102, 126, 234, 0.15)' }}>
