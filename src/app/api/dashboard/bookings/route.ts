@@ -389,9 +389,9 @@ export async function PUT(request: Request) {
   const { bookingId, ...updates } = requestBody as Record<string, unknown>
 
   // Build update payload for Beds24
-  // Note: Beds24 API v2 expects 'id' (not 'bookId') for updates
+  // Note: Beds24 uses POST (not PUT) for updates. If bookId exists, it updates; otherwise creates new.
   const updatePayload: Record<string, unknown> = {
-    id: bookingId,
+    bookId: bookingId,
   }
 
   // Add fields that can be updated
@@ -431,8 +431,9 @@ export async function PUT(request: Request) {
     : undefined
 
   try {
+    // Beds24 uses POST for both create AND update (if bookId is provided, it updates)
     const response = await fetchWithTokenRefresh(`${getBaseUrl()}/bookings`, {
-      method: 'PUT',
+      method: 'POST',
       headers: {
         'content-type': 'application/json',
       },
