@@ -391,6 +391,8 @@ export async function PUT(request: Request) {
   // Build update payload for Beds24
   const updatePayload: Record<string, unknown> = {
     bookId: bookingId,
+    propertyId: Number(propertyId),
+    roomId: Number(roomId),
   }
 
   // Add fields that can be updated
@@ -405,9 +407,21 @@ export async function PUT(request: Request) {
   if (updates.numChild !== undefined) updatePayload.numChild = updates.numChild
   if (updates.notes) updatePayload.notes = updates.notes
   if (updates.status) updatePayload.status = updates.status
-  if (updates.price !== undefined) updatePayload.price = updates.price
+  
+  // Handle price update via invoice
+  if (updates.price !== undefined) {
+    updatePayload.invoice = [
+      {
+        description: 'Total Room Price',
+        amount: Number(updates.price),
+        qty: 1,
+        type: 'item',
+      },
+    ]
+  }
 
-  console.log('📝 Updating booking in Beds24:', bookingId, updatePayload)
+  console.log('📝 Updating booking in Beds24:', bookingId)
+  console.log('📦 Update payload:', JSON.stringify(updatePayload, null, 2))
 
   // Prepare user-specific tokens if available
   const userTokens = session?.user?.beds24Token && session?.user?.beds24RefreshToken
@@ -417,25 +431,44 @@ export async function PUT(request: Request) {
       }
     : undefined
 
-  const response = await fetchWithTokenRefresh(`${getBaseUrl()}/bookings`, {
-    method: 'PUT',
-    headers: {
-      'content-type': 'application/json',
-    },
-    body: JSON.stringify([updatePayload]),
-  }, userTokens)
+  try {
+    const response = await fetchWithTokenRefresh(`${getBaseUrl()}/bookings`, {
+      method: 'PUT',
+      headers: {
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify([updatePayload]),
+    }, userTokens)
 
-  if (!response.ok) {
-    const details = await response.text()
+    if (!response.ok) {
+      const details = await response.text()
+      console.error('❌ Beds24 API Error:', {
+        status: response.status,
+        statusText: response.statusText,
+        details,
+        url: `${getBaseUrl()}/bookings`,
+        payload: updatePayload,
+      })
+      return NextResponse.json(
+        { error: 'Beds24 update failed', status: response.status, details },
+        { status: 502 }
+      )
+    }
+
+    const data = await response.json()
+    
+    console.log('✅ Beds24 update response:', JSON.stringify(data, null, 2))
+    
+    return NextResponse.json({ success: true, data })
+  } catch (error) {
+    console.error('❌ Error updating booking:', error)
     return NextResponse.json(
-      { error: 'Beds24 update failed', status: response.status, details },
-      { status: 502 }
+      { 
+        error: 'Failed to update booking', 
+        details: error instanceof Error ? error.message : String(error),
+        bookingId,
+      },
+      { status: 500 }
     )
   }
-
-  const data = await response.json()
-  
-  console.log('✅ Beds24 update response:', JSON.stringify(data, null, 2))
-  
-  return NextResponse.json({ success: true, data })
 }
