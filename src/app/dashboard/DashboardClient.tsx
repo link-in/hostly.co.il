@@ -501,6 +501,8 @@ const DashboardClient = () => {
     
     const payload = {
       bookingId: editingReservation.id,
+      propertyId: editingReservation.propertyId, // Required by Beds24 for updates
+      roomId: editingReservation.roomId, // Required by Beds24 for updates
       arrival: newReservation.arrival,
       departure: newReservation.departure,
       firstName: newReservation.firstName.trim(),

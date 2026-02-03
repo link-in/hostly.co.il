@@ -18,6 +18,8 @@ export interface Reservation {
   children?: number
   notes?: string
   isNew?: boolean // Flag for new demo reservations
+  roomId?: string // Beds24 room ID (required for updates)
+  propertyId?: string // Beds24 property ID (required for updates)
 }
 
 export interface PriceRule {

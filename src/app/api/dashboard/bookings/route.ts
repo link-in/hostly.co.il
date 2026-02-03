@@ -392,6 +392,8 @@ export async function PATCH(request: Request) {
   // IMPORTANT: Include bookId in payload - V2 API uses this to determine update vs create
   const booking: Record<string, unknown> = {
     bookId: bookingId,
+    propertyId: (updates.propertyId as string) || propertyId, // Required for updates
+    roomId: (updates.roomId as string) || roomId, // Required for updates
   }
 
   // Add fields that can be updated
