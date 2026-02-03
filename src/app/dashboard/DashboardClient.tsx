@@ -454,10 +454,13 @@ const DashboardClient = () => {
     }
 
     // Check conflicts (excluding the current reservation being edited)
+    console.log('🔍 Checking conflicts. Editing reservation ID:', editingReservation.id, 'Type:', typeof editingReservation.id)
     const conflictingReservations: Reservation[] = []
     const hasConflict = reservations.some((reservation) => {
       // Skip the current reservation being edited
+      console.log('  Comparing with:', reservation.id, 'Type:', typeof reservation.id, 'Match:', reservation.id === editingReservation.id)
       if (reservation.id === editingReservation.id) {
+        console.log('  ✅ Skipping current reservation')
         return false
       }
       
