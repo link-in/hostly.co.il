@@ -354,8 +354,8 @@ export async function POST(request: Request) {
   return NextResponse.json(data)
 }
 
-// PUT endpoint for updating existing bookings (Direct bookings only)
-export async function PUT(request: Request) {
+// PATCH endpoint for updating existing bookings (Direct bookings only)
+export async function PATCH(request: Request) {
   let requestBody: unknown
   try {
     requestBody = await request.json()

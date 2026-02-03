@@ -514,7 +514,7 @@ const DashboardClient = () => {
 
     try {
       const response = await fetch('/api/dashboard/bookings', {
-        method: 'PUT',
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       })
