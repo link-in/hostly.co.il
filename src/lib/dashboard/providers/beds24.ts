@@ -35,9 +35,19 @@ export const createBeds24Provider = (config: Beds24ProviderConfig = {}): Dashboa
 
   return {
     getReservations: async () => {
-      const payload = await fetchJson<unknown>(`${baseUrl}/bookings?arrivalFrom=2024-01-01&includeInvoice=true`, apiKey)
+      const payload = await fetchJson<unknown>(
+        `${baseUrl}/bookings?arrivalFrom=2024-01-01&includeInvoice=true`,
+        apiKey
+      )
       const bookings = extractBookings(payload)
-      return bookings.map(mapBookingToReservation)
+      const reservations = bookings.map(mapBookingToReservation)
+      
+      // Filter out cancelled reservations (status=0 in Beds24 = 'cancelled' after normalization)
+      const activeReservations = reservations.filter(r => r.status !== 'cancelled')
+      
+      console.log(`📊 Fetched ${reservations.length} bookings, ${activeReservations.length} active (filtered ${reservations.length - activeReservations.length} cancelled)`)
+      
+      return activeReservations
     },
     getPricingRules: async () => {
       // Beds24 API does not expose a pricing rules endpoint in this flow.
@@ -126,11 +136,9 @@ const mapBookingToReservation = (booking: Record<string, unknown>, index: number
     Number(booking.price ?? booking.totalPrice ?? booking.total ?? booking.grandTotal ?? booking.invoiceTotal ?? 0) || 0
   const total = totalFromFields || extractInvoiceTotal(booking)
 
-  const rawStatus =
-    (typeof booking.status === 'string' && booking.status) ||
-    (typeof booking.bookingStatus === 'string' && booking.bookingStatus) ||
-    ''
-
+  // Handle both numeric and string status values from Beds24
+  // Numeric: 0=Cancelled, 1=Confirmed, 2=New, 3=Request, 4=Black, 5=Inquiry
+  const rawStatus = booking.status ?? booking.bookingStatus ?? ''
   const status = normalizeStatus(rawStatus)
 
   return {
@@ -196,8 +204,22 @@ const mapBookingToReservation = (booking: Record<string, unknown>, index: number
   }
 }
 
-const normalizeStatus = (value: string): Reservation['status'] => {
-  const normalized = value.toLowerCase()
+const normalizeStatus = (value: string | number | undefined): Reservation['status'] => {
+  // Handle numeric status values from Beds24 API
+  // 0=Cancelled, 1=Confirmed, 2=New, 3=Request, 4=Black, 5=Inquiry
+  if (typeof value === 'number') {
+    if (value === 0) return 'cancelled'
+    if (value === 1) return 'confirmed'
+    if (value === 2) return 'pending' // New
+    if (value === 3) return 'pending' // Request
+    if (value === 4) return 'cancelled' // Black (blocked dates)
+    if (value === 5) return 'pending' // Inquiry
+    return 'pending'
+  }
+  
+  // Handle string status values
+  if (!value) return 'pending'
+  const normalized = String(value).toLowerCase()
   if (normalized.includes('new')) {
     return 'pending'
   }

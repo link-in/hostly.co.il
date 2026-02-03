@@ -159,9 +159,10 @@ type ReservationsTableProps = {
   reservations: Reservation[]
   onReservationViewed?: (reservationId: string) => void
   onEditReservation?: (reservation: Reservation) => void
+  onDeleteReservation?: (reservation: Reservation) => void
 }
 
-const ReservationsTable = ({ reservations, onReservationViewed, onEditReservation }: ReservationsTableProps) => {
+const ReservationsTable = ({ reservations, onReservationViewed, onEditReservation, onDeleteReservation }: ReservationsTableProps) => {
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [mobileVisibleCount, setMobileVisibleCount] = useState(6)
   const [viewedReservations, setViewedReservations] = useState<Set<string>>(new Set())
@@ -442,6 +443,50 @@ const ReservationsTable = ({ reservations, onReservationViewed, onEditReservatio
                     </div>
                   </div>
                 )}
+                
+                {/* Action Buttons for Direct bookings */}
+                {(onEditReservation || onDeleteReservation) && reservation.source && reservation.source.toLowerCase().includes('direct') && (
+                  <div className="mt-3 pt-3 d-flex gap-2 flex-wrap" style={{ borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                    {onEditReservation && (
+                      <button
+                        type="button"
+                        className="btn btn-sm flex-grow-1"
+                        style={{
+                          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                          border: 'none',
+                          color: 'white',
+                          padding: '8px 16px',
+                          fontSize: '0.875rem',
+                        }}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          onEditReservation(reservation)
+                        }}
+                      >
+                        ✏️ ערוך
+                      </button>
+                    )}
+                    {onDeleteReservation && (
+                      <button
+                        type="button"
+                        className="btn btn-sm flex-grow-1"
+                        style={{
+                          background: 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)',
+                          border: 'none',
+                          color: 'white',
+                          padding: '8px 16px',
+                          fontSize: '0.875rem',
+                        }}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          onDeleteReservation(reservation)
+                        }}
+                      >
+                        ❌ בטל
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -650,22 +695,46 @@ const ReservationsTable = ({ reservations, onReservationViewed, onEditReservatio
                             }}>{reservation.notes}</div>
                           </div>
                         ) : null}
-                        {onEditReservation && reservation.source && reservation.source.toLowerCase().includes('direct') && (
+                        {(onEditReservation || onDeleteReservation) && reservation.source && reservation.source.toLowerCase().includes('direct') && (
                           <div className="col-12 mt-3 pt-3" style={{ borderTop: '1px solid rgba(249, 147, 251, 0.2)' }}>
-                            <button
-                              type="button"
-                              className="btn btn-sm"
-                              style={{
-                                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                                border: 'none',
-                                color: 'white',
-                              }}
-                              onClick={() => onEditReservation(reservation)}
-                            >
-                              ✏️ ערוך הזמנה
-                            </button>
+                            <div className="d-flex gap-2 flex-wrap">
+                              {onEditReservation && (
+                                <button
+                                  type="button"
+                                  className="btn btn-sm"
+                                  style={{
+                                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                    border: 'none',
+                                    color: 'white',
+                                  }}
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    onEditReservation(reservation)
+                                  }}
+                                >
+                                  ✏️ ערוך הזמנה
+                                </button>
+                              )}
+                              {onDeleteReservation && (
+                                <button
+                                  type="button"
+                                  className="btn btn-sm"
+                                  style={{
+                                    background: 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)',
+                                    border: 'none',
+                                    color: 'white',
+                                  }}
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    onDeleteReservation(reservation)
+                                  }}
+                                >
+                                  ❌ בטל הזמנה
+                                </button>
+                              )}
+                            </div>
                             <p className="small text-muted mt-2 mb-0">
-                              ניתן לערוך רק הזמנות שנוצרו ישירות במערכת
+                              ניתן לערוך/לבטל רק הזמנות שנוצרו ישירות במערכת
                             </p>
                           </div>
                         )}

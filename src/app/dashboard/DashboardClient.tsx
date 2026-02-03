@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useSession, signOut } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
+import { toast, Toaster } from 'sonner'
 import type { Reservation, RoomPrice } from '@/lib/dashboard/types'
 import { formatCurrency } from '@/lib/dashboard/utils'
 import { getDashboardProvider } from '@/lib/dashboard/getDashboardProvider'
@@ -150,7 +151,8 @@ const DashboardClient = () => {
     email: '',
     arrival: '',
     departure: '',
-    guests: 2,
+    adults: 2,
+    children: 0,
     total: '',
     notes: '',
   })
@@ -192,7 +194,8 @@ const DashboardClient = () => {
       email: '',
       arrival: '',
       departure: '',
-      guests: 2,
+      adults: 2,
+      children: 0,
       total: '',
       notes: '',
     })
@@ -204,7 +207,9 @@ const DashboardClient = () => {
   const startEditReservation = (reservation: Reservation) => {
     // Only allow editing Direct bookings (created in our system)
     if (!reservation.source || !reservation.source.toLowerCase().includes('direct')) {
-      alert('ניתן לערוך רק הזמנות שנוצרו ישירות במערכת')
+      toast.warning('ניתן לערוך רק הזמנות שנוצרו ישירות במערכת', {
+        duration: 3000,
+      })
       return
     }
 
@@ -221,7 +226,8 @@ const DashboardClient = () => {
       email: reservation.email || '',
       arrival: reservation.checkIn,
       departure: reservation.checkOut,
-      guests: reservation.guests || reservation.adults || 2,
+      adults: reservation.adults || 2,
+      children: reservation.children || 0,
       total: String(reservation.total),
       notes: reservation.notes || '',
     })
@@ -348,7 +354,8 @@ const DashboardClient = () => {
         lastName: newReservation.lastName.trim(),
         status: 'confirmed',
         notes: newReservation.notes.trim() || undefined,
-        numAdult: newReservation.guests || 1,
+        numAdult: newReservation.adults || 1,
+        numChild: newReservation.children || 0,
         mobile: phone, // Phone is required
         ...(email ? { email } : {}), // Email is optional
         invoice: [
@@ -391,7 +398,9 @@ const DashboardClient = () => {
           nights: Math.round(
             (departureDate.getTime() - arrivalDate.getTime()) / (1000 * 60 * 60 * 24)
           ),
-          guests: newReservation.guests,
+          adults: newReservation.adults,
+          children: newReservation.children,
+          guests: (newReservation.adults || 0) + (newReservation.children || 0),
           total: Number(newReservation.total),
           status: 'confirmed',
           source: 'Demo (הזמנה ידנית)',
@@ -508,7 +517,8 @@ const DashboardClient = () => {
       firstName: newReservation.firstName.trim(),
       lastName: newReservation.lastName.trim(),
       notes: newReservation.notes.trim() || undefined,
-      numAdult: newReservation.guests || 1,
+      numAdult: newReservation.adults || 1,
+      numChild: newReservation.children || 0,
       mobile: phone,
       ...(email ? { email } : {}),
       price: Number(newReservation.total),
@@ -537,7 +547,9 @@ const DashboardClient = () => {
                 guestName: `${newReservation.firstName} ${newReservation.lastName}`,
                 checkIn: newReservation.arrival,
                 checkOut: newReservation.departure,
-                guests: newReservation.guests,
+                adults: newReservation.adults,
+                children: newReservation.children,
+                guests: (newReservation.adults || 0) + (newReservation.children || 0),
                 total: Number(newReservation.total),
                 phone,
                 email: email || undefined,
@@ -560,6 +572,124 @@ const DashboardClient = () => {
       setSaveReservationError(error instanceof Error ? error.message : 'עדכון ההזמנה נכשל')
     } finally {
       setSavingReservation(false)
+    }
+  }
+
+  /**
+   * Cancel a Direct booking in Beds24 (sets status to 0/cancelled)
+   * Only allows cancelling bookings created directly in our system
+   */
+  const handleDeleteReservation = async (reservation: Reservation) => {
+    // Validate it's a Direct booking
+    if (!reservation.source || !reservation.source.toLowerCase().includes('direct')) {
+      toast.warning('ניתן לבטל רק הזמנות שנוצרו ישירות במערכת', {
+        duration: 3000,
+      })
+      return
+    }
+
+    // Check if already cancelled
+    if (reservation.status === 'cancelled') {
+      toast.info('ההזמנה כבר מבוטלת', {
+        duration: 2500,
+      })
+      return
+    }
+
+    // Show elegant confirmation toast with action buttons
+    const guestName = reservation.guestName || 'אורח'
+    const checkInDate = new Date(reservation.checkIn).toLocaleDateString('he-IL')
+    const checkOutDate = new Date(reservation.checkOut).toLocaleDateString('he-IL')
+    
+    toast.warning(
+      `בטל הזמנה של ${guestName}?`,
+      {
+        description: `${checkInDate} - ${checkOutDate}`,
+        duration: 10000,
+        action: {
+          label: '✓ אישור',
+          onClick: () => performCancellation(reservation),
+        },
+        cancel: {
+          label: '✕ ביטול',
+          onClick: () => {},
+        },
+      }
+    )
+  }
+
+  /**
+   * Perform the actual cancellation after confirmation
+   */
+  const performCancellation = async (reservation: Reservation) => {
+    try {
+      // Get propertyId and roomId from session
+      const propertyId = session?.user?.propertyId
+      const roomId = session?.user?.roomId
+      
+      console.log('🔍 Cancelling reservation:', {
+        bookingId: reservation.id,
+        currentStatus: reservation.status,
+        propertyId,
+        roomId,
+        source: reservation.source,
+        checkIn: reservation.checkIn,
+        checkOut: reservation.checkOut,
+      })
+      
+      if (!propertyId || !roomId) {
+        console.error('❌ Missing propertyId or roomId:', { propertyId, roomId })
+        throw new Error('חסרים נתוני נכס/חדר - אנא התחבר מחדש')
+      }
+      
+      const response = await fetch('/api/dashboard/bookings', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          bookingId: reservation.id,
+          source: reservation.source,
+          propertyId,
+          roomId,
+          arrival: reservation.checkIn,
+          departure: reservation.checkOut,
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'ביטול ההזמנה נכשל')
+      }
+
+      const result = await response.json()
+      
+      if (result.demo) {
+        // Delete from demo storage
+        const demoReservations = loadDemoReservations()
+        const updated = demoReservations.filter(r => r.id !== reservation.id)
+        if (typeof window !== 'undefined') {
+          sessionStorage.setItem(DEMO_RESERVATIONS_KEY, JSON.stringify(updated))
+        }
+        toast.success('🎭 מצב דמו: ההזמנה בוטלה בהצלחה!', {
+          duration: 3000,
+        })
+      } else {
+        toast.success('ההזמנה בוטלה בהצלחה', {
+          description: 'הסטטוס עודכן ב-Beds24',
+          duration: 3000,
+        })
+      }
+      
+      // Remove the cancelled reservation from local state immediately
+      setReservations(prev => prev.filter(r => r.id !== reservation.id))
+      
+      // Also refresh from server to ensure sync (cancelled bookings will be filtered out)
+      setTimeout(() => refreshReservations(), 1000)
+    } catch (error) {
+      toast.error('ביטול ההזמנה נכשל', {
+        description: error instanceof Error ? error.message : 'שגיאה לא צפויה',
+        duration: 4000,
+      })
+      console.error('Error cancelling reservation:', error)
     }
   }
 
@@ -660,6 +790,7 @@ const DashboardClient = () => {
 
   const filteredReservations = useMemo(() => {
     // סינון: הצג רק הזמנות עתידיות או נוכחיות (לא עברו)
+    // הזמנות מבוטלות כבר מסוננות ב-provider
     const today = new Date()
     today.setHours(0, 0, 0, 0)
     
@@ -1372,10 +1503,25 @@ const DashboardClient = () => {
                       e.currentTarget.style.color = '#dc3545'
                     }}
                     onClick={() => {
-                      if (confirm('האם למחוק את כל ההזמנות החדשות שהוספת? (הזמנות המקוריות של הדמו לא ימחקו)')) {
-                        clearDemoReservations()
-                        refreshReservations()
-                      }
+                      toast.warning(
+                        'מחק הזמנות דמו?',
+                        {
+                          description: 'הזמנות המקוריות של הדמו לא ימחקו',
+                          duration: 10000,
+                          action: {
+                            label: '✓ מחק הכל',
+                            onClick: () => {
+                              clearDemoReservations()
+                              refreshReservations()
+                              toast.success('הזמנות הדמו נמחקו בהצלחה')
+                            },
+                          },
+                          cancel: {
+                            label: '✕ ביטול',
+                            onClick: () => {},
+                          },
+                        }
+                      )
                     }}
                     title="מחיקת כל ההזמנות החדשות שהוספת במצב דמו"
                   >
@@ -1510,15 +1656,27 @@ const DashboardClient = () => {
                   </div>
                   <div className="col-6 col-md-3">
                     <label className="form-label small fw-semibold">
-                      מספר אורחים <span className="text-danger">*</span>
+                      מבוגרים <span className="text-danger">*</span>
                     </label>
                     <input
                       type="number"
                       min={1}
                       className="form-control"
-                      value={newReservation.guests}
-                      onChange={(event) => updateReservationField('guests', Number(event.target.value))}
+                      value={newReservation.adults}
+                      onChange={(event) => updateReservationField('adults', Number(event.target.value))}
                       required
+                    />
+                  </div>
+                  <div className="col-6 col-md-3">
+                    <label className="form-label small fw-semibold">
+                      ילדים
+                    </label>
+                    <input
+                      type="number"
+                      min={0}
+                      className="form-control"
+                      value={newReservation.children}
+                      onChange={(event) => updateReservationField('children', Number(event.target.value))}
                     />
                   </div>
                   <div className="col-6 col-md-3">
@@ -1624,6 +1782,7 @@ const DashboardClient = () => {
                   reservations={filteredReservations} 
                   onReservationViewed={markReservationAsViewed}
                   onEditReservation={startEditReservation}
+                  onDeleteReservation={handleDeleteReservation}
                 />
                 {/* Desktop Only: View All Reservations Button */}
                 <div className="d-none d-md-block text-center mt-4 pt-3" style={{ borderTop: '1px solid rgba(102, 126, 234, 0.15)' }}>
@@ -1740,6 +1899,17 @@ const DashboardClient = () => {
         </div>
 
       </div>
+      <Toaster 
+        position="top-center" 
+        richColors 
+        closeButton 
+        dir="rtl"
+        toastOptions={{
+          style: {
+            fontFamily: 'inherit',
+          },
+        }}
+      />
     </main>
   )
 }

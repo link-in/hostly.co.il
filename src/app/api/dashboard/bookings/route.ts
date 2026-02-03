@@ -62,7 +62,7 @@ export async function GET() {
   }
 
   try {
-    const response = await fetchWithTokenRefresh(url.toString(), {}, userTokens)
+    const response = await fetchWithTokenRefresh(url.toString(), {}, userTokens, session?.user?.id)
 
     if (!response.ok) {
       const details = await response.text()
@@ -176,7 +176,10 @@ export async function POST(request: Request) {
     if (item.email) booking.email = item.email
     if (item.numAdult) booking.numAdult = item.numAdult
     if (item.numChild) booking.numChild = item.numChild
-    if (item.notes) booking.notes = item.notes
+    if (item.notes !== undefined) {
+      booking.notes = item.notes || '' // Send notes even if empty
+      console.log('📝 Creating booking with notes:', item.notes || '(empty)')
+    }
     if (item.address) booking.address = item.address
     if (item.city) booking.city = item.city
     if (item.postcode) booking.postcode = item.postcode
@@ -205,7 +208,7 @@ export async function POST(request: Request) {
       'content-type': 'application/json',
     },
     body: JSON.stringify(normalizedPayload),
-  }, userTokens)
+  }, userTokens, session?.user?.id)
 
   if (!response.ok) {
     const details = await response.text()
@@ -388,6 +391,12 @@ export async function PATCH(request: Request) {
 
   const { bookingId, ...updates } = requestBody as Record<string, unknown>
 
+  // Validate required fields
+  if (!bookingId || typeof bookingId !== 'string' && typeof bookingId !== 'number') {
+    console.error('❌ Invalid bookingId:', bookingId)
+    return NextResponse.json({ error: 'Invalid bookingId format' }, { status: 400 })
+  }
+
   // Build update payload for Beds24 V2 API
   // IMPORTANT: Per official Beds24 documentation:
   // - Use POST (not PATCH) to /bookings
@@ -396,6 +405,8 @@ export async function PATCH(request: Request) {
   // - Only include fields that need updating
   const booking: Record<string, unknown> = {
     id: bookingId, // CRITICAL: use 'id' field for updates
+    propertyId: (updates.propertyId as string) || propertyId, // Include required fields
+    roomId: (updates.roomId as string) || roomId,
   }
 
   // Add only fields that are actually being updated
@@ -403,17 +414,38 @@ export async function PATCH(request: Request) {
   if (updates.departure) booking.departure = updates.departure
   if (updates.firstName) booking.firstName = updates.firstName
   if (updates.lastName) booking.lastName = updates.lastName
-  if (updates.mobile) booking.mobile = updates.mobile
-  if (updates.phone) booking.phone = updates.phone
+  
+  // Normalize phone numbers before sending to Beds24
+  if (updates.mobile) {
+    const normalizedMobile = normalizePhoneNumber(String(updates.mobile))
+    booking.mobile = normalizedMobile
+    console.log('📱 Normalized mobile:', updates.mobile, '->', normalizedMobile)
+  }
+  if (updates.phone) {
+    const normalizedPhone = normalizePhoneNumber(String(updates.phone))
+    booking.phone = normalizedPhone
+    console.log('📱 Normalized phone:', updates.phone, '->', normalizedPhone)
+  }
+  
   if (updates.email) booking.email = updates.email
   if (updates.numAdult !== undefined) booking.numAdult = updates.numAdult
   if (updates.numChild !== undefined) booking.numChild = updates.numChild
-  if (updates.notes) booking.notes = updates.notes
+  if (updates.notes !== undefined) {
+    booking.notes = updates.notes || '' // Send notes even if empty
+    console.log('📝 Notes update:', updates.notes || '(empty)')
+  }
   if (updates.status) booking.status = updates.status
   
-  // Handle price update - try using 'price' field directly
+  // Handle price update - send as direct field (not invoice)
+  // Note: For updates, Beds24 accepts direct 'price' field
   if (updates.price !== undefined) {
-    booking.price = Number(updates.price)
+    const priceValue = Number(updates.price)
+    if (isNaN(priceValue) || priceValue < 0) {
+      console.error('❌ Invalid price value:', updates.price)
+      return NextResponse.json({ error: 'Invalid price value' }, { status: 400 })
+    }
+    booking.price = priceValue
+    console.log('💰 Price update:', priceValue)
   }
 
   console.log('📝 Updating booking in Beds24:', bookingId)
@@ -442,19 +474,40 @@ export async function PATCH(request: Request) {
         'content-type': 'application/json',
       },
       body: JSON.stringify([booking]), // Array format per documentation
-    }, userTokens)
+    }, userTokens, session?.user?.id) // Pass userId for token persistence
 
     if (!response.ok) {
       const details = await response.text()
-      console.error('❌ Beds24 API Error:', {
+      console.error('❌ Beds24 API HTTP Error:', {
         status: response.status,
         statusText: response.statusText,
         details,
         url: updateUrl,
+        bookingId,
+        userId: session?.user?.id,
+        usingUserTokens: !!userTokens,
         payload: booking,
       })
+      
+      // Provide more helpful error messages
+      let errorMessage = 'Beds24 update failed'
+      if (response.status === 401) {
+        errorMessage = 'Authentication failed - token may be expired or invalid'
+      } else if (response.status === 403) {
+        errorMessage = 'Access denied - check token permissions'
+      } else if (response.status === 404) {
+        errorMessage = 'Booking not found - verify booking ID'
+      } else if (response.status === 502) {
+        errorMessage = 'Beds24 service error - please try again'
+      }
+      
       return NextResponse.json(
-        { error: 'Beds24 update failed', status: response.status, details },
+        { 
+          error: errorMessage, 
+          status: response.status, 
+          details,
+          bookingId,
+        },
         { status: 502 }
       )
     }
@@ -467,10 +520,12 @@ export async function PATCH(request: Request) {
     // Response format: { "bookings": [...], "errors": [...] } or array of results
     let hasError = false
     let errorMessage = ''
+    let errorDetails: any[] = []
     
     if (data.errors && Array.isArray(data.errors) && data.errors.length > 0) {
       // Global errors
       hasError = true
+      errorDetails = data.errors
       errorMessage = data.errors.map((e: any) => e.message || JSON.stringify(e)).join(', ')
     } else if (data.bookings && Array.isArray(data.bookings)) {
       // Check each booking result
@@ -478,7 +533,8 @@ export async function PATCH(request: Request) {
       if (failedBooking) {
         hasError = true
         const errors = failedBooking.errors || []
-        errorMessage = errors.map((e: any) => `${e.field || 'unknown'}: ${e.message}`).join(', ') || 'Update failed'
+        errorDetails = errors
+        errorMessage = errors.map((e: any) => `${e.field || 'unknown'}: ${e.message || 'error'}`).join(', ') || 'Update failed'
       }
     } else if (Array.isArray(data) && data.length > 0) {
       // Legacy format check
@@ -486,29 +542,224 @@ export async function PATCH(request: Request) {
       if (firstResult.success === false) {
         hasError = true
         const errors = firstResult.errors || []
-        errorMessage = errors.map((e: any) => `${e.field}: ${e.message}`).join(', ') || 'Unknown error'
+        errorDetails = errors
+        errorMessage = errors.map((e: any) => `${e.field || 'unknown'}: ${e.message || 'error'}`).join(', ') || 'Unknown error'
       }
     }
     
     if (hasError) {
-      console.error('❌ Beds24 returned error:', errorMessage)
+      console.error('❌ Beds24 returned validation error:', {
+        errorMessage,
+        errorDetails,
+        bookingId,
+        payload: booking,
+      })
       return NextResponse.json(
         { 
-          error: 'Beds24 update failed', 
-          details: errorMessage,
+          error: 'Booking update validation failed', 
+          message: errorMessage,
+          details: errorDetails,
           beds24Response: data,
+          bookingId,
         },
         { status: 400 }
       )
     }
     
-    return NextResponse.json({ success: true, data })
+    console.log('✅ Booking updated successfully:', bookingId)
+    return NextResponse.json({ success: true, data, bookingId })
   } catch (error) {
-    console.error('❌ Error updating booking:', error)
+    console.error('❌ Unexpected error updating booking:', {
+      error,
+      errorMessage: error instanceof Error ? error.message : String(error),
+      errorStack: error instanceof Error ? error.stack : undefined,
+      bookingId,
+      userId: session?.user?.id,
+      usingUserTokens: !!userTokens,
+    })
     return NextResponse.json(
       { 
         error: 'Failed to update booking', 
+        message: error instanceof Error ? error.message : 'Unknown error occurred',
         details: error instanceof Error ? error.message : String(error),
+        bookingId,
+      },
+      { status: 500 }
+    )
+  }
+}
+
+/**
+ * DELETE endpoint - Cancel a booking in Beds24 (sets status to 0/cancelled)
+ * Only allows cancelling Direct bookings (created in our system)
+ * 
+ * Note: We use POST with status=0 instead of DELETE because:
+ * - The global token may not have delete:bookings scope
+ * - Cancelling preserves booking history in Beds24
+ * - Works reliably with write:bookings scope
+ */
+export async function DELETE(request: Request) {
+  const session = await getServerSession(authOptions)
+  
+  // 🎭 Demo Mode Protection
+  if (session?.user?.isDemo) {
+    console.log('🎭 Demo user attempted to cancel booking - returning fake success')
+    return NextResponse.json({
+      success: true,
+      message: 'Demo Mode: הזמנה בוטלה בהצלחה (סימולציה בלבד)',
+      demo: true,
+    })
+  }
+
+  let requestBody: unknown
+  try {
+    requestBody = await request.json()
+  } catch (error) {
+    return NextResponse.json({ error: 'Invalid JSON payload' }, { status: 400 })
+  }
+
+  if (!requestBody || typeof requestBody !== 'object' || !('bookingId' in requestBody)) {
+    return NextResponse.json({ error: 'Missing bookingId in request' }, { status: 400 })
+  }
+
+  const { bookingId, source, propertyId, roomId, arrival, departure } = requestBody as Record<string, unknown>
+
+  // Validate that it's a Direct booking
+  if (!source || typeof source !== 'string' || !source.toLowerCase().includes('direct')) {
+    console.error('❌ Attempted to cancel non-Direct booking:', bookingId, source)
+    return NextResponse.json(
+      { error: 'ניתן לבטל רק הזמנות שנוצרו ישירות במערכת' },
+      { status: 403 }
+    )
+  }
+  
+  // Validate required fields
+  if (!propertyId || !roomId) {
+    console.error('❌ Missing propertyId or roomId:', { bookingId, propertyId, roomId })
+    return NextResponse.json(
+      { error: 'Missing required fields: propertyId and roomId' },
+      { status: 400 }
+    )
+  }
+
+  // Prepare user-specific tokens if available
+  const userTokens = session?.user?.beds24Token && session?.user?.beds24RefreshToken
+    ? {
+        accessToken: session.user.beds24Token,
+        refreshToken: session.user.beds24RefreshToken,
+      }
+    : undefined
+
+  try {
+    // Cancel the booking using POST method (same as update)
+    // POST /bookings with array containing booking with status=0
+    const bookingIdInt = typeof bookingId === 'string' ? parseInt(bookingId, 10) : bookingId
+    const propertyIdInt = typeof propertyId === 'string' ? parseInt(propertyId, 10) : propertyId
+    const roomIdInt = typeof roomId === 'string' ? parseInt(roomId, 10) : roomId
+    
+    const cancelUrl = `${getBaseUrl()}/bookings`
+    
+    // Payload for cancellation - array format like update
+    // Important: status must be a STRING not a number per API docs!
+    const payload = [{
+      id: bookingIdInt,
+      propertyId: propertyIdInt,
+      roomId: roomIdInt,
+      status: 'cancelled',  // String value as per API docs
+    }]
+    
+    console.log('🗑️ Cancelling Direct booking:', bookingId)
+    console.log('🔗 POST URL:', cancelUrl)
+    console.log('📤 Payload:', JSON.stringify(payload, null, 2))
+    
+    const response = await fetchWithTokenRefresh(cancelUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    }, userTokens, session?.user?.id)
+    
+    console.log('📥 Response status:', response.status, response.statusText)
+
+    if (!response.ok) {
+      const details = await response.text()
+      console.error('❌ Beds24 API Error:', {
+        status: response.status,
+        statusText: response.statusText,
+        details,
+        bookingId,
+      })
+      
+      let errorMessage = 'Beds24 cancellation failed'
+      if (response.status === 404) {
+        errorMessage = 'Booking not found - may have been already cancelled'
+      } else if (response.status === 403) {
+        errorMessage = 'Access denied - check API token permissions'
+      }
+      
+      return NextResponse.json(
+        { error: errorMessage, status: response.status, details, bookingId },
+        { status: 502 }
+      )
+    }
+
+    const data = await response.json()
+    console.log('📦 Beds24 cancel response:', JSON.stringify(data, null, 2))
+    
+    // POST returns array of results
+    if (Array.isArray(data) && data.length > 0) {
+      const result = data[0]
+      console.log('📦 First result:', JSON.stringify(result, null, 2))
+      
+      // Check for errors
+      if (result.errors && Array.isArray(result.errors) && result.errors.length > 0) {
+        const errorMessage = result.errors.map((e: any) => e.message || JSON.stringify(e)).join(', ')
+        console.error('❌ Beds24 returned error:', errorMessage)
+        return NextResponse.json(
+          { error: 'Cancellation failed', details: errorMessage, beds24Response: data },
+          { status: 400 }
+        )
+      }
+      
+      // Check for warnings (but still might be successful)
+      if (result.warnings && Array.isArray(result.warnings) && result.warnings.length > 0) {
+        console.log('⚠️ Beds24 returned warnings:', result.warnings)
+        // If there are warnings but success=true, it's still OK
+        if (result.success === true) {
+          console.log('✅ Booking cancelled with warnings:', bookingId)
+          return NextResponse.json({ success: true, data, bookingId, warnings: result.warnings })
+        }
+      }
+      
+      // Check success
+      if (result.success === true) {
+        console.log('✅ Booking cancelled successfully:', bookingId)
+        return NextResponse.json({ success: true, data, bookingId })
+      }
+      
+      // If success is false or undefined
+      console.error('❌ Beds24 returned success=false or undefined:', result)
+      return NextResponse.json(
+        { error: 'Cancellation failed - Beds24 did not confirm success', beds24Response: data },
+        { status: 400 }
+      )
+    }
+    
+    // Unexpected response
+    console.error('❌ Unexpected response format:', data)
+    return NextResponse.json(
+      { error: 'Unexpected response format from Beds24', beds24Response: data },
+      { status: 500 }
+    )
+  } catch (error) {
+    console.error('❌ Unexpected error deleting booking:', {
+      error,
+      errorMessage: error instanceof Error ? error.message : String(error),
+      bookingId,
+    })
+    return NextResponse.json(
+      { 
+        error: 'Failed to delete booking', 
+        message: error instanceof Error ? error.message : 'Unknown error occurred',
         bookingId,
       },
       { status: 500 }
