@@ -391,14 +391,11 @@ export async function PATCH(request: Request) {
   // Build update payload for Beds24 V2 API
   // IMPORTANT: When using PATCH to /v2/bookings/{bookId}:
   // - bookId goes in the URL path (not in payload)
-  // - Send only fields that need updating
-  // - Include roomId and propertyId for validation
-  const booking: Record<string, unknown> = {
-    propertyId: (updates.propertyId as string) || propertyId,
-    roomId: (updates.roomId as string) || roomId,
-  }
+  // - Send ONLY fields that need updating
+  // - Do NOT send propertyId/roomId (booking already exists)
+  const booking: Record<string, unknown> = {}
 
-  // Add fields that can be updated
+  // Add only fields that are actually being updated
   if (updates.arrival) booking.arrival = updates.arrival
   if (updates.departure) booking.departure = updates.departure
   if (updates.firstName) booking.firstName = updates.firstName
@@ -411,16 +408,9 @@ export async function PATCH(request: Request) {
   if (updates.notes) booking.notes = updates.notes
   if (updates.status) booking.status = updates.status
   
-  // Handle price update via invoice (V2 API format)
+  // Handle price update - try using 'price' field directly instead of invoice
   if (updates.price !== undefined) {
-    booking.invoice = [
-      {
-        description: 'Total Room Price',
-        amount: Number(updates.price),
-        qty: 1,
-        type: 'item',
-      },
-    ]
+    booking.price = Number(updates.price)
   }
 
   console.log('📝 Updating booking in Beds24:', bookingId)
