@@ -439,8 +439,9 @@ export async function PUT(request: Request) {
     const updateUrl = `${getBaseUrl()}/bookings`
     console.log('🔗 Update URL:', updateUrl)
     
+    // Try PATCH for updates (POST for creates)
     const response = await fetchWithTokenRefresh(updateUrl, {
-      method: 'POST',
+      method: 'PATCH',
       headers: {
         'content-type': 'application/json',
       },
