@@ -388,38 +388,34 @@ export async function PUT(request: Request) {
 
   const { bookingId, ...updates } = requestBody as Record<string, unknown>
 
-  // Build update payload for Beds24
-  // Note: Beds24 uses POST (not PUT) for updates. If bookId exists, it updates; otherwise creates new.
-  // Must include roomId and propertyId for Beds24 to identify which booking to update
-  const updatePayload: Record<string, unknown> = {
+  // Build update payload for Beds24 JSON API
+  // IMPORTANT: For updates, use /json/bookings endpoint with "bookings" wrapper
+  // Must include bookId to update existing booking (not create new one)
+  const booking: Record<string, unknown> = {
     bookId: bookingId,
-    propertyId: Number(propertyId),
-    roomId: Number(roomId),
   }
 
   // Add fields that can be updated
-  if (updates.arrival) updatePayload.arrival = updates.arrival
-  if (updates.departure) updatePayload.departure = updates.departure
-  if (updates.firstName) updatePayload.firstName = updates.firstName
-  if (updates.lastName) updatePayload.lastName = updates.lastName
-  if (updates.mobile) updatePayload.mobile = updates.mobile
-  if (updates.phone) updatePayload.phone = updates.phone
-  if (updates.email) updatePayload.email = updates.email
-  if (updates.numAdult !== undefined) updatePayload.numAdult = updates.numAdult
-  if (updates.numChild !== undefined) updatePayload.numChild = updates.numChild
-  if (updates.notes) updatePayload.notes = updates.notes
-  if (updates.status) updatePayload.status = updates.status
+  if (updates.arrival) booking.arrival = updates.arrival
+  if (updates.departure) booking.departure = updates.departure
+  if (updates.firstName) booking.firstName = updates.firstName
+  if (updates.lastName) booking.lastName = updates.lastName
+  if (updates.mobile) booking.mobile = updates.mobile
+  if (updates.phone) booking.phone = updates.phone
+  if (updates.email) booking.email = updates.email
+  if (updates.numAdult !== undefined) booking.numAdult = updates.numAdult
+  if (updates.numChild !== undefined) booking.numChild = updates.numChild
+  if (updates.notes) booking.notes = updates.notes
+  if (updates.status) booking.status = updates.status
   
-  // Handle price update via invoice
+  // Handle price update - use firstPrice for Beds24 JSON API
   if (updates.price !== undefined) {
-    updatePayload.invoice = [
-      {
-        description: 'Total Room Price',
-        amount: Number(updates.price),
-        qty: 1,
-        type: 'item',
-      },
-    ]
+    booking.firstPrice = Number(updates.price)
+  }
+
+  // Wrap in "bookings" array as required by /json/bookings endpoint
+  const updatePayload = {
+    bookings: [booking]
   }
 
   console.log('📝 Updating booking in Beds24:', bookingId)
@@ -434,13 +430,17 @@ export async function PUT(request: Request) {
     : undefined
 
   try {
-    // Beds24 uses POST for both create AND update (if bookId is provided, it updates)
-    const response = await fetchWithTokenRefresh(`${getBaseUrl()}/bookings`, {
+    // IMPORTANT: Use /json/bookings endpoint for updates (not /v2/bookings)
+    // This endpoint properly handles bookId for updates vs. creates
+    const updateUrl = 'https://api.beds24.com/json/bookings'
+    console.log('🔗 Update URL:', updateUrl)
+    
+    const response = await fetchWithTokenRefresh(updateUrl, {
       method: 'POST',
       headers: {
         'content-type': 'application/json',
       },
-      body: JSON.stringify([updatePayload]),
+      body: JSON.stringify(updatePayload),
     }, userTokens)
 
     if (!response.ok) {
@@ -449,7 +449,7 @@ export async function PUT(request: Request) {
         status: response.status,
         statusText: response.statusText,
         details,
-        url: `${getBaseUrl()}/bookings`,
+        url: 'https://api.beds24.com/json/bookings',
         payload: updatePayload,
       })
       return NextResponse.json(
@@ -462,22 +462,43 @@ export async function PUT(request: Request) {
     
     console.log('✅ Beds24 update response:', JSON.stringify(data, null, 2))
     
-    // Check if Beds24 returned success: false
-    if (Array.isArray(data) && data.length > 0) {
+    // Check for errors in Beds24 JSON API response
+    // Response format: { "bookings": [...], "errors": [...] } or array of results
+    let hasError = false
+    let errorMessage = ''
+    
+    if (data.errors && Array.isArray(data.errors) && data.errors.length > 0) {
+      // Global errors
+      hasError = true
+      errorMessage = data.errors.map((e: any) => e.message || JSON.stringify(e)).join(', ')
+    } else if (data.bookings && Array.isArray(data.bookings)) {
+      // Check each booking result
+      const failedBooking = data.bookings.find((b: any) => b.success === false || b.errors)
+      if (failedBooking) {
+        hasError = true
+        const errors = failedBooking.errors || []
+        errorMessage = errors.map((e: any) => `${e.field || 'unknown'}: ${e.message}`).join(', ') || 'Update failed'
+      }
+    } else if (Array.isArray(data) && data.length > 0) {
+      // Legacy format check
       const firstResult = data[0]
       if (firstResult.success === false) {
+        hasError = true
         const errors = firstResult.errors || []
-        const errorMessages = errors.map((e: any) => `${e.field}: ${e.message}`).join(', ')
-        console.error('❌ Beds24 returned success: false -', errorMessages)
-        return NextResponse.json(
-          { 
-            error: 'Beds24 update failed', 
-            details: errorMessages || 'Unknown error',
-            beds24Response: firstResult,
-          },
-          { status: 400 }
-        )
+        errorMessage = errors.map((e: any) => `${e.field}: ${e.message}`).join(', ') || 'Unknown error'
       }
+    }
+    
+    if (hasError) {
+      console.error('❌ Beds24 returned error:', errorMessage)
+      return NextResponse.json(
+        { 
+          error: 'Beds24 update failed', 
+          details: errorMessage,
+          beds24Response: data,
+        },
+        { status: 400 }
+      )
     }
     
     return NextResponse.json({ success: true, data })
