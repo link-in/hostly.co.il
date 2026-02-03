@@ -257,32 +257,37 @@ export async function POST(request: Request) {
     // ⭐ NEW: Create check-in record
     console.log('🔐 Creating check-in record...')
     let checkInLink = ''
-    try {
-      const checkInRes = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/check-in/create`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          bookingId,
-          guestName,
-          guestPhone,
-          guestEmail: guestEmail || null,
-          checkInDate,
-          checkOutDate,
-          numAdult,
-          numChild: Number(firstBooking.numChild) || 0,
-          userId: session.user.id,
-        }),
-      })
+    
+    if (session?.user?.id) {
+      try {
+        const checkInRes = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/check-in/create`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            bookingId,
+            guestName,
+            guestPhone,
+            guestEmail: guestEmail || null,
+            checkInDate,
+            checkOutDate,
+            numAdult,
+            numChild: Number(firstBooking.numChild) || 0,
+            userId: session.user.id,
+          }),
+        })
 
-      if (checkInRes.ok) {
-        const checkInData = await checkInRes.json()
-        checkInLink = checkInData.link
-        console.log('✅ Check-in created:', checkInLink)
-      } else {
-        console.error('❌ Failed to create check-in record')
+        if (checkInRes.ok) {
+          const checkInData = await checkInRes.json()
+          checkInLink = checkInData.link
+          console.log('✅ Check-in created:', checkInLink)
+        } else {
+          console.error('❌ Failed to create check-in record')
+        }
+      } catch (checkInError) {
+        console.error('❌ Error creating check-in:', checkInError)
       }
-    } catch (checkInError) {
-      console.error('❌ Error creating check-in:', checkInError)
+    } else {
+      console.warn('⚠️ No session user ID - skipping check-in creation')
     }
     
     // Save to Supabase notifications_log
