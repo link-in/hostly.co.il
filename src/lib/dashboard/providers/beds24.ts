@@ -138,8 +138,10 @@ const mapBookingToReservation = (booking: Record<string, unknown>, index: number
 
   // Handle both numeric and string status values from Beds24
   // Numeric: 0=Cancelled, 1=Confirmed, 2=New, 3=Request, 4=Black, 5=Inquiry
-  const rawStatus = booking.status ?? booking.bookingStatus ?? ''
-  const status = normalizeStatus(rawStatus)
+  const rawStatus = booking.status ?? booking.bookingStatus
+  // Ensure rawStatus is string or number (not object)
+  const validStatus = (typeof rawStatus === 'string' || typeof rawStatus === 'number') ? rawStatus : undefined
+  const status = normalizeStatus(validStatus)
 
   return {
     id: String(booking.id ?? booking.bookingId ?? booking.reservationId ?? `booking_${index}`),
