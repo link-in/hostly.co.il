@@ -178,6 +178,10 @@ export default function CustomersClient() {
   }
 
   const performImport = async () => {
+    // Show loading toast and save its ID
+    const loadingToastId = toast.loading('מייבא לקוחות מ-Beds24...', {
+      duration: Infinity,
+    })
 
     try {
       const response = await fetch('/api/dashboard/customers/import', {
