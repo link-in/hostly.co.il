@@ -168,7 +168,7 @@ export async function GET() {
       headers: {
         'content-type': 'application/json',
       },
-    }, userTokens)
+    }, userTokens, session?.user?.id)
 
     if (!response.ok) {
       const details = await response.text()
@@ -306,7 +306,7 @@ export async function POST(request: Request) {
         'content-type': 'application/json',
       },
       body: JSON.stringify(normalizedPayload),
-    }, userTokens)
+    }, userTokens, session?.user?.id)
 
     if (!response.ok) {
       const details = await response.text()

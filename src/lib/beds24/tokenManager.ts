@@ -165,6 +165,7 @@ export const tokenManager = new Beds24TokenManager()
  * @param url - The URL to fetch
  * @param options - Fetch options
  * @param userTokens - Optional user-specific tokens (if not provided, uses global tokens)
+ * @param userId - Optional user ID for persisting refreshed tokens to database
  */
 export async function fetchWithTokenRefresh(
   url: string,
@@ -172,7 +173,8 @@ export async function fetchWithTokenRefresh(
   userTokens?: {
     accessToken?: string
     refreshToken?: string
-  }
+  },
+  userId?: string
 ): Promise<Response> {
   // Determine which tokens to use
   const useUserTokens = userTokens?.accessToken && userTokens?.refreshToken
@@ -208,7 +210,8 @@ export async function fetchWithTokenRefresh(
     if (useUserTokens) {
       // Refresh user-specific token
       console.log('[Beds24] Refreshing user-specific token...')
-      newToken = await refreshUserToken(userTokens.refreshToken!)
+      const refreshResult = await refreshUserToken(userTokens.refreshToken!, userId)
+      newToken = refreshResult.token
     } else {
       // Force refresh the global token
       newToken = await tokenManager.forceRefresh()
@@ -227,8 +230,13 @@ export async function fetchWithTokenRefresh(
 
 /**
  * Refresh a user-specific token
+ * @param refreshToken - The refresh token to use
+ * @param userId - Optional user ID to persist the new token to database
  */
-async function refreshUserToken(refreshToken: string): Promise<string> {
+async function refreshUserToken(
+  refreshToken: string,
+  userId?: string
+): Promise<{ token: string; expiresIn: number }> {
   const baseUrl = process.env.BEDS24_API_BASE_URL ?? 'https://api.beds24.com/v2'
   
   try {
@@ -251,10 +259,21 @@ async function refreshUserToken(refreshToken: string): Promise<string> {
 
     console.log('[Beds24] User-specific token refreshed successfully')
     
-    // TODO: Update the user's token in the database
-    // This would require access to the database and user ID
+    // Update the user's token in the database if userId is provided
+    if (userId) {
+      try {
+        const { updateUser } = await import('@/lib/auth/getUsersDb')
+        await updateUser(userId, {
+          beds24Token: data.token,
+        })
+        console.log('[Beds24] User token saved to database successfully')
+      } catch (dbError) {
+        // Log but don't throw - token refresh succeeded even if DB update failed
+        console.error('[Beds24] Failed to save token to database:', dbError)
+      }
+    }
     
-    return data.token
+    return data
   } catch (error) {
     console.error('[Beds24] User token refresh failed:', error)
     throw error

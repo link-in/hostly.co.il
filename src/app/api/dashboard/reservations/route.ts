@@ -39,7 +39,7 @@ export async function GET() {
   }
 
   try {
-    const response = await fetchWithTokenRefresh(url.toString(), {}, userTokens)
+    const response = await fetchWithTokenRefresh(url.toString(), {}, userTokens, session?.user?.id)
 
     if (!response.ok) {
       const details = await response.text()
