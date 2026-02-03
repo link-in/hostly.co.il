@@ -388,9 +388,9 @@ export async function PUT(request: Request) {
 
   const { bookingId, ...updates } = requestBody as Record<string, unknown>
 
-  // Build update payload for Beds24 JSON API
-  // IMPORTANT: For updates, use /json/bookings endpoint with "bookings" wrapper
-  // Must include bookId to update existing booking (not create new one)
+  // Build update payload for Beds24 V2 API
+  // IMPORTANT: V2 API uses bookId to identify existing bookings for updates
+  // If bookId exists, it updates; otherwise creates new
   const booking: Record<string, unknown> = {
     bookId: bookingId,
   }
@@ -408,15 +408,20 @@ export async function PUT(request: Request) {
   if (updates.notes) booking.notes = updates.notes
   if (updates.status) booking.status = updates.status
   
-  // Handle price update - use firstPrice for Beds24 JSON API
+  // Handle price update via invoice (V2 API format)
   if (updates.price !== undefined) {
-    booking.firstPrice = Number(updates.price)
+    booking.invoice = [
+      {
+        description: 'Total Room Price',
+        amount: Number(updates.price),
+        qty: 1,
+        type: 'item',
+      },
+    ]
   }
 
-  // Wrap in "bookings" array as required by /json/bookings endpoint
-  const updatePayload = {
-    bookings: [booking]
-  }
+  // V2 API expects array directly (no "bookings" wrapper)
+  const updatePayload = [booking]
 
   console.log('📝 Updating booking in Beds24:', bookingId)
   console.log('📦 Update payload:', JSON.stringify(updatePayload, null, 2))
@@ -430,9 +435,8 @@ export async function PUT(request: Request) {
     : undefined
 
   try {
-    // IMPORTANT: Use /json/bookings endpoint for updates (not /v2/bookings)
-    // This endpoint properly handles bookId for updates vs. creates
-    const updateUrl = 'https://api.beds24.com/json/bookings'
+    // Use V2 API endpoint for updates
+    const updateUrl = `${getBaseUrl()}/bookings`
     console.log('🔗 Update URL:', updateUrl)
     
     const response = await fetchWithTokenRefresh(updateUrl, {
@@ -449,7 +453,7 @@ export async function PUT(request: Request) {
         status: response.status,
         statusText: response.statusText,
         details,
-        url: 'https://api.beds24.com/json/bookings',
+        url: updateUrl,
         payload: updatePayload,
       })
       return NextResponse.json(
