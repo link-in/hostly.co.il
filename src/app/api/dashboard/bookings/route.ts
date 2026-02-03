@@ -418,11 +418,8 @@ export async function PATCH(request: Request) {
     ]
   }
 
-  // V2 API expects array directly (no "bookings" wrapper)
-  const updatePayload = [booking]
-
   console.log('📝 Updating booking in Beds24:', bookingId)
-  console.log('📦 Update payload:', JSON.stringify(updatePayload, null, 2))
+  console.log('📦 Update payload:', JSON.stringify(booking, null, 2))
 
   // Prepare user-specific tokens if available
   const userTokens = session?.user?.beds24Token && session?.user?.beds24RefreshToken
@@ -455,7 +452,7 @@ export async function PATCH(request: Request) {
         statusText: response.statusText,
         details,
         url: updateUrl,
-        payload: updatePayload,
+        payload: booking,
       })
       return NextResponse.json(
         { error: 'Beds24 update failed', status: response.status, details },
