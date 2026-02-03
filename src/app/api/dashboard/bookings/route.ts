@@ -389,11 +389,13 @@ export async function PATCH(request: Request) {
   const { bookingId, ...updates } = requestBody as Record<string, unknown>
 
   // Build update payload for Beds24 V2 API
-  // Try using 'id' field instead of 'bookId' to force update behavior
+  // IMPORTANT: When using PATCH to /v2/bookings/{bookId}:
+  // - bookId goes in the URL path (not in payload)
+  // - Send only fields that need updating
+  // - Include roomId and propertyId for validation
   const booking: Record<string, unknown> = {
-    id: bookingId, // Use 'id' instead of 'bookId'
-    propertyId: (updates.propertyId as string) || propertyId, // Required for updates
-    roomId: (updates.roomId as string) || roomId, // Required for updates
+    propertyId: (updates.propertyId as string) || propertyId,
+    roomId: (updates.roomId as string) || roomId,
   }
 
   // Add fields that can be updated
@@ -422,7 +424,7 @@ export async function PATCH(request: Request) {
   }
 
   console.log('📝 Updating booking in Beds24:', bookingId)
-  console.log('📦 Update payload (using id field):', JSON.stringify(booking, null, 2))
+  console.log('📦 Update payload:', JSON.stringify(booking, null, 2))
 
   // Prepare user-specific tokens if available
   const userTokens = session?.user?.beds24Token && session?.user?.beds24RefreshToken
@@ -433,19 +435,20 @@ export async function PATCH(request: Request) {
     : undefined
 
   try {
-    // IMPORTANT: V2 API uses POST (not PATCH) for both create and update
-    // Include bookId in the array to update (if missing, creates new)
-    const updateUrl = `${getBaseUrl()}/bookings`
-    console.log('🔗 Update URL:', updateUrl)
-    console.log('🔑 Booking ID (using id field):', bookingId)
+    // CORRECT METHOD: Use PATCH to /v2/bookings/{bookId}
+    // This is the proper way to update an existing booking in Beds24 V2 API
+    // bookId is in the URL path, NOT in the payload
+    const updateUrl = `${getBaseUrl()}/bookings/${bookingId}`
+    console.log('🔗 PATCH URL:', updateUrl)
+    console.log('🔑 Booking ID:', bookingId)
     
-    // V2 API expects array of bookings, even for single update
+    // Send booking object directly (not array) with only fields to update
     const response = await fetchWithTokenRefresh(updateUrl, {
-      method: 'POST',
+      method: 'PATCH',
       headers: {
         'content-type': 'application/json',
       },
-      body: JSON.stringify([booking]), // Send as array with bookId included
+      body: JSON.stringify(booking), // Send object directly, not array
     }, userTokens)
 
     if (!response.ok) {
