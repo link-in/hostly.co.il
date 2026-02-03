@@ -384,27 +384,48 @@ function CheckInDetailsPageContent() {
           </>
         )}
 
-        {/* Actions */}
-        <div className="col-12">
-          <div className="card">
-            <div className="card-body">
-              <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
-                {checkIn.status === 'pending' && (
-                  <button className="btn btn-primary">
-                    <Send size={18} /> שלח קישור שוב
-                  </button>
-                )}
-                {checkIn.status === 'completed' && (
-                  <button className="btn btn-success">
-                    <Download size={18} /> הורד PDF
-                  </button>
-                )}
+            {/* Actions */}
+            <div className="col-12">
+              <div className="card border-0 shadow-sm" style={{ borderRadius: '12px' }}>
+                <div className="card-body">
+                  <div className="d-flex gap-2 justify-content-end">
+                    {checkIn.status === 'completed' && (
+                      <button
+                        className="btn shadow-sm"
+                        style={{
+                          background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '8px'
+                        }}
+                        onClick={() => {/* TODO: Generate PDF */}}
+                      >
+                        <Download size={18} /> הורד PDF
+                      </button>
+                    )}
+                    {checkIn.status === 'pending' && (
+                      <button
+                        className="btn shadow-sm"
+                        style={{
+                          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '8px'
+                        }}
+                        onClick={() => {/* TODO: Resend */}}
+                      >
+                        <Send size={18} /> שלח שוב
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
     </div>
+  </main>
   )
 }
 
