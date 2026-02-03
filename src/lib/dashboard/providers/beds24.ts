@@ -151,6 +151,14 @@ const mapBookingToReservation = (booking: Record<string, unknown>, index: number
       (typeof booking.unitName === 'string' && booking.unitName) ||
       (typeof booking.propertyName === 'string' && booking.propertyName) ||
       undefined,
+    roomId:
+      (typeof booking.roomId === 'string' && booking.roomId) ||
+      (typeof booking.roomId === 'number' && String(booking.roomId)) ||
+      undefined,
+    propertyId:
+      (typeof booking.propertyId === 'string' && booking.propertyId) ||
+      (typeof booking.propertyId === 'number' && String(booking.propertyId)) ||
+      undefined,
     createdAt: typeof booking.bookingTime === 'string' ? booking.bookingTime : undefined,
     phone:
       (typeof booking.phone === 'string' && booking.phone) ||
