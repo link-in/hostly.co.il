@@ -150,7 +150,11 @@ export async function POST(request: Request) {
     guestMessage += `מחכים לך! 🏡`
 
     // Send to guest
-    let guestWhatsAppResult = { success: false, provider: 'none', error: 'No phone' }
+    let guestWhatsAppResult: { success: boolean; provider: string; error?: string } = { 
+      success: false, 
+      provider: 'none', 
+      error: 'No phone' 
+    }
     if (checkIn.guest_phone) {
       guestWhatsAppResult = await sendWhatsAppMessage({
         to: checkIn.guest_phone,
