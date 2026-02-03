@@ -18,6 +18,14 @@ const ProfileClient = () => {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
+  
+  // Check-in settings
+  const [wifiSsid, setWifiSsid] = useState('')
+  const [wifiPassword, setWifiPassword] = useState('')
+  const [propertyGuideUrl, setPropertyGuideUrl] = useState('')
+  const [termsText, setTermsText] = useState('')
+  const [liabilityWaiverText, setLiabilityWaiverText] = useState('')
+  const [defaultAccessCode, setDefaultAccessCode] = useState('')
 
   // Custom styles for inputs
   const inputStyle = {
@@ -34,6 +42,17 @@ const ProfileClient = () => {
       setEmail(session.user.email ?? '')
       setLandingPageUrl(session.user.landingPageUrl ?? '')
       setPhoneNumber(session.user.phoneNumber ?? '')
+      
+      // Load check-in settings
+      const settings = session.user.checkInSettings
+      if (settings) {
+        setWifiSsid(settings.wifi_ssid ?? '')
+        setWifiPassword(settings.wifi_password ?? '')
+        setPropertyGuideUrl(settings.property_guide_url ?? '')
+        setTermsText(settings.terms_text ?? '')
+        setLiabilityWaiverText(settings.liability_waiver_text ?? '')
+        setDefaultAccessCode(settings.default_access_code ?? '')
+      }
     }
   }, [session])
 
@@ -67,6 +86,14 @@ const ProfileClient = () => {
           email: email.trim(),
           landingPageUrl: landingPageUrl.trim(),
           phoneNumber: phoneNumber.trim(),
+          checkInSettings: {
+            wifi_ssid: wifiSsid.trim(),
+            wifi_password: wifiPassword.trim(),
+            property_guide_url: propertyGuideUrl.trim(),
+            terms_text: termsText.trim(),
+            liability_waiver_text: liabilityWaiverText.trim(),
+            default_access_code: defaultAccessCode.trim(),
+          },
           ...(newPassword ? { currentPassword, newPassword } : {}),
         }),
       })
@@ -82,7 +109,15 @@ const ProfileClient = () => {
       await update({ 
         displayName: displayName.trim(),
         landingPageUrl: landingPageUrl.trim(),
-        phoneNumber: phoneNumber.trim()
+        phoneNumber: phoneNumber.trim(),
+        checkInSettings: {
+          wifi_ssid: wifiSsid.trim(),
+          wifi_password: wifiPassword.trim(),
+          property_guide_url: propertyGuideUrl.trim(),
+          terms_text: termsText.trim(),
+          liability_waiver_text: liabilityWaiverText.trim(),
+          default_access_code: defaultAccessCode.trim(),
+        }
       })
       
       setSuccess('הפרטים עודכנו בהצלחה')
@@ -327,6 +362,126 @@ const ProfileClient = () => {
                     <small className="text-muted">🔒 לא ניתן לעריכה - קשור ל-Beds24</small>
                   </div>
 
+                  {/* Check-in Settings Section */}
+                  <div className="col-12">
+                    <hr 
+                      className="my-4" 
+                      style={{
+                        background: 'linear-gradient(90deg, transparent, #667eea, transparent)',
+                        height: '2px',
+                        border: 'none',
+                      }}
+                    />
+                    <h3 
+                      className="h5 fw-bold mb-3"
+                      style={{
+                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        backgroundClip: 'text',
+                      }}
+                    >
+                      ⭐ הגדרות צ'ק-אין דיגיטלי
+                    </h3>
+                    <p className="text-muted small mb-3">
+                      הגדרות אלו ישמשו לצ'ק-אין דיגיטלי של אורחים. אם לא תמלא פרטים, ייעשה שימוש בברירות מחדל.
+                    </p>
+                  </div>
+
+                  <div className="col-md-6">
+                    <label className="form-label fw-semibold" style={{ color: '#667eea' }}>
+                      📶 שם רשת WiFi (SSID)
+                    </label>
+                    <input
+                      type="text"
+                      className="form-control shadow-sm profile-input"
+                      style={inputStyle}
+                      value={wifiSsid}
+                      onChange={(e) => setWifiSsid(e.target.value)}
+                      disabled={!editing}
+                      placeholder="שם הרשת שלך"
+                    />
+                    <small className="text-muted">יישלח לאורח אוטומטית אחרי צ'ק-אין</small>
+                  </div>
+
+                  <div className="col-md-6">
+                    <label className="form-label fw-semibold" style={{ color: '#667eea' }}>
+                      🔑 סיסמת WiFi
+                    </label>
+                    <input
+                      type="text"
+                      className="form-control shadow-sm profile-input"
+                      style={inputStyle}
+                      value={wifiPassword}
+                      onChange={(e) => setWifiPassword(e.target.value)}
+                      disabled={!editing}
+                      placeholder="סיסמת הרשת שלך"
+                    />
+                    <small className="text-muted">יישלח לאורח אוטומטית אחרי צ'ק-אין</small>
+                  </div>
+
+                  <div className="col-12">
+                    <label className="form-label fw-semibold" style={{ color: '#667eea' }}>
+                      📄 קישור למדריך הנכס (URL)
+                    </label>
+                    <input
+                      type="url"
+                      className="form-control shadow-sm profile-input"
+                      style={inputStyle}
+                      value={propertyGuideUrl}
+                      onChange={(e) => setPropertyGuideUrl(e.target.value)}
+                      disabled={!editing}
+                      placeholder="https://drive.google.com/... או קישור אחר"
+                    />
+                    <small className="text-muted">קישור למדריך נכס מלא (PDF, Google Drive, וכו')</small>
+                  </div>
+
+                  <div className="col-12">
+                    <label className="form-label fw-semibold" style={{ color: '#667eea' }}>
+                      🚪 קוד כניסה ברירת מחדל
+                    </label>
+                    <input
+                      type="text"
+                      className="form-control shadow-sm profile-input"
+                      style={inputStyle}
+                      value={defaultAccessCode}
+                      onChange={(e) => setDefaultAccessCode(e.target.value)}
+                      disabled={!editing}
+                      placeholder="1234 או #1234*"
+                    />
+                    <small className="text-muted">קוד קבוע למנעול הדירה (אם לא משתמש בקודים דינמיים)</small>
+                  </div>
+
+                  <div className="col-12">
+                    <label className="form-label fw-semibold" style={{ color: '#667eea' }}>
+                      📜 תנאי אירוח מותאמים אישית
+                    </label>
+                    <textarea
+                      className="form-control shadow-sm profile-input"
+                      style={{ ...inputStyle, minHeight: '120px' }}
+                      value={termsText}
+                      onChange={(e) => setTermsText(e.target.value)}
+                      disabled={!editing}
+                      placeholder="השאר ריק לשימוש בתנאי ברירת מחדל, או כתוב תנאים מותאמים אישית..."
+                    />
+                    <small className="text-muted">תנאי שימוש שיופיעו בטופס הצ'ק-אין</small>
+                  </div>
+
+                  <div className="col-12">
+                    <label className="form-label fw-semibold" style={{ color: '#667eea' }}>
+                      ⚠️ כתב ויתור אחריות מותאם אישית
+                    </label>
+                    <textarea
+                      className="form-control shadow-sm profile-input"
+                      style={{ ...inputStyle, minHeight: '120px' }}
+                      value={liabilityWaiverText}
+                      onChange={(e) => setLiabilityWaiverText(e.target.value)}
+                      disabled={!editing}
+                      placeholder="השאר ריק לשימוש בכתב ברירת מחדל, או כתוב נוסח מותאם אישית..."
+                    />
+                    <small className="text-muted">כתב ויתור אחריות שיופיע בטופס הצ'ק-אין</small>
+                  </div>
+
                   {editing ? (
                     <>
                       <div className="col-12">
@@ -428,6 +583,16 @@ const ProfileClient = () => {
                             setEmail(session?.user?.email ?? '')
                             setLandingPageUrl(session?.user?.landingPageUrl ?? '')
                             setPhoneNumber(session?.user?.phoneNumber ?? '')
+                            
+                            // Reset check-in settings
+                            const settings = session?.user?.checkInSettings
+                            setWifiSsid(settings?.wifi_ssid ?? '')
+                            setWifiPassword(settings?.wifi_password ?? '')
+                            setPropertyGuideUrl(settings?.property_guide_url ?? '')
+                            setTermsText(settings?.terms_text ?? '')
+                            setLiabilityWaiverText(settings?.liability_waiver_text ?? '')
+                            setDefaultAccessCode(settings?.default_access_code ?? '')
+                            
                             setCurrentPassword('')
                             setNewPassword('')
                             setConfirmPassword('')

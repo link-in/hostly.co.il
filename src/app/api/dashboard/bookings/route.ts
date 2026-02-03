@@ -254,6 +254,37 @@ export async function POST(request: Request) {
     
     console.log(`🔖 Booking ID: ${bookingId}`)
     
+    // ⭐ NEW: Create check-in record
+    console.log('🔐 Creating check-in record...')
+    let checkInLink = ''
+    try {
+      const checkInRes = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/check-in/create`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          bookingId,
+          guestName,
+          guestPhone,
+          guestEmail: guestEmail || null,
+          checkInDate,
+          checkOutDate,
+          numAdult,
+          numChild: Number(firstBooking.numChild) || 0,
+          userId: session.user.id,
+        }),
+      })
+
+      if (checkInRes.ok) {
+        const checkInData = await checkInRes.json()
+        checkInLink = checkInData.link
+        console.log('✅ Check-in created:', checkInLink)
+      } else {
+        console.error('❌ Failed to create check-in record')
+      }
+    } catch (checkInError) {
+      console.error('❌ Error creating check-in:', checkInError)
+    }
+    
     // Save to Supabase notifications_log
     console.log('💾 Attempting to save to Supabase...')
     const supabase = createServerClient()
@@ -336,9 +367,19 @@ export async function POST(request: Request) {
     
     if (guestPhone) {
       const propertyName = ownerInfo.roomName || 'Mountain View'
+      
+      // ⭐ NEW: Include check-in link in message
+      let message = `שלום ${guestName}! 🏔️\n\nקיבלנו את הזמנתך ב-${propertyName}.\n📅 תאריך כניסה: ${checkInDate}\n📅 תאריך יציאה: ${checkOutDate}\n\n`
+      
+      if (checkInLink) {
+        message += `🔗 אנא השלם/י צ'ק-אין דיגיטלי (לוקח 3 דקות):\n${checkInLink}\n\n`
+      }
+      
+      message += `נשמח לארח אותך! 🎉`
+      
       whatsappResult = await sendWhatsAppMessage({
         to: guestPhone,
-        message: `שלום ${guestName}! 🏔️\n\nקיבלנו את הזמנתך ב-${propertyName}.\n📅 תאריך כניסה: ${checkInDate}\n\nנשמח לארח אותך! 🎉`,
+        message,
       })
       
       console.log(`📱 Guest WhatsApp (${guestPhone}):`, whatsappResult.success ? '✅ Sent' : `❌ Failed - ${whatsappResult.error}`)

@@ -72,6 +72,7 @@ export const authOptions: NextAuthOptions = {
         token.isDemo = user.isDemo
         token.beds24Token = user.beds24Token
         token.beds24RefreshToken = user.beds24RefreshToken
+        token.checkInSettings = user.checkInSettings
         token.issuedAt = Date.now()
       }
       
@@ -95,6 +96,9 @@ export const authOptions: NextAuthOptions = {
         if (session.role !== undefined) {
           token.role = session.role
         }
+        if (session.checkInSettings !== undefined) {
+          token.checkInSettings = session.checkInSettings
+        }
       }
       
       return token
@@ -115,6 +119,7 @@ export const authOptions: NextAuthOptions = {
           isDemo: token.isDemo as boolean | undefined,
           beds24Token: token.beds24Token as string | undefined,
           beds24RefreshToken: token.beds24RefreshToken as string | undefined,
+          checkInSettings: token.checkInSettings as any,
         }
       }
       return session

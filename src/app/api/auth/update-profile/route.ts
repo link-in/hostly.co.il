@@ -17,6 +17,14 @@ export async function POST(request: Request) {
     phoneNumber?: string
     currentPassword?: string
     newPassword?: string
+    checkInSettings?: {
+      wifi_ssid?: string
+      wifi_password?: string
+      property_guide_url?: string
+      terms_text?: string
+      liability_waiver_text?: string
+      default_access_code?: string
+    }
   }
 
   try {
@@ -73,6 +81,11 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'פורמט מספר טלפון לא תקין. השתמש בפורמט: +972501234567' }, { status: 400 })
       }
       updates.phoneNumber = payload.phoneNumber
+    }
+
+    // Update check-in settings if provided
+    if (payload.checkInSettings !== undefined) {
+      updates.checkInSettings = payload.checkInSettings
     }
 
     // Update user in database

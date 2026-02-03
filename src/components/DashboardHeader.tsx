@@ -9,7 +9,7 @@ interface DashboardHeaderProps {
   title?: string
   subtitle?: string
   showLandingPageButton?: boolean
-  currentPage?: 'dashboard' | 'reservations' | 'customers' | 'price-check' | 'profile' | 'landing' | 'pricing-demo'
+  currentPage?: 'dashboard' | 'reservations' | 'customers' | 'price-check' | 'profile' | 'landing' | 'pricing-demo' | 'check-ins'
 }
 
 export default function DashboardHeader({ 
@@ -543,6 +543,39 @@ export default function DashboardHeader({
                       </svg>
                     </div>
                     <span style={{ fontSize: '15px', fontWeight: '500', color: '#333' }}>ניהול לקוחות</span>
+                  </Link>
+                  
+                  <Link 
+                    className={`menu-item w-100 border-0 bg-transparent py-3 px-3 d-flex align-items-center justify-content-start gap-3 text-decoration-none ${currentPage === 'check-ins' ? 'menu-item-active' : ''}`}
+                    href="/dashboard/check-ins" 
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    <div 
+                      className="d-flex align-items-center justify-content-center"
+                      style={{
+                        width: '36px',
+                        height: '36px',
+                        borderRadius: '10px',
+                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                        color: 'white'
+                      }}
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="18"
+                        height="18"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                        <polyline points="22 4 12 14.01 9 11.01" />
+                      </svg>
+                    </div>
+                    <span style={{ fontSize: '15px', fontWeight: '500', color: '#333' }}>צ'ק-אין דיגיטלי ⭐</span>
                   </Link>
                   
                   <Link 

@@ -44,6 +44,7 @@ export const getUserByEmail = async (email: string): Promise<User | null> => {
       isDemo: data.is_demo || false,
       beds24Token: data.beds24_token || undefined,
       beds24RefreshToken: data.beds24_refresh_token || undefined,
+      checkInSettings: data.check_in_settings || undefined,
     }
   } catch (error) {
     console.error('Failed to fetch user:', error)
@@ -93,6 +94,7 @@ export const updateUser = async (userId: string, updates: Partial<User>): Promis
     if (updates.role !== undefined) dbUpdates.role = updates.role
     if (updates.beds24Token !== undefined) dbUpdates.beds24_token = updates.beds24Token
     if (updates.beds24RefreshToken !== undefined) dbUpdates.beds24_refresh_token = updates.beds24RefreshToken
+    if (updates.checkInSettings !== undefined) dbUpdates.check_in_settings = updates.checkInSettings
 
     const { data, error } = await supabase
       .from('users')
@@ -126,6 +128,7 @@ export const updateUser = async (userId: string, updates: Partial<User>): Promis
       isDemo: data.is_demo || false,
       beds24Token: data.beds24_token || undefined,
       beds24RefreshToken: data.beds24_refresh_token || undefined,
+      checkInSettings: data.check_in_settings || undefined,
     }
   } catch (error) {
     console.error('Failed to update user:', error)
@@ -249,6 +252,7 @@ export const createUser = async (userData: {
       isDemo: data.is_demo || false,
       beds24Token: data.beds24_token || undefined,
       beds24RefreshToken: data.beds24_refresh_token || undefined,
+      checkInSettings: data.check_in_settings || undefined,
     }
   } catch (error) {
     console.error('Failed to create user:', error)
@@ -274,5 +278,6 @@ export const toAuthUser = (user: User): AuthUser => {
     isDemo: user.isDemo,
     beds24Token: user.beds24Token,
     beds24RefreshToken: user.beds24RefreshToken,
+    checkInSettings: user.checkInSettings,
   }
 }
