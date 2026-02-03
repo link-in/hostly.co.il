@@ -389,11 +389,14 @@ export async function PATCH(request: Request) {
   const { bookingId, ...updates } = requestBody as Record<string, unknown>
 
   // Build update payload for Beds24 V2 API
-  // IMPORTANT: When using PATCH to /v2/bookings/{bookId}:
-  // - bookId goes in the URL path (not in payload)
-  // - Send ONLY fields that need updating
-  // - Do NOT send propertyId/roomId (booking already exists)
-  const booking: Record<string, unknown> = {}
+  // IMPORTANT: Per official Beds24 documentation:
+  // - Use POST (not PATCH) to /bookings
+  // - Include 'id' field (not 'bookId') in the payload
+  // - Send as array: [{id: xxx, ...fields to update}]
+  // - Only include fields that need updating
+  const booking: Record<string, unknown> = {
+    id: bookingId, // CRITICAL: use 'id' field for updates
+  }
 
   // Add only fields that are actually being updated
   if (updates.arrival) booking.arrival = updates.arrival
@@ -408,7 +411,7 @@ export async function PATCH(request: Request) {
   if (updates.notes) booking.notes = updates.notes
   if (updates.status) booking.status = updates.status
   
-  // Handle price update - try using 'price' field directly instead of invoice
+  // Handle price update - try using 'price' field directly
   if (updates.price !== undefined) {
     booking.price = Number(updates.price)
   }
@@ -425,20 +428,20 @@ export async function PATCH(request: Request) {
     : undefined
 
   try {
-    // CORRECT METHOD: Use PATCH to /v2/bookings/{bookId}
-    // This is the proper way to update an existing booking in Beds24 V2 API
-    // bookId is in the URL path, NOT in the payload
-    const updateUrl = `${getBaseUrl()}/bookings/${bookingId}`
-    console.log('🔗 PATCH URL:', updateUrl)
-    console.log('🔑 Booking ID:', bookingId)
+    // CORRECT METHOD per Beds24 V2 documentation:
+    // POST to /bookings with array containing object with 'id' field
+    // Example: [{ "id": 7777777, "departure": "2021-01-10" }]
+    const updateUrl = `${getBaseUrl()}/bookings`
+    console.log('🔗 POST URL:', updateUrl)
+    console.log('🔑 Booking ID (in payload):', bookingId)
     
-    // Send booking object directly (not array) with only fields to update
+    // Send as array with booking object containing 'id' field
     const response = await fetchWithTokenRefresh(updateUrl, {
-      method: 'PATCH',
+      method: 'POST',
       headers: {
         'content-type': 'application/json',
       },
-      body: JSON.stringify(booking), // Send object directly, not array
+      body: JSON.stringify([booking]), // Array format per documentation
     }, userTokens)
 
     if (!response.ok) {

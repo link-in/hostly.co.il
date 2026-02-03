@@ -516,7 +516,7 @@ const DashboardClient = () => {
 
     try {
       const response = await fetch('/api/dashboard/bookings', {
-        method: 'PATCH',
+        method: 'PATCH', // PATCH to our API (which will POST to Beds24 internally)
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       })
