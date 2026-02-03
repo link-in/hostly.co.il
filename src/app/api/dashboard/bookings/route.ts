@@ -389,9 +389,9 @@ export async function PATCH(request: Request) {
   const { bookingId, ...updates } = requestBody as Record<string, unknown>
 
   // Build update payload for Beds24 V2 API
-  // IMPORTANT: Include bookId in payload - V2 API uses this to determine update vs create
+  // Try using 'id' field instead of 'bookId' to force update behavior
   const booking: Record<string, unknown> = {
-    bookId: bookingId,
+    id: bookingId, // Use 'id' instead of 'bookId'
     propertyId: (updates.propertyId as string) || propertyId, // Required for updates
     roomId: (updates.roomId as string) || roomId, // Required for updates
   }
@@ -422,7 +422,7 @@ export async function PATCH(request: Request) {
   }
 
   console.log('📝 Updating booking in Beds24:', bookingId)
-  console.log('📦 Update payload:', JSON.stringify(booking, null, 2))
+  console.log('📦 Update payload (using id field):', JSON.stringify(booking, null, 2))
 
   // Prepare user-specific tokens if available
   const userTokens = session?.user?.beds24Token && session?.user?.beds24RefreshToken
@@ -437,7 +437,7 @@ export async function PATCH(request: Request) {
     // Include bookId in the array to update (if missing, creates new)
     const updateUrl = `${getBaseUrl()}/bookings`
     console.log('🔗 Update URL:', updateUrl)
-    console.log('🔑 BookId for update:', bookingId)
+    console.log('🔑 Booking ID (using id field):', bookingId)
     
     // V2 API expects array of bookings, even for single update
     const response = await fetchWithTokenRefresh(updateUrl, {
