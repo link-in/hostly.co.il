@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase/server'
 import { sendWhatsAppMessage } from '@/lib/whatsapp'
 import { normalizePhoneNumber } from '@/lib/utils/phoneFormatter'
+import { addOrUpdateCustomer } from '@/lib/customers/addOrUpdateCustomer'
 
 // Force dynamic rendering for webhooks
 export const dynamic = 'force-dynamic'
@@ -46,6 +47,31 @@ interface Beds24Booking {
 interface OwnerInfo {
   phoneNumber: string | null
   roomName: string | null
+}
+
+/**
+ * Find user ID based on property/room from booking
+ */
+async function getUserIdFromBooking(booking: Beds24Booking): Promise<string | null> {
+  try {
+    const supabase = createServerClient()
+    const { data, error } = await supabase
+      .from('users')
+      .select('id')
+      .eq('property_id', String(booking.propertyId))
+      .eq('room_id', String(booking.roomId))
+      .single()
+    
+    if (error || !data) {
+      console.warn(`⚠️  No user found for property ${booking.propertyId}, room ${booking.roomId}`)
+      return null
+    }
+    
+    return data.id
+  } catch (error) {
+    console.error('Error finding user:', error)
+    return null
+  }
 }
 
 async function getOwnerInfo(booking: Beds24Booking): Promise<OwnerInfo> {
@@ -212,6 +238,37 @@ export async function POST(request: NextRequest) {
     console.log('✅ Webhook saved to database:', data)
 
     const recordId = data[0]?.id
+    
+    // Save/update customer in customers table
+    const userId = await getUserIdFromBooking(booking)
+    if (userId && guestName) {
+      console.log('👥 Saving customer from webhook to database...')
+      
+      // Extract booking source
+      const apiSource = String(booking.apiSource || '').toLowerCase()
+      let bookingSource = 'other'
+      
+      if (apiSource.includes('airbnb')) {
+        bookingSource = 'airbnb'
+      } else if (apiSource.includes('booking')) {
+        bookingSource = 'booking.com'
+      }
+      
+      const customerResult = await addOrUpdateCustomer({
+        userId,
+        fullName: guestName,
+        phone: guestPhone || null,
+        email: guestEmail || null,
+        bookingDate: booking.arrival || new Date().toISOString(),
+        bookingSource,
+      })
+      
+      if (customerResult.success) {
+        console.log('✅ Customer saved/updated from webhook:', customerResult.customerId)
+      } else {
+        console.error('❌ Failed to save customer from webhook:', customerResult.error)
+      }
+    }
 
     // Get owner info first (for both guest and owner messages)
     const ownerInfo = await getOwnerInfo(booking)

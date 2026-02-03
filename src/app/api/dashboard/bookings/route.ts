@@ -6,6 +6,7 @@ import { sendWhatsAppMessage } from '@/lib/whatsapp'
 import { createServerClient } from '@/lib/supabase/server'
 import { getUserByEmail } from '@/lib/auth/getUsersDb'
 import { normalizePhoneNumber } from '@/lib/utils/phoneFormatter'
+import { addOrUpdateCustomer } from '@/lib/customers/addOrUpdateCustomer'
 
 export const dynamic = 'force-dynamic'  // Allow POST requests for creating bookings
 export const revalidate = 0
@@ -281,6 +282,25 @@ export async function POST(request: Request) {
     }
     
     const recordId = logData?.[0]?.id
+    
+    // Save/update customer in customers table
+    if (session?.user?.id && guestName) {
+      console.log('👥 Saving customer to database...')
+      const customerResult = await addOrUpdateCustomer({
+        userId: session.user.id,
+        fullName: guestName,
+        phone: guestPhone || null,
+        email: guestEmail || null,
+        bookingDate: checkInDate || new Date().toISOString(),
+        bookingSource: 'direct', // Direct bookings are always 'direct'
+      })
+      
+      if (customerResult.success) {
+        console.log('✅ Customer saved/updated:', customerResult.customerId)
+      } else {
+        console.error('❌ Failed to save customer:', customerResult.error)
+      }
+    }
     
     // Get owner info for room name and phone
     const ownerEmail = session?.user?.email

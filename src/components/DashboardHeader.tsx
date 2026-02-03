@@ -9,7 +9,7 @@ interface DashboardHeaderProps {
   title?: string
   subtitle?: string
   showLandingPageButton?: boolean
-  currentPage?: 'dashboard' | 'reservations' | 'profile' | 'landing' | 'pricing-demo'
+  currentPage?: 'dashboard' | 'reservations' | 'customers' | 'price-check' | 'profile' | 'landing' | 'pricing-demo'
 }
 
 export default function DashboardHeader({ 
@@ -149,7 +149,13 @@ export default function DashboardHeader({
                 src={logoSrc}
                 alt="Hostly"
                 className="dashboard-header-logo"
-                style={{ objectFit: 'contain' }}
+                style={{ 
+                  objectFit: 'contain',
+                  height: '40px',
+                  maxHeight: '48px',
+                  width: 'auto',
+                  display: 'block',
+                }}
                 onError={() => setLogoVisible(false)}
               />
             </div>
@@ -502,6 +508,75 @@ export default function DashboardHeader({
                       </svg>
                     </div>
                     <span style={{ fontSize: '15px', fontWeight: '500', color: '#333' }}>כל ההזמנות</span>
+                  </Link>
+                  
+                  <Link 
+                    className={`menu-item w-100 border-0 bg-transparent py-3 px-3 d-flex align-items-center justify-content-start gap-3 text-decoration-none ${currentPage === 'customers' ? 'menu-item-active' : ''}`}
+                    href="/dashboard/customers" 
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    <div 
+                      className="d-flex align-items-center justify-content-center"
+                      style={{
+                        width: '36px',
+                        height: '36px',
+                        borderRadius: '10px',
+                        background: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)',
+                        color: 'white'
+                      }}
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="18"
+                        height="18"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                        <circle cx="9" cy="7" r="4" />
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                      </svg>
+                    </div>
+                    <span style={{ fontSize: '15px', fontWeight: '500', color: '#333' }}>ניהול לקוחות</span>
+                  </Link>
+                  
+                  <Link 
+                    className={`menu-item w-100 border-0 bg-transparent py-3 px-3 d-flex align-items-center justify-content-start gap-3 text-decoration-none ${currentPage === 'price-check' ? 'menu-item-active' : ''}`}
+                    href="/dashboard/price-check" 
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    <div 
+                      className="d-flex align-items-center justify-content-center"
+                      style={{
+                        width: '36px',
+                        height: '36px',
+                        borderRadius: '10px',
+                        background: 'linear-gradient(135deg, #30cfd0 0%, #330867 100%)',
+                        color: 'white'
+                      }}
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="18"
+                        height="18"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <circle cx="12" cy="12" r="10" />
+                        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                        <line x1="12" y1="17" x2="12.01" y2="17" />
+                      </svg>
+                    </div>
+                    <span style={{ fontSize: '15px', fontWeight: '500', color: '#333' }}>בדיקת מחיר</span>
                   </Link>
                   
                   <Link 
