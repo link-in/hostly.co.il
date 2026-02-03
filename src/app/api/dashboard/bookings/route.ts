@@ -389,11 +389,9 @@ export async function PUT(request: Request) {
   const { bookingId, ...updates } = requestBody as Record<string, unknown>
 
   // Build update payload for Beds24 V2 API
-  // IMPORTANT: V2 API uses bookId to identify existing bookings for updates
-  // If bookId exists, it updates; otherwise creates new
-  const booking: Record<string, unknown> = {
-    bookId: bookingId,
-  }
+  // IMPORTANT: When using PATCH /v2/bookings/{bookId}, don't include bookId in payload
+  // It's already in the URL. Only send fields to update.
+  const booking: Record<string, unknown> = {}
 
   // Add fields that can be updated
   if (updates.arrival) booking.arrival = updates.arrival
@@ -435,17 +433,19 @@ export async function PUT(request: Request) {
     : undefined
 
   try {
-    // Use V2 API endpoint for updates
-    const updateUrl = `${getBaseUrl()}/bookings`
+    // IMPORTANT: For updates, use PATCH to /v2/bookings/{bookId}
+    // This prevents creating a new booking and properly updates the existing one
+    const updateUrl = `${getBaseUrl()}/bookings/${bookingId}`
     console.log('🔗 Update URL:', updateUrl)
     
-    // Try PATCH for updates (POST for creates)
+    // PATCH requires sending only the booking object (not array)
+    // Send only fields that need updating
     const response = await fetchWithTokenRefresh(updateUrl, {
       method: 'PATCH',
       headers: {
         'content-type': 'application/json',
       },
-      body: JSON.stringify(updatePayload),
+      body: JSON.stringify(booking), // Send booking object directly, not array
     }, userTokens)
 
     if (!response.ok) {
