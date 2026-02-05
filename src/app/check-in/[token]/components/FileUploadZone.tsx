@@ -13,7 +13,7 @@ interface FileUploadZoneProps {
 
 export default function FileUploadZone({
   onUpload,
-  accept = 'image/*,application/pdf',
+  accept = 'image/*',
   maxSizeMB = 5,
   label = 'צילום תעודת זהות/דרכון',
   description = 'צלמו או העלו תמונה ברורה של התעודה'
@@ -48,7 +48,7 @@ export default function FileUploadZone({
     })
 
     if (!isValid) {
-      setError('סוג קובץ לא נתמך. אנא העלה תמונה (JPG/PNG) או PDF')
+      setError('סוג קובץ לא נתמך. אנא העלה תמונה (JPG/PNG/HEIC)')
       return
     }
 
@@ -135,17 +135,16 @@ export default function FileUploadZone({
         >
           <Upload size={48} style={{ color: '#3498db', marginBottom: '1rem' }} />
           <div style={{ fontSize: '1.1rem', color: '#2c3e50', marginBottom: '0.5rem' }}>
-            לחצו לבחירת קובץ או גררו לכאן
+            📸 צלמו תמונה או בחרו מהגלריה
           </div>
           <div style={{ fontSize: '0.9rem', color: '#7f8c8d' }}>
-            JPG, PNG או PDF (עד {maxSizeMB}MB)
+            תמונות JPG, PNG, HEIC (עד {maxSizeMB}MB)
           </div>
           <input
             ref={inputRef}
             id="file-upload"
             type="file"
             accept={accept}
-            capture="environment"
             onChange={handleFileChange}
             style={{ display: 'none' }}
           />

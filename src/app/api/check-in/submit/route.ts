@@ -25,9 +25,7 @@ export async function POST(request: Request) {
     }
 
     // Validate required form fields
-    if (!formData.id_document_type || !formData.id_number || !formData.date_of_birth ||
-        !formData.address || !formData.terms_accepted || !formData.signature_data_url ||
-        !formData.actual_num_guests) {
+    if (!formData.terms_accepted || !formData.signature_data_url || !formData.actual_num_guests) {
       return NextResponse.json(
         { error: 'Missing required fields' } as SubmitCheckInResponse,
         { status: 400 }
@@ -85,12 +83,6 @@ export async function POST(request: Request) {
     const { error: updateError } = await supabase
       .from('check_ins')
       .update({
-        id_document_type: formData.id_document_type,
-        id_number: formData.id_number,
-        date_of_birth: formData.date_of_birth,
-        address: formData.address,
-        emergency_contact_name: formData.emergency_contact_name || null,
-        emergency_contact_phone: formData.emergency_contact_phone || null,
         actual_num_guests: formData.actual_num_guests,
         estimated_arrival_time: formData.estimated_arrival_time || null,
         signature_data_url: formData.signature_data_url,

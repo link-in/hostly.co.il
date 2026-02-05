@@ -85,12 +85,6 @@ export interface CreateCheckInResponse {
 
 export interface CheckInFormData {
   // Step 2: Personal details
-  id_document_type: 'id_card' | 'passport' | 'drivers_license'
-  id_number: string
-  date_of_birth: string
-  address: string
-  emergency_contact_name?: string
-  emergency_contact_phone?: string
   actual_num_guests: number
   estimated_arrival_time?: string
   

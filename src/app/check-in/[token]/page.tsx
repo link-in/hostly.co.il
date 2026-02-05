@@ -49,12 +49,6 @@ export default function CheckInPage() {
 
   // Form state
   const [formData, setFormData] = useState({
-    id_document_type: 'id_card' as 'id_card' | 'passport' | 'drivers_license',
-    id_number: '',
-    date_of_birth: '',
-    address: '',
-    emergency_contact_name: '',
-    emergency_contact_phone: '',
     actual_num_guests: 2,
     estimated_arrival_time: '',
     terms_accepted: false,
@@ -110,7 +104,6 @@ export default function CheckInPage() {
     const formDataObj = new FormData()
     formDataObj.append('file', file)
     formDataObj.append('token', token)
-    formDataObj.append('documentType', formData.id_document_type)
 
     const res = await fetch('/api/check-in/upload-id', {
       method: 'POST',
@@ -132,10 +125,7 @@ export default function CheckInPage() {
       return
     }
 
-    if (!formData.id_number || !formData.date_of_birth || !formData.address) {
-      alert('אנא מלאו את כל השדות החובה')
-      return
-    }
+    // Validation happens in API
 
     if (!formData.terms_accepted) {
       alert('יש לאשר את תנאי האירוח')
@@ -156,12 +146,6 @@ export default function CheckInPage() {
         body: JSON.stringify({
           token,
           formData: {
-            id_document_type: formData.id_document_type,
-            id_number: formData.id_number,
-            date_of_birth: formData.date_of_birth,
-            address: formData.address,
-            emergency_contact_name: formData.emergency_contact_name || undefined,
-            emergency_contact_phone: formData.emergency_contact_phone || undefined,
             actual_num_guests: formData.actual_num_guests,
             estimated_arrival_time: formData.estimated_arrival_time || undefined,
             terms_accepted: formData.terms_accepted,
@@ -293,81 +277,11 @@ export default function CheckInPage() {
             }}
           >
             <h2 style={{ fontSize: '1.8rem', color: '#2c3e50', marginBottom: '2rem' }}>
-              פרטים אישיים והעלאת תעודה
+              העלאת תעודת זהות
             </h2>
 
             <div style={{ marginBottom: '2rem' }}>
-              <label className="form-label"><strong>סוג תעודה</strong></label>
-              <select
-                className="form-select"
-                value={formData.id_document_type}
-                onChange={(e) => setFormData(prev => ({ ...prev, id_document_type: e.target.value as any }))}
-                style={{ borderRadius: '8px' }}
-              >
-                <option value="id_card">תעודת זהות</option>
-                <option value="passport">דרכון</option>
-                <option value="drivers_license">רישיון נהיגה</option>
-              </select>
-            </div>
-
-            <div style={{ marginBottom: '2rem' }}>
-              <label className="form-label"><strong>מספר תעודה <span style={{ color: 'red' }}>*</span></strong></label>
-              <input
-                type="text"
-                className="form-control"
-                value={formData.id_number}
-                onChange={(e) => setFormData(prev => ({ ...prev, id_number: e.target.value }))}
-                style={{ borderRadius: '8px' }}
-                required
-              />
-            </div>
-
-            <div style={{ marginBottom: '2rem' }}>
-              <label className="form-label"><strong>תאריך לידה <span style={{ color: 'red' }}>*</span></strong></label>
-              <input
-                type="date"
-                className="form-control"
-                value={formData.date_of_birth}
-                onChange={(e) => setFormData(prev => ({ ...prev, date_of_birth: e.target.value }))}
-                style={{ borderRadius: '8px' }}
-                required
-              />
-            </div>
-
-            <div style={{ marginBottom: '2rem' }}>
               <FileUploadZone onUpload={handleUploadId} />
-            </div>
-
-            <div style={{ marginBottom: '2rem' }}>
-              <label className="form-label"><strong>כתובת מגורים <span style={{ color: 'red' }}>*</span></strong></label>
-              <textarea
-                className="form-control"
-                value={formData.address}
-                onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
-                rows={3}
-                style={{ borderRadius: '8px' }}
-                required
-              />
-            </div>
-
-            <div style={{ marginBottom: '2rem' }}>
-              <label className="form-label"><strong>איש קשר לחירום</strong></label>
-              <input
-                type="text"
-                className="form-control mb-2"
-                placeholder="שם מלא"
-                value={formData.emergency_contact_name}
-                onChange={(e) => setFormData(prev => ({ ...prev, emergency_contact_name: e.target.value }))}
-                style={{ borderRadius: '8px' }}
-              />
-              <input
-                type="tel"
-                className="form-control"
-                placeholder="מספר טלפון"
-                value={formData.emergency_contact_phone}
-                onChange={(e) => setFormData(prev => ({ ...prev, emergency_contact_phone: e.target.value }))}
-                style={{ borderRadius: '8px' }}
-              />
             </div>
 
             <div style={{ marginBottom: '2rem' }}>
@@ -400,14 +314,14 @@ export default function CheckInPage() {
                 className="btn btn-outline-secondary"
                 style={{ flex: 1, borderRadius: '12px', padding: '0.8rem' }}
               >
-                ← חזרה
+                → חזרה
               </button>
               <button
                 onClick={() => setCurrentStep(3)}
                 className="btn btn-primary"
                 style={{ flex: 2, borderRadius: '12px', padding: '0.8rem', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', border: 'none' }}
               >
-                המשך →
+                המשך ←
               </button>
             </div>
           </div>
@@ -430,41 +344,123 @@ export default function CheckInPage() {
 
             <div
               style={{
-                maxHeight: '300px',
+                maxHeight: '400px',
                 overflowY: 'auto',
                 border: '2px solid #e0e0e0',
                 borderRadius: '12px',
                 padding: '1.5rem',
                 marginBottom: '2rem',
                 background: '#f8f9fa',
+                lineHeight: '1.8',
+                textAlign: 'right',
               }}
             >
-              <h3 style={{ fontSize: '1.3rem', marginBottom: '1rem' }}>תקנון אירוח</h3>
-              <ul style={{ lineHeight: '1.8' }}>
-                <li>שעת כניסה: 15:00, שעת יציאה: 11:00</li>
-                <li>איסור עישון בנכס</li>
-                <li>שמירה על הנכס והציוד</li>
-                <li>אחריות לנזקים שייגרמו מרשלנות</li>
-                <li>הנכס מצויד במצלמות אבטחה חיצוניות</li>
-                <li>שמירה על שקט לילי (22:00-08:00)</li>
-                {checkInData.custom_terms && (
-                  <li dangerouslySetInnerHTML={{ __html: checkInData.custom_terms }} />
-                )}
-              </ul>
+              <h3 style={{ fontSize: '1.4rem', marginBottom: '1rem', fontWeight: 'bold' }}>
+                🏡 הסכם תנאי אירוח והצהרת אחריות
+              </h3>
+              
+              {checkInData.custom_terms ? (
+                <div dangerouslySetInnerHTML={{ __html: checkInData.custom_terms }} />
+              ) : (
+                <div style={{ fontSize: '0.92rem' }}>
+                  <p style={{ marginBottom: '1rem', fontWeight: '500' }}>
+                    אני הח"מ מצהיר/ה כי קראתי והבנתי את תנאי ההסכם ומקבל/ת על עצמי את כל התחייבויותיו:
+                  </p>
+
+                  <h4 style={{ fontSize: '1.05rem', fontWeight: 'bold', marginTop: '0.8rem', marginBottom: '0.4rem' }}>
+                    1️⃣ זמני כניסה ופינוי
+                  </h4>
+                  <p style={{ marginBottom: '0.7rem' }}>
+                    כניסה: 15:00 | פינוי: 13:00<br/>
+                    איחור בפינוי ללא אישור מראש יחייב בתשלום נוסף בסך 150 ₪ לכל שעת איחור.
+                  </p>
+
+                  <h4 style={{ fontSize: '1.05rem', fontWeight: 'bold', marginTop: '0.8rem', marginBottom: '0.4rem' }}>
+                    2️⃣ שמירה על הנכס
+                  </h4>
+                  <p style={{ marginBottom: '0.7rem' }}>
+                    השוכר מתחייב לשמור על שלמות הנכס ותכולתו ולהשתמש בהם בזהירות. חל איסור על הוצאת ציוד מהנכס. כל תקלה או נזק יש לדווח מיד.
+                  </p>
+
+                  <h4 style={{ fontSize: '1.05rem', fontWeight: 'bold', marginTop: '0.8rem', marginBottom: '0.4rem' }}>
+                    3️⃣ אחריות לנזקים
+                  </h4>
+                  <p style={{ marginBottom: '0.7rem' }}>
+                    השוכר נושא באחריות מלאה לכל נזק שייגרם לנכס כתוצאה משימוש, רשלנות או אי-קיום הוראות ההסכם. בעל הנכס רשאי לחייב את השוכר בעלות התיקון המלאה.
+                  </p>
+
+                  <h4 style={{ fontSize: '1.05rem', fontWeight: 'bold', marginTop: '0.8rem', marginBottom: '0.4rem' }}>
+                    4️⃣ אחריות על קטינים
+                  </h4>
+                  <p style={{ marginBottom: '0.7rem' }}>
+                    האחריות המלאה לבטיחות והשגחת קטינים (מתחת לגיל 18) חלה על השוכר בלבד. בעל הנכס אינו אחראי לנזקי גוף או פגיעות.
+                  </p>
+
+                  <h4 style={{ fontSize: '1.05rem', fontWeight: 'bold', marginTop: '0.8rem', marginBottom: '0.4rem' }}>
+                    5️⃣ כללי שימוש
+                  </h4>
+                  <p style={{ marginBottom: '0.7rem' }}>
+                    • איסור מוחלט על עישון בנכס<br/>
+                    • שמירה על שקט בין 22:00-08:00 (חוק למניעת מפגעים)<br/>
+                    • איסור על מסיבות או אורחים נוספים ללא תיאום מראש
+                  </p>
+
+                  <h4 style={{ fontSize: '1.05rem', fontWeight: 'bold', marginTop: '0.8rem', marginBottom: '0.4rem' }}>
+                    6️⃣ מצלמות אבטחה
+                  </h4>
+                  <p style={{ marginBottom: '0.7rem' }}>
+                    שטחי החוץ (כניסה וחצר) מצולמים 24/7 למטרות אבטחה בהתאם לחוק הגנת הפרטיות. אין מצלמות בחללי המגורים.
+                  </p>
+
+                  <h4 style={{ fontSize: '1.05rem', fontWeight: 'bold', marginTop: '0.8rem', marginBottom: '0.4rem' }}>
+                    7️⃣ ויתור על תביעות
+                  </h4>
+                  <p style={{ marginBottom: '0.7rem' }}>
+                    השימוש בנכס נעשה על אחריות השוכר בלבד. השוכר מוותר על כל תביעה כנגד בעל הנכס בגין נזקי גוף, פגיעה או אובדן רכוש אישי, אלא אם נגרם במזיד.
+                  </p>
+                </div>
+              )}
             </div>
 
             <div style={{ marginBottom: '2rem' }}>
-              <div className="form-check" style={{ marginBottom: '1rem' }}>
+              <div 
+                style={{ 
+                  marginBottom: '1rem',
+                  padding: '1rem',
+                  border: '2px solid #e74c3c',
+                  borderRadius: '8px',
+                  background: '#fff5f5',
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '0.75rem',
+                  direction: 'rtl',
+                  textAlign: 'right'
+                }}
+              >
                 <input
-                  className="form-check-input"
                   type="checkbox"
                   checked={formData.terms_accepted}
                   onChange={(e) => setFormData(prev => ({ ...prev, terms_accepted: e.target.checked }))}
                   id="terms"
-                  style={{ marginLeft: '0.5rem' }}
+                  required
+                  style={{ 
+                    width: '20px',
+                    height: '20px',
+                    marginTop: '0.2rem',
+                    cursor: 'pointer',
+                    flexShrink: 0,
+                    accentColor: '#e74c3c'
+                  }}
                 />
-                <label className="form-check-label" htmlFor="terms">
-                  <strong>קראתי והבנתי את תנאי האירוח ואני מסכים/ה לכל האמור</strong>
+                <label 
+                  htmlFor="terms"
+                  style={{ 
+                    cursor: 'pointer',
+                    lineHeight: '1.6',
+                    userSelect: 'none'
+                  }}
+                >
+                  <strong>אני מצהיר/ה כי קראתי בעיון את הסכם תנאי האירוח, הבנתי את כל התחייבויותיו, ומסכים/ה לכל תנאיו ללא סייג. ידוע לי כי חתימתי מהווה הסכמה מחייבת משפטית.</strong>
                 </label>
               </div>
             </div>
@@ -482,7 +478,7 @@ export default function CheckInPage() {
                 className="btn btn-outline-secondary"
                 style={{ flex: 1, borderRadius: '12px', padding: '0.8rem' }}
               >
-                ← חזרה
+                → חזרה
               </button>
               <button
                 onClick={handleSubmit}

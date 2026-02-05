@@ -62,9 +62,9 @@ export async function POST(request: Request) {
       )
     }
 
-    // Get the base URL
-    const baseUrl = process.env.NEXTAUTH_URL || 
-                    (request.headers.get('host') ? `https://${request.headers.get('host')}` : 'http://localhost:3000')
+    // Get the base URL from request or env
+    const url = new URL(request.url)
+    const baseUrl = process.env.NEXTAUTH_URL || `${url.protocol}//${url.host}`
     
     const checkInLink = `${baseUrl}/check-in/${checkIn.token}`
 

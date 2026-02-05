@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { Eye, Send, Download, CheckCircle, Clock, XCircle } from 'lucide-react'
+import { Eye, Send, Download, CheckCircle, Clock, XCircle, ExternalLink } from 'lucide-react'
 import type { CheckIn } from '@/lib/check-in/types'
 import { SessionProvider } from '../SessionProvider'
 import DashboardHeader from '@/components/DashboardHeader'
@@ -248,6 +248,18 @@ function CheckInsPageContent() {
                     </td>
                     <td>
                       <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        {/* כפתור פתיחת קישור צ'ק-אין */}
+                        {checkIn.status === 'pending' && checkIn.token && (
+                          <button
+                            className="btn btn-sm btn-outline-primary"
+                            onClick={() => window.open(`${window.location.origin}/check-in/${checkIn.token}`, '_blank')}
+                            title="פתח קישור צ'ק-אין"
+                          >
+                            <ExternalLink size={16} />
+                          </button>
+                        )}
+                        
+                        {/* כפתור צפייה בפרטים */}
                         <button
                           className="btn btn-sm"
                           style={{
@@ -260,6 +272,8 @@ function CheckInsPageContent() {
                         >
                           <Eye size={16} />
                         </button>
+                        
+                        {/* כפתור שליחה מחדש */}
                         {checkIn.status === 'pending' && (
                           <button
                             className="btn btn-sm btn-outline-secondary"
@@ -269,6 +283,8 @@ function CheckInsPageContent() {
                             <Send size={16} />
                           </button>
                         )}
+                        
+                        {/* כפתור הורדת PDF */}
                         {checkIn.status === 'completed' && (
                           <button
                             className="btn btn-sm btn-outline-success"

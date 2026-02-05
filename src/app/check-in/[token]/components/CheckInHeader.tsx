@@ -17,9 +17,6 @@ export default function CheckInHeader({ propertyName }: CheckInHeaderProps) {
         boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
       }}
     >
-      <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>
-        🏡
-      </div>
       <h1 style={{ fontSize: '1.8rem', fontWeight: 'bold', margin: '0 0 0.5rem 0' }}>
         צ'ק-אין דיגיטלי
       </h1>

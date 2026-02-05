@@ -462,9 +462,11 @@ const ProfileClient = () => {
                       value={termsText}
                       onChange={(e) => setTermsText(e.target.value)}
                       disabled={!editing}
-                      placeholder="השאר ריק לשימוש בתנאי ברירת מחדל, או כתוב תנאים מותאמים אישית..."
+                      placeholder="השאר ריק לשימוש בתנאי ברירת מחדל המשפטיים, או כתוב תנאים מותאמים אישית בפורמט HTML..."
                     />
-                    <small className="text-muted">תנאי שימוש שיופיעו בטופס הצ'ק-אין</small>
+                    <small className="text-muted">
+                      השאר ריק לשימוש בתנאים המשפטיים המלאים (מומלץ). אם תרצה להוסיף תנאים נוספים, כתוב אותם בפורמט HTML והם יוצגו במקום התנאים הדיפולטיים.
+                    </small>
                   </div>
 
                   <div className="col-12">

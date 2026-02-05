@@ -260,7 +260,11 @@ export async function POST(request: Request) {
     
     if (session?.user?.id) {
       try {
-        const checkInRes = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/check-in/create`, {
+        // Get base URL from request
+        const requestUrl = new URL(request.url)
+        const baseUrl = process.env.NEXTAUTH_URL || `${requestUrl.protocol}//${requestUrl.host}`
+        
+        const checkInRes = await fetch(`${baseUrl}/api/check-in/create`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -376,9 +380,10 @@ export async function POST(request: Request) {
       // ⭐ NEW: Include check-in link in message
       let message = `שלום ${guestName}! 🏔️\n\nקיבלנו את הזמנתך ב-${propertyName}.\n📅 תאריך כניסה: ${checkInDate}\n📅 תאריך יציאה: ${checkOutDate}\n\n`
       
-      if (checkInLink) {
-        message += `🔗 אנא השלם/י צ'ק-אין דיגיטלי (לוקח 3 דקות):\n${checkInLink}\n\n`
-      }
+      // ⚠️ Temporarily disabled - check-in link will be sent separately
+      // if (checkInLink) {
+      //   message += `🔗 אנא השלם/י צ'ק-אין דיגיטלי (לוקח 3 דקות):\n${checkInLink}\n\n`
+      // }
       
       message += `נשמח לארח אותך! 🎉`
       
