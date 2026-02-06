@@ -4,6 +4,7 @@ import { useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import DashboardHeader from '@/components/DashboardHeader'
 
 export default function AdminDashboardPage() {
   const { data: session, status } = useSession()
@@ -39,23 +40,23 @@ export default function AdminDashboardPage() {
   }
 
   return (
-    <div className="container py-5" style={{ maxWidth: '1200px', direction: 'rtl' }}>
+    <div className="container py-4" style={{ maxWidth: '1200px', direction: 'rtl' }}>
+      <DashboardHeader 
+        session={session}
+        title="לוח בקרה אדמין"
+        subtitle="ניהול המערכת"
+        currentPage="admin"
+        showLandingPageButton={false}
+      />
+      
       <div 
-        className="d-flex flex-column align-items-center mb-4 p-4"
+        className="d-flex flex-column align-items-center mb-4 p-4 mt-4"
         style={{
           backgroundColor: 'white',
           borderRadius: '12px',
           boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
         }}
       >
-        <img
-          src="/photos/hostly-logo.png"
-          alt="Hostly"
-          style={{ height: '64px', objectFit: 'contain', marginBottom: '1rem' }}
-          onError={(e) => {
-            e.currentTarget.style.display = 'none'
-          }}
-        />
         <h1 
           className="mb-2"
           style={{

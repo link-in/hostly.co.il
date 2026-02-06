@@ -205,59 +205,70 @@ const ReservationsTable = ({ reservations, onReservationViewed, onEditReservatio
   // Get platform logo/icon based on reservation source
   const getPlatformIcon = (source: string | null | undefined, size: number = 24) => {
     const sourceLower = (source || '').toLowerCase()
-    const emojiSize = Math.floor(size * 1.2)
+    
+    // Container style for consistent alignment
+    const containerStyle: React.CSSProperties = {
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      width: `${size}px`,
+      height: `${size}px`,
+      flexShrink: 0,
+    }
     
     if (sourceLower.includes('airbnb')) {
       // Airbnb logo
       return (
-        <img 
-          src="/airbnb-logo.png" 
-          alt="Airbnb" 
-          width={size} 
-          height={size}
-          style={{ 
-            display: 'inline-block', 
-            verticalAlign: 'middle',
-            borderRadius: '50%',
-            objectFit: 'cover'
-          }} 
-        />
+        <span style={containerStyle}>
+          <img 
+            src="/airbnb-logo.png" 
+            alt="Airbnb" 
+            width={size} 
+            height={size}
+            style={{ 
+              display: 'block',
+              borderRadius: '50%',
+              objectFit: 'cover'
+            }} 
+          />
+        </span>
       )
     }
     if (sourceLower.includes('booking')) {
       // Booking.com logo
       return (
-        <img 
-          src="/booking-logo.png" 
-          alt="Booking.com" 
-          width={size} 
-          height={size}
-          style={{ 
-            display: 'inline-block', 
-            verticalAlign: 'middle',
-            borderRadius: '50%',
-            objectFit: 'cover'
-          }} 
-        />
+        <span style={containerStyle}>
+          <img 
+            src="/booking-logo.png" 
+            alt="Booking.com" 
+            width={size} 
+            height={size}
+            style={{ 
+              display: 'block',
+              borderRadius: '50%',
+              objectFit: 'cover'
+            }} 
+          />
+        </span>
       )
     }
     if (sourceLower.includes('agoda')) {
-      return <span style={{ fontSize: `${emojiSize}px`, display: 'inline-block', verticalAlign: 'middle' }}>🗺️</span>
+      return <span style={{ ...containerStyle, fontSize: '18px' }}>🗺️</span>
     }
     if (sourceLower.includes('expedia')) {
-      return <span style={{ fontSize: `${emojiSize}px`, display: 'inline-block', verticalAlign: 'middle' }}>✈️</span>
+      return <span style={{ ...containerStyle, fontSize: '18px' }}>✈️</span>
     }
     if (sourceLower.includes('vrbo') || sourceLower.includes('homeaway')) {
-      return <span style={{ fontSize: `${emojiSize}px`, display: 'inline-block', verticalAlign: 'middle' }}>🏡</span>
+      return <span style={{ ...containerStyle, fontSize: '18px' }}>🏡</span>
     }
     if (sourceLower.includes('tripadvisor')) {
-      return <span style={{ fontSize: `${emojiSize}px`, display: 'inline-block', verticalAlign: 'middle' }}>🦉</span>
+      return <span style={{ ...containerStyle, fontSize: '18px' }}>🦉</span>
     }
     if (sourceLower.includes('hotels.com')) {
-      return <span style={{ fontSize: `${emojiSize}px`, display: 'inline-block', verticalAlign: 'middle' }}>🏨</span>
+      return <span style={{ ...containerStyle, fontSize: '18px' }}>🏨</span>
     }
     // הזמנה ישירה או לא מוכר
-    return <span style={{ fontSize: `${emojiSize}px`, display: 'inline-block', verticalAlign: 'middle' }}>🌐</span>
+    return <span style={{ ...containerStyle, fontSize: '20px' }}>🌐</span>
   }
 
   // Mobile List View Component
@@ -598,8 +609,8 @@ const ReservationsTable = ({ reservations, onReservationViewed, onEditReservatio
                 </td>
                 <td>{reservation.nights}</td>
                 <td className="small">
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    {getPlatformIcon(reservation.source, 18)}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    {getPlatformIcon(reservation.source, 20)}
                     <span>{reservation.source ?? '—'}</span>
                   </div>
                 </td>
