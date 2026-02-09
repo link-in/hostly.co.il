@@ -1,6 +1,8 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react'
 import type { Reservation, RoomPrice } from '@/lib/dashboard/types'
 import { formatCurrency } from '@/lib/dashboard/utils'
+import { useHolidays } from '@/hooks/useHolidays'
+import HolidayIndicator from '@/components/HolidayIndicator'
 
 type CalendarPricingProps = {
   reservations: Reservation[]
@@ -173,6 +175,24 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated }: CalendarPric
   const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null)
   const reservationDetailsRef = useRef<HTMLDivElement>(null)
   const todayKey = toKey(normalizeDate(new Date()))
+  const [isMobile, setIsMobile] = useState(false)
+  
+  // Load Hebrew holidays for the current month
+  const { holidays } = useHolidays(currentMonth)
+  
+  // Detect mobile viewport
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768)
+    }
+    
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    
+    return () => {
+      window.removeEventListener('resize', checkMobile)
+    }
+  }, [])
 
   // Auto-scroll to reservation details when a reservation is selected
   useEffect(() => {
@@ -444,6 +464,8 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated }: CalendarPric
                     }`
                   : '12px'
 
+                const holiday = holidays.get(key)
+                
                 return (
                   <button
                     key={key}
@@ -482,6 +504,7 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated }: CalendarPric
                     }}
                     onClick={() => handleDateToggle(date)}
                   >
+                    {holiday && <HolidayIndicator holiday={holiday} isMobile={isMobile} />}
                     <span
                       className="fw-semibold"
                       style={{ position: 'absolute', top: '8px', left: '8px', fontSize: '14px', color: isBlocked ? 'rgba(255, 152, 0, 0.9)' : 'rgba(255, 255, 255, 0.9)' }}
@@ -667,6 +690,19 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated }: CalendarPric
                 <div>
                   <span className="badge me-2" style={{ background: 'rgba(102, 126, 234, 0.6)' }}>נבחר</span>
                   תאריך שנבחר לעדכון מחיר
+                </div>
+                <div>
+                  <span 
+                    style={{ 
+                      display: 'inline-block',
+                      fontSize: '14px',
+                      marginLeft: '8px',
+                      marginRight: '8px'
+                    }}
+                  >
+                    🚩
+                  </span>
+                  חג יהודי
                 </div>
                 <div className="mt-2 pt-2" style={{ borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
                   <small className="text-muted">
