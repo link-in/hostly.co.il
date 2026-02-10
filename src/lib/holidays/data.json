@@ -1,0 +1,2417 @@
+{
+  "2024": [
+    {
+      "date": "2024-01-25",
+      "title": "ט״וּ בִּשְׁבָט",
+      "hebrew": "ט״ו בשבט",
+      "category": "holiday",
+      "subcat": "minor"
+    },
+    {
+      "date": "2024-02-23",
+      "title": "פּוּרִים קָטָן",
+      "hebrew": "פורים קטן",
+      "category": "holiday",
+      "subcat": "minor"
+    },
+    {
+      "date": "2024-02-24",
+      "title": "שׁוּשָׁן פּוּרִים קָטָן",
+      "hebrew": "שושן פורים קטן",
+      "category": "holiday",
+      "subcat": "minor"
+    },
+    {
+      "date": "2024-03-23",
+      "title": "עֶרֶב פּוּרִים",
+      "hebrew": "ערב פורים",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2024-03-24",
+      "title": "פּוּרִים",
+      "hebrew": "פורים",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2024-03-25",
+      "title": "שׁוּשָׁן פּוּרִים",
+      "hebrew": "שושן פורים",
+      "category": "holiday",
+      "subcat": "minor"
+    },
+    {
+      "date": "2024-04-22",
+      "title": "עֶרֶב פֶּסַח",
+      "hebrew": "ערב פסח",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2024-04-23",
+      "title": "פֶּסַח א׳",
+      "hebrew": "פסח א׳",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2024-04-24",
+      "title": "פֶּסַח ב׳",
+      "hebrew": "פסח ב׳",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2024-04-25",
+      "title": "פֶּסַח ג׳ (חוה״מ)",
+      "hebrew": "פסח ג׳ (חוה״מ)",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2024-04-26",
+      "title": "פֶּסַח ד׳ (חוה״מ)",
+      "hebrew": "פסח ד׳ (חוה״מ)",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2024-04-27",
+      "title": "פֶּסַח ה׳ (חוה״מ)",
+      "hebrew": "פסח ה׳ (חוה״מ)",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2024-04-28",
+      "title": "פֶּסַח ו׳ (חוה״מ)",
+      "hebrew": "פסח ו׳ (חוה״מ)",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2024-04-29",
+      "title": "פֶּסַח ז׳",
+      "hebrew": "פסח ז׳",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2024-04-30",
+      "title": "פֶּסַח ח׳",
+      "hebrew": "פסח ח׳",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2024-05-22",
+      "title": "פֶּסַח שֵׁנִי",
+      "hebrew": "פסח שני",
+      "category": "holiday",
+      "subcat": "minor"
+    },
+    {
+      "date": "2024-05-26",
+      "title": "ל״ג בָּעוֹמֶר",
+      "hebrew": "ל״ג בעומר",
+      "category": "holiday",
+      "subcat": "minor"
+    },
+    {
+      "date": "2024-06-11",
+      "title": "עֶרֶב שָׁבוּעוֹת",
+      "hebrew": "ערב שבועות",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2024-06-12",
+      "title": "שָׁבוּעוֹת א׳",
+      "hebrew": "שבועות א׳",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2024-06-13",
+      "title": "שָׁבוּעוֹת ב׳",
+      "hebrew": "שבועות ב׳",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2024-08-12",
+      "title": "עֶרֶב תִּשְׁעָה בְּאָב",
+      "hebrew": "ערב תשעה באב",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2024-08-13",
+      "title": "תִּשְׁעָה בְּאָב",
+      "hebrew": "תשעה באב",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2024-08-19",
+      "title": "ט״וּ בְּאָב",
+      "hebrew": "ט״ו באב",
+      "category": "holiday",
+      "subcat": "minor"
+    },
+    {
+      "date": "2024-09-04",
+      "title": "רֹאשׁ הַשָּׁנָה לְמַעְשַׂר בְּהֵמָה",
+      "hebrew": "ראש השנה למעשר בהמה",
+      "category": "holiday",
+      "subcat": "minor"
+    },
+    {
+      "date": "2024-09-28",
+      "title": "סְלִיחוֹת",
+      "hebrew": "סליחות",
+      "category": "holiday",
+      "subcat": "minor"
+    },
+    {
+      "date": "2024-10-02",
+      "title": "עֶרֶב רֹאשׁ הַשָּׁנָה",
+      "hebrew": "ערב ראש השנה",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2024-10-03",
+      "title": "רֹאשׁ הַשָּׁנָה 5785",
+      "hebrew": "ראש השנה 5785",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2024-10-04",
+      "title": "רֹאשׁ הַשָּׁנָה ב׳",
+      "hebrew": "ראש השנה ב׳",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2024-10-11",
+      "title": "עֶרֶב יוֹם כִּפּוּר",
+      "hebrew": "ערב יום כיפור",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2024-10-12",
+      "title": "יוֹם כִּפּוּר",
+      "hebrew": "יום כיפור",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2024-10-16",
+      "title": "עֶרֶב סוּכּוֹת",
+      "hebrew": "ערב סוכות",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2024-10-17",
+      "title": "סוּכּוֹת א׳",
+      "hebrew": "סוכות א׳",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2024-10-18",
+      "title": "סוּכּוֹת ב׳",
+      "hebrew": "סוכות ב׳",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2024-10-19",
+      "title": "סוּכּוֹת ג׳ (חוה״מ)",
+      "hebrew": "סוכות ג׳ (חוה״מ)",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2024-10-20",
+      "title": "סוּכּוֹת ד׳ (חוה״מ)",
+      "hebrew": "סוכות ד׳ (חוה״מ)",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2024-10-21",
+      "title": "סוּכּוֹת ה׳ (חוה״מ)",
+      "hebrew": "סוכות ה׳ (חוה״מ)",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2024-10-22",
+      "title": "סוּכּוֹת ו׳ (חוה״מ)",
+      "hebrew": "סוכות ו׳ (חוה״מ)",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2024-10-23",
+      "title": "סוּכּוֹת ז׳ (הוֹשַׁעְנָא רַבָּה)",
+      "hebrew": "סוכות ז׳ (הושענא רבה)",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2024-10-24",
+      "title": "שְׁמִינִי עֲצֶרֶת",
+      "hebrew": "שמיני עצרת",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2024-10-25",
+      "title": "שִׂמְחַת תּוֹרָה",
+      "hebrew": "שמחת תורה",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2024-12-25",
+      "title": "חֲנוּכָּה: א׳ נֵר",
+      "hebrew": "חנוכה: א׳ נר",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2024-12-26",
+      "title": "חֲנוּכָּה: ב׳ נֵרוֹת",
+      "hebrew": "חנוכה: ב׳ נרות",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2024-12-27",
+      "title": "חֲנוּכָּה: ג׳ נֵרוֹת",
+      "hebrew": "חנוכה: ג׳ נרות",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2024-12-28",
+      "title": "חֲנוּכָּה: ד׳ נֵרוֹת",
+      "hebrew": "חנוכה: ד׳ נרות",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2024-12-29",
+      "title": "חֲנוּכָּה: ה׳ נֵרוֹת",
+      "hebrew": "חנוכה: ה׳ נרות",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2024-12-30",
+      "title": "חֲנוּכָּה: ו׳ נֵרוֹת",
+      "hebrew": "חנוכה: ו׳ נרות",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2024-12-31",
+      "title": "חַג הַבָּנוֹת",
+      "hebrew": "חג הבנות",
+      "category": "holiday",
+      "subcat": "minor"
+    },
+    {
+      "date": "2024-12-31",
+      "title": "חֲנוּכָּה: ז׳ נֵרוֹת",
+      "hebrew": "חנוכה: ז׳ נרות",
+      "category": "holiday",
+      "subcat": "major"
+    }
+  ],
+  "2025": [
+    {
+      "date": "2025-01-01",
+      "title": "חֲנוּכָּה: ח׳ נֵרוֹת",
+      "hebrew": "חנוכה: ח׳ נרות",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2025-01-02",
+      "title": "חֲנוּכָּה: יוֹם ח׳",
+      "hebrew": "חנוכה: יום ח׳",
+      "category": "holiday",
+      "subcat": "minor"
+    },
+    {
+      "date": "2025-02-13",
+      "title": "ט״וּ בִּשְׁבָט",
+      "hebrew": "ט״ו בשבט",
+      "category": "holiday",
+      "subcat": "minor"
+    },
+    {
+      "date": "2025-03-13",
+      "title": "עֶרֶב פּוּרִים",
+      "hebrew": "ערב פורים",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2025-03-14",
+      "title": "פּוּרִים",
+      "hebrew": "פורים",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2025-03-15",
+      "title": "שׁוּשָׁן פּוּרִים",
+      "hebrew": "שושן פורים",
+      "category": "holiday",
+      "subcat": "minor"
+    },
+    {
+      "date": "2025-03-16",
+      "title": "פּוּרִים מְשׁוּלָּשׁ",
+      "hebrew": "פורים משולש",
+      "category": "holiday",
+      "subcat": "minor"
+    },
+    {
+      "date": "2025-04-12",
+      "title": "עֶרֶב פֶּסַח",
+      "hebrew": "ערב פסח",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2025-04-13",
+      "title": "פֶּסַח א׳",
+      "hebrew": "פסח א׳",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2025-04-14",
+      "title": "פֶּסַח ב׳",
+      "hebrew": "פסח ב׳",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2025-04-15",
+      "title": "פֶּסַח ג׳ (חוה״מ)",
+      "hebrew": "פסח ג׳ (חוה״מ)",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2025-04-16",
+      "title": "פֶּסַח ד׳ (חוה״מ)",
+      "hebrew": "פסח ד׳ (חוה״מ)",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2025-04-17",
+      "title": "פֶּסַח ה׳ (חוה״מ)",
+      "hebrew": "פסח ה׳ (חוה״מ)",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2025-04-18",
+      "title": "פֶּסַח ו׳ (חוה״מ)",
+      "hebrew": "פסח ו׳ (חוה״מ)",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2025-04-19",
+      "title": "פֶּסַח ז׳",
+      "hebrew": "פסח ז׳",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2025-04-20",
+      "title": "פֶּסַח ח׳",
+      "hebrew": "פסח ח׳",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2025-05-12",
+      "title": "פֶּסַח שֵׁנִי",
+      "hebrew": "פסח שני",
+      "category": "holiday",
+      "subcat": "minor"
+    },
+    {
+      "date": "2025-05-16",
+      "title": "ל״ג בָּעוֹמֶר",
+      "hebrew": "ל״ג בעומר",
+      "category": "holiday",
+      "subcat": "minor"
+    },
+    {
+      "date": "2025-06-01",
+      "title": "עֶרֶב שָׁבוּעוֹת",
+      "hebrew": "ערב שבועות",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2025-06-02",
+      "title": "שָׁבוּעוֹת א׳",
+      "hebrew": "שבועות א׳",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2025-06-03",
+      "title": "שָׁבוּעוֹת ב׳",
+      "hebrew": "שבועות ב׳",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2025-08-02",
+      "title": "עֶרֶב תִּשְׁעָה בְּאָב",
+      "hebrew": "ערב תשעה באב",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2025-08-03",
+      "title": "תִּשְׁעָה בְּאָב",
+      "hebrew": "תשעה באב",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2025-08-09",
+      "title": "ט״וּ בְּאָב",
+      "hebrew": "ט״ו באב",
+      "category": "holiday",
+      "subcat": "minor"
+    },
+    {
+      "date": "2025-08-25",
+      "title": "רֹאשׁ הַשָּׁנָה לְמַעְשַׂר בְּהֵמָה",
+      "hebrew": "ראש השנה למעשר בהמה",
+      "category": "holiday",
+      "subcat": "minor"
+    },
+    {
+      "date": "2025-09-13",
+      "title": "סְלִיחוֹת",
+      "hebrew": "סליחות",
+      "category": "holiday",
+      "subcat": "minor"
+    },
+    {
+      "date": "2025-09-22",
+      "title": "עֶרֶב רֹאשׁ הַשָּׁנָה",
+      "hebrew": "ערב ראש השנה",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2025-09-23",
+      "title": "רֹאשׁ הַשָּׁנָה 5786",
+      "hebrew": "ראש השנה 5786",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2025-09-24",
+      "title": "רֹאשׁ הַשָּׁנָה ב׳",
+      "hebrew": "ראש השנה ב׳",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2025-10-01",
+      "title": "עֶרֶב יוֹם כִּפּוּר",
+      "hebrew": "ערב יום כיפור",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2025-10-02",
+      "title": "יוֹם כִּפּוּר",
+      "hebrew": "יום כיפור",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2025-10-06",
+      "title": "עֶרֶב סוּכּוֹת",
+      "hebrew": "ערב סוכות",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2025-10-07",
+      "title": "סוּכּוֹת א׳",
+      "hebrew": "סוכות א׳",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2025-10-08",
+      "title": "סוּכּוֹת ב׳",
+      "hebrew": "סוכות ב׳",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2025-10-09",
+      "title": "סוּכּוֹת ג׳ (חוה״מ)",
+      "hebrew": "סוכות ג׳ (חוה״מ)",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2025-10-10",
+      "title": "סוּכּוֹת ד׳ (חוה״מ)",
+      "hebrew": "סוכות ד׳ (חוה״מ)",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2025-10-11",
+      "title": "סוּכּוֹת ה׳ (חוה״מ)",
+      "hebrew": "סוכות ה׳ (חוה״מ)",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2025-10-12",
+      "title": "סוּכּוֹת ו׳ (חוה״מ)",
+      "hebrew": "סוכות ו׳ (חוה״מ)",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2025-10-13",
+      "title": "סוּכּוֹת ז׳ (הוֹשַׁעְנָא רַבָּה)",
+      "hebrew": "סוכות ז׳ (הושענא רבה)",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2025-10-14",
+      "title": "שְׁמִינִי עֲצֶרֶת",
+      "hebrew": "שמיני עצרת",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2025-10-15",
+      "title": "שִׂמְחַת תּוֹרָה",
+      "hebrew": "שמחת תורה",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2025-12-14",
+      "title": "חֲנוּכָּה: א׳ נֵר",
+      "hebrew": "חנוכה: א׳ נר",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2025-12-15",
+      "title": "חֲנוּכָּה: ב׳ נֵרוֹת",
+      "hebrew": "חנוכה: ב׳ נרות",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2025-12-16",
+      "title": "חֲנוּכָּה: ג׳ נֵרוֹת",
+      "hebrew": "חנוכה: ג׳ נרות",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2025-12-17",
+      "title": "חֲנוּכָּה: ד׳ נֵרוֹת",
+      "hebrew": "חנוכה: ד׳ נרות",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2025-12-18",
+      "title": "חֲנוּכָּה: ה׳ נֵרוֹת",
+      "hebrew": "חנוכה: ה׳ נרות",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2025-12-19",
+      "title": "חֲנוּכָּה: ו׳ נֵרוֹת",
+      "hebrew": "חנוכה: ו׳ נרות",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2025-12-20",
+      "title": "חַג הַבָּנוֹת",
+      "hebrew": "חג הבנות",
+      "category": "holiday",
+      "subcat": "minor"
+    },
+    {
+      "date": "2025-12-20",
+      "title": "חֲנוּכָּה: ז׳ נֵרוֹת",
+      "hebrew": "חנוכה: ז׳ נרות",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2025-12-21",
+      "title": "חֲנוּכָּה: ח׳ נֵרוֹת",
+      "hebrew": "חנוכה: ח׳ נרות",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2025-12-22",
+      "title": "חֲנוּכָּה: יוֹם ח׳",
+      "hebrew": "חנוכה: יום ח׳",
+      "category": "holiday",
+      "subcat": "minor"
+    }
+  ],
+  "2026": [
+    {
+      "date": "2026-02-02",
+      "title": "ט״וּ בִּשְׁבָט",
+      "hebrew": "ט״ו בשבט",
+      "category": "holiday",
+      "subcat": "minor"
+    },
+    {
+      "date": "2026-03-02",
+      "title": "עֶרֶב פּוּרִים",
+      "hebrew": "ערב פורים",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2026-03-03",
+      "title": "פּוּרִים",
+      "hebrew": "פורים",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2026-03-04",
+      "title": "שׁוּשָׁן פּוּרִים",
+      "hebrew": "שושן פורים",
+      "category": "holiday",
+      "subcat": "minor"
+    },
+    {
+      "date": "2026-04-01",
+      "title": "עֶרֶב פֶּסַח",
+      "hebrew": "ערב פסח",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2026-04-02",
+      "title": "פֶּסַח א׳",
+      "hebrew": "פסח א׳",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2026-04-03",
+      "title": "פֶּסַח ב׳",
+      "hebrew": "פסח ב׳",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2026-04-04",
+      "title": "פֶּסַח ג׳ (חוה״מ)",
+      "hebrew": "פסח ג׳ (חוה״מ)",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2026-04-05",
+      "title": "פֶּסַח ד׳ (חוה״מ)",
+      "hebrew": "פסח ד׳ (חוה״מ)",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2026-04-06",
+      "title": "פֶּסַח ה׳ (חוה״מ)",
+      "hebrew": "פסח ה׳ (חוה״מ)",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2026-04-07",
+      "title": "פֶּסַח ו׳ (חוה״מ)",
+      "hebrew": "פסח ו׳ (חוה״מ)",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2026-04-08",
+      "title": "פֶּסַח ז׳",
+      "hebrew": "פסח ז׳",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2026-04-09",
+      "title": "פֶּסַח ח׳",
+      "hebrew": "פסח ח׳",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2026-05-01",
+      "title": "פֶּסַח שֵׁנִי",
+      "hebrew": "פסח שני",
+      "category": "holiday",
+      "subcat": "minor"
+    },
+    {
+      "date": "2026-05-05",
+      "title": "ל״ג בָּעוֹמֶר",
+      "hebrew": "ל״ג בעומר",
+      "category": "holiday",
+      "subcat": "minor"
+    },
+    {
+      "date": "2026-05-21",
+      "title": "עֶרֶב שָׁבוּעוֹת",
+      "hebrew": "ערב שבועות",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2026-05-22",
+      "title": "שָׁבוּעוֹת א׳",
+      "hebrew": "שבועות א׳",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2026-05-23",
+      "title": "שָׁבוּעוֹת ב׳",
+      "hebrew": "שבועות ב׳",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2026-07-22",
+      "title": "עֶרֶב תִּשְׁעָה בְּאָב",
+      "hebrew": "ערב תשעה באב",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2026-07-23",
+      "title": "תִּשְׁעָה בְּאָב",
+      "hebrew": "תשעה באב",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2026-07-29",
+      "title": "ט״וּ בְּאָב",
+      "hebrew": "ט״ו באב",
+      "category": "holiday",
+      "subcat": "minor"
+    },
+    {
+      "date": "2026-08-14",
+      "title": "רֹאשׁ הַשָּׁנָה לְמַעְשַׂר בְּהֵמָה",
+      "hebrew": "ראש השנה למעשר בהמה",
+      "category": "holiday",
+      "subcat": "minor"
+    },
+    {
+      "date": "2026-09-05",
+      "title": "סְלִיחוֹת",
+      "hebrew": "סליחות",
+      "category": "holiday",
+      "subcat": "minor"
+    },
+    {
+      "date": "2026-09-11",
+      "title": "עֶרֶב רֹאשׁ הַשָּׁנָה",
+      "hebrew": "ערב ראש השנה",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2026-09-12",
+      "title": "רֹאשׁ הַשָּׁנָה 5787",
+      "hebrew": "ראש השנה 5787",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2026-09-13",
+      "title": "רֹאשׁ הַשָּׁנָה ב׳",
+      "hebrew": "ראש השנה ב׳",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2026-09-20",
+      "title": "עֶרֶב יוֹם כִּפּוּר",
+      "hebrew": "ערב יום כיפור",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2026-09-21",
+      "title": "יוֹם כִּפּוּר",
+      "hebrew": "יום כיפור",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2026-09-25",
+      "title": "עֶרֶב סוּכּוֹת",
+      "hebrew": "ערב סוכות",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2026-09-26",
+      "title": "סוּכּוֹת א׳",
+      "hebrew": "סוכות א׳",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2026-09-27",
+      "title": "סוּכּוֹת ב׳",
+      "hebrew": "סוכות ב׳",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2026-09-28",
+      "title": "סוּכּוֹת ג׳ (חוה״מ)",
+      "hebrew": "סוכות ג׳ (חוה״מ)",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2026-09-29",
+      "title": "סוּכּוֹת ד׳ (חוה״מ)",
+      "hebrew": "סוכות ד׳ (חוה״מ)",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2026-09-30",
+      "title": "סוּכּוֹת ה׳ (חוה״מ)",
+      "hebrew": "סוכות ה׳ (חוה״מ)",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2026-10-01",
+      "title": "סוּכּוֹת ו׳ (חוה״מ)",
+      "hebrew": "סוכות ו׳ (חוה״מ)",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2026-10-02",
+      "title": "סוּכּוֹת ז׳ (הוֹשַׁעְנָא רַבָּה)",
+      "hebrew": "סוכות ז׳ (הושענא רבה)",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2026-10-03",
+      "title": "שְׁמִינִי עֲצֶרֶת",
+      "hebrew": "שמיני עצרת",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2026-10-04",
+      "title": "שִׂמְחַת תּוֹרָה",
+      "hebrew": "שמחת תורה",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2026-12-04",
+      "title": "חֲנוּכָּה: א׳ נֵר",
+      "hebrew": "חנוכה: א׳ נר",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2026-12-05",
+      "title": "חֲנוּכָּה: ב׳ נֵרוֹת",
+      "hebrew": "חנוכה: ב׳ נרות",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2026-12-06",
+      "title": "חֲנוּכָּה: ג׳ נֵרוֹת",
+      "hebrew": "חנוכה: ג׳ נרות",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2026-12-07",
+      "title": "חֲנוּכָּה: ד׳ נֵרוֹת",
+      "hebrew": "חנוכה: ד׳ נרות",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2026-12-08",
+      "title": "חֲנוּכָּה: ה׳ נֵרוֹת",
+      "hebrew": "חנוכה: ה׳ נרות",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2026-12-09",
+      "title": "חֲנוּכָּה: ו׳ נֵרוֹת",
+      "hebrew": "חנוכה: ו׳ נרות",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2026-12-10",
+      "title": "חַג הַבָּנוֹת",
+      "hebrew": "חג הבנות",
+      "category": "holiday",
+      "subcat": "minor"
+    },
+    {
+      "date": "2026-12-10",
+      "title": "חֲנוּכָּה: ז׳ נֵרוֹת",
+      "hebrew": "חנוכה: ז׳ נרות",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2026-12-11",
+      "title": "חֲנוּכָּה: ח׳ נֵרוֹת",
+      "hebrew": "חנוכה: ח׳ נרות",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2026-12-12",
+      "title": "חֲנוּכָּה: יוֹם ח׳",
+      "hebrew": "חנוכה: יום ח׳",
+      "category": "holiday",
+      "subcat": "minor"
+    }
+  ],
+  "2027": [
+    {
+      "date": "2027-01-23",
+      "title": "ט״וּ בִּשְׁבָט",
+      "hebrew": "ט״ו בשבט",
+      "category": "holiday",
+      "subcat": "minor"
+    },
+    {
+      "date": "2027-02-21",
+      "title": "פּוּרִים קָטָן",
+      "hebrew": "פורים קטן",
+      "category": "holiday",
+      "subcat": "minor"
+    },
+    {
+      "date": "2027-02-22",
+      "title": "שׁוּשָׁן פּוּרִים קָטָן",
+      "hebrew": "שושן פורים קטן",
+      "category": "holiday",
+      "subcat": "minor"
+    },
+    {
+      "date": "2027-03-22",
+      "title": "עֶרֶב פּוּרִים",
+      "hebrew": "ערב פורים",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2027-03-23",
+      "title": "פּוּרִים",
+      "hebrew": "פורים",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2027-03-24",
+      "title": "שׁוּשָׁן פּוּרִים",
+      "hebrew": "שושן פורים",
+      "category": "holiday",
+      "subcat": "minor"
+    },
+    {
+      "date": "2027-04-21",
+      "title": "עֶרֶב פֶּסַח",
+      "hebrew": "ערב פסח",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2027-04-22",
+      "title": "פֶּסַח א׳",
+      "hebrew": "פסח א׳",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2027-04-23",
+      "title": "פֶּסַח ב׳",
+      "hebrew": "פסח ב׳",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2027-04-24",
+      "title": "פֶּסַח ג׳ (חוה״מ)",
+      "hebrew": "פסח ג׳ (חוה״מ)",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2027-04-25",
+      "title": "פֶּסַח ד׳ (חוה״מ)",
+      "hebrew": "פסח ד׳ (חוה״מ)",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2027-04-26",
+      "title": "פֶּסַח ה׳ (חוה״מ)",
+      "hebrew": "פסח ה׳ (חוה״מ)",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2027-04-27",
+      "title": "פֶּסַח ו׳ (חוה״מ)",
+      "hebrew": "פסח ו׳ (חוה״מ)",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2027-04-28",
+      "title": "פֶּסַח ז׳",
+      "hebrew": "פסח ז׳",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2027-04-29",
+      "title": "פֶּסַח ח׳",
+      "hebrew": "פסח ח׳",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2027-05-21",
+      "title": "פֶּסַח שֵׁנִי",
+      "hebrew": "פסח שני",
+      "category": "holiday",
+      "subcat": "minor"
+    },
+    {
+      "date": "2027-05-25",
+      "title": "ל״ג בָּעוֹמֶר",
+      "hebrew": "ל״ג בעומר",
+      "category": "holiday",
+      "subcat": "minor"
+    },
+    {
+      "date": "2027-06-10",
+      "title": "עֶרֶב שָׁבוּעוֹת",
+      "hebrew": "ערב שבועות",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2027-06-11",
+      "title": "שָׁבוּעוֹת א׳",
+      "hebrew": "שבועות א׳",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2027-06-12",
+      "title": "שָׁבוּעוֹת ב׳",
+      "hebrew": "שבועות ב׳",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2027-08-11",
+      "title": "עֶרֶב תִּשְׁעָה בְּאָב",
+      "hebrew": "ערב תשעה באב",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2027-08-12",
+      "title": "תִּשְׁעָה בְּאָב",
+      "hebrew": "תשעה באב",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2027-08-18",
+      "title": "ט״וּ בְּאָב",
+      "hebrew": "ט״ו באב",
+      "category": "holiday",
+      "subcat": "minor"
+    },
+    {
+      "date": "2027-09-03",
+      "title": "רֹאשׁ הַשָּׁנָה לְמַעְשַׂר בְּהֵמָה",
+      "hebrew": "ראש השנה למעשר בהמה",
+      "category": "holiday",
+      "subcat": "minor"
+    },
+    {
+      "date": "2027-09-25",
+      "title": "סְלִיחוֹת",
+      "hebrew": "סליחות",
+      "category": "holiday",
+      "subcat": "minor"
+    },
+    {
+      "date": "2027-10-01",
+      "title": "עֶרֶב רֹאשׁ הַשָּׁנָה",
+      "hebrew": "ערב ראש השנה",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2027-10-02",
+      "title": "רֹאשׁ הַשָּׁנָה 5788",
+      "hebrew": "ראש השנה 5788",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2027-10-03",
+      "title": "רֹאשׁ הַשָּׁנָה ב׳",
+      "hebrew": "ראש השנה ב׳",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2027-10-10",
+      "title": "עֶרֶב יוֹם כִּפּוּר",
+      "hebrew": "ערב יום כיפור",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2027-10-11",
+      "title": "יוֹם כִּפּוּר",
+      "hebrew": "יום כיפור",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2027-10-15",
+      "title": "עֶרֶב סוּכּוֹת",
+      "hebrew": "ערב סוכות",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2027-10-16",
+      "title": "סוּכּוֹת א׳",
+      "hebrew": "סוכות א׳",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2027-10-17",
+      "title": "סוּכּוֹת ב׳",
+      "hebrew": "סוכות ב׳",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2027-10-18",
+      "title": "סוּכּוֹת ג׳ (חוה״מ)",
+      "hebrew": "סוכות ג׳ (חוה״מ)",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2027-10-19",
+      "title": "סוּכּוֹת ד׳ (חוה״מ)",
+      "hebrew": "סוכות ד׳ (חוה״מ)",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2027-10-20",
+      "title": "סוּכּוֹת ה׳ (חוה״מ)",
+      "hebrew": "סוכות ה׳ (חוה״מ)",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2027-10-21",
+      "title": "סוּכּוֹת ו׳ (חוה״מ)",
+      "hebrew": "סוכות ו׳ (חוה״מ)",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2027-10-22",
+      "title": "סוּכּוֹת ז׳ (הוֹשַׁעְנָא רַבָּה)",
+      "hebrew": "סוכות ז׳ (הושענא רבה)",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2027-10-23",
+      "title": "שְׁמִינִי עֲצֶרֶת",
+      "hebrew": "שמיני עצרת",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2027-10-24",
+      "title": "שִׂמְחַת תּוֹרָה",
+      "hebrew": "שמחת תורה",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2027-12-24",
+      "title": "חֲנוּכָּה: א׳ נֵר",
+      "hebrew": "חנוכה: א׳ נר",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2027-12-25",
+      "title": "חֲנוּכָּה: ב׳ נֵרוֹת",
+      "hebrew": "חנוכה: ב׳ נרות",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2027-12-26",
+      "title": "חֲנוּכָּה: ג׳ נֵרוֹת",
+      "hebrew": "חנוכה: ג׳ נרות",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2027-12-27",
+      "title": "חֲנוּכָּה: ד׳ נֵרוֹת",
+      "hebrew": "חנוכה: ד׳ נרות",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2027-12-28",
+      "title": "חֲנוּכָּה: ה׳ נֵרוֹת",
+      "hebrew": "חנוכה: ה׳ נרות",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2027-12-29",
+      "title": "חֲנוּכָּה: ו׳ נֵרוֹת",
+      "hebrew": "חנוכה: ו׳ נרות",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2027-12-30",
+      "title": "חַג הַבָּנוֹת",
+      "hebrew": "חג הבנות",
+      "category": "holiday",
+      "subcat": "minor"
+    },
+    {
+      "date": "2027-12-30",
+      "title": "חֲנוּכָּה: ז׳ נֵרוֹת",
+      "hebrew": "חנוכה: ז׳ נרות",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2027-12-31",
+      "title": "חֲנוּכָּה: ח׳ נֵרוֹת",
+      "hebrew": "חנוכה: ח׳ נרות",
+      "category": "holiday",
+      "subcat": "major"
+    }
+  ],
+  "2028": [
+    {
+      "date": "2028-01-01",
+      "title": "חֲנוּכָּה: יוֹם ח׳",
+      "hebrew": "חנוכה: יום ח׳",
+      "category": "holiday",
+      "subcat": "minor"
+    },
+    {
+      "date": "2028-02-12",
+      "title": "ט״וּ בִּשְׁבָט",
+      "hebrew": "ט״ו בשבט",
+      "category": "holiday",
+      "subcat": "minor"
+    },
+    {
+      "date": "2028-03-11",
+      "title": "עֶרֶב פּוּרִים",
+      "hebrew": "ערב פורים",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2028-03-12",
+      "title": "פּוּרִים",
+      "hebrew": "פורים",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2028-03-13",
+      "title": "שׁוּשָׁן פּוּרִים",
+      "hebrew": "שושן פורים",
+      "category": "holiday",
+      "subcat": "minor"
+    },
+    {
+      "date": "2028-04-10",
+      "title": "עֶרֶב פֶּסַח",
+      "hebrew": "ערב פסח",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2028-04-11",
+      "title": "פֶּסַח א׳",
+      "hebrew": "פסח א׳",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2028-04-12",
+      "title": "פֶּסַח ב׳",
+      "hebrew": "פסח ב׳",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2028-04-13",
+      "title": "פֶּסַח ג׳ (חוה״מ)",
+      "hebrew": "פסח ג׳ (חוה״מ)",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2028-04-14",
+      "title": "פֶּסַח ד׳ (חוה״מ)",
+      "hebrew": "פסח ד׳ (חוה״מ)",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2028-04-15",
+      "title": "פֶּסַח ה׳ (חוה״מ)",
+      "hebrew": "פסח ה׳ (חוה״מ)",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2028-04-16",
+      "title": "פֶּסַח ו׳ (חוה״מ)",
+      "hebrew": "פסח ו׳ (חוה״מ)",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2028-04-17",
+      "title": "פֶּסַח ז׳",
+      "hebrew": "פסח ז׳",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2028-04-18",
+      "title": "פֶּסַח ח׳",
+      "hebrew": "פסח ח׳",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2028-05-10",
+      "title": "פֶּסַח שֵׁנִי",
+      "hebrew": "פסח שני",
+      "category": "holiday",
+      "subcat": "minor"
+    },
+    {
+      "date": "2028-05-14",
+      "title": "ל״ג בָּעוֹמֶר",
+      "hebrew": "ל״ג בעומר",
+      "category": "holiday",
+      "subcat": "minor"
+    },
+    {
+      "date": "2028-05-30",
+      "title": "עֶרֶב שָׁבוּעוֹת",
+      "hebrew": "ערב שבועות",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2028-05-31",
+      "title": "שָׁבוּעוֹת א׳",
+      "hebrew": "שבועות א׳",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2028-06-01",
+      "title": "שָׁבוּעוֹת ב׳",
+      "hebrew": "שבועות ב׳",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2028-07-31",
+      "title": "עֶרֶב תִּשְׁעָה בְּאָב",
+      "hebrew": "ערב תשעה באב",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2028-08-01",
+      "title": "תִּשְׁעָה בְּאָב",
+      "hebrew": "תשעה באב",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2028-08-07",
+      "title": "ט״וּ בְּאָב",
+      "hebrew": "ט״ו באב",
+      "category": "holiday",
+      "subcat": "minor"
+    },
+    {
+      "date": "2028-08-23",
+      "title": "רֹאשׁ הַשָּׁנָה לְמַעְשַׂר בְּהֵמָה",
+      "hebrew": "ראש השנה למעשר בהמה",
+      "category": "holiday",
+      "subcat": "minor"
+    },
+    {
+      "date": "2028-09-16",
+      "title": "סְלִיחוֹת",
+      "hebrew": "סליחות",
+      "category": "holiday",
+      "subcat": "minor"
+    },
+    {
+      "date": "2028-09-20",
+      "title": "עֶרֶב רֹאשׁ הַשָּׁנָה",
+      "hebrew": "ערב ראש השנה",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2028-09-21",
+      "title": "רֹאשׁ הַשָּׁנָה 5789",
+      "hebrew": "ראש השנה 5789",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2028-09-22",
+      "title": "רֹאשׁ הַשָּׁנָה ב׳",
+      "hebrew": "ראש השנה ב׳",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2028-09-29",
+      "title": "עֶרֶב יוֹם כִּפּוּר",
+      "hebrew": "ערב יום כיפור",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2028-09-30",
+      "title": "יוֹם כִּפּוּר",
+      "hebrew": "יום כיפור",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2028-10-04",
+      "title": "עֶרֶב סוּכּוֹת",
+      "hebrew": "ערב סוכות",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2028-10-05",
+      "title": "סוּכּוֹת א׳",
+      "hebrew": "סוכות א׳",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2028-10-06",
+      "title": "סוּכּוֹת ב׳",
+      "hebrew": "סוכות ב׳",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2028-10-07",
+      "title": "סוּכּוֹת ג׳ (חוה״מ)",
+      "hebrew": "סוכות ג׳ (חוה״מ)",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2028-10-08",
+      "title": "סוּכּוֹת ד׳ (חוה״מ)",
+      "hebrew": "סוכות ד׳ (חוה״מ)",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2028-10-09",
+      "title": "סוּכּוֹת ה׳ (חוה״מ)",
+      "hebrew": "סוכות ה׳ (חוה״מ)",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2028-10-10",
+      "title": "סוּכּוֹת ו׳ (חוה״מ)",
+      "hebrew": "סוכות ו׳ (חוה״מ)",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2028-10-11",
+      "title": "סוּכּוֹת ז׳ (הוֹשַׁעְנָא רַבָּה)",
+      "hebrew": "סוכות ז׳ (הושענא רבה)",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2028-10-12",
+      "title": "שְׁמִינִי עֲצֶרֶת",
+      "hebrew": "שמיני עצרת",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2028-10-13",
+      "title": "שִׂמְחַת תּוֹרָה",
+      "hebrew": "שמחת תורה",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2028-12-12",
+      "title": "חֲנוּכָּה: א׳ נֵר",
+      "hebrew": "חנוכה: א׳ נר",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2028-12-13",
+      "title": "חֲנוּכָּה: ב׳ נֵרוֹת",
+      "hebrew": "חנוכה: ב׳ נרות",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2028-12-14",
+      "title": "חֲנוּכָּה: ג׳ נֵרוֹת",
+      "hebrew": "חנוכה: ג׳ נרות",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2028-12-15",
+      "title": "חֲנוּכָּה: ד׳ נֵרוֹת",
+      "hebrew": "חנוכה: ד׳ נרות",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2028-12-16",
+      "title": "חֲנוּכָּה: ה׳ נֵרוֹת",
+      "hebrew": "חנוכה: ה׳ נרות",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2028-12-17",
+      "title": "חֲנוּכָּה: ו׳ נֵרוֹת",
+      "hebrew": "חנוכה: ו׳ נרות",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2028-12-18",
+      "title": "חַג הַבָּנוֹת",
+      "hebrew": "חג הבנות",
+      "category": "holiday",
+      "subcat": "minor"
+    },
+    {
+      "date": "2028-12-18",
+      "title": "חֲנוּכָּה: ז׳ נֵרוֹת",
+      "hebrew": "חנוכה: ז׳ נרות",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2028-12-19",
+      "title": "חֲנוּכָּה: ח׳ נֵרוֹת",
+      "hebrew": "חנוכה: ח׳ נרות",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2028-12-20",
+      "title": "חֲנוּכָּה: יוֹם ח׳",
+      "hebrew": "חנוכה: יום ח׳",
+      "category": "holiday",
+      "subcat": "minor"
+    }
+  ],
+  "2029": [
+    {
+      "date": "2029-01-31",
+      "title": "ט״וּ בִּשְׁבָט",
+      "hebrew": "ט״ו בשבט",
+      "category": "holiday",
+      "subcat": "minor"
+    },
+    {
+      "date": "2029-02-28",
+      "title": "עֶרֶב פּוּרִים",
+      "hebrew": "ערב פורים",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2029-03-01",
+      "title": "פּוּרִים",
+      "hebrew": "פורים",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2029-03-02",
+      "title": "שׁוּשָׁן פּוּרִים",
+      "hebrew": "שושן פורים",
+      "category": "holiday",
+      "subcat": "minor"
+    },
+    {
+      "date": "2029-03-30",
+      "title": "עֶרֶב פֶּסַח",
+      "hebrew": "ערב פסח",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2029-03-31",
+      "title": "פֶּסַח א׳",
+      "hebrew": "פסח א׳",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2029-04-01",
+      "title": "פֶּסַח ב׳",
+      "hebrew": "פסח ב׳",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2029-04-02",
+      "title": "פֶּסַח ג׳ (חוה״מ)",
+      "hebrew": "פסח ג׳ (חוה״מ)",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2029-04-03",
+      "title": "פֶּסַח ד׳ (חוה״מ)",
+      "hebrew": "פסח ד׳ (חוה״מ)",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2029-04-04",
+      "title": "פֶּסַח ה׳ (חוה״מ)",
+      "hebrew": "פסח ה׳ (חוה״מ)",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2029-04-05",
+      "title": "פֶּסַח ו׳ (חוה״מ)",
+      "hebrew": "פסח ו׳ (חוה״מ)",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2029-04-06",
+      "title": "פֶּסַח ז׳",
+      "hebrew": "פסח ז׳",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2029-04-07",
+      "title": "פֶּסַח ח׳",
+      "hebrew": "פסח ח׳",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2029-04-29",
+      "title": "פֶּסַח שֵׁנִי",
+      "hebrew": "פסח שני",
+      "category": "holiday",
+      "subcat": "minor"
+    },
+    {
+      "date": "2029-05-03",
+      "title": "ל״ג בָּעוֹמֶר",
+      "hebrew": "ל״ג בעומר",
+      "category": "holiday",
+      "subcat": "minor"
+    },
+    {
+      "date": "2029-05-19",
+      "title": "עֶרֶב שָׁבוּעוֹת",
+      "hebrew": "ערב שבועות",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2029-05-20",
+      "title": "שָׁבוּעוֹת א׳",
+      "hebrew": "שבועות א׳",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2029-05-21",
+      "title": "שָׁבוּעוֹת ב׳",
+      "hebrew": "שבועות ב׳",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2029-07-21",
+      "title": "עֶרֶב תִּשְׁעָה בְּאָב",
+      "hebrew": "ערב תשעה באב",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2029-07-22",
+      "title": "(תִּשְׁעָה בְּאָב (נִדְחָה",
+      "hebrew": "(תשעה באב (נדחה",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2029-07-27",
+      "title": "ט״וּ בְּאָב",
+      "hebrew": "ט״ו באב",
+      "category": "holiday",
+      "subcat": "minor"
+    },
+    {
+      "date": "2029-08-12",
+      "title": "רֹאשׁ הַשָּׁנָה לְמַעְשַׂר בְּהֵמָה",
+      "hebrew": "ראש השנה למעשר בהמה",
+      "category": "holiday",
+      "subcat": "minor"
+    },
+    {
+      "date": "2029-09-01",
+      "title": "סְלִיחוֹת",
+      "hebrew": "סליחות",
+      "category": "holiday",
+      "subcat": "minor"
+    },
+    {
+      "date": "2029-09-09",
+      "title": "עֶרֶב רֹאשׁ הַשָּׁנָה",
+      "hebrew": "ערב ראש השנה",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2029-09-10",
+      "title": "רֹאשׁ הַשָּׁנָה 5790",
+      "hebrew": "ראש השנה 5790",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2029-09-11",
+      "title": "רֹאשׁ הַשָּׁנָה ב׳",
+      "hebrew": "ראש השנה ב׳",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2029-09-18",
+      "title": "עֶרֶב יוֹם כִּפּוּר",
+      "hebrew": "ערב יום כיפור",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2029-09-19",
+      "title": "יוֹם כִּפּוּר",
+      "hebrew": "יום כיפור",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2029-09-23",
+      "title": "עֶרֶב סוּכּוֹת",
+      "hebrew": "ערב סוכות",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2029-09-24",
+      "title": "סוּכּוֹת א׳",
+      "hebrew": "סוכות א׳",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2029-09-25",
+      "title": "סוּכּוֹת ב׳",
+      "hebrew": "סוכות ב׳",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2029-09-26",
+      "title": "סוּכּוֹת ג׳ (חוה״מ)",
+      "hebrew": "סוכות ג׳ (חוה״מ)",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2029-09-27",
+      "title": "סוּכּוֹת ד׳ (חוה״מ)",
+      "hebrew": "סוכות ד׳ (חוה״מ)",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2029-09-28",
+      "title": "סוּכּוֹת ה׳ (חוה״מ)",
+      "hebrew": "סוכות ה׳ (חוה״מ)",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2029-09-29",
+      "title": "סוּכּוֹת ו׳ (חוה״מ)",
+      "hebrew": "סוכות ו׳ (חוה״מ)",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2029-09-30",
+      "title": "סוּכּוֹת ז׳ (הוֹשַׁעְנָא רַבָּה)",
+      "hebrew": "סוכות ז׳ (הושענא רבה)",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2029-10-01",
+      "title": "שְׁמִינִי עֲצֶרֶת",
+      "hebrew": "שמיני עצרת",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2029-10-02",
+      "title": "שִׂמְחַת תּוֹרָה",
+      "hebrew": "שמחת תורה",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2029-12-01",
+      "title": "חֲנוּכָּה: א׳ נֵר",
+      "hebrew": "חנוכה: א׳ נר",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2029-12-02",
+      "title": "חֲנוּכָּה: ב׳ נֵרוֹת",
+      "hebrew": "חנוכה: ב׳ נרות",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2029-12-03",
+      "title": "חֲנוּכָּה: ג׳ נֵרוֹת",
+      "hebrew": "חנוכה: ג׳ נרות",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2029-12-04",
+      "title": "חֲנוּכָּה: ד׳ נֵרוֹת",
+      "hebrew": "חנוכה: ד׳ נרות",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2029-12-05",
+      "title": "חֲנוּכָּה: ה׳ נֵרוֹת",
+      "hebrew": "חנוכה: ה׳ נרות",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2029-12-06",
+      "title": "חֲנוּכָּה: ו׳ נֵרוֹת",
+      "hebrew": "חנוכה: ו׳ נרות",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2029-12-07",
+      "title": "חַג הַבָּנוֹת",
+      "hebrew": "חג הבנות",
+      "category": "holiday",
+      "subcat": "minor"
+    },
+    {
+      "date": "2029-12-07",
+      "title": "חֲנוּכָּה: ז׳ נֵרוֹת",
+      "hebrew": "חנוכה: ז׳ נרות",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2029-12-08",
+      "title": "חֲנוּכָּה: ח׳ נֵרוֹת",
+      "hebrew": "חנוכה: ח׳ נרות",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2029-12-09",
+      "title": "חֲנוּכָּה: יוֹם ח׳",
+      "hebrew": "חנוכה: יום ח׳",
+      "category": "holiday",
+      "subcat": "minor"
+    }
+  ],
+  "2030": [
+    {
+      "date": "2030-01-19",
+      "title": "ט״וּ בִּשְׁבָט",
+      "hebrew": "ט״ו בשבט",
+      "category": "holiday",
+      "subcat": "minor"
+    },
+    {
+      "date": "2030-02-17",
+      "title": "פּוּרִים קָטָן",
+      "hebrew": "פורים קטן",
+      "category": "holiday",
+      "subcat": "minor"
+    },
+    {
+      "date": "2030-02-18",
+      "title": "שׁוּשָׁן פּוּרִים קָטָן",
+      "hebrew": "שושן פורים קטן",
+      "category": "holiday",
+      "subcat": "minor"
+    },
+    {
+      "date": "2030-03-18",
+      "title": "עֶרֶב פּוּרִים",
+      "hebrew": "ערב פורים",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2030-03-19",
+      "title": "פּוּרִים",
+      "hebrew": "פורים",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2030-03-20",
+      "title": "שׁוּשָׁן פּוּרִים",
+      "hebrew": "שושן פורים",
+      "category": "holiday",
+      "subcat": "minor"
+    },
+    {
+      "date": "2030-04-17",
+      "title": "עֶרֶב פֶּסַח",
+      "hebrew": "ערב פסח",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2030-04-18",
+      "title": "פֶּסַח א׳",
+      "hebrew": "פסח א׳",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2030-04-19",
+      "title": "פֶּסַח ב׳",
+      "hebrew": "פסח ב׳",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2030-04-20",
+      "title": "פֶּסַח ג׳ (חוה״מ)",
+      "hebrew": "פסח ג׳ (חוה״מ)",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2030-04-21",
+      "title": "פֶּסַח ד׳ (חוה״מ)",
+      "hebrew": "פסח ד׳ (חוה״מ)",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2030-04-22",
+      "title": "פֶּסַח ה׳ (חוה״מ)",
+      "hebrew": "פסח ה׳ (חוה״מ)",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2030-04-23",
+      "title": "פֶּסַח ו׳ (חוה״מ)",
+      "hebrew": "פסח ו׳ (חוה״מ)",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2030-04-24",
+      "title": "פֶּסַח ז׳",
+      "hebrew": "פסח ז׳",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2030-04-25",
+      "title": "פֶּסַח ח׳",
+      "hebrew": "פסח ח׳",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2030-05-17",
+      "title": "פֶּסַח שֵׁנִי",
+      "hebrew": "פסח שני",
+      "category": "holiday",
+      "subcat": "minor"
+    },
+    {
+      "date": "2030-05-21",
+      "title": "ל״ג בָּעוֹמֶר",
+      "hebrew": "ל״ג בעומר",
+      "category": "holiday",
+      "subcat": "minor"
+    },
+    {
+      "date": "2030-06-06",
+      "title": "עֶרֶב שָׁבוּעוֹת",
+      "hebrew": "ערב שבועות",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2030-06-07",
+      "title": "שָׁבוּעוֹת א׳",
+      "hebrew": "שבועות א׳",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2030-06-08",
+      "title": "שָׁבוּעוֹת ב׳",
+      "hebrew": "שבועות ב׳",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2030-08-07",
+      "title": "עֶרֶב תִּשְׁעָה בְּאָב",
+      "hebrew": "ערב תשעה באב",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2030-08-08",
+      "title": "תִּשְׁעָה בְּאָב",
+      "hebrew": "תשעה באב",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2030-08-14",
+      "title": "ט״וּ בְּאָב",
+      "hebrew": "ט״ו באב",
+      "category": "holiday",
+      "subcat": "minor"
+    },
+    {
+      "date": "2030-08-30",
+      "title": "רֹאשׁ הַשָּׁנָה לְמַעְשַׂר בְּהֵמָה",
+      "hebrew": "ראש השנה למעשר בהמה",
+      "category": "holiday",
+      "subcat": "minor"
+    },
+    {
+      "date": "2030-09-21",
+      "title": "סְלִיחוֹת",
+      "hebrew": "סליחות",
+      "category": "holiday",
+      "subcat": "minor"
+    },
+    {
+      "date": "2030-09-27",
+      "title": "עֶרֶב רֹאשׁ הַשָּׁנָה",
+      "hebrew": "ערב ראש השנה",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2030-09-28",
+      "title": "רֹאשׁ הַשָּׁנָה 5791",
+      "hebrew": "ראש השנה 5791",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2030-09-29",
+      "title": "רֹאשׁ הַשָּׁנָה ב׳",
+      "hebrew": "ראש השנה ב׳",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2030-10-06",
+      "title": "עֶרֶב יוֹם כִּפּוּר",
+      "hebrew": "ערב יום כיפור",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2030-10-07",
+      "title": "יוֹם כִּפּוּר",
+      "hebrew": "יום כיפור",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2030-10-11",
+      "title": "עֶרֶב סוּכּוֹת",
+      "hebrew": "ערב סוכות",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2030-10-12",
+      "title": "סוּכּוֹת א׳",
+      "hebrew": "סוכות א׳",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2030-10-13",
+      "title": "סוּכּוֹת ב׳",
+      "hebrew": "סוכות ב׳",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2030-10-14",
+      "title": "סוּכּוֹת ג׳ (חוה״מ)",
+      "hebrew": "סוכות ג׳ (חוה״מ)",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2030-10-15",
+      "title": "סוּכּוֹת ד׳ (חוה״מ)",
+      "hebrew": "סוכות ד׳ (חוה״מ)",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2030-10-16",
+      "title": "סוּכּוֹת ה׳ (חוה״מ)",
+      "hebrew": "סוכות ה׳ (חוה״מ)",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2030-10-17",
+      "title": "סוּכּוֹת ו׳ (חוה״מ)",
+      "hebrew": "סוכות ו׳ (חוה״מ)",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2030-10-18",
+      "title": "סוּכּוֹת ז׳ (הוֹשַׁעְנָא רַבָּה)",
+      "hebrew": "סוכות ז׳ (הושענא רבה)",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2030-10-19",
+      "title": "שְׁמִינִי עֲצֶרֶת",
+      "hebrew": "שמיני עצרת",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2030-10-20",
+      "title": "שִׂמְחַת תּוֹרָה",
+      "hebrew": "שמחת תורה",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2030-12-20",
+      "title": "חֲנוּכָּה: א׳ נֵר",
+      "hebrew": "חנוכה: א׳ נר",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2030-12-21",
+      "title": "חֲנוּכָּה: ב׳ נֵרוֹת",
+      "hebrew": "חנוכה: ב׳ נרות",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2030-12-22",
+      "title": "חֲנוּכָּה: ג׳ נֵרוֹת",
+      "hebrew": "חנוכה: ג׳ נרות",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2030-12-23",
+      "title": "חֲנוּכָּה: ד׳ נֵרוֹת",
+      "hebrew": "חנוכה: ד׳ נרות",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2030-12-24",
+      "title": "חֲנוּכָּה: ה׳ נֵרוֹת",
+      "hebrew": "חנוכה: ה׳ נרות",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2030-12-25",
+      "title": "חֲנוּכָּה: ו׳ נֵרוֹת",
+      "hebrew": "חנוכה: ו׳ נרות",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2030-12-26",
+      "title": "חַג הַבָּנוֹת",
+      "hebrew": "חג הבנות",
+      "category": "holiday",
+      "subcat": "minor"
+    },
+    {
+      "date": "2030-12-26",
+      "title": "חֲנוּכָּה: ז׳ נֵרוֹת",
+      "hebrew": "חנוכה: ז׳ נרות",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2030-12-27",
+      "title": "חֲנוּכָּה: ח׳ נֵרוֹת",
+      "hebrew": "חנוכה: ח׳ נרות",
+      "category": "holiday",
+      "subcat": "major"
+    },
+    {
+      "date": "2030-12-28",
+      "title": "חֲנוּכָּה: יוֹם ח׳",
+      "hebrew": "חנוכה: יום ח׳",
+      "category": "holiday",
+      "subcat": "minor"
+    }
+  ]
+}

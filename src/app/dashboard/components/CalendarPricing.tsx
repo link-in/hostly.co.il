@@ -470,7 +470,7 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated }: CalendarPric
                   <button
                     key={key}
                     type="button"
-                    className="border-0 text-start p-2"
+                    className="text-start p-2"
                     style={{
                       position: 'relative',
                       minHeight: '90px',
@@ -484,8 +484,8 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated }: CalendarPric
                       color: 'rgba(255, 255, 255, 0.9)',
                       opacity: isCurrentMonth ? (isBlocked ? 0.6 : 1) : 0.4,
                       cursor: isBooked || isBlocked ? 'not-allowed' : 'pointer',
-                      border: isToday ? '2px solid rgba(102, 126, 234, 0.6)' : isBlocked ? '1px solid rgba(255, 152, 0, 0.3)' : '1px solid transparent',
-                      borderRadius: bookingRadius,
+                      border: isToday ? '2px solid rgba(102, 126, 234, 0.6)' : isBlocked ? '1px solid rgba(255, 152, 0, 0.3)' : '1px solid rgba(102, 126, 234, 0.25)',
+                      borderRadius: '0',
                       transition: 'all 0.2s ease',
                     }}
                     onMouseEnter={(e) => {
