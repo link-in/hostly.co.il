@@ -1,14 +1,34 @@
 import bcrypt from 'bcryptjs'
 import type { User, AuthUser } from './types'
-import { createServerClient } from '@/lib/supabase/server'
+import { createServerClient, createServiceRoleClient } from '@/lib/supabase/server'
+
+function mapRowToUser(data: Record<string, unknown>): User {
+  return {
+    id: data.id as string,
+    email: data.email as string,
+    passwordHash: data.password_hash as string,
+    displayName: data.display_name as string,
+    firstName: (data.first_name as string) || undefined,
+    lastName: (data.last_name as string) || undefined,
+    propertyId: (data.property_id as string) ?? '',
+    roomId: (data.room_id as string) ?? '',
+    landingPageUrl: (data.landing_page_url as string) || undefined,
+    phoneNumber: (data.phone_number as string) || undefined,
+    role: (data.role as User['role']) || 'owner',
+    isDemo: (data.is_demo as boolean) || false,
+    beds24Token: (data.beds24_token as string) || undefined,
+    beds24RefreshToken: (data.beds24_refresh_token as string) || undefined,
+    checkInSettings: data.check_in_settings as User['checkInSettings'],
+  }
+}
 
 /**
- * Get user by email from Supabase
+ * Get user by email from Supabase (uses anon key, respects RLS)
  */
 export const getUserByEmail = async (email: string): Promise<User | null> => {
   try {
     const supabase = createServerClient()
-    
+
     const { data, error } = await supabase
       .from('users')
       .select('*')
@@ -17,38 +37,44 @@ export const getUserByEmail = async (email: string): Promise<User | null> => {
 
     if (error) {
       if (error.code === 'PGRST116') {
-        // No rows returned
         return null
       }
       console.error('Failed to fetch user from Supabase:', error)
       return null
     }
 
-    if (!data) {
-      return null
-    }
-
-    // Map database columns to User interface
-    return {
-      id: data.id,
-      email: data.email,
-      passwordHash: data.password_hash,
-      displayName: data.display_name,
-      firstName: data.first_name || undefined,
-      lastName: data.last_name || undefined,
-      propertyId: data.property_id,
-      roomId: data.room_id,
-      landingPageUrl: data.landing_page_url || undefined,
-      phoneNumber: data.phone_number || undefined,
-      role: data.role || 'owner',
-      isDemo: data.is_demo || false,
-      beds24Token: data.beds24_token || undefined,
-      beds24RefreshToken: data.beds24_refresh_token || undefined,
-      checkInSettings: data.check_in_settings || undefined,
-    }
+    if (!data) return null
+    return mapRowToUser(data as Record<string, unknown>)
   } catch (error) {
     console.error('Failed to fetch user:', error)
     return null
+  }
+}
+
+/**
+ * Get user by email for credential auth (uses service role when available, bypasses RLS).
+ * Use only in NextAuth authorize() so login works regardless of RLS on users.
+ */
+export const getUserByEmailForAuth = async (email: string): Promise<User | null> => {
+  try {
+    const supabase = createServiceRoleClient()
+
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .ilike('email', email)
+      .maybeSingle()
+
+    if (error) {
+      console.error('Failed to fetch user for auth:', error)
+      return null
+    }
+
+    if (!data) return null
+    return mapRowToUser(data as Record<string, unknown>)
+  } catch (_) {
+    // Service role not configured or other error – fall back to anon (RLS may block)
+    return getUserByEmail(email)
   }
 }
 
@@ -279,5 +305,75 @@ export const toAuthUser = (user: User): AuthUser => {
     beds24Token: user.beds24Token,
     beds24RefreshToken: user.beds24RefreshToken,
     checkInSettings: user.checkInSettings,
+  }
+}
+
+const DEMO_EMAIL = 'demo@hostly.co.il'
+const DEMO_PASSWORD = 'demo2026'
+const DEMO_USER_ID = 'demo_user_001'
+
+/**
+ * Ensure demo user exists with correct password (uses service role, bypasses RLS).
+ * Use for seeding / fixing demo login. Safe to call multiple times.
+ */
+export async function ensureDemoUser(): Promise<{ ok: boolean; message: string }> {
+  try {
+    const supabase = createServiceRoleClient()
+    const passwordHash = await hashPassword(DEMO_PASSWORD)
+
+    const { data: existing } = await supabase
+      .from('users')
+      .select('id')
+      .ilike('email', DEMO_EMAIL)
+      .maybeSingle()
+
+    if (existing) {
+      const { error } = await supabase
+        .from('users')
+        .update({
+          password_hash: passwordHash,
+          display_name: 'דמו - Mountain View',
+          first_name: 'דמו',
+          last_name: 'משתמש',
+          property_id: 'DEMO_999999',
+          room_id: 'DEMO_ROOM_999',
+          landing_page_url: 'https://demo.hostly.co.il',
+          phone_number: '+972501234567',
+          role: 'owner',
+          is_demo: true,
+        })
+        .eq('id', existing.id)
+
+      if (error) {
+        console.error('Failed to update demo user:', error)
+        return { ok: false, message: error.message }
+      }
+      return { ok: true, message: 'Demo user password updated' }
+    }
+
+    const { error } = await supabase.from('users').insert({
+      id: DEMO_USER_ID,
+      email: DEMO_EMAIL,
+      password_hash: passwordHash,
+      display_name: 'דמו - Mountain View',
+      first_name: 'דמו',
+      last_name: 'משתמש',
+      property_id: 'DEMO_999999',
+      room_id: 'DEMO_ROOM_999',
+      landing_page_url: 'https://demo.hostly.co.il',
+      phone_number: '+972501234567',
+      role: 'owner',
+      is_demo: true,
+    })
+
+    if (error) {
+      console.error('Failed to create demo user:', error)
+      return { ok: false, message: error.message }
+    }
+    return { ok: true, message: 'Demo user created' }
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'Unknown error'
+    console.error('ensureDemoUser error:', err)
+    return { ok: false, message: msg }
   }
 }

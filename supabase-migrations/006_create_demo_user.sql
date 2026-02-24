@@ -41,7 +41,15 @@ VALUES (
 ON CONFLICT (id) DO UPDATE SET
   is_demo = true,
   email = EXCLUDED.email,
-  display_name = EXCLUDED.display_name;
+  display_name = EXCLUDED.display_name,
+  password_hash = EXCLUDED.password_hash,
+  first_name = EXCLUDED.first_name,
+  last_name = EXCLUDED.last_name,
+  property_id = EXCLUDED.property_id,
+  room_id = EXCLUDED.room_id,
+  landing_page_url = EXCLUDED.landing_page_url,
+  phone_number = EXCLUDED.phone_number,
+  role = EXCLUDED.role;
 
 -- Add comment
 COMMENT ON COLUMN users.is_demo IS 'Demo user flag - uses mock data instead of Beds24';

@@ -1,6 +1,6 @@
 import type { NextAuthOptions } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
-import { getUserByEmail, verifyPassword, toAuthUser } from './getUsersDb'
+import { getUserByEmailForAuth, verifyPassword, toAuthUser } from './getUsersDb'
 import type { AuthUser } from './types'
 
 declare module 'next-auth' {
@@ -27,7 +27,7 @@ export const authOptions: NextAuthOptions = {
           return null
         }
 
-        const user = await getUserByEmail(credentials.email)
+        const user = await getUserByEmailForAuth(credentials.email)
         if (!user) {
           return null
         }
@@ -104,15 +104,16 @@ export const authOptions: NextAuthOptions = {
       return token
     },
     async session({ session, token }) {
-      if (token && token.id && token.email && token.displayName && token.propertyId && token.roomId && token.role) {
+      // Require only id, email, displayName, role so admin users (without propertyId/roomId) can log in
+      if (token && token.id && token.email && token.displayName && token.role) {
         session.user = {
           id: token.id,
           email: token.email,
           displayName: token.displayName,
           firstName: token.firstName as string | undefined,
           lastName: token.lastName as string | undefined,
-          propertyId: token.propertyId,
-          roomId: token.roomId,
+          propertyId: (token.propertyId as string) ?? '',
+          roomId: (token.roomId as string) ?? '',
           landingPageUrl: token.landingPageUrl as string | undefined,
           phoneNumber: token.phoneNumber as string | undefined,
           role: token.role as 'admin' | 'owner',

@@ -59,6 +59,7 @@ export default function AdminUsersPage() {
     beds24RefreshToken: '',
   })
   const [submitting, setSubmitting] = useState(false)
+  const [connectingAirbnb, setConnectingAirbnb] = useState(false)
 
   // Redirect if not admin
   useEffect(() => {
@@ -202,6 +203,34 @@ export default function AdminUsersPage() {
       role: 'owner',
     })
     setError(null)
+  }
+
+  const handleConnectAirbnb = async () => {
+    if (!editingUser || connectingAirbnb) return
+
+    try {
+      setConnectingAirbnb(true)
+      setError(null)
+
+      const response = await fetch(`/api/channels/airbnb/authorize?propertyId=${editingUser.propertyId}`)
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'Failed to get Airbnb authorization URL')
+      }
+
+      const data = await response.json()
+      
+      if (!data.authorizationUrl) {
+        throw new Error('No authorization URL received')
+      }
+
+      // Redirect to Airbnb OAuth screen
+      window.location.href = data.authorizationUrl
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to connect to Airbnb')
+      setConnectingAirbnb(false)
+    }
   }
 
   if (status === 'loading' || loading) {
@@ -486,6 +515,62 @@ export default function AdminUsersPage() {
                     </button>
                   </div>
                 </form>
+              </div>
+            </div>
+          )}
+
+          {editingUser && showForm && (
+            <div className="card mb-4 border-0 bg-white" style={{ borderRadius: '12px' }}>
+              <div 
+                className="card-header"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(255, 92, 92, 0.1) 0%, rgba(255, 154, 158, 0.1) 100%)',
+                  borderRadius: '12px 12px 0 0',
+                }}
+              >
+                <h5 
+                  className="mb-0"
+                  style={{
+                    background: 'linear-gradient(135deg, #FF5A5F 0%, #FF9A9E 100%)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text',
+                    fontWeight: 'bold',
+                  }}
+                >
+                  חיבור ערוצים
+                </h5>
+              </div>
+              <div className="card-body">
+                <div className="d-flex align-items-center justify-content-between">
+                  <div>
+                    <h6 className="mb-1">Airbnb</h6>
+                    <small className="text-muted">
+                      Property ID: <code>{editingUser.propertyId}</code>
+                    </small>
+                  </div>
+                  <button
+                    type="button"
+                    className="btn"
+                    style={{
+                      background: 'linear-gradient(135deg, #FF5A5F 0%, #FF9A9E 100%)',
+                      border: 'none',
+                      color: 'white',
+                      minWidth: '150px',
+                    }}
+                    onClick={handleConnectAirbnb}
+                    disabled={connectingAirbnb}
+                  >
+                    {connectingAirbnb ? (
+                      <>
+                        <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                        מתחבר...
+                      </>
+                    ) : (
+                      'חבר ל-Airbnb'
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
           )}

@@ -55,6 +55,7 @@ const LoginForm = () => {
       }
     } catch (err) {
       setError('שגיאה בהתחברות. נסה שוב.')
+    } finally {
       setLoading(false)
     }
   }
