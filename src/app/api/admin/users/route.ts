@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth/authOptions'
-import { createServerClient } from '@/lib/supabase/server'
+import { createServerClient, createServiceRoleClient } from '@/lib/supabase/server'
 import { hashPassword } from '@/lib/auth/getUsersDb'
+import { createTrialSubscription } from '@/lib/auth/subscriptionDb'
 import type { User } from '@/lib/auth/types'
 
 export const dynamic = 'force-dynamic'
@@ -22,7 +23,7 @@ export async function GET() {
       )
     }
 
-    const supabase = createServerClient()
+    const supabase = createServiceRoleClient()
     const { data, error } = await supabase
       .from('users')
       .select('*')
@@ -36,23 +37,54 @@ export async function GET() {
       )
     }
 
-    // Map database columns to User interface (without password_hash)
-    const users = data.map((user) => ({
-      id: user.id,
-      email: user.email,
-      firstName: user.first_name,
-      lastName: user.last_name,
-      displayName: user.display_name,
-      propertyId: user.property_id,
-      roomId: user.room_id,
-      landingPageUrl: user.landing_page_url,
-      phoneNumber: user.phone_number,
-      role: user.role,
-      beds24Token: user.beds24_token,
-      beds24RefreshToken: user.beds24_refresh_token,
-      createdAt: user.created_at,
-      updatedAt: user.updated_at,
-    }))
+    // Fetch latest subscription per user
+    const userIds = data.map((u) => u.id)
+    const { data: subsData } = await supabase
+      .from('subscriptions')
+      .select('*')
+      .in('user_id', userIds)
+      .order('created_at', { ascending: false })
+
+    // Build map: userId → latest subscription
+    const subsMap = new Map<string, Record<string, unknown>>()
+    for (const sub of subsData ?? []) {
+      if (!subsMap.has(sub.user_id)) subsMap.set(sub.user_id, sub)
+    }
+
+    const users = data.map((user) => {
+      const sub = subsMap.get(user.id)
+      const expiresAt = sub?.expires_at as string | null
+      const daysRemaining = expiresAt
+        ? Math.ceil((new Date(expiresAt).getTime() - Date.now()) / 86400000)
+        : null
+
+      return {
+        id: user.id,
+        email: user.email,
+        firstName: user.first_name,
+        lastName: user.last_name,
+        displayName: user.display_name,
+        propertyId: user.property_id,
+        roomId: user.room_id,
+        landingPageUrl: user.landing_page_url,
+        phoneNumber: user.phone_number,
+        role: user.role,
+        beds24Token: user.beds24_token,
+        beds24RefreshToken: user.beds24_refresh_token,
+        createdAt: user.created_at,
+        updatedAt: user.updated_at,
+        subscription: sub
+          ? {
+              id: sub.id,
+              status: sub.status,
+              planId: sub.plan_id,
+              billingCycle: sub.billing_cycle,
+              expiresAt: sub.expires_at,
+              daysRemaining,
+            }
+          : null,
+      }
+    })
 
     return NextResponse.json({ users })
   } catch (error) {
@@ -148,6 +180,8 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       )
     }
+
+    await createTrialSubscription(userId)
 
     return NextResponse.json({ 
       success: true, 
