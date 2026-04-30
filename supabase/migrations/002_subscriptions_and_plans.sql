@@ -18,11 +18,12 @@ ALTER TABLE subscription_plans
   CHECK (billing_cycle IN ('monthly', 'annual'));
 
 -- 2. Insert plans (upsert so re-running is safe)
-INSERT INTO subscription_plans (id, display_name, monthly_price, billing_cycle, max_whatsapp_per_month)
+INSERT INTO subscription_plans (id, name, display_name, monthly_price, billing_cycle, max_whatsapp_per_month)
 VALUES
-  ('monthly', 'מנוי חודשי', 150.00, 'monthly', 500),
-  ('annual',  'מנוי שנתי',  1000.00, 'annual',  500)
+  ('monthly', 'monthly', 'מנוי חודשי', 150.00, 'monthly', 500),
+  ('annual',  'annual',  'מנוי שנתי',  1000.00, 'annual',  500)
 ON CONFLICT (id) DO UPDATE SET
+  name          = EXCLUDED.name,
   display_name  = EXCLUDED.display_name,
   monthly_price = EXCLUDED.monthly_price,
   billing_cycle = EXCLUDED.billing_cycle;
