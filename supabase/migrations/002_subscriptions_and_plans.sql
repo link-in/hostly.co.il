@@ -7,11 +7,15 @@ CREATE TABLE IF NOT EXISTS subscription_plans (
   id            TEXT PRIMARY KEY,
   display_name  TEXT NOT NULL,
   monthly_price NUMERIC(10, 2) NOT NULL DEFAULT 0,
-  billing_cycle TEXT NOT NULL CHECK (billing_cycle IN ('monthly', 'annual')),
   max_whatsapp_per_month INT NOT NULL DEFAULT 0,
   is_active     BOOLEAN NOT NULL DEFAULT TRUE,
   created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- 1b. Add billing_cycle column if it doesn't already exist
+ALTER TABLE subscription_plans
+  ADD COLUMN IF NOT EXISTS billing_cycle TEXT
+  CHECK (billing_cycle IN ('monthly', 'annual'));
 
 -- 2. Insert plans (upsert so re-running is safe)
 INSERT INTO subscription_plans (id, display_name, monthly_price, billing_cycle, max_whatsapp_per_month)
