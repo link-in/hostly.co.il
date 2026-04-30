@@ -13,6 +13,16 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // Admins and demo users are always considered active — no subscription restrictions
+    if (session.user.role === 'admin' || session.user.isDemo) {
+      return NextResponse.json({
+        status: 'active',
+        planId: 'admin',
+        daysRemaining: 9999,
+        expiresAt: null,
+      })
+    }
+
     const sub = await getActiveSubscription(session.user.id)
 
     if (!sub) {

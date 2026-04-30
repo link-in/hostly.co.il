@@ -83,10 +83,17 @@ export const authOptions: NextAuthOptions = {
           token.beds24RefreshToken = authUser.beds24RefreshToken
           token.checkInSettings = authUser.checkInSettings
           token.issuedAt = Date.now()
-          const sub = await getActiveSubscription(authUser.id)
-          token.subscriptionStatus = sub?.status ?? 'expired'
-          token.trialEndsAt = sub?.expires_at ?? null
-          token.subscriptionPlanId = sub?.plan_id ?? null
+          // Admins and demo users bypass subscription checks
+          if (authUser.role === 'admin' || authUser.isDemo) {
+            token.subscriptionStatus = 'active'
+            token.trialEndsAt = null
+            token.subscriptionPlanId = null
+          } else {
+            const sub = await getActiveSubscription(authUser.id)
+            token.subscriptionStatus = sub?.status ?? 'expired'
+            token.trialEndsAt = sub?.expires_at ?? null
+            token.subscriptionPlanId = sub?.plan_id ?? null
+          }
         }
         return token
       }
@@ -108,10 +115,17 @@ export const authOptions: NextAuthOptions = {
         token.beds24RefreshToken = user.beds24RefreshToken
         token.checkInSettings = user.checkInSettings
         token.issuedAt = Date.now()
-        const sub = await getActiveSubscription(user.id)
-        token.subscriptionStatus = sub?.status ?? 'expired'
-        token.trialEndsAt = sub?.expires_at ?? null
-        token.subscriptionPlanId = sub?.plan_id ?? null
+        // Admins and demo users bypass subscription checks
+        if (user.role === 'admin' || user.isDemo) {
+          token.subscriptionStatus = 'active'
+          token.trialEndsAt = null
+          token.subscriptionPlanId = null
+        } else {
+          const sub = await getActiveSubscription(user.id)
+          token.subscriptionStatus = sub?.status ?? 'expired'
+          token.trialEndsAt = sub?.expires_at ?? null
+          token.subscriptionPlanId = sub?.plan_id ?? null
+        }
       }
       
       // Handle session updates (from update() call)
