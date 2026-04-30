@@ -187,9 +187,9 @@ const LoginForm = () => {
                   boxShadow: '0 20px 60px rgba(0, 0, 0, 0.2)',
                 }}
               >
-              <div className="card-body p-4 p-md-5">
+                <div className="card-body p-4 p-md-5">
                 <div className="text-center mb-4">
-                  <div className="mb-3 floating-logo">
+                  <div className="mb-3 floating-logo" style={{ display: 'flex', justifyContent: 'center' }}>
                     <img
                       src="/photos/hostly-logo.png"
                       alt="Hostly Logo"
@@ -197,6 +197,7 @@ const LoginForm = () => {
                       height={90}
                       style={{ 
                         objectFit: 'contain',
+                        display: 'block',
                         filter: 'drop-shadow(0 4px 12px rgba(102, 126, 234, 0.15))'
                       }}
                     />
@@ -532,11 +533,11 @@ const LoginForm = () => {
                     </a>
                   </div>
                 </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
       </main>
     </>
   )
