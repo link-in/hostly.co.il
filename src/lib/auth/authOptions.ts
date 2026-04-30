@@ -2,6 +2,7 @@ import type { NextAuthOptions } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import GoogleProvider from 'next-auth/providers/google'
 import { getUserByEmailForAuth, verifyPassword, toAuthUser, findOrCreateGoogleUser } from './getUsersDb'
+import { getActiveSubscription } from './subscriptionDb'
 import type { AuthUser } from './types'
 
 declare module 'next-auth' {
@@ -82,6 +83,10 @@ export const authOptions: NextAuthOptions = {
           token.beds24RefreshToken = authUser.beds24RefreshToken
           token.checkInSettings = authUser.checkInSettings
           token.issuedAt = Date.now()
+          const sub = await getActiveSubscription(authUser.id)
+          token.subscriptionStatus = sub?.status ?? 'expired'
+          token.trialEndsAt = sub?.expires_at ?? null
+          token.subscriptionPlanId = sub?.plan_id ?? null
         }
         return token
       }
@@ -103,6 +108,10 @@ export const authOptions: NextAuthOptions = {
         token.beds24RefreshToken = user.beds24RefreshToken
         token.checkInSettings = user.checkInSettings
         token.issuedAt = Date.now()
+        const sub = await getActiveSubscription(user.id)
+        token.subscriptionStatus = sub?.status ?? 'expired'
+        token.trialEndsAt = sub?.expires_at ?? null
+        token.subscriptionPlanId = sub?.plan_id ?? null
       }
       
       // Handle session updates (from update() call)
@@ -150,6 +159,9 @@ export const authOptions: NextAuthOptions = {
           beds24Token: token.beds24Token as string | undefined,
           beds24RefreshToken: token.beds24RefreshToken as string | undefined,
           checkInSettings: token.checkInSettings as any,
+          subscriptionStatus: token.subscriptionStatus as any,
+          trialEndsAt: token.trialEndsAt as string | undefined,
+          subscriptionPlanId: token.subscriptionPlanId as string | undefined,
         }
       }
       return session

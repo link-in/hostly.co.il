@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs'
 import type { User, AuthUser } from './types'
 import { createServerClient, createServiceRoleClient } from '@/lib/supabase/server'
+import { createTrialSubscription } from './subscriptionDb'
 
 function mapRowToUser(data: Record<string, unknown>): User {
   return {
@@ -263,6 +264,8 @@ export const createUser = async (userData: {
     if (!data) {
       return null
     }
+
+    await createTrialSubscription(userId)
     
     // Map database columns to User interface
     return {
@@ -324,6 +327,8 @@ export const findOrCreateGoogleUser = async (
       console.error('Failed to create Google user:', error)
       return null
     }
+
+    await createTrialSubscription(userId)
 
     return toAuthUser(mapRowToUser(data as Record<string, unknown>))
   } catch (err) {

@@ -1,5 +1,7 @@
 export type UserRole = 'admin' | 'owner'
 
+export type SubscriptionStatus = 'trial' | 'active' | 'cancelled' | 'expired'
+
 export interface CheckInSettings {
   wifi_ssid?: string
   wifi_password?: string
@@ -25,6 +27,9 @@ export interface User {
   beds24Token?: string
   beds24RefreshToken?: string
   checkInSettings?: CheckInSettings
+  subscriptionStatus?: SubscriptionStatus
+  trialEndsAt?: string
+  subscriptionPlanId?: string
 }
 
 export interface AuthUser {
@@ -42,6 +47,9 @@ export interface AuthUser {
   beds24Token?: string
   beds24RefreshToken?: string
   checkInSettings?: CheckInSettings
+  subscriptionStatus?: SubscriptionStatus
+  trialEndsAt?: string
+  subscriptionPlanId?: string
 }
 
 export interface UserCredentials {
