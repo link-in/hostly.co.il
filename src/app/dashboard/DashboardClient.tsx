@@ -989,7 +989,8 @@ const DashboardClient = () => {
   // Show loading while checking authentication
   if (status === 'loading') {
     return (
-      <div 
+      <main
+        dir="rtl"
         style={{ 
           minHeight: '100vh',
           background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
@@ -1004,7 +1005,7 @@ const DashboardClient = () => {
           </div>
           <p>טוען נתונים...</p>
         </div>
-      </div>
+      </main>
     )
   }
 
