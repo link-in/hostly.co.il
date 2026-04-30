@@ -12,7 +12,7 @@ export interface CheckInSettings {
 export interface User {
   id: string
   email: string
-  passwordHash: string
+  passwordHash: string | null
   displayName: string
   firstName?: string
   lastName?: string

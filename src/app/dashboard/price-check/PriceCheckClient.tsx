@@ -5,6 +5,8 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { toast, Toaster } from 'sonner'
 import DashboardHeader from '@/components/DashboardHeader'
+import RoomTabs from '../components/RoomTabs'
+import { useSelectedRoom } from '@/lib/rooms/RoomContext'
 import { formatCurrency } from '@/lib/dashboard/utils'
 
 type PriceCheckResult = {
@@ -22,6 +24,7 @@ type PriceCheckResult = {
 export default function PriceCheckClient() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const { selectedRoomId } = useSelectedRoom()
   
   // Form state
   const [checkIn, setCheckIn] = useState('')
@@ -94,6 +97,7 @@ export default function PriceCheckClient() {
           checkOut,
           numAdult,
           numChild,
+          ...(selectedRoomId ? { roomId: selectedRoomId } : {}),
         }),
       })
 
@@ -137,11 +141,12 @@ export default function PriceCheckClient() {
       <Toaster position="top-center" dir="rtl" />
       
       <div className="container py-4">
-        <DashboardHeader 
-          session={session} 
-          currentPage="price-check" 
-          showLandingPageButton={true} 
+        <DashboardHeader
+          session={session}
+          currentPage="price-check"
+          showLandingPageButton={true}
         />
+        <RoomTabs />
 
         <div className="row mt-4">
           <div className="col-12">

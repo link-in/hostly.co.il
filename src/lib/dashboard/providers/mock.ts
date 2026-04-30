@@ -3,7 +3,18 @@ import type { DashboardProvider, PriceRule, Reservation, RoomPrice } from '@/lib
 /**
  * Mock Dashboard Provider - Demo Data
  * עם נתונים ריאליסטיים למשתמשי דמו
+ *
+ * 3 demo rooms for multi-room experience:
+ *   DEMO_ROOM_001 – "נוף הרים א"  (main room, res_1001-1020)
+ *   DEMO_ROOM_002 – "נוף הרים ב"  (second room, res_1021-1033)
+ *   DEMO_ROOM_003 – "חדר גן"       (garden suite, res_1034-1040)
  */
+
+export const DEMO_ROOMS = [
+  { id: 'DEMO_ROOM_001', name: 'נוף הרים א' },
+  { id: 'DEMO_ROOM_002', name: 'נוף הרים ב' },
+  { id: 'DEMO_ROOM_003', name: 'חדר גן' },
+] as const
 
 const reservations: Reservation[] = [
   // ינואר 2026
@@ -16,7 +27,8 @@ const reservations: Reservation[] = [
     total: 2100,
     status: 'confirmed',
     source: 'Booking.com',
-    unitName: 'Mountain View Dafna',
+    unitName: 'נוף הרים א',
+    roomId: 'DEMO_ROOM_001',
     createdAt: '2025-12-20',
   },
   {
@@ -28,7 +40,8 @@ const reservations: Reservation[] = [
     total: 2400,
     status: 'confirmed',
     source: 'Airbnb',
-    unitName: 'Mountain View Dafna',
+    unitName: 'נוף הרים א',
+    roomId: 'DEMO_ROOM_001',
     createdAt: '2025-12-28',
   },
   {
@@ -40,10 +53,11 @@ const reservations: Reservation[] = [
     total: 1600,
     status: 'confirmed',
     source: 'Direct',
-    unitName: 'Mountain View Dafna',
+    unitName: 'נוף הרים א',
+    roomId: 'DEMO_ROOM_001',
     createdAt: '2026-01-05',
   },
-  
+
   // פברואר 2026
   {
     id: 'res_1004',
@@ -54,7 +68,8 @@ const reservations: Reservation[] = [
     total: 2250,
     status: 'confirmed',
     source: 'Booking.com',
-    unitName: 'Mountain View Dafna',
+    unitName: 'נוף הרים א',
+    roomId: 'DEMO_ROOM_001',
     createdAt: '2026-01-15',
   },
   {
@@ -66,7 +81,8 @@ const reservations: Reservation[] = [
     total: 1800,
     status: 'confirmed',
     source: 'Airbnb',
-    unitName: 'Mountain View Dafna',
+    unitName: 'נוף הרים א',
+    roomId: 'DEMO_ROOM_001',
     createdAt: '2026-01-28',
   },
   {
@@ -78,7 +94,8 @@ const reservations: Reservation[] = [
     total: 1700,
     status: 'confirmed',
     source: 'Booking.com',
-    unitName: 'Mountain View Dafna',
+    unitName: 'נוף הרים א',
+    roomId: 'DEMO_ROOM_001',
     createdAt: '2026-02-03',
   },
   {
@@ -90,10 +107,11 @@ const reservations: Reservation[] = [
     total: 1650,
     status: 'pending',
     source: 'Airbnb',
-    unitName: 'Mountain View Dafna',
+    unitName: 'נוף הרים א',
+    roomId: 'DEMO_ROOM_001',
     createdAt: '2026-02-18',
   },
-  
+
   // מרץ 2026
   {
     id: 'res_1008',
@@ -104,7 +122,8 @@ const reservations: Reservation[] = [
     total: 2400,
     status: 'confirmed',
     source: 'Direct',
-    unitName: 'Mountain View Dafna',
+    unitName: 'נוף הרים א',
+    roomId: 'DEMO_ROOM_001',
     createdAt: '2026-02-15',
   },
   {
@@ -116,7 +135,8 @@ const reservations: Reservation[] = [
     total: 2550,
     status: 'confirmed',
     source: 'Booking.com',
-    unitName: 'Mountain View Dafna',
+    unitName: 'נוף הרים א',
+    roomId: 'DEMO_ROOM_001',
     createdAt: '2026-02-20',
   },
   {
@@ -128,7 +148,8 @@ const reservations: Reservation[] = [
     total: 2700,
     status: 'confirmed',
     source: 'Airbnb',
-    unitName: 'Mountain View Dafna',
+    unitName: 'נוף הרים א',
+    roomId: 'DEMO_ROOM_001',
     createdAt: '2026-03-01',
   },
   {
@@ -140,10 +161,11 @@ const reservations: Reservation[] = [
     total: 2850,
     status: 'pending',
     source: 'Booking.com',
-    unitName: 'Mountain View Dafna',
+    unitName: 'נוף הרים א',
+    roomId: 'DEMO_ROOM_001',
     createdAt: '2026-03-10',
   },
-  
+
   // אפריל 2026 (פסח)
   {
     id: 'res_1012',
@@ -154,7 +176,8 @@ const reservations: Reservation[] = [
     total: 3300,
     status: 'confirmed',
     source: 'Airbnb',
-    unitName: 'Mountain View Dafna',
+    unitName: 'נוף הרים א',
+    roomId: 'DEMO_ROOM_001',
     createdAt: '2026-03-05',
   },
   {
@@ -166,7 +189,8 @@ const reservations: Reservation[] = [
     total: 4800,
     status: 'confirmed',
     source: 'Booking.com',
-    unitName: 'Mountain View Dafna',
+    unitName: 'נוף הרים א',
+    roomId: 'DEMO_ROOM_001',
     createdAt: '2026-03-15',
   },
   {
@@ -178,7 +202,8 @@ const reservations: Reservation[] = [
     total: 3600,
     status: 'confirmed',
     source: 'Direct',
-    unitName: 'Mountain View Dafna',
+    unitName: 'נוף הרים א',
+    roomId: 'DEMO_ROOM_001',
     createdAt: '2026-03-28',
   },
   {
@@ -190,10 +215,11 @@ const reservations: Reservation[] = [
     total: 2200,
     status: 'confirmed',
     source: 'Airbnb',
-    unitName: 'Mountain View Dafna',
+    unitName: 'נוף הרים א',
+    roomId: 'DEMO_ROOM_001',
     createdAt: '2026-04-05',
   },
-  
+
   // מאי 2026
   {
     id: 'res_1016',
@@ -204,7 +230,8 @@ const reservations: Reservation[] = [
     total: 1900,
     status: 'confirmed',
     source: 'Booking.com',
-    unitName: 'Mountain View Dafna',
+    unitName: 'נוף הרים א',
+    roomId: 'DEMO_ROOM_001',
     createdAt: '2026-04-12',
   },
   {
@@ -216,7 +243,8 @@ const reservations: Reservation[] = [
     total: 1850,
     status: 'confirmed',
     source: 'Airbnb',
-    unitName: 'Mountain View Dafna',
+    unitName: 'נוף הרים א',
+    roomId: 'DEMO_ROOM_001',
     createdAt: '2026-04-20',
   },
   {
@@ -228,7 +256,8 @@ const reservations: Reservation[] = [
     total: 2700,
     status: 'pending',
     source: 'Direct',
-    unitName: 'Mountain View Dafna',
+    unitName: 'נוף הרים א',
+    roomId: 'DEMO_ROOM_001',
     createdAt: '2026-04-28',
   },
   {
@@ -240,10 +269,11 @@ const reservations: Reservation[] = [
     total: 2850,
     status: 'confirmed',
     source: 'Booking.com',
-    unitName: 'Mountain View Dafna',
+    unitName: 'נוף הרים א',
+    roomId: 'DEMO_ROOM_001',
     createdAt: '2026-05-05',
   },
-  
+
   // יוני 2026
   {
     id: 'res_1020',
@@ -254,250 +284,261 @@ const reservations: Reservation[] = [
     total: 2850,
     status: 'confirmed',
     source: 'Airbnb',
-    unitName: 'Mountain View Dafna',
+    unitName: 'נוף הרים א',
+    roomId: 'DEMO_ROOM_001',
     createdAt: '2026-05-15',
   },
+
+  // ---- DEMO_ROOM_002 - "נוף הרים ב" ----
   {
     id: 'res_1021',
     guestName: 'תמר וינר',
-    checkIn: '2026-06-13',
-    checkOut: '2026-06-16',
+    checkIn: '2026-01-08',
+    checkOut: '2026-01-11',
     nights: 3,
-    total: 2700,
+    total: 2100,
     status: 'confirmed',
     source: 'Booking.com',
-    unitName: 'Mountain View Dafna',
-    createdAt: '2026-05-25',
+    unitName: 'נוף הרים ב',
+    roomId: 'DEMO_ROOM_002',
+    createdAt: '2025-12-18',
   },
   {
     id: 'res_1022',
     guestName: 'ניר אטיאס',
-    checkIn: '2026-06-20',
-    checkOut: '2026-06-22',
-    nights: 2,
-    total: 1800,
+    checkIn: '2026-02-12',
+    checkOut: '2026-02-15',
+    nights: 3,
+    total: 1950,
     status: 'confirmed',
     source: 'Direct',
-    unitName: 'Mountain View Dafna',
-    createdAt: '2026-06-01',
+    unitName: 'נוף הרים ב',
+    roomId: 'DEMO_ROOM_002',
+    createdAt: '2026-01-22',
   },
   {
     id: 'res_1023',
     guestName: 'איריס סלע',
-    checkIn: '2026-06-27',
-    checkOut: '2026-06-30',
+    checkIn: '2026-03-07',
+    checkOut: '2026-03-10',
     nights: 3,
-    total: 3000,
-    status: 'pending',
+    total: 2250,
+    status: 'confirmed',
     source: 'Airbnb',
-    unitName: 'Mountain View Dafna',
-    createdAt: '2026-06-10',
+    unitName: 'נוף הרים ב',
+    roomId: 'DEMO_ROOM_002',
+    createdAt: '2026-02-14',
   },
-  
-  // יולי 2026 (קיץ)
   {
     id: 'res_1024',
     guestName: 'אסף זיו',
-    checkIn: '2026-07-03',
-    checkOut: '2026-07-07',
-    nights: 4,
-    total: 4400,
+    checkIn: '2026-04-04',
+    checkOut: '2026-04-07',
+    nights: 3,
+    total: 3000,
     status: 'confirmed',
     source: 'Booking.com',
-    unitName: 'Mountain View Dafna',
-    createdAt: '2026-06-15',
+    unitName: 'נוף הרים ב',
+    roomId: 'DEMO_ROOM_002',
+    createdAt: '2026-03-05',
   },
   {
     id: 'res_1025',
     guestName: 'רחל מנור',
-    checkIn: '2026-07-11',
-    checkOut: '2026-07-14',
+    checkIn: '2026-05-01',
+    checkOut: '2026-05-04',
     nights: 3,
-    total: 3450,
+    total: 2550,
     status: 'confirmed',
     source: 'Airbnb',
-    unitName: 'Mountain View Dafna',
-    createdAt: '2026-06-20',
+    unitName: 'נוף הרים ב',
+    roomId: 'DEMO_ROOM_002',
+    createdAt: '2026-04-10',
   },
   {
     id: 'res_1026',
     guestName: 'בן שלום',
-    checkIn: '2026-07-18',
-    checkOut: '2026-07-21',
+    checkIn: '2026-06-06',
+    checkOut: '2026-06-09',
     nights: 3,
-    total: 3600,
+    total: 2700,
     status: 'confirmed',
     source: 'Booking.com',
-    unitName: 'Mountain View Dafna',
-    createdAt: '2026-06-28',
+    unitName: 'נוף הרים ב',
+    roomId: 'DEMO_ROOM_002',
+    createdAt: '2026-05-15',
   },
   {
     id: 'res_1027',
     guestName: 'ענת גבע',
-    checkIn: '2026-07-25',
-    checkOut: '2026-07-28',
+    checkIn: '2026-07-10',
+    checkOut: '2026-07-13',
     nights: 3,
-    total: 3450,
+    total: 3300,
     status: 'confirmed',
     source: 'Direct',
-    unitName: 'Mountain View Dafna',
-    createdAt: '2026-07-05',
+    unitName: 'נוף הרים ב',
+    roomId: 'DEMO_ROOM_002',
+    createdAt: '2026-06-18',
   },
-  
-  // אוגוסט 2026
   {
     id: 'res_1028',
     guestName: 'עידו ברון',
     checkIn: '2026-08-01',
     checkOut: '2026-08-04',
     nights: 3,
-    total: 3750,
+    total: 3450,
     status: 'confirmed',
     source: 'Airbnb',
-    unitName: 'Mountain View Dafna',
+    unitName: 'נוף הרים ב',
+    roomId: 'DEMO_ROOM_002',
     createdAt: '2026-07-10',
   },
   {
     id: 'res_1029',
     guestName: 'מור אלמוג',
-    checkIn: '2026-08-08',
-    checkOut: '2026-08-11',
-    nights: 3,
-    total: 3600,
-    status: 'confirmed',
-    source: 'Booking.com',
-    unitName: 'Mountain View Dafna',
-    createdAt: '2026-07-18',
-  },
-  {
-    id: 'res_1030',
-    guestName: 'נדב שני',
-    checkIn: '2026-08-15',
-    checkOut: '2026-08-17',
-    nights: 2,
-    total: 2400,
-    status: 'pending',
-    source: 'Airbnb',
-    unitName: 'Mountain View Dafna',
-    createdAt: '2026-07-28',
-  },
-  
-  // ספטמבר 2026
-  {
-    id: 'res_1031',
-    guestName: 'ליאור כץ',
-    checkIn: '2026-09-04',
-    checkOut: '2026-09-07',
+    checkIn: '2026-09-11',
+    checkOut: '2026-09-14',
     nights: 3,
     total: 2700,
     status: 'confirmed',
     source: 'Booking.com',
-    unitName: 'Mountain View Dafna',
-    createdAt: '2026-08-15',
+    unitName: 'נוף הרים ב',
+    roomId: 'DEMO_ROOM_002',
+    createdAt: '2026-08-20',
   },
   {
-    id: 'res_1032',
-    guestName: 'דנה ארד',
-    checkIn: '2026-09-20',
-    checkOut: '2026-09-23',
+    id: 'res_1030',
+    guestName: 'נדב שני',
+    checkIn: '2026-10-09',
+    checkOut: '2026-10-12',
     nights: 3,
     total: 3150,
     status: 'confirmed',
     source: 'Airbnb',
-    unitName: 'Mountain View Dafna',
-    createdAt: '2026-09-01',
-  },
-  
-  // אוקטובר 2026 (חגים)
-  {
-    id: 'res_1033',
-    guestName: 'אייל נחום',
-    checkIn: '2026-10-02',
-    checkOut: '2026-10-05',
-    nights: 3,
-    total: 3600,
-    status: 'confirmed',
-    source: 'Direct',
-    unitName: 'Mountain View Dafna',
-    createdAt: '2026-09-10',
+    unitName: 'נוף הרים ב',
+    roomId: 'DEMO_ROOM_002',
+    createdAt: '2026-09-18',
   },
   {
-    id: 'res_1034',
-    guestName: 'ורד שטרן',
-    checkIn: '2026-10-16',
-    checkOut: '2026-10-19',
-    nights: 3,
-    total: 2850,
-    status: 'confirmed',
-    source: 'Booking.com',
-    unitName: 'Mountain View Dafna',
-    createdAt: '2026-09-25',
-  },
-  
-  // נובמבר 2026
-  {
-    id: 'res_1035',
-    guestName: 'שי לבנון',
+    id: 'res_1031',
+    guestName: 'ליאור כץ',
     checkIn: '2026-11-06',
     checkOut: '2026-11-09',
     nights: 3,
+    total: 2250,
+    status: 'confirmed',
+    source: 'Booking.com',
+    unitName: 'נוף הרים ב',
+    roomId: 'DEMO_ROOM_002',
+    createdAt: '2026-10-18',
+  },
+  {
+    id: 'res_1032',
+    guestName: 'דנה ארד',
+    checkIn: '2026-11-20',
+    checkOut: '2026-11-23',
+    nights: 3,
+    total: 2100,
+    status: 'pending',
+    source: 'Airbnb',
+    unitName: 'נוף הרים ב',
+    roomId: 'DEMO_ROOM_002',
+    createdAt: '2026-11-01',
+  },
+  {
+    id: 'res_1033',
+    guestName: 'אייל נחום',
+    checkIn: '2026-12-11',
+    checkOut: '2026-12-14',
+    nights: 3,
     total: 2400,
     status: 'confirmed',
+    source: 'Direct',
+    unitName: 'נוף הרים ב',
+    roomId: 'DEMO_ROOM_002',
+    createdAt: '2026-11-20',
+  },
+
+  // ---- DEMO_ROOM_003 - "חדר גן" ----
+  {
+    id: 'res_1034',
+    guestName: 'ורד שטרן',
+    checkIn: '2026-02-20',
+    checkOut: '2026-02-22',
+    nights: 2,
+    total: 1300,
+    status: 'confirmed',
+    source: 'Booking.com',
+    unitName: 'חדר גן',
+    roomId: 'DEMO_ROOM_003',
+    createdAt: '2026-02-05',
+  },
+  {
+    id: 'res_1035',
+    guestName: 'שי לבנון',
+    checkIn: '2026-04-17',
+    checkOut: '2026-04-19',
+    nights: 2,
+    total: 1800,
+    status: 'confirmed',
     source: 'Airbnb',
-    unitName: 'Mountain View Dafna',
-    createdAt: '2026-10-18',
+    unitName: 'חדר גן',
+    roomId: 'DEMO_ROOM_003',
+    createdAt: '2026-03-28',
   },
   {
     id: 'res_1036',
     guestName: 'רות אבני',
-    checkIn: '2026-11-20',
-    checkOut: '2026-11-22',
+    checkIn: '2026-07-17',
+    checkOut: '2026-07-19',
     nights: 2,
-    total: 1700,
-    status: 'pending',
+    total: 1900,
+    status: 'confirmed',
     source: 'Booking.com',
-    unitName: 'Mountain View Dafna',
-    createdAt: '2026-11-05',
+    unitName: 'חדר גן',
+    roomId: 'DEMO_ROOM_003',
+    createdAt: '2026-06-25',
   },
-  
-  // דצמבר 2026 (חורף)
   {
     id: 'res_1037',
     guestName: 'גל סימן טוב',
-    checkIn: '2026-12-04',
-    checkOut: '2026-12-07',
-    nights: 3,
-    total: 2550,
+    checkIn: '2026-09-25',
+    checkOut: '2026-09-27',
+    nights: 2,
+    total: 1750,
     status: 'confirmed',
     source: 'Direct',
-    unitName: 'Mountain View Dafna',
-    createdAt: '2026-11-15',
+    unitName: 'חדר גן',
+    roomId: 'DEMO_ROOM_003',
+    createdAt: '2026-09-10',
   },
   {
     id: 'res_1038',
     guestName: 'עדי רבין',
     checkIn: '2026-12-18',
-    checkOut: '2026-12-21',
-    nights: 3,
-    total: 2700,
+    checkOut: '2026-12-20',
+    nights: 2,
+    total: 1600,
     status: 'confirmed',
     source: 'Booking.com',
-    unitName: 'Mountain View Dafna',
+    unitName: 'חדר גן',
+    roomId: 'DEMO_ROOM_003',
     createdAt: '2026-11-28',
   },
   {
     id: 'res_1039',
     guestName: 'יעל דגן',
     checkIn: '2026-12-25',
-    checkOut: '2026-12-28',
-    nights: 3,
-    total: 3000,
+    checkOut: '2026-12-27',
+    nights: 2,
+    total: 1750,
     status: 'confirmed',
     source: 'Airbnb',
-    unitName: 'Mountain View Dafna',
+    unitName: 'חדר גן',
+    roomId: 'DEMO_ROOM_003',
     createdAt: '2026-12-05',
   },
-  
   // הזמנה מבוטלת לדוגמה
   {
     id: 'res_1040',
@@ -505,10 +546,11 @@ const reservations: Reservation[] = [
     checkIn: '2026-05-01',
     checkOut: '2026-05-03',
     nights: 2,
-    total: 1800,
+    total: 1400,
     status: 'cancelled',
     source: 'Booking.com',
-    unitName: 'Mountain View Dafna',
+    unitName: 'חדר גן',
+    roomId: 'DEMO_ROOM_003',
     createdAt: '2026-04-10',
   },
 ]
@@ -557,7 +599,7 @@ const pricingRules: PriceRule[] = [
   },
   {
     id: 'price_2005',
-    title: 'חנוכה וחורף',
+    title: 'חורף - חנוכה וחגים',
     startDate: '2026-12-01',
     endDate: '2026-12-31',
     minNights: 2,
@@ -568,71 +610,82 @@ const pricingRules: PriceRule[] = [
 ]
 
 /**
- * Generate room prices for a full year
- * מחירי לילה ריאליסטיים לשנה שלמה
+ * Generate room prices for a full year with room-specific multipliers.
+ * Room 001 (main) – base prices
+ * Room 002 – 10% lower
+ * Room 003 (garden suite) – 30% lower
  */
-function generateYearPrices(): RoomPrice[] {
+function generateYearPrices(roomId: string, priceMultiplier = 1): RoomPrice[] {
   const prices: RoomPrice[] = []
   const startDate = new Date('2026-01-01')
   const endDate = new Date('2026-12-31')
-  
-  // Base prices by season
+
   const seasonalPrices = {
-    winter: 700,      // ינואר-מרץ
-    spring: 850,      // אפריל-מאי
-    summer: 1150,     // יוני-אוגוסט
-    fall: 900,        // ספטמבר-נובמבר
-    holiday: 1200,    // חגים וסופי שבוע מיוחדים
+    winter: Math.round(700 * priceMultiplier),
+    spring: Math.round(850 * priceMultiplier),
+    summer: Math.round(1150 * priceMultiplier),
+    fall: Math.round(900 * priceMultiplier),
+    holiday: Math.round(1200 * priceMultiplier),
   }
-  
+
   for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
     const month = d.getMonth() + 1
     const dayOfWeek = d.getDay()
-    const isWeekend = dayOfWeek === 5 || dayOfWeek === 6 // שישי-שבת
-    
+    const isWeekend = dayOfWeek === 5 || dayOfWeek === 6
+
     let basePrice = seasonalPrices.winter
-    
-    // Seasonal pricing
+
     if (month >= 1 && month <= 3) {
       basePrice = seasonalPrices.winter
     } else if (month >= 4 && month <= 5) {
-      basePrice = seasonalPrices.spring
-      // Passover premium
-      if (month === 4) {
-        basePrice = seasonalPrices.holiday
-      }
+      basePrice = month === 4 ? seasonalPrices.holiday : seasonalPrices.spring
     } else if (month >= 6 && month <= 8) {
       basePrice = seasonalPrices.summer
     } else if (month >= 9 && month <= 11) {
-      basePrice = seasonalPrices.fall
-      // High holidays premium
-      if (month === 9 || month === 10) {
-        basePrice = seasonalPrices.holiday
-      }
+      basePrice = (month === 9 || month === 10) ? seasonalPrices.holiday : seasonalPrices.fall
     } else if (month === 12) {
-      basePrice = seasonalPrices.winter + 150 // Hanukkah/winter holidays
+      basePrice = Math.round(seasonalPrices.winter * 1.21)
     }
-    
-    // Weekend premium (15% more)
+
     if (isWeekend) {
       basePrice = Math.round(basePrice * 1.15)
     }
-    
+
     const dateStr = d.toISOString().split('T')[0]
-    prices.push({
-      date: dateStr,
-      price: basePrice,
-      roomId: 'demo_room_1',
-    })
+    prices.push({ date: dateStr, price: basePrice, roomId })
   }
-  
+
   return prices
 }
 
-const roomPrices: RoomPrice[] = generateYearPrices()
+const allRoomPrices: RoomPrice[] = [
+  ...generateYearPrices('DEMO_ROOM_001', 1),
+  ...generateYearPrices('DEMO_ROOM_002', 0.9),
+  ...generateYearPrices('DEMO_ROOM_003', 0.7),
+]
 
-export const mockDashboardProvider: DashboardProvider = {
-  getReservations: async () => reservations,
-  getPricingRules: async () => pricingRules,
-  getRoomPrices: async () => roomPrices,
+/**
+ * Create a mock provider optionally scoped to a specific roomId.
+ * When roomId is provided, only reservations and prices for that room are returned.
+ * When omitted, all rooms' data is returned.
+ */
+export function createMockProvider(roomId?: string): DashboardProvider {
+  return {
+    getReservations: async () => {
+      if (roomId) {
+        return reservations.filter((r) => r.roomId === roomId && r.status !== 'cancelled')
+      }
+      return reservations.filter((r) => r.status !== 'cancelled')
+    },
+    getPricingRules: async () => pricingRules,
+    getRoomPrices: async () => {
+      if (roomId) {
+        return allRoomPrices.filter((p) => p.roomId === roomId)
+      }
+      return allRoomPrices
+    },
+  }
 }
+
+/** Default export: all-rooms mock provider (backward compatible) */
+export const mockDashboardProvider: DashboardProvider = createMockProvider()

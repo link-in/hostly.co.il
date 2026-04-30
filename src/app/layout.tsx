@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Rubik } from 'next/font/google'
 import 'bootstrap/dist/css/bootstrap.min.css'
 import './globals.css'
@@ -6,6 +6,16 @@ import ServiceWorkerRegistrar from './components/ServiceWorkerRegistrar'
 import PWAInstallBanner from './components/PWAInstallBanner'
 
 const rubik = Rubik({ subsets: ['latin', 'hebrew'], variable: '--font-rubik' })
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#667eea' },
+    { media: '(prefers-color-scheme: dark)', color: '#667eea' },
+  ],
+}
 
 export const metadata: Metadata = {
   title: 'Hostly - מערכת ניהול נכסים',
@@ -34,15 +44,6 @@ export const metadata: Metadata = {
     title: 'Hostly - מערכת ניהול נכסים',
     description: 'מערכת ניהול מתקדמת לנכסי השכרה לטווח קצר',
   },
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 1,
-  },
-  themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#667eea' },
-    { media: '(prefers-color-scheme: dark)', color: '#667eea' },
-  ],
 }
 
 export default function RootLayout({

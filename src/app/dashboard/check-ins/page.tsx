@@ -5,7 +5,6 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { Eye, Send, Download, CheckCircle, Clock, XCircle, ExternalLink } from 'lucide-react'
 import type { CheckIn } from '@/lib/check-in/types'
-import { SessionProvider } from '../SessionProvider'
 import DashboardHeader from '@/components/DashboardHeader'
 
 function CheckInsPageContent() {
@@ -339,9 +338,5 @@ function CheckInsPageContent() {
 }
 
 export default function CheckInsPage() {
-  return (
-    <SessionProvider>
-      <CheckInsPageContent />
-    </SessionProvider>
-  )
+  return <CheckInsPageContent />
 }

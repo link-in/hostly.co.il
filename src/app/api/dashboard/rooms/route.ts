@@ -121,10 +121,13 @@ const extractRowPrice = (row: unknown) => {
   return undefined
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   const session = await getServerSession(authOptions)
   const propertyId = session?.user?.propertyId ?? process.env.BEDS24_PROPERTY_ID
-  const roomId = session?.user?.roomId ?? process.env.BEDS24_ROOM_ID
+  // Allow client to override roomId via query param (multi-room support)
+  const requestUrl = new URL(request.url)
+  const roomIdOverride = requestUrl.searchParams.get('roomId')
+  const roomId = roomIdOverride ?? session?.user?.roomId ?? process.env.BEDS24_ROOM_ID
   const includeAvailability = process.env.BEDS24_INCLUDE_AVAILABILITY
 
   if (!propertyId) {

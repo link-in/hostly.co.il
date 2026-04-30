@@ -15,12 +15,15 @@ const DEFAULT_BASE_URL = 'https://api.beds24.com/v2'
 
 const getBaseUrl = () => process.env.BEDS24_API_BASE_URL ?? DEFAULT_BASE_URL
 
-export async function GET() {
+export async function GET(request: Request) {
   // Get session to identify which property/room to fetch
   const session = await getServerSession(authOptions)
   
   const propertyId = session?.user?.propertyId ?? process.env.BEDS24_PROPERTY_ID
-  const roomId = session?.user?.roomId ?? process.env.BEDS24_ROOM_ID
+  // Allow client to override roomId via query param (multi-room support)
+  const requestUrl = new URL(request.url)
+  const roomIdOverride = requestUrl.searchParams.get('roomId')
+  const roomId = roomIdOverride ?? session?.user?.roomId ?? process.env.BEDS24_ROOM_ID
 
   if (!propertyId || !roomId) {
     return NextResponse.json(

@@ -11,7 +11,9 @@ import { getDashboardProvider } from '@/lib/dashboard/getDashboardProvider'
 import ReservationsTable from './components/ReservationsTable'
 import StatCard from './components/StatCard'
 import CalendarPricing from './components/CalendarPricing'
+import RoomTabs from './components/RoomTabs'
 import DashboardHeader from '@/components/DashboardHeader'
+import { useSelectedRoom } from '@/lib/rooms/RoomContext'
 
 const toLocalKey = (value: Date) => {
   const year = value.getFullYear()
@@ -128,9 +130,13 @@ const clearDemoReservations = () => {
 const DashboardClient = () => {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const { selectedRoomId } = useSelectedRoom()
   
-  // Get provider based on user (demo users get mock data)
-  const { provider, meta } = useMemo(() => getDashboardProvider(session?.user), [session?.user])
+  // Recreate provider when selected room changes so prices/bookings are room-scoped
+  const { provider, meta } = useMemo(
+    () => getDashboardProvider(session?.user, selectedRoomId || session?.user?.roomId),
+    [session?.user, selectedRoomId]
+  )
   
   const [reservations, setReservations] = useState<Reservation[]>([])
   const [roomPrices, setRoomPrices] = useState<RoomPrice[]>([])
@@ -717,7 +723,17 @@ const DashboardClient = () => {
     }
   }, [status, router])
 
+  // Reset loading state whenever the selected room changes so stale data is hidden
   useEffect(() => {
+    if (selectedRoomId) {
+      setLoadingReservations(true)
+      setLoadingRoomPrices(true)
+    }
+  }, [selectedRoomId])
+
+  useEffect(() => {
+    if (status !== 'authenticated') return
+
     let isActive = true
 
     const load = async () => {
@@ -773,7 +789,7 @@ const DashboardClient = () => {
     return () => {
       isActive = false
     }
-  }, [provider])
+  }, [provider, status])
 
   const availableMonths = useMemo(() => {
     const monthsSet = new Set<string>()
@@ -1013,6 +1029,8 @@ const DashboardClient = () => {
             currentPage="dashboard"
           />
         </div>
+
+        <RoomTabs />
 
         {/* Demo Mode Banner */}
         {meta.isMock && session?.user?.isDemo ? (

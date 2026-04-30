@@ -9,7 +9,7 @@ interface TokenData {
   refreshToken: string
 }
 
-class Beds24TokenManager {
+export class Beds24TokenManager {
   private tokenData: TokenData | null = null
   private refreshPromise: Promise<string> | null = null
 
@@ -24,13 +24,16 @@ class Beds24TokenManager {
     const accessToken = process.env.BEDS24_TOKEN
     const refreshToken = process.env.BEDS24_REFRESH_TOKEN
 
-    if (accessToken && refreshToken) {
-      // Assume token expires in 24 hours if we don't have exact expiry
-      const expiresAt = Date.now() + 24 * 60 * 60 * 1000
+    if (accessToken) {
+      // Long life tokens (no refresh token) are treated as valid for 1 year.
+      // Regular tokens with a refresh token are assumed valid for 24 hours.
+      const expiresAt = refreshToken
+        ? Date.now() + 24 * 60 * 60 * 1000
+        : Date.now() + 365 * 24 * 60 * 60 * 1000
       this.tokenData = {
         accessToken,
         expiresAt,
-        refreshToken,
+        refreshToken: refreshToken ?? '',
       }
     }
   }

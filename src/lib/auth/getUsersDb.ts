@@ -6,7 +6,7 @@ function mapRowToUser(data: Record<string, unknown>): User {
   return {
     id: data.id as string,
     email: data.email as string,
-    passwordHash: data.password_hash as string,
+    passwordHash: (data.password_hash as string) ?? null,
     displayName: data.display_name as string,
     firstName: (data.first_name as string) || undefined,
     lastName: (data.last_name as string) || undefined,
@@ -79,9 +79,11 @@ export const getUserByEmailForAuth = async (email: string): Promise<User | null>
 }
 
 /**
- * Verify password against hash
+ * Verify password against hash.
+ * Returns false for Google-only users (null hash).
  */
-export const verifyPassword = async (plainPassword: string, passwordHash: string): Promise<boolean> => {
+export const verifyPassword = async (plainPassword: string, passwordHash: string | null): Promise<boolean> => {
+  if (!passwordHash) return false
   try {
     return await bcrypt.compare(plainPassword, passwordHash)
   } catch (error) {
@@ -282,6 +284,50 @@ export const createUser = async (userData: {
     }
   } catch (error) {
     console.error('Failed to create user:', error)
+    return null
+  }
+}
+
+/**
+ * Find an existing user by email, or create a new one for Google OAuth sign-in.
+ * New users get empty propertyId/roomId and require onboarding.
+ */
+export const findOrCreateGoogleUser = async (
+  email: string,
+  displayName: string,
+): Promise<AuthUser | null> => {
+  const existing = await getUserByEmailForAuth(email)
+  if (existing) {
+    return toAuthUser(existing)
+  }
+
+  try {
+    const supabase = createServiceRoleClient()
+    const userId = `user_${Date.now()}_${Math.random().toString(36).substring(7)}`
+
+    const { data, error } = await supabase
+      .from('users')
+      .insert({
+        id: userId,
+        email: email.toLowerCase(),
+        password_hash: null,
+        display_name: displayName,
+        property_id: '',
+        room_id: '',
+        role: 'owner',
+        is_demo: false,
+      })
+      .select()
+      .single()
+
+    if (error || !data) {
+      console.error('Failed to create Google user:', error)
+      return null
+    }
+
+    return toAuthUser(mapRowToUser(data as Record<string, unknown>))
+  } catch (err) {
+    console.error('findOrCreateGoogleUser error:', err)
     return null
   }
 }

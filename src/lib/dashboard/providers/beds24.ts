@@ -3,6 +3,8 @@ import type { DashboardProvider, PriceRule, Reservation, RoomPrice } from '@/lib
 type Beds24ProviderConfig = {
   baseUrl?: string
   apiKey?: string
+  /** Override the room ID used for fetching prices and bookings (multi-room support) */
+  roomId?: string
 }
 
 const DEFAULT_BASE_URL = '/api/dashboard'
@@ -32,13 +34,20 @@ const fetchJson = async <T>(url: string, apiKey?: string): Promise<T> => {
 export const createBeds24Provider = (config: Beds24ProviderConfig = {}): DashboardProvider => {
   const baseUrl = config.baseUrl ?? DEFAULT_BASE_URL
   const apiKey = config.apiKey
+  const roomId = config.roomId
+
+  const buildRoomParam = (base: string) => {
+    if (!roomId) return base
+    const sep = base.includes('?') ? '&' : '?'
+    return `${base}${sep}roomId=${encodeURIComponent(roomId)}`
+  }
 
   return {
     getReservations: async () => {
-      const payload = await fetchJson<unknown>(
-        `${baseUrl}/bookings?arrivalFrom=2024-01-01&includeInvoice=true`,
-        apiKey
+      const endpoint = buildRoomParam(
+        `${baseUrl}/bookings?arrivalFrom=2024-01-01&includeInvoice=true`
       )
+      const payload = await fetchJson<unknown>(endpoint, apiKey)
       const bookings = extractBookings(payload)
       const reservations = bookings.map(mapBookingToReservation)
       
@@ -55,7 +64,8 @@ export const createBeds24Provider = (config: Beds24ProviderConfig = {}): Dashboa
       return []
     },
     getRoomPrices: async () => {
-      const payload = await fetchJson<unknown>(`${baseUrl}/rooms`, apiKey)
+      const endpoint = buildRoomParam(`${baseUrl}/rooms`)
+      const payload = await fetchJson<unknown>(endpoint, apiKey)
       const prices = extractRoomPrices(payload)
       return prices
     },

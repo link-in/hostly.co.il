@@ -1,5 +1,4 @@
 import React from 'react'
-import { SessionProvider } from '../SessionProvider'
 import ProfileClient from './ProfileClient'
 
 export const metadata = {
@@ -7,11 +6,7 @@ export const metadata = {
 }
 
 const ProfilePage = () => {
-  return (
-    <SessionProvider>
-      <ProfileClient />
-    </SessionProvider>
-  )
+  return <ProfileClient />
 }
 
 export default ProfilePage

@@ -174,6 +174,7 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated }: CalendarPric
   const [saving, setSaving] = useState(false)
   const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null)
   const reservationDetailsRef = useRef<HTMLDivElement>(null)
+  const lastSelectedRef = useRef<Date | null>(null)
   const todayKey = toKey(normalizeDate(new Date()))
   const [isMobile, setIsMobile] = useState(false)
   
@@ -251,7 +252,7 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated }: CalendarPric
   const bookingSegments = useMemo(() => buildBookingSegments(reservations, days), [reservations, days])
   const weeksCount = Math.ceil(days.length / 7)
 
-  const handleDateToggle = (date: Date) => {
+  const handleDateToggle = (date: Date, shiftKey = false) => {
     const key = toKey(date)
     const numAvail = availabilityMap[key] ?? 1
     
@@ -264,11 +265,38 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated }: CalendarPric
     
     // Check if date is blocked (numAvail === 0)
     if (numAvail === 0) {
-      // Don't allow selection of blocked dates
       return
     }
     
     setSelectedReservation(null)
+
+    // SHIFT+click: select range from last anchor to this date
+    if (shiftKey && lastSelectedRef.current) {
+      const anchor = lastSelectedRef.current
+      const rangeStart = anchor.getTime() <= date.getTime() ? anchor : date
+      const rangeEnd = anchor.getTime() <= date.getTime() ? date : anchor
+      const range: Date[] = []
+      let cursor = new Date(rangeStart)
+      while (cursor.getTime() <= rangeEnd.getTime()) {
+        const cursorKey = toKey(cursor)
+        const cursorAvail = availabilityMap[cursorKey] ?? 1
+        if (!bookingMap.has(cursorKey) && cursorAvail !== 0) {
+          range.push(new Date(cursor))
+        }
+        cursor = addDays(cursor, 1)
+      }
+      setSelectedDates((prev) => {
+        const merged = [...prev]
+        range.forEach((d) => {
+          if (!merged.some((m) => isSameDay(m, d))) merged.push(d)
+        })
+        return merged
+      })
+      return
+    }
+
+    // Regular click: toggle single date and update anchor
+    lastSelectedRef.current = date
     setSelectedDates((prev) => {
       const exists = prev.some((item) => isSameDay(item, date))
       if (exists) {
@@ -330,6 +358,7 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated }: CalendarPric
         return next
       })
       setSelectedDates([])
+      lastSelectedRef.current = null
       if (onPricesUpdated) {
         await onPricesUpdated()
       }
@@ -343,6 +372,7 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated }: CalendarPric
 
   const clearSelection = () => {
     setSelectedDates([])
+    lastSelectedRef.current = null
   }
 
   const monthLabel = new Intl.DateTimeFormat('he-IL', { month: 'long', year: 'numeric' }).format(currentMonth)
@@ -425,6 +455,9 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated }: CalendarPric
             </button>
           </div>
         </div>
+        <div className="mb-2" style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', textAlign: 'right', direction: 'rtl' }}>
+          לחץ על תאריך לבחירה · <kbd style={{ background: 'rgba(102,126,234,0.2)', border: '1px solid rgba(102,126,234,0.4)', borderRadius: '3px', padding: '0 4px', color: 'rgba(255,255,255,0.6)', fontSize: '10px' }}>Shift</kbd> + לחיצה לבחירת טווח
+        </div>
         <div
           className="rounded-4"
           style={{
@@ -502,7 +535,7 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated }: CalendarPric
                           : 'transparent'
                       }
                     }}
-                    onClick={() => handleDateToggle(date)}
+                    onClick={(e) => handleDateToggle(date, e.shiftKey)}
                   >
                     {holiday && <HolidayIndicator holiday={holiday} isMobile={isMobile} />}
                     <span

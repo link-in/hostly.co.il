@@ -8,6 +8,8 @@ import type { Reservation } from '@/lib/dashboard/types'
 import { formatCurrency } from '@/lib/dashboard/utils'
 import { getDashboardProvider } from '@/lib/dashboard/getDashboardProvider'
 import DashboardHeader from '@/components/DashboardHeader'
+import RoomTabs from '../components/RoomTabs'
+import { useSelectedRoom } from '@/lib/rooms/RoomContext'
 
 // LocalStorage key for viewed reservations
 const VIEWED_RESERVATIONS_KEY = 'hostly_viewed_reservations'
@@ -66,6 +68,7 @@ const markNewReservations = (reservations: Reservation[]): Reservation[] => {
 export default function ReservationsClient() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const { selectedRoomId } = useSelectedRoom()
   const [reservations, setReservations] = useState<Reservation[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -81,7 +84,10 @@ export default function ReservationsClient() {
   })
   const [viewedReservations, setViewedReservations] = useState<Set<string>>(new Set())
 
-  const { provider, meta } = useMemo(() => getDashboardProvider(session?.user), [session?.user])
+  const { provider, meta } = useMemo(
+    () => getDashboardProvider(session?.user, selectedRoomId || session?.user?.roomId),
+    [session?.user, selectedRoomId]
+  )
   
   const handleReservationViewed = (reservationId: string) => {
     markReservationAsViewed(reservationId)
@@ -96,6 +102,13 @@ export default function ReservationsClient() {
       router.push('/dashboard/login')
     }
   }, [status, router])
+
+  // Reset loading state when selected room changes
+  useEffect(() => {
+    if (selectedRoomId) {
+      setLoading(true)
+    }
+  }, [selectedRoomId])
 
   // Load data
   useEffect(() => {
@@ -287,6 +300,7 @@ export default function ReservationsClient() {
             currentPage="reservations"
           />
         </div>
+        <RoomTabs />
       </div>
 
       {/* Main Content */}

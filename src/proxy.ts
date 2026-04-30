@@ -2,18 +2,17 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { getToken } from 'next-auth/jwt'
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname
   const hostname = request.headers.get('host') || ''
   
-  // =========================================
-  // Redirect hostly.co.il root to dashboard
-  // =========================================
-  const cleanHostname = hostname.split(':')[0] // הסר port
-  if ((cleanHostname === 'hostly.co.il' || cleanHostname === 'www.hostly.co.il') && path === '/') {
+  // Redirect app root to dashboard. Production app domain: app.hostly.co.il
+  const cleanHostname = hostname.split(':')[0]
+  const isAppDomain = cleanHostname === 'app.hostly.co.il' || cleanHostname === 'hostly.co.il' || cleanHostname === 'www.hostly.co.il'
+  if (isAppDomain && path === '/') {
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }
-  
+
   // =========================================
   // Subdomain Handling - Landing Pages
   // =========================================

@@ -4,18 +4,13 @@
 
 import React from 'react'
 import DashboardTestClient from './DashboardTestClient'
-import { SessionProvider } from '../SessionProvider'
 
 export const metadata = {
   title: '🧪 דשבורד בדיקה | נוף הרים בדפנה',
 }
 
 const DashboardTestPage = () => {
-  return (
-    <SessionProvider>
-      <DashboardTestClient />
-    </SessionProvider>
-  )
+  return <DashboardTestClient />
 }
 
 export default DashboardTestPage

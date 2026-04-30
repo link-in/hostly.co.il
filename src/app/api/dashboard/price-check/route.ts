@@ -23,18 +23,27 @@ export async function POST(request: Request) {
     }
 
     const propertyId = session?.user?.propertyId ?? process.env.BEDS24_PROPERTY_ID
-    const roomId = session?.user?.roomId ?? process.env.BEDS24_ROOM_ID
 
-    if (!propertyId || !roomId) {
+    if (!propertyId) {
       return NextResponse.json(
-        { error: 'Missing BEDS24_PROPERTY_ID or BEDS24_ROOM_ID in session or environment' },
+        { error: 'Missing BEDS24_PROPERTY_ID in session or environment' },
         { status: 500 }
       )
     }
 
     // Parse request body
     const body = await request.json()
-    const { checkIn, checkOut, numAdult, numChild } = body
+    const { checkIn, checkOut, numAdult, numChild, roomId: roomIdOverride } = body
+
+    // Allow client to pass roomId override (multi-room support), fallback to session
+    const roomId = roomIdOverride ?? session?.user?.roomId ?? process.env.BEDS24_ROOM_ID
+
+    if (!roomId) {
+      return NextResponse.json(
+        { error: 'Missing BEDS24_ROOM_ID in session or environment' },
+        { status: 500 }
+      )
+    }
 
     // Validate inputs
     if (!checkIn || !checkOut) {

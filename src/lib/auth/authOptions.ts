@@ -1,6 +1,7 @@
 import type { NextAuthOptions } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
-import { getUserByEmailForAuth, verifyPassword, toAuthUser } from './getUsersDb'
+import GoogleProvider from 'next-auth/providers/google'
+import { getUserByEmailForAuth, verifyPassword, toAuthUser, findOrCreateGoogleUser } from './getUsersDb'
 import type { AuthUser } from './types'
 
 declare module 'next-auth' {
@@ -16,6 +17,10 @@ declare module 'next-auth/jwt' {
 
 export const authOptions: NextAuthOptions = {
   providers: [
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    }),
     CredentialsProvider({
       name: 'Credentials',
       credentials: {
@@ -56,8 +61,32 @@ export const authOptions: NextAuthOptions = {
     },
   },
   callbacks: {
-    async jwt({ token, user, trigger, session }) {
-      // Initial sign in
+    async jwt({ token, user, account, profile, trigger, session }) {
+      // Initial sign in via Google OAuth
+      if (account?.provider === 'google' && profile?.email) {
+        const displayName = (profile as { name?: string }).name ?? profile.email
+        const authUser = await findOrCreateGoogleUser(profile.email, displayName)
+        if (authUser) {
+          token.id = authUser.id
+          token.email = authUser.email
+          token.displayName = authUser.displayName
+          token.firstName = authUser.firstName
+          token.lastName = authUser.lastName
+          token.propertyId = authUser.propertyId
+          token.roomId = authUser.roomId
+          token.landingPageUrl = authUser.landingPageUrl
+          token.phoneNumber = authUser.phoneNumber
+          token.role = authUser.role
+          token.isDemo = authUser.isDemo
+          token.beds24Token = authUser.beds24Token
+          token.beds24RefreshToken = authUser.beds24RefreshToken
+          token.checkInSettings = authUser.checkInSettings
+          token.issuedAt = Date.now()
+        }
+        return token
+      }
+
+      // Initial sign in via Credentials
       if (user) {
         token.id = user.id
         token.email = user.email
