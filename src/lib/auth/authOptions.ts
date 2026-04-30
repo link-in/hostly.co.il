@@ -86,13 +86,13 @@ export const authOptions: NextAuthOptions = {
           // Admins and demo users bypass subscription checks
           if (authUser.role === 'admin' || authUser.isDemo) {
             token.subscriptionStatus = 'active'
-            token.trialEndsAt = null
-            token.subscriptionPlanId = null
+            token.trialEndsAt = undefined
+            token.subscriptionPlanId = undefined
           } else {
             const sub = await getActiveSubscription(authUser.id)
             token.subscriptionStatus = sub?.status ?? 'expired'
-            token.trialEndsAt = sub?.expires_at ?? null
-            token.subscriptionPlanId = sub?.plan_id ?? null
+            token.trialEndsAt = sub?.expires_at ?? undefined
+            token.subscriptionPlanId = sub?.plan_id ?? undefined
           }
         }
         return token
@@ -118,13 +118,13 @@ export const authOptions: NextAuthOptions = {
         // Admins and demo users bypass subscription checks
         if (user.role === 'admin' || user.isDemo) {
           token.subscriptionStatus = 'active'
-          token.trialEndsAt = null
-          token.subscriptionPlanId = null
+          token.trialEndsAt = undefined
+          token.subscriptionPlanId = undefined
         } else {
           const sub = await getActiveSubscription(user.id)
           token.subscriptionStatus = sub?.status ?? 'expired'
-          token.trialEndsAt = sub?.expires_at ?? null
-          token.subscriptionPlanId = sub?.plan_id ?? null
+          token.trialEndsAt = sub?.expires_at ?? undefined
+          token.subscriptionPlanId = sub?.plan_id ?? undefined
         }
       }
       
