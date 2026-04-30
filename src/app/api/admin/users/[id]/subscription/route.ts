@@ -35,7 +35,7 @@ export async function PATCH(
       .limit(1)
       .maybeSingle()
 
-    const updates: Record<string, unknown> = { updated_at: new Date().toISOString() }
+    const updates: Record<string, unknown> = {}
 
     if (status) updates.status = status
     if (planId !== undefined) updates.plan_id = planId || null
