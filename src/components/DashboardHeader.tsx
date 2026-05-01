@@ -9,7 +9,7 @@ interface DashboardHeaderProps {
   title?: string
   subtitle?: string
   showLandingPageButton?: boolean
-  currentPage?: 'dashboard' | 'reservations' | 'customers' | 'price-check' | 'profile' | 'landing' | 'pricing-demo' | 'check-ins' | 'admin'
+  currentPage?: 'dashboard' | 'reservations' | 'customers' | 'price-check' | 'profile' | 'landing' | 'pricing-demo' | 'check-ins' | 'admin' | 'pricing'
 }
 
 export default function DashboardHeader({ 

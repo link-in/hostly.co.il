@@ -67,7 +67,7 @@ function PricingContent() {
     >
       <div className="container py-3 py-md-4">
         <div className="mb-3 mb-md-4">
-          <DashboardHeader currentPage="dashboard" />
+          <DashboardHeader session={session} currentPage="pricing" />
         </div>
 
         {/* Test mode banner */}
