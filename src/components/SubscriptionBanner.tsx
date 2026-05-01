@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
+import { usePathname, useRouter } from 'next/navigation'
 import type { SubscriptionStatus } from '@/lib/auth/types'
 
 interface SubscriptionInfo {
@@ -9,11 +10,15 @@ interface SubscriptionInfo {
   daysRemaining: number
   expiresAt: string | null
   planId: string | null
+  wasActive?: boolean
 }
 
 export default function SubscriptionBanner() {
   const { data: session } = useSession()
+  const pathname = usePathname()
+  const router = useRouter()
   const [sub, setSub] = useState<SubscriptionInfo | null>(null)
+  const [navigating, setNavigating] = useState(false)
 
   useEffect(() => {
     if (!session?.user) return
@@ -27,7 +32,9 @@ export default function SubscriptionBanner() {
   }, [session])
 
   if (!sub) return null
+  if (navigating) return null
   if (session?.user?.isDemo || session?.user?.role === 'admin') return null
+  if (pathname?.startsWith('/dashboard/pricing')) return null
 
   // Active paid subscription — no banner
   if (sub.status === 'active') return null
@@ -90,8 +97,8 @@ export default function SubscriptionBanner() {
     )
   }
 
-  // Cancelled — still has access
-  if (sub.status === 'cancelled') {
+  // Cancelled — only show banner if still has some access remaining
+  if (sub.status === 'cancelled' && sub.daysRemaining > 0) {
     return (
       <div
         dir="rtl"
@@ -133,16 +140,17 @@ export default function SubscriptionBanner() {
     )
   }
 
-  // Expired — full block screen
-  if (sub.status === 'expired') {
+  // Expired or cancelled-with-no-access — full block screen
+  if (sub.status === 'expired' || (sub.status === 'cancelled' && sub.daysRemaining <= 0)) {
+    const hadPaidPlan = sub.wasActive || sub.planId != null
     return (
       <div
         dir="rtl"
         style={{
           position: 'fixed',
           inset: 0,
-          background: 'rgba(0,0,0,0.6)',
-          backdropFilter: 'blur(4px)',
+          background: 'rgba(0,0,0,0.65)',
+          backdropFilter: 'blur(6px)',
           zIndex: 9999,
           display: 'flex',
           alignItems: 'center',
@@ -158,19 +166,24 @@ export default function SubscriptionBanner() {
             maxWidth: '460px',
             width: '100%',
             textAlign: 'center',
-            boxShadow: '0 25px 60px rgba(0,0,0,0.3)',
+            boxShadow: '0 25px 60px rgba(0,0,0,0.35)',
           }}
         >
           <div style={{ fontSize: '52px', marginBottom: '16px' }}>🔒</div>
           <h2 style={{ fontSize: '1.5rem', fontWeight: '700', color: '#111827', marginBottom: '10px' }}>
-            תקופת הניסיון הסתיימה
+            {hadPaidPlan ? 'המנוי שלך הסתיים' : 'תקופת הניסיון הסתיימה'}
           </h2>
           <p style={{ color: '#6b7280', fontSize: '15px', marginBottom: '28px', lineHeight: '1.6' }}>
-            כדי להמשיך להשתמש ב-Hostly, בחר תוכנית מנוי.
+            {hadPaidPlan
+              ? 'כדי להמשיך להשתמש ב-Hostly, חדש את המנוי שלך.'
+              : 'כדי להמשיך להשתמש ב-Hostly, בחר תוכנית מנוי.'}
           </p>
           <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
-            <a
-              href="/dashboard/pricing"
+            <button
+              onClick={() => {
+                setNavigating(true)
+                router.push('/dashboard/pricing')
+              }}
               style={{
                 background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                 color: 'white',
@@ -178,12 +191,13 @@ export default function SubscriptionBanner() {
                 borderRadius: '10px',
                 fontSize: '15px',
                 fontWeight: '600',
-                textDecoration: 'none',
+                border: 'none',
+                cursor: 'pointer',
                 boxShadow: '0 4px 12px rgba(102, 126, 234, 0.35)',
               }}
             >
-              צפה בתוכניות
-            </a>
+              {hadPaidPlan ? 'חדש מנוי' : 'צפה בתוכניות'}
+            </button>
           </div>
           <p style={{ marginTop: '20px', fontSize: '13px', color: '#9ca3af' }}>
             שאלות? צור קשר:{' '}

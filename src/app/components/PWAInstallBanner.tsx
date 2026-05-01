@@ -14,6 +14,9 @@ export default function PWAInstallBanner() {
   const [showAndroidBanner, setShowAndroidBanner] = useState(false)
 
   useEffect(() => {
+    // Mobile only — skip on desktop (width > 768px)
+    if (window.innerWidth > 768) return
+
     // Don't show if already running as PWA (standalone mode)
     const isStandalone =
       window.matchMedia('(display-mode: standalone)').matches ||

@@ -252,28 +252,31 @@ export default function AdminUsersPage() {
   const openSubPanel = (user: AdminUser) => {
     setSubPanel(user.id)
     setSubSuccess(null)
+    const defaultExpiry = new Date()
+    defaultExpiry.setDate(defaultExpiry.getDate() + 14)
     setSubForm({
       status: user.subscription?.status ?? 'trial',
       planId: user.subscription?.planId ?? '',
       expiresAt: user.subscription?.expiresAt
         ? new Date(user.subscription.expiresAt).toISOString().slice(0, 10)
-        : '',
+        : defaultExpiry.toISOString().slice(0, 10),
       extendDays: '',
     })
   }
 
-  const saveSubscription = async (userId: string) => {
+  const saveSubscription = async (userId: string, overrides?: Partial<typeof subForm>) => {
     try {
       setSubSaving(true)
       setError(null)
+      const form = overrides ? { ...subForm, ...overrides } : subForm
       const res = await fetch(`/api/admin/users/${userId}/subscription`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          status: subForm.status || undefined,
-          planId: subForm.planId || undefined,
-          expiresAt: subForm.extendDays ? undefined : (subForm.expiresAt || undefined),
-          extendDays: subForm.extendDays ? Number(subForm.extendDays) : undefined,
+          status: form.status || undefined,
+          planId: form.planId || undefined,
+          expiresAt: form.extendDays ? undefined : (form.expiresAt || undefined),
+          extendDays: form.extendDays ? Number(form.extendDays) : undefined,
         }),
       })
       if (!res.ok) {
@@ -329,6 +332,171 @@ export default function AdminUsersPage() {
 
   return (
     <div className="container py-5" style={{ maxWidth: '1400px', direction: 'rtl' }}>
+
+      {/* ── Subscription Modal ─────────────────────────────── */}
+      {subPanel && (
+        <div
+          style={{
+            position: 'fixed', inset: 0, zIndex: 1050,
+            background: 'rgba(0,0,0,0.45)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}
+          onClick={(e) => { if (e.target === e.currentTarget) setSubPanel(null) }}
+        >
+          <div style={{
+            background: 'white', borderRadius: '16px', padding: '28px 32px',
+            width: '360px', maxWidth: '95vw', boxShadow: '0 20px 60px rgba(0,0,0,0.25)',
+            direction: 'rtl',
+          }}>
+            <h5 style={{ marginBottom: '20px', fontWeight: 700, color: '#4c1d95' }}>
+              💳 ניהול מנוי
+            </h5>
+
+            {subSuccess && (
+              <div style={{
+                background: '#ecfdf5', border: '1px solid #6ee7b7',
+                borderRadius: '8px', padding: '10px 14px',
+                color: '#059669', marginBottom: '16px', fontSize: '14px',
+              }}>
+                {subSuccess}
+              </div>
+            )}
+
+            {/* Status */}
+            <div style={{ marginBottom: '14px' }}>
+              <label style={{ display: 'block', marginBottom: '4px', fontWeight: 600, fontSize: '13px' }}>
+                סטטוס מנוי
+              </label>
+              <select
+                className="form-select form-select-sm"
+                value={subForm.status}
+                onChange={(e) => setSubForm({ ...subForm, status: e.target.value })}
+              >
+                <option value="trial">ניסיון</option>
+                <option value="active">פעיל (משולם)</option>
+                <option value="cancelled">בוטל</option>
+                <option value="expired">פג תוקף</option>
+              </select>
+            </div>
+
+            {/* Plan — only when active */}
+            {subForm.status === 'active' && (
+              <div style={{ marginBottom: '14px' }}>
+                <label style={{ display: 'block', marginBottom: '4px', fontWeight: 600, fontSize: '13px' }}>
+                  תוכנית
+                </label>
+                <select
+                  className="form-select form-select-sm"
+                  value={subForm.planId}
+                  onChange={(e) => setSubForm({ ...subForm, planId: e.target.value })}
+                >
+                  <option value="">בחר תוכנית</option>
+                  <option value="monthly">חודשי — ₪150</option>
+                  <option value="annual">שנתי — ₪1,000</option>
+                </select>
+              </div>
+            )}
+
+            {/* Expiry date */}
+            <div style={{ marginBottom: '14px' }}>
+              <label style={{ display: 'block', marginBottom: '4px', fontWeight: 600, fontSize: '13px' }}>
+                תאריך פקיעה
+              </label>
+              <input
+                type="date"
+                className="form-control form-control-sm"
+                value={subForm.expiresAt}
+                onChange={(e) => setSubForm({ ...subForm, expiresAt: e.target.value, extendDays: '' })}
+              />
+            </div>
+
+            {/* Extend by days */}
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', marginBottom: '6px', fontWeight: 600, fontSize: '13px' }}>
+                הארך ב-ימים
+              </label>
+              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                {[7, 14, 30].map((d) => (
+                  <button
+                    key={d}
+                    type="button"
+                    className="btn btn-sm"
+                    style={{
+                      border: '1px solid #667eea',
+                      color: subForm.extendDays === String(d) ? 'white' : '#667eea',
+                      background: subForm.extendDays === String(d) ? '#667eea' : 'white',
+                      padding: '4px 12px',
+                      fontSize: '13px',
+                    }}
+                    onClick={() => setSubForm({ ...subForm, extendDays: String(d), expiresAt: '' })}
+                  >
+                    +{d}
+                  </button>
+                ))}
+                <input
+                  type="number"
+                  className="form-control form-control-sm"
+                  placeholder="מספר"
+                  style={{ width: '72px' }}
+                  value={subForm.extendDays}
+                  onChange={(e) => setSubForm({ ...subForm, extendDays: e.target.value, expiresAt: '' })}
+                />
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
+              <button
+                type="button"
+                className="btn"
+                style={{
+                  background: 'linear-gradient(135deg,#667eea,#764ba2)',
+                  color: 'white', border: 'none', flex: 1,
+                  padding: '8px 0',
+                }}
+                onClick={() => saveSubscription(subPanel)}
+                disabled={subSaving}
+              >
+                {subSaving ? 'שומר...' : 'שמור שינויים'}
+              </button>
+              <button
+                type="button"
+                className="btn"
+                style={{
+                  border: '1px solid #cbd5e1', color: '#64748b',
+                  background: 'white', padding: '8px 16px',
+                }}
+                onClick={() => { setSubPanel(null); setSubSuccess(null) }}
+              >
+                סגור
+              </button>
+            </div>
+
+            {/* Quick cancel subscription */}
+            {subForm.status !== 'cancelled' && subForm.status !== 'expired' && (
+              <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: '12px' }}>
+                <button
+                  type="button"
+                  className="btn btn-sm w-100"
+                  style={{
+                    border: '1px solid #fca5a5', color: '#b91c1c',
+                    background: 'transparent', fontSize: '13px',
+                  }}
+                  onClick={() => {
+                    if (confirm('האם לבטל את המנוי של המשתמש? הגישה תיחסם מיידית.')) {
+                      setSubForm((prev) => ({ ...prev, status: 'cancelled', planId: '', expiresAt: '', extendDays: '' }))
+                      saveSubscription(subPanel, { status: 'cancelled', planId: '', expiresAt: '', extendDays: '' })
+                    }
+                  }}
+                  disabled={subSaving}
+                >
+                  ביטול מנוי
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
       {/* Header with Logo */}
       <div 
         className="d-flex flex-column flex-md-row align-items-center justify-content-between mb-4 p-4"
@@ -701,161 +869,77 @@ export default function AdminUsersPage() {
                     </td>
                     <td>
                       {getSubBadge(user.subscription)}
-                      {/* Subscription panel */}
-                      {subPanel === user.id && (
-                        <div style={{
-                          marginTop: '8px',
-                          padding: '12px',
-                          background: '#f8faff',
-                          border: '1px solid #e0e7ff',
-                          borderRadius: '10px',
-                          minWidth: '260px',
-                          fontSize: '13px',
-                        }}>
-                          <div style={{ fontWeight: '600', marginBottom: '8px', color: '#4c1d95' }}>
-                            ניהול מנוי
-                          </div>
-                          {subSuccess && (
-                            <div style={{ color: '#059669', marginBottom: '8px' }}>{subSuccess}</div>
-                          )}
-                          <div style={{ marginBottom: '6px' }}>
-                            <label style={{ display: 'block', marginBottom: '3px' }}>סטטוס</label>
-                            <select
-                              className="form-select form-select-sm"
-                              value={subForm.status}
-                              onChange={(e) => setSubForm({ ...subForm, status: e.target.value })}
-                            >
-                              <option value="trial">ניסיון</option>
-                              <option value="active">פעיל (משולם)</option>
-                              <option value="cancelled">בוטל</option>
-                              <option value="expired">פג תוקף</option>
-                            </select>
-                          </div>
-                          <div style={{ marginBottom: '6px' }}>
-                            <label style={{ display: 'block', marginBottom: '3px' }}>תוכנית</label>
-                            <select
-                              className="form-select form-select-sm"
-                              value={subForm.planId}
-                              onChange={(e) => setSubForm({ ...subForm, planId: e.target.value })}
-                            >
-                              <option value="">ללא תוכנית</option>
-                              <option value="monthly">חודשי — ₪150</option>
-                              <option value="annual">שנתי — ₪1,000</option>
-                            </select>
-                          </div>
-                          <div style={{ marginBottom: '6px' }}>
-                            <label style={{ display: 'block', marginBottom: '3px' }}>תאריך פקיעה</label>
-                            <input
-                              type="date"
-                              className="form-control form-control-sm"
-                              value={subForm.expiresAt}
-                              onChange={(e) => setSubForm({ ...subForm, expiresAt: e.target.value, extendDays: '' })}
-                            />
-                          </div>
-                          <div style={{ marginBottom: '10px' }}>
-                            <label style={{ display: 'block', marginBottom: '3px' }}>הארך ב-ימים</label>
-                            <div style={{ display: 'flex', gap: '4px' }}>
-                              {[7, 14, 30].map((d) => (
-                                <button
-                                  key={d}
-                                  type="button"
-                                  className="btn btn-sm"
-                                  style={{
-                                    border: '1px solid #667eea',
-                                    color: subForm.extendDays === String(d) ? 'white' : '#667eea',
-                                    background: subForm.extendDays === String(d) ? '#667eea' : 'white',
-                                    padding: '2px 8px',
-                                    fontSize: '12px',
-                                  }}
-                                  onClick={() => setSubForm({ ...subForm, extendDays: String(d), expiresAt: '' })}
-                                >
-                                  +{d}
-                                </button>
-                              ))}
-                              <input
-                                type="number"
-                                className="form-control form-control-sm"
-                                placeholder="מספר"
-                                style={{ width: '64px' }}
-                                value={subForm.extendDays}
-                                onChange={(e) => setSubForm({ ...subForm, extendDays: e.target.value, expiresAt: '' })}
-                              />
-                            </div>
-                          </div>
-                          <div style={{ display: 'flex', gap: '6px' }}>
-                            <button
-                              type="button"
-                              className="btn btn-sm"
-                              style={{ background: 'linear-gradient(135deg,#667eea,#764ba2)', color: 'white', border: 'none', fontSize: '12px' }}
-                              onClick={() => saveSubscription(user.id)}
-                              disabled={subSaving}
-                            >
-                              {subSaving ? 'שומר...' : 'שמור'}
-                            </button>
-                            <button
-                              type="button"
-                              className="btn btn-sm"
-                              style={{ border: '1px solid #cbd5e1', color: '#64748b', background: 'white', fontSize: '12px' }}
-                              onClick={() => { setSubPanel(null); setSubSuccess(null) }}
-                            >
-                              סגור
-                            </button>
-                          </div>
-                        </div>
-                      )}
                     </td>
                     <td>
-                      <button 
-                        className="btn btn-sm me-2"
-                        style={{
-                          border: '1px solid #667eea',
-                          color: '#667eea',
-                          backgroundColor: 'transparent',
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.backgroundColor = '#667eea'
-                          e.currentTarget.style.color = 'white'
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.backgroundColor = 'transparent'
-                          e.currentTarget.style.color = '#667eea'
-                        }}
-                        onClick={() => handleEdit(user)}
-                      >
-                        ערוך
-                      </button>
-                      <button
-                        className="btn btn-sm me-2"
-                        style={{
-                          border: '1px solid #764ba2',
-                          color: '#764ba2',
-                          backgroundColor: 'transparent',
-                          fontSize: '12px',
-                        }}
-                        onClick={() => subPanel === user.id ? setSubPanel(null) : openSubPanel(user)}
-                      >
-                        💳 מנוי
-                      </button>
-                      <button 
-                        className="btn btn-sm"
-                        style={{
-                          border: '1px solid #dc3545',
-                          color: '#dc3545',
-                          backgroundColor: 'transparent',
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.backgroundColor = '#dc3545'
-                          e.currentTarget.style.color = 'white'
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.backgroundColor = 'transparent'
-                          e.currentTarget.style.color = '#dc3545'
-                        }}
-                        onClick={() => handleDelete(user.id, user.email)}
-                        disabled={user.id === session?.user?.id}
-                      >
-                        מחק
-                      </button>
+                      <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'nowrap' }}>
+                        <button
+                          className="btn btn-sm"
+                          style={{
+                            border: '1px solid #667eea',
+                            color: '#667eea',
+                            backgroundColor: 'transparent',
+                            fontSize: '13px',
+                            lineHeight: '1.4',
+                            padding: '4px 10px',
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = '#667eea'
+                            e.currentTarget.style.color = 'white'
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = 'transparent'
+                            e.currentTarget.style.color = '#667eea'
+                          }}
+                          onClick={() => handleEdit(user)}
+                        >
+                          ערוך
+                        </button>
+                        <button
+                          className="btn btn-sm"
+                          style={{
+                            border: '1px solid #764ba2',
+                            color: '#764ba2',
+                            backgroundColor: 'transparent',
+                            fontSize: '13px',
+                            lineHeight: '1.4',
+                            padding: '4px 10px',
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = '#764ba2'
+                            e.currentTarget.style.color = 'white'
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = 'transparent'
+                            e.currentTarget.style.color = '#764ba2'
+                          }}
+                          onClick={() => subPanel === user.id ? setSubPanel(null) : openSubPanel(user)}
+                        >
+                          💳 מנוי
+                        </button>
+                        <button
+                          className="btn btn-sm"
+                          style={{
+                            border: '1px solid #dc3545',
+                            color: '#dc3545',
+                            backgroundColor: 'transparent',
+                            fontSize: '13px',
+                            lineHeight: '1.4',
+                            padding: '4px 10px',
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = '#dc3545'
+                            e.currentTarget.style.color = 'white'
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = 'transparent'
+                            e.currentTarget.style.color = '#dc3545'
+                          }}
+                          onClick={() => handleDelete(user.id, user.email)}
+                          disabled={user.id === session?.user?.id}
+                        >
+                          מחק
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

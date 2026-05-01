@@ -2,11 +2,21 @@
 
 import React, { useState, useEffect } from 'react'
 import { useSession, signOut } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import DashboardHeader from '@/components/DashboardHeader'
 
+interface SubscriptionInfo {
+  status: 'trial' | 'active' | 'cancelled' | 'expired'
+  planId: string | null
+  billingCycle: 'monthly' | 'annual' | null
+  daysRemaining: number
+  expiresAt: string | null
+}
+
 const ProfileClient = () => {
   const { data: session, update } = useSession()
+  const router = useRouter()
   const [editing, setEditing] = useState(false)
   const [displayName, setDisplayName] = useState('')
   const [email, setEmail] = useState('')
@@ -18,6 +28,12 @@ const ProfileClient = () => {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
+
+  // Subscription state
+  const [sub, setSub] = useState<SubscriptionInfo | null>(null)
+  const [subLoading, setSubLoading] = useState(true)
+  const [cancelling, setCancelling] = useState(false)
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false)
   
   // Check-in settings
   const [wifiSsid, setWifiSsid] = useState('')
@@ -33,6 +49,40 @@ const ProfileClient = () => {
     border: '1px solid #e0e0e0',
     padding: '0.6rem',
     transition: 'all 0.2s ease',
+  }
+
+  // Load subscription info
+  useEffect(() => {
+    if (!session?.user) return
+    if (session.user.role === 'admin' || session.user.isDemo) {
+      setSubLoading(false)
+      return
+    }
+    fetch('/api/dashboard/subscription')
+      .then((r) => r.json())
+      .then((data) => setSub(data))
+      .catch(() => null)
+      .finally(() => setSubLoading(false))
+  }, [session])
+
+  const handleCancelSubscription = async () => {
+    setCancelling(true)
+    try {
+      const res = await fetch('/api/dashboard/subscription', {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ action: 'cancel' }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'ביטול נכשל')
+      setSub((prev) => prev ? { ...prev, status: 'cancelled' } : prev)
+      setShowCancelConfirm(false)
+      setSuccess('המנוי בוטל בהצלחה. תוכל להמשיך להשתמש במערכת עד תאריך הפקיעה.')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'ביטול נכשל')
+    } finally {
+      setCancelling(false)
+    }
   }
 
   // Update form fields when session loads
@@ -550,6 +600,231 @@ const ProfileClient = () => {
                         />
                       </div>
                     </>
+                  ) : null}
+
+                  {/* Subscription Management Section */}
+                  {session.user.role !== 'admin' && !session.user.isDemo ? (
+                    <div className="col-12">
+                      <hr
+                        className="my-4"
+                        style={{
+                          background: 'linear-gradient(90deg, transparent, #667eea, transparent)',
+                          height: '2px',
+                          border: 'none',
+                        }}
+                      />
+                      <h3
+                        className="h5 fw-bold mb-3"
+                        style={{
+                          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                          WebkitBackgroundClip: 'text',
+                          WebkitTextFillColor: 'transparent',
+                          backgroundClip: 'text',
+                        }}
+                      >
+                        💳 ניהול מנוי
+                      </h3>
+
+                      {subLoading ? (
+                        <div className="text-muted small">טוען פרטי מנוי...</div>
+                      ) : !sub ? (
+                        <div className="text-muted small">לא נמצא מנוי פעיל</div>
+                      ) : (
+                        <div
+                          style={{
+                            background: 'linear-gradient(135deg, rgba(102,126,234,0.06) 0%, rgba(249,147,251,0.06) 100%)',
+                            border: '1px solid rgba(102,126,234,0.2)',
+                            borderRadius: '12px',
+                            padding: '20px 24px',
+                          }}
+                        >
+                          <div className="d-flex flex-wrap gap-4 align-items-center mb-3">
+                            <div>
+                              <div className="text-muted small mb-1">סטטוס</div>
+                              <span
+                                style={{
+                                  display: 'inline-block',
+                                  padding: '4px 12px',
+                                  borderRadius: '20px',
+                                  fontSize: '13px',
+                                  fontWeight: '600',
+                                  background:
+                                    sub.status === 'active'
+                                      ? '#dcfce7'
+                                      : sub.status === 'trial'
+                                        ? '#dbeafe'
+                                        : sub.status === 'cancelled'
+                                          ? '#fef3c7'
+                                          : '#fee2e2',
+                                  color:
+                                    sub.status === 'active'
+                                      ? '#15803d'
+                                      : sub.status === 'trial'
+                                        ? '#1d4ed8'
+                                        : sub.status === 'cancelled'
+                                          ? '#92400e'
+                                          : '#b91c1c',
+                                }}
+                              >
+                                {sub.status === 'active'
+                                  ? 'פעיל'
+                                  : sub.status === 'trial'
+                                    ? 'ניסיון'
+                                    : sub.status === 'cancelled'
+                                      ? 'בוטל'
+                                      : 'פג תוקף'}
+                              </span>
+                            </div>
+
+                            {sub.billingCycle && (
+                              <div>
+                                <div className="text-muted small mb-1">תוכנית</div>
+                                <strong style={{ color: '#374151' }}>
+                                  {sub.billingCycle === 'monthly' ? 'חודשי — ₪150' : 'שנתי — ₪1,000'}
+                                </strong>
+                              </div>
+                            )}
+
+                            {sub.expiresAt && (
+                              <div>
+                                <div className="text-muted small mb-1">
+                                  {sub.status === 'cancelled' ? 'גישה עד' : 'תוקף עד'}
+                                </div>
+                                <strong style={{ color: '#374151' }}>
+                                  {new Date(sub.expiresAt).toLocaleDateString('he-IL')}
+                                </strong>
+                              </div>
+                            )}
+
+                            {sub.status === 'trial' && (
+                              <div>
+                                <div className="text-muted small mb-1">ימים שנותרו</div>
+                                <strong style={{ color: sub.daysRemaining <= 3 ? '#b91c1c' : '#374151' }}>
+                                  {sub.daysRemaining} ימים
+                                </strong>
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="d-flex gap-2 flex-wrap">
+                            {(sub.status === 'trial' || sub.status === 'expired') && (
+                              <button
+                                type="button"
+                                onClick={() => router.push('/dashboard/pricing')}
+                                style={{
+                                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                  color: 'white',
+                                  border: 'none',
+                                  borderRadius: '8px',
+                                  padding: '8px 20px',
+                                  fontSize: '14px',
+                                  fontWeight: '600',
+                                  cursor: 'pointer',
+                                }}
+                              >
+                                שדרג עכשיו
+                              </button>
+                            )}
+
+                            {sub.status === 'cancelled' && (
+                              <button
+                                type="button"
+                                onClick={() => router.push('/dashboard/pricing')}
+                                style={{
+                                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                  color: 'white',
+                                  border: 'none',
+                                  borderRadius: '8px',
+                                  padding: '8px 20px',
+                                  fontSize: '14px',
+                                  fontWeight: '600',
+                                  cursor: 'pointer',
+                                }}
+                              >
+                                חדש מנוי
+                              </button>
+                            )}
+
+                            {sub.status === 'active' && !showCancelConfirm && (
+                              <button
+                                type="button"
+                                onClick={() => setShowCancelConfirm(true)}
+                                style={{
+                                  background: 'transparent',
+                                  color: '#b91c1c',
+                                  border: '1px solid #fca5a5',
+                                  borderRadius: '8px',
+                                  padding: '8px 20px',
+                                  fontSize: '14px',
+                                  fontWeight: '500',
+                                  cursor: 'pointer',
+                                }}
+                              >
+                                ביטול מנוי
+                              </button>
+                            )}
+                          </div>
+
+                          {showCancelConfirm && sub.status === 'active' && (
+                            <div
+                              style={{
+                                marginTop: '16px',
+                                background: '#fff7ed',
+                                border: '1px solid #fed7aa',
+                                borderRadius: '10px',
+                                padding: '16px',
+                              }}
+                            >
+                              <p style={{ fontSize: '14px', color: '#92400e', marginBottom: '12px' }}>
+                                האם אתה בטוח שברצונך לבטל את המנוי?
+                                <br />
+                                <span style={{ fontSize: '13px', color: '#a16207' }}>
+                                  תוכל להמשיך להשתמש במערכת עד{' '}
+                                  {sub.expiresAt
+                                    ? new Date(sub.expiresAt).toLocaleDateString('he-IL')
+                                    : 'תאריך הפקיעה'}
+                                </span>
+                              </p>
+                              <div className="d-flex gap-2">
+                                <button
+                                  type="button"
+                                  onClick={handleCancelSubscription}
+                                  disabled={cancelling}
+                                  style={{
+                                    background: '#b91c1c',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '8px',
+                                    padding: '7px 18px',
+                                    fontSize: '14px',
+                                    fontWeight: '600',
+                                    cursor: cancelling ? 'not-allowed' : 'pointer',
+                                    opacity: cancelling ? 0.7 : 1,
+                                  }}
+                                >
+                                  {cancelling ? 'מבטל...' : 'כן, בטל מנוי'}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setShowCancelConfirm(false)}
+                                  style={{
+                                    background: 'transparent',
+                                    color: '#374151',
+                                    border: '1px solid #d1d5db',
+                                    borderRadius: '8px',
+                                    padding: '7px 18px',
+                                    fontSize: '14px',
+                                    cursor: 'pointer',
+                                  }}
+                                >
+                                  חזור
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   ) : null}
 
                   <div className="col-12 d-flex gap-2 mt-4">

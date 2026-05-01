@@ -38,9 +38,13 @@ export async function PATCH(
     const updates: Record<string, unknown> = {}
 
     if (status) updates.status = status
-    if (planId !== undefined) updates.plan_id = planId || null
-    if (planId === 'monthly' || planId === 'annual') {
-      updates.billing_cycle = planId
+
+    // Only update plan / billing_cycle when NOT cancelling
+    if (status !== 'cancelled') {
+      if (planId !== undefined) updates.plan_id = planId || null
+      if (planId === 'monthly' || planId === 'annual') {
+        updates.billing_cycle = planId
+      }
     }
 
     // Calculate new expiry
@@ -61,6 +65,10 @@ export async function PATCH(
     if (status === 'cancelled') {
       updates.auto_renew = false
       updates.cancelled_at = new Date().toISOString()
+      // Immediate cancellation: revoke access now unless admin set a specific future date
+      if (!expiresAt && !extendDays) {
+        updates.expires_at = new Date().toISOString()
+      }
     }
 
     if (existing) {
@@ -71,7 +79,7 @@ export async function PATCH(
 
       if (error) {
         console.error('Failed to update subscription:', error)
-        return NextResponse.json({ error: 'Failed to update subscription' }, { status: 500 })
+        return NextResponse.json({ error: `DB error: ${error.message}` }, { status: 500 })
       }
     } else {
       // Create new subscription
