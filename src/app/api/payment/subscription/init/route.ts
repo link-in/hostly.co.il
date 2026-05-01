@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
       amount,
       uniqueId,
       planId,
-      userName: session.user.name ?? session.user.email ?? 'לקוח Hostly',
+      userName: session.user.displayName ?? session.user.email ?? 'לקוח Hostly',
       userEmail: session.user.email ?? '',
       successUrl: `${siteUrl}/payment/success?id=${uniqueId}`,
       failedUrl: `${siteUrl}/payment/error?id=${uniqueId}`,
