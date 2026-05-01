@@ -90,7 +90,7 @@ function PricingContent() {
             בחר את תוכנית המנוי שלך
           </h1>
           <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '15px' }}>
-            {session?.user?.name ? `שלום ${session.user.name} — ` : ''}
+            {session?.user?.displayName ? `שלום ${session.user.displayName} — ` : ''}
             גישה מלאה לכל הכלים לניהול הנכס שלך
           </p>
         </div>
