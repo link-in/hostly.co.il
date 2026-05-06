@@ -13,9 +13,6 @@ export async function GET() {
   const session = await getServerSession(authOptions)
   const propertyId = session?.user?.propertyId ?? process.env.BEDS24_PROPERTY_ID
   const roomId = session?.user?.roomId?.split(',')[0].split(':')[0].trim() ?? process.env.BEDS24_ROOM_ID
-      { status: 400 }
-    )
-  }
 
   const url = new URL(`${getBaseUrl()}/pricing`)
   url.searchParams.set('propertyId', propertyId)
