@@ -6,13 +6,6 @@ export async function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname
   const hostname = request.headers.get('host') || ''
   
-  // Redirect app root to dashboard. Production app domain: app.hostly.co.il
-  const cleanHostname = hostname.split(':')[0]
-  const isAppDomain = cleanHostname === 'app.hostly.co.il' || cleanHostname === 'hostly.co.il' || cleanHostname === 'www.hostly.co.il'
-  if (isAppDomain && path === '/') {
-    return NextResponse.redirect(new URL('/dashboard', request.url))
-  }
-
   // =========================================
   // Subdomain Handling - Landing Pages
   // =========================================
