@@ -719,9 +719,28 @@ const DashboardClient = () => {
   useEffect(() => {
     if (status === 'unauthenticated') {
       console.log('🔒 User not authenticated, redirecting to login')
-      router.push('/dashboard/login')
+      router.push('/')
     }
   }, [status, router])
+
+  // Redirect new users (no propertyId) to onboarding
+  useEffect(() => {
+    if (
+      status === 'authenticated' &&
+      session?.user &&
+      !session.user.propertyId &&
+      session.user.role !== 'admin' &&
+      !session.user.isDemo
+    ) {
+      // Small delay to allow session update to propagate
+      const timer = setTimeout(() => {
+        if (!session?.user?.propertyId) {
+          router.push('/dashboard/onboarding')
+        }
+      }, 300)
+      return () => clearTimeout(timer)
+    }
+  }, [status, session, router])
 
   // Reset loading state whenever the selected room changes so stale data is hidden
   useEffect(() => {

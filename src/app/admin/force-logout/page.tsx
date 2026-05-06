@@ -24,7 +24,7 @@ export default function ForceLogoutPage() {
       
       // Wait a bit then redirect
       setTimeout(() => {
-        router.push('/dashboard/login')
+        router.push('/')
       }, 1000)
     }
     

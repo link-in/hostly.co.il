@@ -15,6 +15,8 @@ export async function POST(request: Request) {
     email?: string
     landingPageUrl?: string
     phoneNumber?: string
+    propertyId?: string
+    roomId?: string
     currentPassword?: string
     newPassword?: string
     checkInSettings?: {
@@ -81,6 +83,15 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'פורמט מספר טלפון לא תקין. השתמש בפורמט: +972501234567' }, { status: 400 })
       }
       updates.phoneNumber = payload.phoneNumber
+    }
+
+    // Allow user to set their own propertyId/roomId (used during onboarding)
+    if (payload.propertyId !== undefined) {
+      updates.propertyId = payload.propertyId
+    }
+
+    if (payload.roomId !== undefined) {
+      updates.roomId = payload.roomId
     }
 
     // Update check-in settings if provided

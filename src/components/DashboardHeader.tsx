@@ -51,7 +51,7 @@ export default function DashboardHeader({
 
   const handleLogout = async () => {
     await signOut({ redirect: false })
-    window.location.href = '/dashboard/login'
+    window.location.href = '/'
   }
 
   const displayTitle = title || session?.user?.displayName || 'Hostly'

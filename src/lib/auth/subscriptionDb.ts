@@ -55,7 +55,7 @@ export async function createTrialSubscription(userId: string): Promise<boolean> 
       user_id: userId,
       plan_id: null,
       status: 'trial',
-      billing_cycle: null,
+      billing_cycle: 'monthly',
       started_at: new Date().toISOString(),
       expires_at: trialEndsAt.toISOString(),
       auto_renew: false,

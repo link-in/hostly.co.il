@@ -12,11 +12,7 @@ const getBaseUrl = () => process.env.BEDS24_API_BASE_URL ?? DEFAULT_BASE_URL
 export async function GET() {
   const session = await getServerSession(authOptions)
   const propertyId = session?.user?.propertyId ?? process.env.BEDS24_PROPERTY_ID
-  const roomId = session?.user?.roomId ?? process.env.BEDS24_ROOM_ID
-
-  if (!propertyId || !roomId) {
-    return NextResponse.json(
-      { error: 'Missing Property ID or Room ID' },
+  const roomId = session?.user?.roomId?.split(',')[0].split(':')[0].trim() ?? process.env.BEDS24_ROOM_ID
       { status: 400 }
     )
   }

@@ -127,7 +127,8 @@ export async function GET(request: Request) {
   // Allow client to override roomId via query param (multi-room support)
   const requestUrl = new URL(request.url)
   const roomIdOverride = requestUrl.searchParams.get('roomId')
-  const roomId = roomIdOverride ?? session?.user?.roomId ?? process.env.BEDS24_ROOM_ID
+  const roomIdRaw = roomIdOverride ?? session?.user?.roomId ?? process.env.BEDS24_ROOM_ID
+  const roomId = roomIdRaw?.split(',')[0].split(':')[0].trim()
   const includeAvailability = process.env.BEDS24_INCLUDE_AVAILABILITY
 
   if (!propertyId) {
@@ -266,7 +267,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   const session = await getServerSession(authOptions)
   const propertyId = session?.user?.propertyId ?? process.env.BEDS24_PROPERTY_ID
-  const defaultRoomId = session?.user?.roomId ?? process.env.BEDS24_ROOM_ID
+  const defaultRoomId = session?.user?.roomId?.split(',')[0].split(':')[0].trim() ?? process.env.BEDS24_ROOM_ID
 
   let payload: unknown
   try {

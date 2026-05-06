@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 
 interface AdminUserSubscription {
   id: string
@@ -24,8 +25,6 @@ interface AdminUser {
   landingPageUrl?: string
   phoneNumber?: string
   role: 'admin' | 'owner'
-  beds24Token?: string
-  beds24RefreshToken?: string
   createdAt: string
   updatedAt: string
   subscription: AdminUserSubscription | null
@@ -42,8 +41,6 @@ interface UserFormData {
   landingPageUrl?: string
   phoneNumber?: string
   role: 'admin' | 'owner'
-  beds24Token?: string
-  beds24RefreshToken?: string
 }
 
 export default function AdminUsersPage() {
@@ -64,10 +61,7 @@ export default function AdminUsersPage() {
     roomId: '',
     landingPageUrl: '',
     phoneNumber: '',
-    role: 'owner',
-    beds24Token: '',
-    beds24RefreshToken: '',
-  })
+    role: 'owner',  })
   const [submitting, setSubmitting] = useState(false)
   const [connectingAirbnb, setConnectingAirbnb] = useState(false)
   const [subPanel, setSubPanel] = useState<string | null>(null) // userId with open sub panel
@@ -81,7 +75,7 @@ export default function AdminUsersPage() {
   useEffect(() => {
     if (status === 'loading') return
     if (status === 'unauthenticated') {
-      router.push('/dashboard/login')
+      router.push('/')
       return
     }
     if (session?.user?.role !== 'admin') {
@@ -148,10 +142,7 @@ export default function AdminUsersPage() {
         propertyId: '',
         roomId: '',
         landingPageUrl: '',
-        phoneNumber: '',
-        beds24Token: '',
-        beds24RefreshToken: '',
-        role: 'owner',
+        phoneNumber: '',        role: 'owner',
       })
       fetchUsers()
     } catch (err) {
@@ -172,10 +163,7 @@ export default function AdminUsersPage() {
       propertyId: user.propertyId,
       roomId: user.roomId,
       landingPageUrl: user.landingPageUrl || '',
-      phoneNumber: user.phoneNumber || '',
-      beds24Token: user.beds24Token || '',
-      beds24RefreshToken: user.beds24RefreshToken || '',
-      role: user.role,
+      phoneNumber: user.phoneNumber || '',      role: user.role,
     })
     setShowForm(true)
   }
@@ -213,10 +201,7 @@ export default function AdminUsersPage() {
       propertyId: '',
       roomId: '',
       landingPageUrl: '',
-      phoneNumber: '',
-      beds24Token: '',
-      beds24RefreshToken: '',
-      role: 'owner',
+      phoneNumber: '',      role: 'owner',
     })
     setError(null)
   }
@@ -700,37 +685,6 @@ export default function AdminUsersPage() {
                       </select>
                     </div>
 
-                    <div className="col-12">
-                      <hr className="my-3" />
-                      <h6 className="text-muted mb-3">🔑 Beds24 API Tokens (אופציונלי)</h6>
-                      <div className="alert alert-info small">
-                        <strong>💡 טיפ:</strong> אם ללקוח יש חשבון Beds24 נפרד, הכנס את הטוקנים שלו כאן. אחרת, השאר ריק והמערכת תשתמש בטוקן הגלובלי.
-                      </div>
-                    </div>
-
-                    <div className="col-md-6">
-                      <label className="form-label">Beds24 Access Token</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        value={formData.beds24Token || ''}
-                        onChange={(e) => setFormData({ ...formData, beds24Token: e.target.value })}
-                        placeholder="אופציונלי - רק אם חשבון נפרד"
-                      />
-                      <small className="text-muted">השאר ריק לשמור קיים או להשתמש בגלובלי</small>
-                    </div>
-
-                    <div className="col-md-6">
-                      <label className="form-label">Beds24 Refresh Token</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        value={formData.beds24RefreshToken || ''}
-                        onChange={(e) => setFormData({ ...formData, beds24RefreshToken: e.target.value })}
-                        placeholder="אופציונלי - רק אם חשבון נפרד"
-                      />
-                      <small className="text-muted">השאר ריק לשמור קיים או להשתמש בגלובלי</small>
-                    </div>
                   </div>
 
                   <div className="mt-3 d-flex gap-2">
@@ -872,28 +826,29 @@ export default function AdminUsersPage() {
                     </td>
                     <td>
                       <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'nowrap' }}>
-                        <button
-                          className="btn btn-sm"
-                          style={{
-                            border: '1px solid #667eea',
-                            color: '#667eea',
-                            backgroundColor: 'transparent',
-                            fontSize: '13px',
-                            lineHeight: '1.4',
-                            padding: '4px 10px',
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.backgroundColor = '#667eea'
-                            e.currentTarget.style.color = 'white'
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.backgroundColor = 'transparent'
-                            e.currentTarget.style.color = '#667eea'
-                          }}
-                          onClick={() => handleEdit(user)}
-                        >
-                          ערוך
-                        </button>
+                        <Link href={`/admin/users/${user.id}/edit`}>
+                          <button
+                            className="btn btn-sm"
+                            style={{
+                              border: '1px solid #667eea',
+                              color: '#667eea',
+                              backgroundColor: 'transparent',
+                              fontSize: '13px',
+                              lineHeight: '1.4',
+                              padding: '4px 10px',
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.backgroundColor = '#667eea'
+                              e.currentTarget.style.color = 'white'
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = 'transparent'
+                              e.currentTarget.style.color = '#667eea'
+                            }}
+                          >
+                            ערוך
+                          </button>
+                        </Link>
                         <button
                           className="btn btn-sm"
                           style={{

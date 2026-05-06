@@ -9,7 +9,7 @@ export default function FinalCTA() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     // ניתן לשלוח את המידע לשרת או להפנות לדף התחברות
-    window.location.href = '/dashboard/login'
+    window.location.href = '/'
   }
 
   return (
@@ -284,7 +284,7 @@ export default function FinalCTA() {
               </p>
               <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'center', gap: '24px', flexWrap: 'wrap' }}>
                 <a
-                  href="/dashboard/login"
+                  href="/"
                   style={{
                     color: 'rgba(255, 255, 255, 0.7)',
                     fontSize: '14px',

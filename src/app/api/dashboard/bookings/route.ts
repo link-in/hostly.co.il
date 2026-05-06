@@ -23,12 +23,14 @@ export async function GET(request: Request) {
   // Allow client to override roomId via query param (multi-room support)
   const requestUrl = new URL(request.url)
   const roomIdOverride = requestUrl.searchParams.get('roomId')
-  const roomId = roomIdOverride ?? session?.user?.roomId ?? process.env.BEDS24_ROOM_ID
+  const roomIdRaw = roomIdOverride ?? session?.user?.roomId ?? process.env.BEDS24_ROOM_ID
+  // Extract single roomId - session may store comma-separated list (e.g. "638851:חדר,672381:גן")
+  const roomId = roomIdRaw?.split(',')[0].split(':')[0].trim() || null
 
-  if (!propertyId || !roomId) {
+  if (!propertyId) {
     return NextResponse.json(
-      { error: 'Missing BEDS24_PROPERTY_ID or BEDS24_ROOM_ID in session or environment' },
-      { status: 500 }
+      { error: 'Missing propertyId — complete onboarding to set up your property.' },
+      { status: 400 }
     )
   }
 
@@ -45,11 +47,11 @@ export async function GET(request: Request) {
     url.searchParams.set('includeInvoice', 'true')
   }
   
-  // Add property and room filters to ensure we only get bookings for this specific unit
+  // Filter by property; add roomId only when available
   url.searchParams.set('propertyId', propertyId)
-  url.searchParams.set('roomId', roomId)
+  if (roomId) url.searchParams.set('roomId', roomId)
 
-  console.log(`🔍 Fetching bookings for Property: ${propertyId}, Room: ${roomId}`)
+  console.log(`🔍 Fetching bookings for Property: ${propertyId}${roomId ? `, Room: ${roomId}` : ' (no roomId)'}`)
 
   // Prepare user-specific tokens if available
   const userTokens = session?.user?.beds24Token && session?.user?.beds24RefreshToken
@@ -131,7 +133,7 @@ export async function POST(request: Request) {
   }
   
   const propertyId = session?.user?.propertyId ?? process.env.BEDS24_PROPERTY_ID
-  const roomId = session?.user?.roomId ?? process.env.BEDS24_ROOM_ID
+  const roomId = session?.user?.roomId?.split(',')[0].split(':')[0].trim() ?? process.env.BEDS24_ROOM_ID
 
   if (!propertyId || !roomId) {
     return NextResponse.json({ error: 'Missing BEDS24_PROPERTY_ID or BEDS24_ROOM_ID' }, { status: 500 })
@@ -457,7 +459,7 @@ export async function PATCH(request: Request) {
   }
   
   const propertyId = session?.user?.propertyId ?? process.env.BEDS24_PROPERTY_ID
-  const roomId = session?.user?.roomId ?? process.env.BEDS24_ROOM_ID
+  const roomId = session?.user?.roomId?.split(',')[0].split(':')[0].trim() ?? process.env.BEDS24_ROOM_ID
 
   if (!propertyId || !roomId) {
     return NextResponse.json({ error: 'Missing BEDS24_PROPERTY_ID or BEDS24_ROOM_ID' }, { status: 500 })

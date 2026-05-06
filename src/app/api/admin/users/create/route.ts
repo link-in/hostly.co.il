@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth/authOptions'
 import { createUser } from '@/lib/auth/getUsersDb'
+import { sendWelcomeEmail } from '@/lib/email/sendEmail'
 
 export async function POST(request: Request) {
   try {
@@ -21,9 +22,9 @@ export async function POST(request: Request) {
     // Validate required fields
     const { email, password, displayName, firstName, lastName, propertyId, roomId } = body
     
-    if (!email || !password || !displayName || !propertyId || !roomId) {
+    if (!email || !password || !displayName) {
       return NextResponse.json(
-        { error: 'Missing required fields: email, password, displayName, propertyId, roomId' },
+        { error: 'Missing required fields: email, password, displayName' },
         { status: 400 }
       )
     }
@@ -59,6 +60,7 @@ export async function POST(request: Request) {
       role: body.role || 'owner',
       beds24Token: body.beds24Token,
       beds24RefreshToken: body.beds24RefreshToken,
+      beds24AccountId: body.beds24AccountId,
     })
     
     if (!newUser) {
@@ -67,6 +69,13 @@ export async function POST(request: Request) {
         { status: 400 }
       )
     }
+
+    // Send welcome email with login credentials (non-blocking)
+    sendWelcomeEmail({
+      to: newUser.email,
+      displayName: newUser.displayName,
+      password,
+    }).catch((err) => console.error('Welcome email failed (non-critical):', err))
     
     // Return success (without password hash)
     return NextResponse.json({

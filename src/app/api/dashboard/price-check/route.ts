@@ -36,7 +36,8 @@ export async function POST(request: Request) {
     const { checkIn, checkOut, numAdult, numChild, roomId: roomIdOverride } = body
 
     // Allow client to pass roomId override (multi-room support), fallback to session
-    const roomId = roomIdOverride ?? session?.user?.roomId ?? process.env.BEDS24_ROOM_ID
+    const roomId = (roomIdOverride ?? session?.user?.roomId ?? process.env.BEDS24_ROOM_ID)
+      ?.split(',')[0].split(':')[0].trim()
 
     if (!roomId) {
       return NextResponse.json(

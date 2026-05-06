@@ -26,6 +26,7 @@ export interface User {
   isDemo?: boolean
   beds24Token?: string
   beds24RefreshToken?: string
+  beds24AccountId?: string
   checkInSettings?: CheckInSettings
   subscriptionStatus?: SubscriptionStatus
   trialEndsAt?: string
@@ -46,6 +47,7 @@ export interface AuthUser {
   isDemo?: boolean
   beds24Token?: string
   beds24RefreshToken?: string
+  beds24AccountId?: string
   checkInSettings?: CheckInSettings
   subscriptionStatus?: SubscriptionStatus
   trialEndsAt?: string

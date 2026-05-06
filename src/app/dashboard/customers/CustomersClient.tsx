@@ -110,7 +110,7 @@ export default function CustomersClient() {
   // Redirect if not authenticated
   useEffect(() => {
     if (status === 'unauthenticated') {
-      router.push('/dashboard/login')
+      router.push('/')
     }
   }, [status, router])
 

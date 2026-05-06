@@ -35,6 +35,7 @@ export default function SubscriptionBanner() {
   if (navigating) return null
   if (session?.user?.isDemo || session?.user?.role === 'admin') return null
   if (pathname?.startsWith('/dashboard/pricing')) return null
+  if (pathname?.startsWith('/dashboard/onboarding')) return null
 
   // Active paid subscription — no banner
   if (sub.status === 'active') return null
@@ -42,57 +43,62 @@ export default function SubscriptionBanner() {
   // Trial banner
   if (sub.status === 'trial') {
     const days = sub.daysRemaining
-    if (days <= 0) return null // will show expired banner instead via status change
+    if (days <= 0) return null
     const isUrgent = days <= 3
 
     return (
-      <div
-        dir="rtl"
-        style={{
-          background: isUrgent
-            ? 'linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%)'
-            : 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)',
-          border: `1px solid ${isUrgent ? '#fed7aa' : '#bfdbfe'}`,
-          borderRadius: '12px',
-          padding: '12px 16px',
-          marginBottom: '20px',
+      <div dir="rtl" style={{ display: 'flex', justifyContent: 'center', padding: '14px 16px 0' }}>
+        <div style={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          gap: '12px',
+          gap: 14,
           flexWrap: 'wrap',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <span style={{ fontSize: '20px' }}>{isUrgent ? '⚠️' : '🎯'}</span>
-          <div>
-            <p style={{ margin: 0, fontWeight: '600', color: isUrgent ? '#9a3412' : '#1e40af', fontSize: '14px' }}>
-              {isUrgent
-                ? `נשארו רק ${days} ימים לתקופת הניסיון שלך`
-                : `תקופת הניסיון שלך — נשארו ${days} ימים`}
-            </p>
-            <p style={{ margin: '2px 0 0', fontSize: '13px', color: isUrgent ? '#c2410c' : '#3b82f6' }}>
-              מנוי חודשי: ₪150 | מנוי שנתי: ₪1,000
-            </p>
+          background: isUrgent
+            ? 'rgba(0,0,0,0.55)'
+            : 'rgba(0,0,0,0.5)',
+          backdropFilter: 'blur(14px)',
+          WebkitBackdropFilter: 'blur(14px)',
+          border: `1px solid ${isUrgent ? 'rgba(251,146,60,0.5)' : 'rgba(255,255,255,0.12)'}`,
+          borderRadius: 50,
+          padding: '9px 18px 9px 14px',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
+          maxWidth: 520,
+          width: '100%',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ fontSize: 18 }}>{isUrgent ? '⚠️' : '🎯'}</span>
+            <div>
+              <p style={{ margin: 0, fontWeight: 600, color: 'white', fontSize: 13 }}>
+                {isUrgent
+                  ? `נשארו רק ${days} ימים לתקופת הניסיון שלך`
+                  : `תקופת הניסיון שלך — נשארו ${days} ימים`}
+              </p>
+              <p style={{ margin: '1px 0 0', fontSize: 12, color: 'rgba(255,255,255,0.7)' }}>
+                מנוי חודשי: ₪150 | מנוי שנתי: ₪1,000
+              </p>
+            </div>
           </div>
+          <a
+            href="/dashboard/pricing"
+            style={{
+              background: isUrgent
+                ? 'linear-gradient(135deg, #f97316, #ea580c)'
+                : 'rgba(255,255,255,0.22)',
+              color: 'white',
+              padding: '7px 16px',
+              borderRadius: 50,
+              fontSize: 12,
+              fontWeight: 700,
+              textDecoration: 'none',
+              whiteSpace: 'nowrap',
+              border: isUrgent ? 'none' : '1px solid rgba(255,255,255,0.35)',
+              boxShadow: isUrgent ? '0 2px 8px rgba(249,115,22,0.4)' : 'none',
+            }}
+          >
+            שדרג עכשיו
+          </a>
         </div>
-        <a
-          href="/dashboard/pricing"
-          style={{
-            background: isUrgent
-              ? 'linear-gradient(135deg, #ea580c 0%, #c2410c 100%)'
-              : 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
-            color: 'white',
-            padding: '8px 18px',
-            borderRadius: '8px',
-            fontSize: '13px',
-            fontWeight: '600',
-            textDecoration: 'none',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          שדרג עכשיו
-        </a>
       </div>
     )
   }
@@ -100,42 +106,46 @@ export default function SubscriptionBanner() {
   // Cancelled — only show banner if still has some access remaining
   if (sub.status === 'cancelled' && sub.daysRemaining > 0) {
     return (
-      <div
-        dir="rtl"
-        style={{
-          background: 'linear-gradient(135deg, #fefce8 0%, #fef9c3 100%)',
-          border: '1px solid #fde047',
-          borderRadius: '12px',
-          padding: '12px 16px',
-          marginBottom: '20px',
+      <div dir="rtl" style={{ display: 'flex', justifyContent: 'center', padding: '14px 16px 0' }}>
+        <div style={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          gap: '12px',
+          gap: 14,
           flexWrap: 'wrap',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <span style={{ fontSize: '20px' }}>📋</span>
-          <p style={{ margin: 0, fontWeight: '600', color: '#854d0e', fontSize: '14px' }}>
-            המנוי שלך בוטל — הגישה תפוג בעוד {sub.daysRemaining} ימים
-          </p>
+          background: 'rgba(0,0,0,0.5)',
+          backdropFilter: 'blur(14px)',
+          WebkitBackdropFilter: 'blur(14px)',
+          border: '1px solid rgba(251,191,36,0.4)',
+          borderRadius: 50,
+          padding: '9px 18px 9px 14px',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
+          maxWidth: 520,
+          width: '100%',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ fontSize: 18 }}>📋</span>
+            <p style={{ margin: 0, fontWeight: 600, color: 'white', fontSize: 13 }}>
+              המנוי שלך בוטל — הגישה תפוג בעוד {sub.daysRemaining} ימים
+            </p>
+          </div>
+          <a
+            href="/dashboard/pricing"
+            style={{
+              background: 'linear-gradient(135deg, #f59e0b, #d97706)',
+              color: 'white',
+              padding: '7px 16px',
+              borderRadius: 50,
+              fontSize: 12,
+              fontWeight: 700,
+              textDecoration: 'none',
+              whiteSpace: 'nowrap',
+              boxShadow: '0 2px 8px rgba(245,158,11,0.4)',
+            }}
+          >
+            חדש מנוי
+          </a>
         </div>
-        <a
-          href="/dashboard/pricing"
-          style={{
-            background: 'linear-gradient(135deg, #ca8a04 0%, #a16207 100%)',
-            color: 'white',
-            padding: '8px 18px',
-            borderRadius: '8px',
-            fontSize: '13px',
-            fontWeight: '600',
-            textDecoration: 'none',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          חדש מנוי
-        </a>
       </div>
     )
   }

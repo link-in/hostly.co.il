@@ -146,7 +146,7 @@ export default function HeroSection() {
                     e.currentTarget.style.transform = 'translateY(0)'
                     e.currentTarget.style.boxShadow = '0 8px 24px rgba(102, 126, 234, 0.4)'
                   }}
-                  onClick={() => window.location.href = '/dashboard/login'}
+                  onClick={() => window.location.href = '/'}
                 >
                   🚀 התחילו לנהל חכם - 14 יום ניסיון חינם
                 </button>

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth/authOptions'
-import { createServerClient, createServiceRoleClient } from '@/lib/supabase/server'
+import { createServiceRoleClient } from '@/lib/supabase/server'
 import { hashPassword } from '@/lib/auth/getUsersDb'
 import { createTrialSubscription } from '@/lib/auth/subscriptionDb'
 import type { User } from '@/lib/auth/types'
@@ -122,11 +122,13 @@ export async function POST(request: NextRequest) {
       roomId, 
       landingPageUrl,
       phoneNumber,
-      role 
+      role,
+      beds24Token,
+      beds24RefreshToken,
     } = body
 
     // Validate required fields
-    if (!email || !password || !firstName || !lastName || !displayName || !propertyId || !roomId) {
+    if (!email || !password || !displayName) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
@@ -134,12 +136,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if email already exists
-    const supabase = createServerClient()
+    const supabase = createServiceRoleClient()
     const { data: existingUser } = await supabase
       .from('users')
       .select('id')
       .ilike('email', email)
-      .single()
+      .maybeSingle()
 
     if (existingUser) {
       return NextResponse.json(
@@ -161,14 +163,16 @@ export async function POST(request: NextRequest) {
         id: userId,
         email: email.toLowerCase(),
         password_hash: passwordHash,
-        first_name: firstName,
-        last_name: lastName,
+        first_name: firstName || null,
+        last_name: lastName || null,
         display_name: displayName,
         property_id: propertyId,
         room_id: roomId,
         landing_page_url: landingPageUrl || null,
         phone_number: phoneNumber || null,
         role: role || 'owner',
+        beds24_token: beds24Token || null,
+        beds24_refresh_token: beds24RefreshToken || null,
       })
       .select()
       .single()

@@ -99,7 +99,7 @@ export default function ReservationsClient() {
   // Authentication guard
   useEffect(() => {
     if (status === 'unauthenticated') {
-      router.push('/dashboard/login')
+      router.push('/')
     }
   }, [status, router])
 

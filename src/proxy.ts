@@ -67,7 +67,7 @@ export async function proxy(request: NextRequest) {
     // Not authenticated
     if (!token) {
       console.log('❌ No token found - redirecting to login')
-      return NextResponse.redirect(new URL('/dashboard/login', request.url))
+      return NextResponse.redirect(new URL('/', request.url))
     }
 
     // Not admin

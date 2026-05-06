@@ -9,8 +9,10 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     <SessionProvider>
       <Suspense>
         <RoomProvider>
-          <SubscriptionBanner />
-          {children}
+          <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)' }}>
+            <SubscriptionBanner />
+            {children}
+          </div>
         </RoomProvider>
       </Suspense>
     </SessionProvider>

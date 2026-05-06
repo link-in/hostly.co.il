@@ -188,7 +188,7 @@ export default function FeaturesGrid() {
                   e.currentTarget.style.transform = 'scale(1)'
                   e.currentTarget.style.boxShadow = '0 6px 20px rgba(102, 126, 234, 0.3)'
                 }}
-                onClick={() => window.location.href = '/dashboard/login'}
+                onClick={() => window.location.href = '/'}
               >
                 🚀 נסו בחינם 14 יום
               </button>

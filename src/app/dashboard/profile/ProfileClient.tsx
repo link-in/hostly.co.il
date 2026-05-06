@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { useSession, signOut } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { ExternalLink, Loader2 } from 'lucide-react'
 import DashboardHeader from '@/components/DashboardHeader'
 
 interface SubscriptionInfo {
@@ -35,6 +36,11 @@ const ProfileClient = () => {
   const [cancelling, setCancelling] = useState(false)
   const [showCancelConfirm, setShowCancelConfirm] = useState(false)
   
+  // Airbnb connect
+  const [airbnbLinking, setAirbnbLinking] = useState(false)
+  const [airbnbLinkError, setAirbnbLinkError] = useState<string | null>(null)
+  const [airbnbLinkSuccess, setAirbnbLinkSuccess] = useState(false)
+
   // Check-in settings
   const [wifiSsid, setWifiSsid] = useState('')
   const [wifiPassword, setWifiPassword] = useState('')
@@ -64,6 +70,23 @@ const ProfileClient = () => {
       .catch(() => null)
       .finally(() => setSubLoading(false))
   }, [session])
+
+  const handleConnectAirbnb = async () => {
+    setAirbnbLinkError(null)
+    setAirbnbLinkSuccess(false)
+    setAirbnbLinking(true)
+    try {
+      const res = await fetch('/api/dashboard/beds24/airbnb-auth-url')
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? 'שגיאה בקבלת קישור Airbnb')
+      window.open(data.url, '_blank', 'noopener,noreferrer')
+      setAirbnbLinkSuccess(true)
+    } catch (err) {
+      setAirbnbLinkError(err instanceof Error ? err.message : 'שגיאה לא ידועה')
+    } finally {
+      setAirbnbLinking(false)
+    }
+  }
 
   const handleCancelSubscription = async () => {
     setCancelling(true)
@@ -205,6 +228,10 @@ const ProfileClient = () => {
 
     .profile-btn-gradient:active:not(:disabled) {
       transform: translateY(0);
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
     }
   `
 
@@ -411,6 +438,46 @@ const ProfileClient = () => {
                     />
                     <small className="text-muted">🔒 לא ניתן לעריכה - קשור ל-Beds24</small>
                   </div>
+
+                  {/* ── Airbnb Channel Connection ── */}
+                  {session.user.propertyId && (
+                    <div className="col-12">
+                      <div
+                        className="p-3 rounded-3"
+                        style={{ background: '#fff7ed', border: '1px solid #fed7aa' }}
+                      >
+                        <div className="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                          <div>
+                            <div className="fw-semibold" style={{ color: '#c2410c' }}>
+                              חיבור חשבון Airbnb
+                            </div>
+                            <small className="text-muted">
+                              חבר את הנכס שלך לAirbnb דרך Beds24 — יפתח דף הרשאה בחלון חדש
+                            </small>
+                          </div>
+                          <button
+                            type="button"
+                            className="btn btn-sm fw-bold d-flex align-items-center gap-2"
+                            style={{ background: '#ff5a5f', color: '#fff', border: 'none', whiteSpace: 'nowrap' }}
+                            disabled={airbnbLinking}
+                            onClick={handleConnectAirbnb}
+                          >
+                            {airbnbLinking
+                              ? <><Loader2 size={14} style={{ animation: 'spin .8s linear infinite' }} /> מחפש קישור...</>
+                              : <><ExternalLink size={14} /> חבר Airbnb</>}
+                          </button>
+                        </div>
+                        {airbnbLinkError && (
+                          <div className="alert alert-danger mb-0 mt-2 py-2 small">{airbnbLinkError}</div>
+                        )}
+                        {airbnbLinkSuccess && (
+                          <div className="alert alert-success mb-0 mt-2 py-2 small">
+                            ✓ נפתח דף ההרשאה של Airbnb. לאחר אישור, הנכס יהיה מחובר אוטומטית.
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
 
                   {/* Check-in Settings Section */}
                   <div className="col-12">

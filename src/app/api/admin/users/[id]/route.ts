@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth/authOptions'
-import { createServerClient } from '@/lib/supabase/server'
+import { createServerClient, createServiceRoleClient } from '@/lib/supabase/server'
 import { hashPassword } from '@/lib/auth/getUsersDb'
+import { fetchWithTokenRefresh } from '@/lib/beds24/tokenManager'
 
 export const dynamic = 'force-dynamic'
 
@@ -28,7 +29,7 @@ export async function PUT(
     const body = await request.json()
     const { 
       email, 
-      password, // Optional - only if changing password
+      password,
       firstName,
       lastName,
       displayName, 
@@ -37,20 +38,18 @@ export async function PUT(
       landingPageUrl,
       phoneNumber,
       role,
-      beds24Token,
-      beds24RefreshToken
     } = body
 
-    // Validate required fields
-    if (!email || !firstName || !lastName || !displayName || !propertyId || !roomId) {
+    // Only email and displayName are required
+    if (!email || !displayName) {
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { error: 'Missing required fields: email, displayName' },
         { status: 400 }
       )
     }
 
     // Check if email already exists (for another user)
-    const supabase = createServerClient()
+    const supabase = createServiceRoleClient()
     const { data: existingUser } = await supabase
       .from('users')
       .select('id')
@@ -78,21 +77,11 @@ export async function PUT(
       role: role || 'owner',
     }
 
-    // Only update password if provided
     if (password && password.trim() !== '') {
       updates.password_hash = await hashPassword(password)
     }
 
-    // Update Beds24 tokens if provided (optional)
-    // Only update if explicitly set (allow clearing by passing empty string)
-    if (beds24Token !== undefined) {
-      updates.beds24_token = beds24Token || null
-    }
-    if (beds24RefreshToken !== undefined) {
-      updates.beds24_refresh_token = beds24RefreshToken || null
-    }
-
-    // Update user
+    // Update user (supabase is already serviceRoleClient)
     const { data, error } = await supabase
       .from('users')
       .update(updates)
@@ -162,8 +151,35 @@ export async function DELETE(
       )
     }
 
-    // Delete user
-    const supabase = createServerClient()
+    const supabase = createServiceRoleClient()
+
+    // Fetch user to get beds24AccountId before deleting
+    const { data: userToDelete } = await supabase
+      .from('users')
+      .select('beds24_account_id')
+      .eq('id', userId)
+      .maybeSingle()
+
+    // If user has a Beds24 sub-account, disable it (set role to "No Access")
+    if (userToDelete?.beds24_account_id) {
+      try {
+        const BASE_URL = process.env.BEDS24_API_BASE_URL ?? 'https://api.beds24.com/v2'
+        await fetchWithTokenRefresh(`${BASE_URL}/accounts`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify([{
+            id: userToDelete.beds24_account_id,
+            role: 'No Access',
+          }]),
+        })
+        console.log(`[Beds24] Sub-account ${userToDelete.beds24_account_id} disabled (No Access)`)
+      } catch (err) {
+        // Non-critical - log but continue with deletion
+        console.error('[Beds24] Failed to disable sub-account:', err)
+      }
+    }
+
+    // Delete user from Hostly
     const { error } = await supabase
       .from('users')
       .delete()

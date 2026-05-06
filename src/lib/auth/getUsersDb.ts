@@ -19,6 +19,7 @@ function mapRowToUser(data: Record<string, unknown>): User {
     isDemo: (data.is_demo as boolean) || false,
     beds24Token: (data.beds24_token as string) || undefined,
     beds24RefreshToken: (data.beds24_refresh_token as string) || undefined,
+    beds24AccountId: (data.beds24_account_id as string) || undefined,
     checkInSettings: data.check_in_settings as User['checkInSettings'],
   }
 }
@@ -208,20 +209,27 @@ export const createUser = async (userData: {
   displayName: string
   firstName?: string
   lastName?: string
-  propertyId: string
-  roomId: string
+  propertyId?: string
+  roomId?: string
   landingPageUrl?: string
   phoneNumber?: string
   role?: 'owner' | 'admin'
   beds24Token?: string
   beds24RefreshToken?: string
+  beds24AccountId?: string
 }): Promise<User | null> => {
   try {
-    const supabase = createServerClient()
+    // Use service role to bypass RLS for admin-driven user creation
+    const supabase = createServiceRoleClient()
     
     // Check if email already exists
-    const exists = await emailExists(userData.email)
-    if (exists) {
+    const { data: existing } = await supabase
+      .from('users')
+      .select('id')
+      .ilike('email', userData.email)
+      .maybeSingle()
+
+    if (existing) {
       console.error('Email already exists:', userData.email)
       return null
     }
@@ -240,14 +248,15 @@ export const createUser = async (userData: {
       display_name: userData.displayName,
       first_name: userData.firstName || null,
       last_name: userData.lastName || null,
-      property_id: userData.propertyId,
-      room_id: userData.roomId,
+      property_id: userData.propertyId || '',
+      room_id: userData.roomId || '',
       landing_page_url: userData.landingPageUrl || null,
       phone_number: userData.phoneNumber || null,
       role: userData.role || 'owner',
       is_demo: false,
       beds24_token: userData.beds24Token || null,
       beds24_refresh_token: userData.beds24RefreshToken || null,
+      beds24_account_id: userData.beds24AccountId || null,
     }
     
     const { data, error } = await supabase
@@ -355,6 +364,7 @@ export const toAuthUser = (user: User): AuthUser => {
     isDemo: user.isDemo,
     beds24Token: user.beds24Token,
     beds24RefreshToken: user.beds24RefreshToken,
+    beds24AccountId: user.beds24AccountId,
     checkInSettings: user.checkInSettings,
   }
 }

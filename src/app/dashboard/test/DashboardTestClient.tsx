@@ -388,7 +388,7 @@ const DashboardTestClient = () => {
   useEffect(() => {
     if (status === 'unauthenticated') {
       console.log('🔒 User not authenticated, redirecting to login')
-      router.push('/dashboard/login')
+      router.push('/')
     }
   }, [status, router])
 

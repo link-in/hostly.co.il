@@ -16,7 +16,7 @@ function CheckInDetailsPageContent() {
 
   useEffect(() => {
     if (status === 'unauthenticated') {
-      router.push('/dashboard/login')
+      router.push('/')
     }
   }, [status, router])
 

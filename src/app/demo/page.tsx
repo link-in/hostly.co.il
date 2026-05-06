@@ -554,7 +554,7 @@ const DemoAutoLoginPage = () => {
                     </button>
                     
                     <a 
-                      href="/dashboard/login"
+                      href="/"
                       className="btn w-100 hover-lift"
                       style={{
                         background: 'white',

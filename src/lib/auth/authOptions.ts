@@ -48,8 +48,8 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   pages: {
-    signIn: '/dashboard/login',
-    signOut: '/dashboard/login',
+    signIn: '/',
+    signOut: '/',
   },
   session: {
     strategy: 'jwt',
@@ -150,6 +150,12 @@ export const authOptions: NextAuthOptions = {
         }
         if (session.checkInSettings !== undefined) {
           token.checkInSettings = session.checkInSettings
+        }
+        if (session.propertyId !== undefined) {
+          token.propertyId = session.propertyId
+        }
+        if (session.roomId !== undefined) {
+          token.roomId = session.roomId
         }
       }
       

@@ -9,7 +9,7 @@ export default async function LandingEditorPage() {
   const session = await getServerSession(authOptions)
   
   if (!session) {
-    redirect('/dashboard/login')
+    redirect('/')
   }
   
   return <LandingEditor />
