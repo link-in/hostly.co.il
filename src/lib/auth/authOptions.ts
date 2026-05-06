@@ -162,12 +162,11 @@ export const authOptions: NextAuthOptions = {
       return token
     },
     async session({ session, token }) {
-      // Require only id, email, displayName, role so admin users (without propertyId/roomId) can log in
-      if (token && token.id && token.email && token.displayName && token.role) {
+      if (token && token.id && token.email) {
         session.user = {
           id: token.id,
           email: token.email,
-          displayName: token.displayName,
+          displayName: (token.displayName as string) || (token.email as string),
           firstName: token.firstName as string | undefined,
           lastName: token.lastName as string | undefined,
           propertyId: (token.propertyId as string) ?? '',
