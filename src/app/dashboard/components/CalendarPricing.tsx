@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import type { Reservation, RoomPrice } from '@/lib/dashboard/types'
 import { formatCurrency } from '@/lib/dashboard/utils'
 import { useHolidays } from '@/hooks/useHolidays'
@@ -163,8 +164,13 @@ const buildBookingSegments = (reservations: Reservation[], days: Date[]) => {
   return Array.from(segments.values())
 }
 
+const HEBREW_MONTHS = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר']
+
 const CalendarPricing = ({ reservations, prices, onPricesUpdated }: CalendarPricingProps) => {
   const [currentMonth, setCurrentMonth] = useState(() => startOfMonth(new Date()))
+  const [showMonthPicker, setShowMonthPicker] = useState(false)
+  const [pickerPos, setPickerPos] = useState<{ top: number; left: number } | null>(null)
+  const monthBtnRef = useRef<HTMLButtonElement>(null)
   const [selectedDates, setSelectedDates] = useState<Date[]>([])
   const [priceOverrides, setPriceOverrides] = useState<Record<string, number>>({})
   const [priceInput, setPriceInput] = useState('')
@@ -376,12 +382,111 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated }: CalendarPric
   }
 
   const monthLabel = new Intl.DateTimeFormat('he-IL', { month: 'long', year: 'numeric' }).format(currentMonth)
+  const [pickerYear, setPickerYear] = useState(() => new Date().getFullYear())
 
   return (
     <div className="row g-4">
       <div className="col-lg-8">
         <div className="d-flex align-items-center justify-content-between mb-3">
-          <div className="fw-semibold" style={{ color: 'rgba(249, 147, 251, 0.9)', fontSize: '1.1rem' }}>{monthLabel}</div>
+          {/* Month label — click to open picker */}
+          <div style={{ position: 'relative' }}>
+            <button
+              ref={monthBtnRef}
+              type="button"
+              onClick={() => {
+                if (showMonthPicker) {
+                  setShowMonthPicker(false)
+                  setPickerPos(null)
+                } else {
+                  const rect = monthBtnRef.current?.getBoundingClientRect()
+                  if (rect) {
+                    const dropdownWidth = 248
+                    const spaceOnRight = window.innerWidth - rect.left
+                    const left = spaceOnRight >= dropdownWidth
+                      ? rect.left + window.scrollX
+                      : Math.max(8, rect.right - dropdownWidth) + window.scrollX
+                    setPickerPos({ top: rect.bottom + window.scrollY + 6, left })
+                    setPickerYear(currentMonth.getFullYear())
+                  }
+                  setShowMonthPicker(true)
+                }
+              }}
+              style={{
+                background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px',
+                borderRadius: 8, display: 'flex', alignItems: 'center', gap: 6,
+                color: 'rgba(249, 147, 251, 0.9)', fontSize: '1.1rem', fontWeight: 600,
+              }}
+              onMouseEnter={e => (e.currentTarget.style.background = 'rgba(102,126,234,0.1)')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+            >
+              {monthLabel}
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </button>
+
+            {showMonthPicker && pickerPos && typeof document !== 'undefined' && createPortal(
+              <>
+                {/* Backdrop */}
+                <div
+                  style={{ position: 'fixed', inset: 0, zIndex: 9998 }}
+                  onClick={() => { setShowMonthPicker(false); setPickerPos(null) }}
+                />
+                {/* Picker — absolute via portal so it scrolls with page */}
+                <div style={{
+                  position: 'absolute',
+                  top: pickerPos.top,
+                  left: pickerPos.left,
+                  zIndex: 9999,
+                  background: 'linear-gradient(135deg, #1e293b 0%, #2d3748 100%)',
+                  borderRadius: 12,
+                  padding: 14,
+                  width: 248,
+                  boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+                  border: '1px solid rgba(102,126,234,0.3)',
+                }}>
+                  {/* Year row */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                    <span style={{ fontWeight: 700, fontSize: 14, color: 'rgba(249,147,251,0.9)', paddingRight: 4 }}>{pickerYear}</span>
+                    <button type="button" onClick={() => setPickerYear(y => y + 1)}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.6)', padding: '2px 8px', borderRadius: 6, fontSize: 16, lineHeight: 1 }}
+                      onMouseEnter={e => (e.currentTarget.style.color = 'white')}
+                      onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.6)')}
+                    >›</button>
+                  </div>
+                  {/* Month grid */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 5 }}>
+                    {HEBREW_MONTHS.map((name, idx) => {
+                      const isActive = currentMonth.getMonth() === idx && currentMonth.getFullYear() === pickerYear
+                      return (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => {
+                            setCurrentMonth(startOfMonth(new Date(pickerYear, idx, 1)))
+                            setShowMonthPicker(false)
+                            setPickerPos(null)
+                          }}
+                          style={{
+                            padding: '7px 4px', border: 'none', borderRadius: 8, fontSize: 12, cursor: 'pointer',
+                            fontWeight: isActive ? 700 : 400,
+                            background: isActive ? 'linear-gradient(135deg,#667eea,#764ba2)' : 'rgba(255,255,255,0.06)',
+                            color: isActive ? 'white' : 'rgba(255,255,255,0.75)',
+                            transition: 'background 0.15s',
+                          }}
+                          onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = 'rgba(102,126,234,0.25)' }}
+                          onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = 'rgba(255,255,255,0.06)' }}
+                        >
+                          {name}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              </>,
+              document.body
+            )}
+          </div>
           <div className="d-flex align-items-center gap-1">
             <button
               type="button"
