@@ -1,7 +1,5 @@
 import { Resend } from 'resend'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
-
 // Use onboarding@resend.dev until hostly.co.il domain is verified in Resend
 const FROM_ADDRESS = process.env.EMAIL_FROM ?? 'Hostly <onboarding@resend.dev>'
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://hostly.co.il'
@@ -14,6 +12,13 @@ export async function sendWelcomeEmail(params: {
   displayName: string
   password: string
 }): Promise<boolean> {
+  const apiKey = process.env.RESEND_API_KEY
+  if (!apiKey) {
+    console.warn('RESEND_API_KEY not set — skipping welcome email')
+    return false
+  }
+
+  const resend = new Resend(apiKey)
   const { to, displayName, password } = params
   const loginUrl = `${BASE_URL}/`
 
