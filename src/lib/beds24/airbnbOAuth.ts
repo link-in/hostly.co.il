@@ -23,9 +23,16 @@ const BEDS24_AIRBNB_SCOPES = [
   'messages_write',
 ].join(',')
 
-// After OAuth, Airbnb redirects to Beds24's callback which then redirects
-// the user back to the Beds24 channel sync page.
-const BEDS24_AIRBNB_STATE = 's://beds24.com/control3.php?pagetype=syncroniserairbnbaccount'
+// After OAuth, Airbnb redirects to Beds24's push.php which processes the token.
+// push.php then redirects the user to the URL encoded in the state parameter.
+// We redirect to our own success page — Beds24 still stores the token before redirecting.
+function buildState(): string {
+  const successUrl = process.env.NEXTAUTH_URL
+    ? `${process.env.NEXTAUTH_URL}/airbnb-success`
+    : 'https://app.hostly.co.il/airbnb-success'
+  // Beds24 uses "s://" as a prefix meaning "redirect to https://"
+  return `s://${successUrl.replace(/^https?:\/\//, '')}`
+}
 
 /**
  * Builds the Airbnb OAuth URL that connects a user's Airbnb account to Beds24.
@@ -37,7 +44,7 @@ export function buildAirbnbOAuthUrl(_propertyId?: string): string {
     client_id: BEDS24_AIRBNB_CLIENT_ID,
     redirect_uri: BEDS24_AIRBNB_REDIRECT_URI,
     scope: BEDS24_AIRBNB_SCOPES,
-    state: BEDS24_AIRBNB_STATE,
+    state: buildState(),
   })
 
   return `https://www.airbnb.com/oauth2/auth?${params.toString()}`

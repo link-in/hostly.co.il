@@ -258,7 +258,7 @@ export default function EditUserPage({ params }: { params: Promise<{ id: string 
                           חיבור חשבון Airbnb
                         </div>
                         <small className="text-muted">
-                          פותח דף הרשאה ב-Airbnb עבור הנכס הנוכחי
+                          לאחר האישור תועבר לעמוד Beds24 — זה תקין, החיבור הצליח
                         </small>
                       </div>
                       <button
@@ -295,7 +295,7 @@ export default function EditUserPage({ params }: { params: Promise<{ id: string 
                             {copied ? <><Check size={13} /> הועתק!</> : <><Copy size={13} /> העתק</>}
                           </button>
                         </div>
-                        <small className="text-muted">בעל הנכס פותח את הקישור, מתחבר עם Airbnb שלו ומאשר — בלי לחלוק סיסמאות</small>
+                        <small className="text-muted">בעל הנכס פותח את הקישור, מתחבר עם Airbnb שלו ומאשר — לאחר האישור יועבר לעמוד Beds24, זה תקין והחיבור הצליח</small>
                       </div>
                     )}
                   </div>
