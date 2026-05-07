@@ -104,12 +104,15 @@ export async function POST(request: Request) {
   // Extract payload and sendWhatsApp flag
   let payload: unknown
   let sendWhatsApp = true // Default: send WhatsApp
+  let requestedRoomId: string | undefined
   
   if (requestBody && typeof requestBody === 'object' && 'bookings' in requestBody) {
-    // New format: { bookings: [...], sendWhatsApp: true/false }
+    // New format: { bookings: [...], sendWhatsApp: true/false, roomId?: string }
     payload = (requestBody as { bookings: unknown }).bookings
     sendWhatsApp = (requestBody as { sendWhatsApp?: boolean }).sendWhatsApp ?? true
+    requestedRoomId = (requestBody as { roomId?: string }).roomId
     console.log('📧 sendWhatsApp flag:', sendWhatsApp)
+    if (requestedRoomId) console.log('🚪 Booking for specific room:', requestedRoomId)
   } else {
     // Old format: direct array or object (for backwards compatibility)
     payload = requestBody
@@ -133,7 +136,10 @@ export async function POST(request: Request) {
   }
   
   const propertyId = session?.user?.propertyId ?? process.env.BEDS24_PROPERTY_ID
-  const roomId = session?.user?.roomId?.split(',')[0].split(':')[0].trim() ?? process.env.BEDS24_ROOM_ID
+  // Use roomId from request (active tab) if provided, otherwise fall back to first room in session
+  const roomId = requestedRoomId?.split(':')[0].trim()
+    ?? session?.user?.roomId?.split(',')[0].split(':')[0].trim()
+    ?? process.env.BEDS24_ROOM_ID
 
   if (!propertyId || !roomId) {
     return NextResponse.json({ error: 'Missing BEDS24_PROPERTY_ID or BEDS24_ROOM_ID' }, { status: 500 })

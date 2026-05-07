@@ -383,7 +383,8 @@ const DashboardClient = () => {
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ 
           bookings: payload,
-          sendWhatsApp: sendWhatsApp 
+          sendWhatsApp: sendWhatsApp,
+          roomId: selectedRoomId || undefined,
         }),
       })
       console.log('Dashboard create booking response', response.status)
