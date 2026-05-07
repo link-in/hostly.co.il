@@ -3,6 +3,7 @@ import { createServerClient } from '@/lib/supabase/server'
 import { sendWhatsAppMessage } from '@/lib/whatsapp'
 import { normalizePhoneNumber } from '@/lib/utils/phoneFormatter'
 import { addOrUpdateCustomer } from '@/lib/customers/addOrUpdateCustomer'
+import { refreshRoomCache } from '@/lib/availability/cache'
 
 // Force dynamic rendering for webhooks
 export const dynamic = 'force-dynamic'
@@ -267,6 +268,25 @@ export async function POST(request: NextRequest) {
         console.log('✅ Customer saved/updated from webhook:', customerResult.customerId)
       } else {
         console.error('❌ Failed to save customer from webhook:', customerResult.error)
+      }
+    }
+
+    // Refresh availability cache in the background (non-blocking)
+    if (userId) {
+      const accessToken = process.env.BEDS24_TOKEN
+      const refreshToken = process.env.BEDS24_REFRESH_TOKEN
+      if (accessToken && refreshToken) {
+        refreshRoomCache(
+          userId,
+          String(booking.propertyId),
+          String(booking.roomId),
+          accessToken,
+          refreshToken,
+        ).then((r) => {
+          console.log(`[AvailabilityCache] Webhook refresh: ${r.upserted} rows for room ${booking.roomId}${r.error ? ` (error: ${r.error})` : ''}`)
+        }).catch((e) => {
+          console.error('[AvailabilityCache] Webhook refresh failed:', e)
+        })
       }
     }
 

@@ -1,0 +1,398 @@
+{
+  "info": {
+    "name": "Hostly API — Public Calendar & Cache",
+    "_postman_id": "hostly-calendar-api-v2",
+    "description": "Flow מלא לבדיקת Public Calendar API:\n1. Seed Cache (admin)\n2. קבל API Key\n3. בדוק זמינות ומחירים\n4. בדיקות שגיאות",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl",         "value": "http://localhost:3000",       "description": "Local dev. Change to https://hostly.co.il for production" },
+    { "key": "adminSecret",     "value": "hostly-cache-seed-2026",      "description": "ADMIN_CACHE_SECRET from .env.local" },
+    { "key": "apiKey",          "value": "",                            "description": "Filled automatically by 'Create API Key' request" },
+    { "key": "userId",          "value": "user_1778067172570_2hfkdk",   "description": "test435345 user ID" },
+    { "key": "propertyId",      "value": "326842",                      "description": "Beds24 property ID for test435345" },
+    { "key": "roomId",          "value": "678098",                      "description": "Beds24 room ID (change to 678360 for room 2)" },
+    { "key": "roomId2",         "value": "678360",                      "description": "Second room of test435345" }
+  ],
+  "item": [
+    {
+      "name": "1️⃣  Admin — Seed Cache",
+      "description": "שלב ראשון: מאכלסים את ה-cache עם נתוני זמינות מ-Beds24",
+      "item": [
+        {
+          "name": "Seed Cache — חדר 1 (678098)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/admin/cache/seed",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-admin-secret", "value": "{{adminSecret}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"propertyId\": \"{{propertyId}}\",\n  \"roomId\": \"{{roomId}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('success=true', () => {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.success).to.be.true;",
+                  "  pm.expect(json.upserted).to.be.above(0);",
+                  "  console.log('Upserted rows:', json.upserted);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Seed Cache — חדר 2 (678360)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/admin/cache/seed",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-admin-secret", "value": "{{adminSecret}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"propertyId\": \"{{propertyId}}\",\n  \"roomId\": \"{{roomId2}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('success=true', () => {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.success).to.be.true;",
+                  "  pm.expect(json.upserted).to.be.above(0);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Seed Cache — Bad Secret (expect 403)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/admin/cache/seed",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-admin-secret", "value": "wrong-secret" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"propertyId\": \"{{propertyId}}\",\n  \"roomId\": \"{{roomId}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Expect 403 Unauthorized', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "2️⃣  Admin — API Keys",
+      "description": "יצירת API Key שהלקוח ישתמש בו להטמעת לוח שנה באתר שלו",
+      "item": [
+        {
+          "name": "Create API Key (admin)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/admin/api-keys",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"name\": \"Website Calendar Key\",\n  \"allowedRoomIds\": [\"{{roomId}}\", \"{{roomId2}}\"]\n}"
+            },
+            "description": "מחייב session של Admin בדפדפן. להפעלה מ-Postman יש להתחבר קודם."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const json = pm.response.json();",
+                  "  pm.collectionVariables.set('apiKey', json.key);",
+                  "  console.log('API Key saved:', json.key);",
+                  "  pm.test('Key starts with hst_live_', () => {",
+                  "    pm.expect(json.key).to.match(/^hst_live_/);",
+                  "  });",
+                  "} else {",
+                  "  console.warn('Skipped — need admin session cookie');",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Set API Key Manually",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/admin/api-keys?userId={{userId}}",
+            "header": [],
+            "description": "הרץ אחרי יצירת מפתח — מציג את הmpreview של המפתחות הקיימים"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200 or 403', () => {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200, 403]);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "3️⃣  Public Calendar API",
+      "description": "הAPI הציבורי שהלקוח מטמיע באתר שלו. מחייב x-api-key.",
+      "item": [
+        {
+          "name": "Get Availability — חדר 1 ✅",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/public/calendar?roomId={{roomId}}&from=2026-05-01&to=2026-07-31",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "public", "calendar"],
+              "query": [
+                { "key": "roomId", "value": "{{roomId}}" },
+                { "key": "from",   "value": "2026-05-01" },
+                { "key": "to",     "value": "2026-07-31" }
+              ]
+            },
+            "header": [{ "key": "x-api-key", "value": "{{apiKey}}" }]
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has availability array', () => {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json).to.have.property('availability');",
+                  "  pm.expect(json.availability).to.be.an('array').with.lengthOf.above(0);",
+                  "  pm.expect(json).to.have.property('roomId');",
+                  "  pm.expect(json).to.have.property('cachedAt');",
+                  "  console.log('Days returned:', json.availability.length);",
+                  "  const sample = json.availability[0];",
+                  "  pm.expect(sample).to.have.all.keys('date', 'price', 'available', 'minStay');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Availability — חדר 2 ✅",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/public/calendar?roomId={{roomId2}}&from=2026-05-01&to=2026-07-31",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "public", "calendar"],
+              "query": [
+                { "key": "roomId", "value": "{{roomId2}}" },
+                { "key": "from",   "value": "2026-05-01" },
+                { "key": "to",     "value": "2026-07-31" }
+              ]
+            },
+            "header": [{ "key": "x-api-key", "value": "{{apiKey}}" }]
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has availability for room 2', () => {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.availability).to.be.an('array').with.lengthOf.above(0);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "No API Key → 401",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/public/calendar?roomId={{roomId}}&from=2026-05-01&to=2026-07-31",
+            "header": []
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Expect 401 - missing key', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Wrong API Key → 401",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/public/calendar?roomId={{roomId}}&from=2026-05-01&to=2026-07-31",
+            "header": [{ "key": "x-api-key", "value": "hst_live_invalidkey000000000000000000" }]
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Expect 401 - invalid key', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Room Not In Key → 403",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/public/calendar?roomId=999999&from=2026-05-01&to=2026-07-31",
+            "header": [{ "key": "x-api-key", "value": "{{apiKey}}" }]
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Expect 403 - room not allowed', () => pm.response.to.have.status(403));",
+                  "pm.test('Error is room_not_allowed', () => {",
+                  "  pm.expect(pm.response.json().error).to.equal('room_not_allowed');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Missing roomId → 400",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/public/calendar?from=2026-05-01&to=2026-07-31",
+            "header": [{ "key": "x-api-key", "value": "{{apiKey}}" }]
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Expect 400 - missing roomId', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Date Range > 365 days → 400",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/public/calendar?roomId={{roomId}}&from=2026-01-01&to=2027-06-01",
+            "header": [{ "key": "x-api-key", "value": "{{apiKey}}" }]
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Expect 400 - range too large', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CORS preflight OPTIONS → 204",
+          "request": {
+            "method": "OPTIONS",
+            "url": "{{baseUrl}}/api/public/calendar",
+            "header": [
+              { "key": "Origin", "value": "https://example.com" },
+              { "key": "Access-Control-Request-Method", "value": "GET" },
+              { "key": "Access-Control-Request-Headers", "value": "x-api-key" }
+            ]
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Expect 204 - preflight OK', () => pm.response.to.have.status(204));",
+                  "pm.test('CORS headers present', () => {",
+                  "  pm.expect(pm.response.headers.get('Access-Control-Allow-Origin')).to.equal('*');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "4️⃣  Dashboard — Cache Refresh (with session)",
+      "description": "לקוח מרענן את ה-cache שלו ידנית מהדשבורד. מחייב session cookie.",
+      "item": [
+        {
+          "name": "Refresh My Cache",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/dashboard/cache/refresh",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "description": "מחייב session cookie של לקוח מחובר. הרץ אחרי התחברות בדפדפן."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('200 or 401', () => {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200, 401]);",
+                  "});",
+                  "if (pm.response.code === 200) {",
+                  "  pm.test('success=true', () => {",
+                  "    pm.expect(pm.response.json().success).to.be.true;",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+// Global test setup — mock environment variables
+process.env.BEDS24_API_BASE_URL = 'https://api.beds24.com/v2'
+process.env.BEDS24_TOKEN = 'test-token'
+process.env.BEDS24_REFRESH_TOKEN = 'test-refresh-token'
+process.env.BEDS24_PROPERTY_ID = '306559'
+process.env.BEDS24_ROOM_ID = '638851'
+process.env.ADMIN_CACHE_SECRET = 'hostly-cache-seed-2026'
+process.env.NEXTAUTH_SECRET = 'test-secret'
+process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co'
+process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key'
+process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-service-role-key'
