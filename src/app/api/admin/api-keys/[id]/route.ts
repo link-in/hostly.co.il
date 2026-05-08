@@ -27,11 +27,13 @@ const PatchSchema = z.object({
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   if (!await requireAdmin()) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
+
+  const { id } = await params
 
   let body: unknown
   try { body = await request.json() } catch {
@@ -56,7 +58,7 @@ export async function PATCH(
   const { data, error } = await supabase
     .from('api_keys')
     .update(updates)
-    .eq('id', params.id)
+    .eq('id', id)
     .select('id, name, allowed_room_ids, is_active, last_used_at')
     .single()
 
@@ -68,17 +70,18 @@ export async function PATCH(
 
 export async function DELETE(
   _request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   if (!await requireAdmin()) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
+  const { id } = await params
   const supabase = createServiceRoleClient()
   const { error, count } = await supabase
     .from('api_keys')
     .delete({ count: 'exact' })
-    .eq('id', params.id)
+    .eq('id', id)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   if (count === 0) return NextResponse.json({ error: 'Key not found' }, { status: 404 })
