@@ -35,7 +35,13 @@ export async function POST(request: NextRequest) {
   if (!isAdminSession && !isSecretAuth) {
     return NextResponse.json({
       error: 'Unauthorized',
-      debug: { secretSet: !!adminSecret, headerReceived: !!headerSecret, match: headerSecret === adminSecret }
+      debug: {
+        secretSet: !!adminSecret,
+        headerReceived: !!headerSecret,
+        match: headerSecret === adminSecret,
+        secretLength: adminSecret?.length,
+        headerLength: headerSecret?.length,
+      }
     }, { status: 403 })
   }
 
