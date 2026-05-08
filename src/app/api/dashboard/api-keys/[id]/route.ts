@@ -27,12 +27,14 @@ const PatchKeySchema = z.object({
 // ---------------------------------------------------------------------------
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
+
+  const { id } = await params
 
   let body: unknown
   try {
@@ -54,7 +56,6 @@ export async function PATCH(
 
   const supabase = createServiceRoleClient()
 
-  // Build the update payload
   const updates: Record<string, unknown> = {}
   if (name !== undefined) updates.name = name
   if (isActive !== undefined) updates.is_active = isActive
@@ -63,8 +64,8 @@ export async function PATCH(
   const { data, error } = await supabase
     .from('api_keys')
     .update(updates)
-    .eq('id', params.id)
-    .eq('user_id', session.user.id)  // ownership check — users can only edit their own keys
+    .eq('id', id)
+    .eq('user_id', session.user.id)
     .select('id, name, allowed_room_ids, is_active, created_at, last_used_at')
     .single()
 
@@ -91,20 +92,21 @@ export async function PATCH(
 // ---------------------------------------------------------------------------
 export async function DELETE(
   _request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  const { id } = await params
   const supabase = createServiceRoleClient()
 
   const { error, count } = await supabase
     .from('api_keys')
     .delete({ count: 'exact' })
-    .eq('id', params.id)
-    .eq('user_id', session.user.id)  // ownership check
+    .eq('id', id)
+    .eq('user_id', session.user.id)
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
