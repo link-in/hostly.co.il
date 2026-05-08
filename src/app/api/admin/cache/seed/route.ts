@@ -33,7 +33,10 @@ export async function POST(request: NextRequest) {
   const isSecretAuth = adminSecret && headerSecret === adminSecret
 
   if (!isAdminSession && !isSecretAuth) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+    return NextResponse.json({
+      error: 'Unauthorized',
+      debug: { secretSet: !!adminSecret, headerReceived: !!headerSecret, match: headerSecret === adminSecret }
+    }, { status: 403 })
   }
 
   let body: unknown
