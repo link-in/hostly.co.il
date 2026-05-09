@@ -359,6 +359,114 @@
       ]
     },
     {
+      "name": "5️⃣  Webhook — Beds24 Simulation",
+      "description": "סימולציה של Beds24 webhook. בודק שהמערכת מקבלת, שומרת, ושולחת WhatsApp.",
+      "item": [
+        {
+          "name": "New Confirmed Booking ✅",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/webhook",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"timeStamp\": \"2026-05-09T18:00:00Z\",\n  \"booking\": {\n    \"id\": 99999,\n    \"propertyId\": \"{{propertyId}}\",\n    \"roomId\": \"{{roomId}}\",\n    \"status\": \"confirmed\",\n    \"subStatus\": \"\",\n    \"firstName\": \"Test\",\n    \"lastName\": \"Webhook\",\n    \"email\": \"test@hostly.co.il\",\n    \"phone\": \"0521234567\",\n    \"mobile\": \"0521234567\",\n    \"arrival\": \"2026-06-01\",\n    \"departure\": \"2026-06-05\",\n    \"numAdult\": 2,\n    \"numChild\": 0,\n    \"price\": 500,\n    \"deposit\": 0,\n    \"tax\": 0,\n    \"address\": \"\",\n    \"city\": \"\",\n    \"postcode\": \"\",\n    \"country\": \"\",\n    \"bookingTime\": \"2026-05-09T18:00:00Z\",\n    \"modifiedTime\": \"2026-05-09T18:00:00Z\",\n    \"apiSource\": \"Airbnb\"\n  }\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('success=true', () => {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.success).to.be.true;",
+                  "  console.log('Message:', json.message);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Duplicate Booking (same id=99999) — should skip",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/webhook",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"timeStamp\": \"2026-05-09T18:00:00Z\",\n  \"booking\": {\n    \"id\": 99999,\n    \"propertyId\": \"{{propertyId}}\",\n    \"roomId\": \"{{roomId}}\",\n    \"status\": \"confirmed\",\n    \"subStatus\": \"\",\n    \"firstName\": \"Test\",\n    \"lastName\": \"Webhook\",\n    \"email\": \"test@hostly.co.il\",\n    \"phone\": \"0521234567\",\n    \"mobile\": \"0521234567\",\n    \"arrival\": \"2026-06-01\",\n    \"departure\": \"2026-06-05\",\n    \"numAdult\": 2,\n    \"numChild\": 0,\n    \"price\": 500,\n    \"deposit\": 0,\n    \"tax\": 0,\n    \"address\": \"\",\n    \"city\": \"\",\n    \"postcode\": \"\",\n    \"country\": \"\",\n    \"bookingTime\": \"2026-05-09T18:00:00Z\",\n    \"modifiedTime\": \"2026-05-09T18:00:00Z\"\n  }\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Duplicate skipped', () => {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.success).to.be.true;",
+                  "  pm.expect(json.message).to.include('already processed');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cancelled Booking — should skip",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/webhook",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"timeStamp\": \"2026-05-09T18:00:00Z\",\n  \"booking\": {\n    \"id\": 88888,\n    \"propertyId\": \"{{propertyId}}\",\n    \"roomId\": \"{{roomId}}\",\n    \"status\": \"cancelled\",\n    \"subStatus\": \"\",\n    \"firstName\": \"Cancelled\",\n    \"lastName\": \"Guest\",\n    \"email\": \"\",\n    \"phone\": \"\",\n    \"mobile\": \"\",\n    \"arrival\": \"2026-06-10\",\n    \"departure\": \"2026-06-12\",\n    \"numAdult\": 1,\n    \"numChild\": 0,\n    \"price\": 0,\n    \"deposit\": 0,\n    \"tax\": 0,\n    \"address\": \"\",\n    \"city\": \"\",\n    \"postcode\": \"\",\n    \"country\": \"\",\n    \"bookingTime\": \"2026-05-09T18:00:00Z\",\n    \"modifiedTime\": \"2026-05-09T18:00:00Z\"\n  }\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Cancelled booking skipped', () => {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.success).to.be.true;",
+                  "  pm.expect(json.message).to.include('skipped');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET Webhook — health check",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/webhook",
+            "header": []
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has status field', () => {",
+                  "  pm.expect(pm.response.json().status).to.equal('active');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
       "name": "4️⃣  Dashboard — Cache Refresh (with session)",
       "description": "לקוח מרענן את ה-cache שלו ידנית מהדשבורד. מחייב session cookie.",
       "item": [
