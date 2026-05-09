@@ -7,6 +7,7 @@ import { createServerClient } from '@/lib/supabase/server'
 import { getUserByEmail } from '@/lib/auth/getUsersDb'
 import { normalizePhoneNumber } from '@/lib/utils/phoneFormatter'
 import { addOrUpdateCustomer } from '@/lib/customers/addOrUpdateCustomer'
+import { normalizeBookingItem, extractBookingId, extractUserTokens } from '@/lib/bookings/normalizer'
 
 export const dynamic = 'force-dynamic'  // Allow POST requests for creating bookings
 export const revalidate = 0
@@ -145,74 +146,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Missing BEDS24_PROPERTY_ID or BEDS24_ROOM_ID' }, { status: 500 })
   }
 
-  const extractInvoiceTotal = (items: unknown[]) => {
-    return items.reduce<number>((sum, entry) => {
-      if (!entry || typeof entry !== 'object') {
-        return sum
-      }
-      const amount =
-        (typeof (entry as { amount?: unknown }).amount === 'number' && (entry as { amount: number }).amount) ||
-        (typeof (entry as { amount?: unknown }).amount === 'string' && Number.parseFloat((entry as { amount: string }).amount)) ||
-        (typeof (entry as { total?: unknown }).total === 'number' && (entry as { total: number }).total) ||
-        (typeof (entry as { total?: unknown }).total === 'string' && Number.parseFloat((entry as { total: string }).total)) ||
-        0
-      return Number.isFinite(amount) ? sum + amount : sum
-    }, 0)
-  }
-
-  const normalizeItem = (item: Record<string, unknown>) => {
-    const invoiceItems = Array.isArray(item.invoice) ? item.invoice : []
-    const explicitPrice =
-      (typeof item.price === 'number' && item.price) ||
-      (typeof item.price === 'string' && Number.parseFloat(item.price)) ||
-      0
-    const invoiceTotal = extractInvoiceTotal(invoiceItems)
-    const price = explicitPrice || invoiceTotal
-    
-    // Build booking object with all required fields
-    const booking: Record<string, unknown> = {
-      propertyId: Number(propertyId),
-      roomId: Number(roomId),
-      arrival: item.arrival,
-      departure: item.departure,
-      firstName: item.firstName,
-      lastName: item.lastName,
-      status: item.status ?? 'confirmed',
-      invoice: invoiceItems,
-      ...(price ? { price } : {}),
-    }
-    
-    // Add optional fields if provided
-    if (item.mobile) booking.mobile = item.mobile
-    if (item.phone) booking.phone = item.phone
-    if (item.email) booking.email = item.email
-    if (item.numAdult) booking.numAdult = item.numAdult
-    if (item.numChild) booking.numChild = item.numChild
-    if (item.notes !== undefined) {
-      booking.notes = item.notes || '' // Send notes even if empty
-      console.log('📝 Creating booking with notes:', item.notes || '(empty)')
-    }
-    if (item.address) booking.address = item.address
-    if (item.city) booking.city = item.city
-    if (item.postcode) booking.postcode = item.postcode
-    if (item.country) booking.country = item.country
-    
-    return booking
-  }
-
   const normalizedPayload = Array.isArray(payload)
-    ? payload.map((item) => normalizeItem(item as Record<string, unknown>))
-    : [normalizeItem(payload as Record<string, unknown>)]
+    ? payload.map((item) => normalizeBookingItem(item as Record<string, unknown>, propertyId, roomId))
+    : [normalizeBookingItem(payload as Record<string, unknown>, propertyId, roomId)]
 
   console.log('Beds24 booking payload', normalizedPayload)
 
-  // Prepare user-specific tokens if available
-  const userTokens = session?.user?.beds24Token && session?.user?.beds24RefreshToken
-    ? {
-        accessToken: session.user.beds24Token,
-        refreshToken: session.user.beds24RefreshToken,
-      }
-    : undefined
+  const userTokens = extractUserTokens(session)
 
   const response = await fetchWithTokenRefresh(`${getBaseUrl()}/bookings`, {
     method: 'POST',
@@ -258,10 +198,7 @@ export async function POST(request: Request) {
       console.log(`📧 Email: ${guestEmail}`)
     }
     
-    // Get booking ID from Beds24 response
-    const bookingId = Array.isArray(data) && data[0]?.new?.id 
-      ? String(data[0].new.id)
-      : (Array.isArray(data) && data[0]?.bookingId ? String(data[0].bookingId) : 'N/A')
+    const bookingId = extractBookingId(data)
     
     console.log(`🔖 Booking ID: ${bookingId}`)
     
@@ -533,13 +470,7 @@ export async function PATCH(request: Request) {
   console.log('📝 Updating booking in Beds24:', bookingId)
   console.log('📦 Update payload:', JSON.stringify(booking, null, 2))
 
-  // Prepare user-specific tokens if available
-  const userTokens = session?.user?.beds24Token && session?.user?.beds24RefreshToken
-    ? {
-        accessToken: session.user.beds24Token,
-        refreshToken: session.user.beds24RefreshToken,
-      }
-    : undefined
+  const userTokens = extractUserTokens(session)
 
   try {
     // CORRECT METHOD per Beds24 V2 documentation:
@@ -724,13 +655,7 @@ export async function DELETE(request: Request) {
     )
   }
 
-  // Prepare user-specific tokens if available
-  const userTokens = session?.user?.beds24Token && session?.user?.beds24RefreshToken
-    ? {
-        accessToken: session.user.beds24Token,
-        refreshToken: session.user.beds24RefreshToken,
-      }
-    : undefined
+  const userTokens = extractUserTokens(session)
 
   try {
     // Cancel the booking using POST method (same as update)
