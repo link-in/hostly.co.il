@@ -9,7 +9,7 @@ interface DashboardHeaderProps {
   title?: string
   subtitle?: string
   showLandingPageButton?: boolean
-  currentPage?: 'dashboard' | 'reservations' | 'customers' | 'price-check' | 'profile' | 'landing' | 'pricing-demo' | 'check-ins' | 'admin' | 'pricing'
+  currentPage?: 'dashboard' | 'reservations' | 'customers' | 'price-check' | 'profile' | 'landing' | 'pricing-demo' | 'check-ins' | 'admin' | 'pricing' | 'api-keys'
 }
 
 export default function DashboardHeader({ 
@@ -756,6 +756,38 @@ export default function DashboardHeader({
                     </>
                   )}
                   
+                  <Link 
+                    className={`menu-item w-100 border-0 bg-transparent py-3 px-3 d-flex align-items-center justify-content-start gap-3 text-decoration-none ${currentPage === 'api-keys' ? 'menu-item-active' : ''}`}
+                    href="/dashboard/api-keys" 
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    <div 
+                      className="d-flex align-items-center justify-content-center"
+                      style={{
+                        width: '36px',
+                        height: '36px',
+                        borderRadius: '10px',
+                        background: 'linear-gradient(135deg, #f7971e 0%, #ffd200 100%)',
+                        color: 'white'
+                      }}
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="18"
+                        height="18"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" />
+                      </svg>
+                    </div>
+                    <span style={{ fontSize: '15px', fontWeight: '500', color: '#333' }}>מפתחות API</span>
+                  </Link>
+
                   <Link 
                     className={`menu-item w-100 border-0 bg-transparent py-3 px-3 d-flex align-items-center justify-content-start gap-3 text-decoration-none ${currentPage === 'landing' ? 'menu-item-active' : ''}`}
                     href="/dashboard/landing" 
