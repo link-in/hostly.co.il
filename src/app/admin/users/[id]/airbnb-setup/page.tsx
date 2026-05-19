@@ -19,6 +19,7 @@ interface AirbnbListing {
   listingId: string
   name?: string
   address?: string
+  picture?: string
   [key: string]: unknown
 }
 
@@ -486,7 +487,7 @@ export default function AirbnbSetupPage({ params }: { params: Promise<{ id: stri
                           >
                             {listing.picture && (
                               <img
-                                src={listing.picture as string}
+                                src={listing.picture}
                                 alt=""
                                 style={{ width: 52, height: 52, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }}
                                 onError={(e) => { e.currentTarget.style.display = 'none' }}
