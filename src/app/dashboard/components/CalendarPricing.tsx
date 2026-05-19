@@ -4,6 +4,8 @@ import type { Reservation, RoomPrice } from '@/lib/dashboard/types'
 import { formatCurrency } from '@/lib/dashboard/utils'
 import { useHolidays } from '@/hooks/useHolidays'
 import HolidayIndicator from '@/components/HolidayIndicator'
+import { useSelectedRoom } from '@/lib/rooms/RoomContext'
+import { toast } from 'sonner'
 
 type CalendarPricingProps = {
   reservations: Reservation[]
@@ -167,6 +169,7 @@ const buildBookingSegments = (reservations: Reservation[], days: Date[]) => {
 const HEBREW_MONTHS = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר']
 
 const CalendarPricing = ({ reservations, prices, onPricesUpdated }: CalendarPricingProps) => {
+  const { selectedRoomId } = useSelectedRoom()
   const [currentMonth, setCurrentMonth] = useState(() => startOfMonth(new Date()))
   const [showMonthPicker, setShowMonthPicker] = useState(false)
   const [pickerPos, setPickerPos] = useState<{ top: number; left: number } | null>(null)
@@ -178,6 +181,19 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated }: CalendarPric
   const [saveError, setSaveError] = useState<string | null>(null)
   const [saveSuccess, setSaveSuccess] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
+
+  // Reset local overrides and selection whenever the user switches to a different room
+  const prevRoomRef = useRef<string | null>(null)
+  useEffect(() => {
+    if (prevRoomRef.current !== null && prevRoomRef.current !== selectedRoomId) {
+      setPriceOverrides({})
+      setSelectedDates([])
+      setSaveError(null)
+      setSaveSuccess(null)
+      lastSelectedRef.current = null
+    }
+    prevRoomRef.current = selectedRoomId
+  }, [selectedRoomId])
   const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null)
   const reservationDetailsRef = useRef<HTMLDivElement>(null)
   const lastSelectedRef = useRef<Date | null>(null)
@@ -328,9 +344,15 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated }: CalendarPric
     setSaving(true)
 
     const ranges = buildDateRanges(selectedDates)
+    // Prefer selectedRoomId from context (always accurate), fallback to prices data
+    const resolvedRoomId =
+      selectedRoomId ||
+      prices.find((entry) => entry.roomId)?.roomId ||
+      null
+
     const payload = [
       {
-        ...(prices.find((entry) => entry.roomId)?.roomId ? { roomId: Number(prices.find((entry) => entry.roomId)?.roomId) } : {}),
+        ...(resolvedRoomId ? { roomId: Number(resolvedRoomId) } : {}),
         calendar: ranges.map((range) => ({
           from: range.from,
           to: range.to,
@@ -368,9 +390,20 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated }: CalendarPric
       if (onPricesUpdated) {
         await onPricesUpdated()
       }
+      // Refresh availability cache in background so the embed also sees new prices
+      if (resolvedRoomId) {
+        fetch('/api/dashboard/cache/refresh', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ roomId: String(resolvedRoomId) }),
+        }).catch(() => {})
+      }
       setSaveSuccess('המחיר עודכן בהצלחה.')
+      toast.success(`המחיר עודכן ל-₪${Number(priceInput).toLocaleString('he-IL')} בהצלחה`)
     } catch (error) {
-      setSaveError(error instanceof Error ? error.message : 'עדכון המחיר נכשל')
+      const msg = error instanceof Error ? error.message : 'עדכון המחיר נכשל'
+      setSaveError(msg)
+      toast.error(msg)
     } finally {
       setSaving(false)
     }

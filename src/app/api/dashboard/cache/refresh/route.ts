@@ -47,7 +47,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'User not found' }, { status: 404 })
   }
 
-  const roomId = bodyRoomId ?? user.room_id
+  // room_id in DB may be comma-separated with optional names: "679503:Room A,679529:Room B"
+  // Use the first segment only when no explicit roomId was provided
+  const rawRoomId = bodyRoomId ?? user.room_id?.split(',')[0].split(':')[0].trim()
+  const roomId = rawRoomId?.trim() || null
   const propertyId = bodyPropertyId ?? user.property_id
 
   if (!roomId || !propertyId) {

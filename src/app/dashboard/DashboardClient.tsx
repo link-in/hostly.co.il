@@ -142,6 +142,7 @@ const DashboardClient = () => {
   const [roomPrices, setRoomPrices] = useState<RoomPrice[]>([])
   const [loadingReservations, setLoadingReservations] = useState(true)
   const [loadingRoomPrices, setLoadingRoomPrices] = useState(true)
+  const [initialRoomPricesLoaded, setInitialRoomPricesLoaded] = useState(false)
   const [reservationsError, setReservationsError] = useState<string | null>(null)
   const [roomPricesError, setRoomPricesError] = useState<string | null>(null)
   const [showNewReservation, setShowNewReservation] = useState(false)
@@ -243,7 +244,11 @@ const DashboardClient = () => {
   }
 
   const refreshRoomPrices = async () => {
-    setLoadingRoomPrices(true)
+    // Only show full loading spinner on first load — subsequent refreshes update silently
+    // so CalendarPricing stays mounted and preserves local state (priceOverrides etc.)
+    if (!initialRoomPricesLoaded) {
+      setLoadingRoomPrices(true)
+    }
     try {
       const prices = await provider.getRoomPrices()
       setRoomPrices(prices)
@@ -252,6 +257,7 @@ const DashboardClient = () => {
       setRoomPricesError(error instanceof Error ? error.message : 'טעינת מחירי לילה נכשלה')
     } finally {
       setLoadingRoomPrices(false)
+      setInitialRoomPricesLoaded(true)
     }
   }
 
@@ -1880,7 +1886,7 @@ const DashboardClient = () => {
                 {roomPricesError}
               </div>
             ) : null}
-            {loadingRoomPrices ? (
+            {loadingRoomPrices && !initialRoomPricesLoaded ? (
               <div style={{ color: 'rgba(255, 255, 255, 0.7)' }}>טוען מחירי לילה...</div>
             ) : (
               <CalendarPricing reservations={reservations} prices={roomPrices} onPricesUpdated={refreshRoomPrices} />

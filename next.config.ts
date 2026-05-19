@@ -13,6 +13,19 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  async headers() {
+    return [
+      {
+        // Allow the /embed page to be loaded inside iframes from any origin.
+        source: '/embed',
+        headers: [
+          { key: 'X-Frame-Options',          value: 'ALLOWALL' },
+          { key: 'Content-Security-Policy',   value: "frame-ancestors *" },
+          { key: 'Access-Control-Allow-Origin', value: '*' },
+        ],
+      },
+    ]
+  },
 };
 
 export default nextConfig;

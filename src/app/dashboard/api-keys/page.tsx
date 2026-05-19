@@ -61,6 +61,10 @@ export default function ApiKeysPage() {
   // Toggle active
   const [togglingId, setTogglingId] = useState<string | null>(null)
 
+  // Embed settings — payment required toggle
+  const [paymentRequired, setPaymentRequired] = useState(false)
+  const [paymentToggling, setPaymentToggling] = useState(false)
+
   // ── Auth guard ─────────────────────────────────────────────────────────────
   useEffect(() => {
     if (status === 'loading') return
@@ -86,6 +90,31 @@ export default function ApiKeysPage() {
   useEffect(() => {
     if (status === 'authenticated') fetchKeys()
   }, [status])
+
+  // ── Fetch embed settings ───────────────────────────────────────────────────
+  useEffect(() => {
+    if (status !== 'authenticated') return
+    fetch('/api/dashboard/embed-settings')
+      .then(r => r.json())
+      .then(d => setPaymentRequired(d.paymentRequired ?? false))
+      .catch(() => {})
+  }, [status])
+
+  const handlePaymentToggle = async () => {
+    setPaymentToggling(true)
+    try {
+      const res = await fetch('/api/dashboard/embed-settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ paymentRequired: !paymentRequired }),
+      })
+      if (res.ok) setPaymentRequired(p => !p)
+    } catch {
+      // silent
+    } finally {
+      setPaymentToggling(false)
+    }
+  }
 
   // ── Create key ─────────────────────────────────────────────────────────────
   const handleCreate = async () => {
@@ -436,6 +465,75 @@ export default function ApiKeysPage() {
             </div>
           </div>
 
+          {/* ── Embed Booking Settings ─────────────────────────────────── */}
+          <div className="card border-0 shadow-sm mt-4" style={{ borderRadius: 16 }}>
+            <div className="card-body p-4">
+              <h5 className="fw-bold mb-1" style={{ fontSize: '1.05rem' }}>
+                הגדרות הזמנה
+              </h5>
+              <p className="text-muted mb-4" style={{ fontSize: '0.88rem' }}>
+                קביעת אופן קבלת הזמנות מהלוח שנה המוטמע באתר הלקוח
+              </p>
+
+              <div
+                className="d-flex align-items-center justify-content-between p-3"
+                style={{ background: '#f8faff', borderRadius: 12, border: '1px solid #e8edf5' }}
+              >
+                <div>
+                  <div className="fw-semibold" style={{ fontSize: '0.95rem' }}>
+                    דרוש תשלום לפני אישור הזמנה
+                  </div>
+                  <div className="text-muted mt-1" style={{ fontSize: '0.83rem' }}>
+                    {paymentRequired
+                      ? 'אורחים ישלמו בכרטיס אשראי (Cardcom) לפני שההזמנה תאושר ב-Beds24'
+                      : 'הזמנות מאושרות מיד — תקבל התראת WhatsApp ותחזור ללקוח בעצמך'}
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handlePaymentToggle}
+                  disabled={paymentToggling}
+                  style={{
+                    width: 52,
+                    height: 28,
+                    borderRadius: 14,
+                    border: 'none',
+                    background: paymentRequired ? '#667eea' : '#d1d5db',
+                    position: 'relative',
+                    cursor: 'pointer',
+                    transition: 'background 0.2s',
+                    flexShrink: 0,
+                  }}
+                  aria-label="Toggle payment required"
+                >
+                  <span
+                    style={{
+                      position: 'absolute',
+                      top: 3,
+                      right: paymentRequired ? 3 : 'auto',
+                      left: paymentRequired ? 'auto' : 3,
+                      width: 22,
+                      height: 22,
+                      borderRadius: '50%',
+                      background: '#fff',
+                      boxShadow: '0 1px 4px rgba(0,0,0,0.2)',
+                      transition: 'all 0.2s',
+                    }}
+                  />
+                </button>
+              </div>
+
+              {paymentRequired && (
+                <div
+                  className="mt-3 p-3"
+                  style={{ background: '#fffbeb', border: '1px solid #fcd34d', borderRadius: 10, fontSize: '0.83rem', color: '#78350f' }}
+                >
+                  <strong>⚠️ נדרש:</strong> ודא שמשתני הסביבה <code>CARDCOM_TERMINAL_NUMBER</code> ו-<code>CARDCOM_API_NAME</code> מוגדרים בשרת.
+                </div>
+              )}
+            </div>
+          </div>
 
         </div>
       </div>

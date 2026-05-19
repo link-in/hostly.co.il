@@ -29,7 +29,11 @@ export async function GET(request: NextRequest) {
     let data: unknown
     try { data = JSON.parse(rawText) } catch { data = rawText }
 
-    console.log(`[Beds24] GET /channels/airbnb/listings → ${res.status}:`, JSON.stringify(data).slice(0, 300))
+    // Log first item in full so we can see all available fields
+    const preview = Array.isArray((data as Record<string,unknown>)?.data)
+      ? JSON.stringify((data as Record<string,unknown[]>).data[0], null, 2)
+      : JSON.stringify(data).slice(0, 800)
+    console.log(`[Beds24] GET /channels/airbnb/listings → ${res.status} (first item):`, preview)
 
     if (!res.ok) {
       return NextResponse.json(
@@ -38,8 +42,18 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Beds24 returns an array of listing objects: [{ listingId, name, ... }]
-    const listings = Array.isArray(data) ? data : (data as { data?: unknown[] })?.data ?? []
+    // Beds24 V2 response shape may be:
+    // { success: true, data: [ { airbnbListing: { listingId, name, ... } }, ... ] }
+    // or a flat array of listing objects
+    const rawItems: unknown[] = Array.isArray(data)
+      ? data
+      : (data as { data?: unknown[] })?.data ?? []
+
+    // Flatten nested { airbnbListing: {...} } wrapper if present
+    const listings = rawItems.map((item) => {
+      const nested = (item as Record<string, unknown>).airbnbListing
+      return nested && typeof nested === 'object' ? nested : item
+    })
 
     return NextResponse.json({ listings })
   } catch (err) {

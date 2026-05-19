@@ -68,11 +68,8 @@ function RegisterForm() {
         return
       }
 
-      // 3. Store credentials temporarily for onboarding display (cleared immediately after reading)
-      sessionStorage.setItem('hostly_reg_creds', JSON.stringify({ email: form.email, password: form.password }))
-
-      // 4. Go to onboarding
-      router.push('/dashboard/onboarding')
+      // 3. Go to dashboard (setup is handled by admin)
+      router.push('/dashboard')
     } catch {
       setError('שגיאה בהרשמה, נסה שוב')
     } finally {
@@ -82,7 +79,7 @@ function RegisterForm() {
 
   const handleGoogle = async () => {
     setGoogleLoading(true)
-    await signIn('google', { callbackUrl: '/dashboard/onboarding' })
+    await signIn('google', { callbackUrl: '/dashboard' })
   }
 
   return (

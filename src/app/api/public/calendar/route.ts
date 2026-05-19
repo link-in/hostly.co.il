@@ -1,21 +1,22 @@
 /**
  * Public Calendar API
  *
- * Returns cached availability & pricing for a room, intended for embedding
- * in customer websites. Authenticated via API Key (x-api-key header).
+ * Returns live availability & pricing for a room directly from Beds24,
+ * intended for embedding in customer websites.
+ * Authenticated via API Key (x-api-key header).
  *
- * GET /api/public/calendar?roomId=<id>&from=YYYY-MM-DD&to=YYYY-MM-DD
+ * GET /api/public/calendar?roomId=<id>&from=YYYY-MM-DD&to=YYYY-MM-DD[&numGuest=N]
  *
  * Auth flow:
  *   1. Validate API key exists and is active          → 401 if not
  *   2. Verify user subscription is active/trial       → 403 subscription_inactive
  *   3. Verify roomId is in the key's allowed_room_ids → 403 room_not_allowed
- *   4. Return data from availability_cache
+ *   4. Fetch live data directly from Beds24
  */
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceRoleClient } from '@/lib/supabase/server'
-import { getAvailability } from '@/lib/availability/cache'
+import { fetchLiveAvailability } from '@/lib/availability/direct'
 
 export const dynamic = 'force-dynamic'
 
@@ -50,9 +51,10 @@ export async function GET(request: NextRequest) {
   }
 
   const url = new URL(request.url)
-  const roomId = url.searchParams.get('roomId')?.trim()
-  const from = url.searchParams.get('from')?.trim()
-  const to = url.searchParams.get('to')?.trim()
+  const roomId    = url.searchParams.get('roomId')?.trim()
+  const from      = url.searchParams.get('from')?.trim()
+  const to        = url.searchParams.get('to')?.trim()
+  const numGuest  = Math.max( 1, parseInt( url.searchParams.get('numGuest') ?? '1', 10 ) || 1 )
 
   if (!roomId) {
     return json({ error: 'Missing required query param: roomId' }, 400)
@@ -123,16 +125,40 @@ export async function GET(request: NextRequest) {
     return json({ error: 'room_not_allowed' }, 403)
   }
 
-  // ── Step 4: Fetch from cache ──────────────────────────────────────────────
-  const result = await getAvailability(userId, roomId, resolvedFrom, resolvedTo)
+  // ── Step 4: Fetch user's Beds24 tokens ───────────────────────────────────
+  const { data: userRow } = await supabase
+    .from('users')
+    .select('beds24_token, beds24_refresh_token, property_id')
+    .eq('id', userId)
+    .single()
+
+  const accessToken  = userRow?.beds24_token        || process.env.BEDS24_TOKEN        || ''
+  const refreshToken = userRow?.beds24_refresh_token || process.env.BEDS24_REFRESH_TOKEN || ''
+  const propertyId   = userRow?.property_id         || ''
+
+  if ( ! accessToken || ! refreshToken ) {
+    return json( { error: 'beds24_not_configured', message: 'Beds24 token not set for this account.' }, 503 )
+  }
+
+  // ── Step 5: Fetch live from Beds24 ────────────────────────────────────────
+  const result = await fetchLiveAvailability( {
+    userId,
+    propertyId,
+    roomId,
+    from: resolvedFrom,
+    to: resolvedTo,
+    accessToken,
+    refreshToken,
+    numGuest,
+  } )
 
   if (!result) {
     return json(
       {
-        error: 'no_cache',
-        message: 'No cached data available for this room. Data will appear after the next booking event.',
+        error: 'beds24_error',
+        message: 'Could not fetch availability from Beds24. Please try again shortly.',
       },
-      404,
+      502,
     )
   }
 

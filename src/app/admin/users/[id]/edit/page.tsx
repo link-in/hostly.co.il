@@ -3,7 +3,7 @@
 import React, { useState, useEffect, use } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Eye, EyeOff, RefreshCw, ExternalLink, Loader2, Copy, Check } from 'lucide-react'
+import { Eye, EyeOff, RefreshCw } from 'lucide-react'
 
 interface RoomEntry { id: string; name: string }
 
@@ -41,10 +41,6 @@ export default function EditUserPage({ params }: { params: Promise<{ id: string 
   })
   const [rooms, setRooms] = useState<RoomEntry[]>([{ id: '', name: '' }])
   const [showPassword, setShowPassword] = useState(false)
-  const [airbnbLinking, setAirbnbLinking] = useState(false)
-  const [airbnbLinkError, setAirbnbLinkError] = useState<string | null>(null)
-  const [airbnbUrl, setAirbnbUrl] = useState<string | null>(null)
-  const [copied, setCopied] = useState(false)
 
   // ── Load user ──────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -79,34 +75,6 @@ export default function EditUserPage({ params }: { params: Promise<{ id: string 
   const addRoom = () => setRooms((prev) => [...prev, { id: '', name: '' }])
   const removeRoom = (index: number) =>
     setRooms((prev) => (prev.length > 1 ? prev.filter((_, i) => i !== index) : prev))
-
-  const handleConnectAirbnb = async () => {
-    setAirbnbLinkError(null)
-    setAirbnbUrl(null)
-    if (!formData.propertyId.trim()) {
-      setAirbnbLinkError('יש להזין Property ID לפני החיבור לAirbnb')
-      return
-    }
-    setAirbnbLinking(true)
-    try {
-      const res = await fetch(`/api/admin/beds24/airbnb-auth-url?propertyId=${formData.propertyId.trim()}`)
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error ?? 'שגיאה בקבלת קישור Airbnb')
-      setAirbnbUrl(data.url)
-      window.open(data.url, '_blank', 'noopener,noreferrer')
-    } catch (err) {
-      setAirbnbLinkError(err instanceof Error ? err.message : 'שגיאה לא ידועה')
-    } finally {
-      setAirbnbLinking(false)
-    }
-  }
-
-  const handleCopyAirbnbUrl = async () => {
-    if (!airbnbUrl) return
-    await navigator.clipboard.writeText(airbnbUrl)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2500)
-  }
 
   const buildRoomId = () =>
     rooms
@@ -147,7 +115,6 @@ export default function EditUserPage({ params }: { params: Promise<{ id: string 
 
   return (
     <>
-    <style>{`.spin{animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     <div dir="rtl" style={{ minHeight: '100vh', background: 'linear-gradient(135deg,#667eea 0%,#764ba2 50%,#f093fb 100%)' }}>
       <div className="container py-5">
         <div className="row justify-content-center">
@@ -248,56 +215,48 @@ export default function EditUserPage({ params }: { params: Promise<{ id: string 
                       onChange={(e) => handleChange('propertyId', e.target.value)} placeholder="306559" />
                   </div>
 
-                  {/* ── Airbnb Connect ── */}
-                  <div className="mb-4 p-3 rounded-3" style={{ background: '#fff7ed', border: '1px solid #fed7aa' }}>
+                  {/* ── Beds24 Setup Wizard ── */}
+                  <div className="mb-4 p-3 rounded-3" style={{ background: '#eff6ff', border: '1px solid #bfdbfe' }}>
                     <div className="d-flex justify-content-between align-items-center">
                       <div>
-                        <div className="fw-semibold" style={{ color: '#c2410c' }}>
-                          <img src="https://upload.wikimedia.org/wikipedia/commons/6/69/Airbnb_Logo_Bélo.svg"
-                            alt="Airbnb" width={18} style={{ verticalAlign: 'middle', marginLeft: 6 }} />
-                          חיבור חשבון Airbnb
+                        <div className="fw-semibold" style={{ color: '#1d4ed8', fontSize: 14 }}>
+                          הגדרת חשבון-משנה ב-Beds24
                         </div>
                         <small className="text-muted">
-                          לאחר האישור תועבר לעמוד Beds24 — זה תקין, החיבור הצליח
+                          חיבור Invite Code, שמירת Property/Room IDs ואתחול Cache
                         </small>
                       </div>
-                      <button
-                        type="button"
-                        className="btn btn-sm fw-bold d-flex align-items-center gap-2"
-                        style={{ background: '#ff5a5f', color: '#fff', border: 'none', whiteSpace: 'nowrap', opacity: airbnbLinking ? 0.7 : 1 }}
-                        disabled={airbnbLinking}
-                        onClick={handleConnectAirbnb}
-                      >
-                        {airbnbLinking
-                          ? <><Loader2 size={14} className="spin" /> מחפש קישור...</>
-                          : <><ExternalLink size={14} /> חבר Airbnb</>}
-                      </button>
+                      <Link href={`/admin/users/${userId}/beds24-setup`}>
+                        <button
+                          type="button"
+                          className="btn btn-sm fw-bold"
+                          style={{ background: '#1d4ed8', color: 'white', border: 'none', whiteSpace: 'nowrap' }}
+                        >
+                          הגדרת Beds24 ←
+                        </button>
+                      </Link>
                     </div>
-                    {airbnbLinkError && (
-                      <div className="alert alert-danger mb-0 mt-2 py-2 small">{airbnbLinkError}</div>
-                    )}
-                    {airbnbUrl && (
-                      <div className="mt-2 p-2 rounded-2" style={{ background: '#ecfdf5', border: '1px solid #6ee7b7' }}>
-                        <div className="small fw-semibold text-success mb-1">✓ קישור מוכן — שלח לבעל הנכס לאישור</div>
-                        <div className="d-flex gap-2 align-items-center">
-                          <input
-                            readOnly
-                            className="form-control form-control-sm"
-                            value={airbnbUrl}
-                            style={{ fontSize: 11, direction: 'ltr' }}
-                          />
-                          <button
-                            type="button"
-                            className="btn btn-sm fw-bold d-flex align-items-center gap-1"
-                            style={{ background: copied ? '#059669' : '#374151', color: '#fff', border: 'none', whiteSpace: 'nowrap', flexShrink: 0 }}
-                            onClick={handleCopyAirbnbUrl}
-                          >
-                            {copied ? <><Check size={13} /> הועתק!</> : <><Copy size={13} /> העתק</>}
-                          </button>
+                  </div>
+
+                  {/* ── Airbnb Setup (after Beds24 tokens are set) ── */}
+                  <div className="mb-4 p-3 rounded-3" style={{ background: '#f0fdf4', border: '1px solid #86efac' }}>
+                    <div className="d-flex justify-content-between align-items-center">
+                      <div>
+                        <div className="fw-semibold" style={{ color: '#15803d', fontSize: 14 }}>
+                          חיבור Airbnb דרך Beds24
                         </div>
-                        <small className="text-muted">בעל הנכס פותח את הקישור, מתחבר עם Airbnb שלו ומאשר — לאחר האישור יועבר לעמוד Beds24, זה תקין והחיבור הצליח</small>
+                        <small className="text-muted">לאחר הגדרת Beds24 — ייבא נכס מ-Airbnb, הגדר Cache ו-API Key</small>
                       </div>
-                    )}
+                      <Link href={`/admin/users/${userId}/airbnb-setup`}>
+                        <button
+                          type="button"
+                          className="btn btn-sm fw-bold"
+                          style={{ background: '#15803d', color: 'white', border: 'none', whiteSpace: 'nowrap' }}
+                        >
+                          הגדר Airbnb ←
+                        </button>
+                      </Link>
+                    </div>
                   </div>
 
                   <div className="mb-4">

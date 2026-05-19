@@ -167,12 +167,28 @@ export async function GET(request: Request) {
       }
     : undefined
 
+  // Also fetch room base price from /inventory/rooms (fallback when calendar has no overrides)
+  // Note: /inventory/rooms does not support roomId filter — fetch all and filter in code
+  const roomsInfoUrl = new URL(`${getBaseUrl()}/inventory/rooms`)
+  roomsInfoUrl.searchParams.set('propertyId', propertyId)
+
+  // Fallback URL: try without propertyId when a specific roomId is given
+  // (room may belong to a different property than the user's default)
+  const fallbackUrl = roomId ? new URL(`${getBaseUrl()}/inventory/rooms/calendar`) : null
+  if (fallbackUrl) {
+    fallbackUrl.searchParams.set('roomId', roomId!)
+    fallbackUrl.searchParams.set('startDate', queryStartDate)
+    fallbackUrl.searchParams.set('endDate', queryEndDate)
+    fallbackUrl.searchParams.set('includePrices', '1')
+  }
+
   try {
-    const response = await fetchWithTokenRefresh(url.toString(), {
-      headers: {
-        'content-type': 'application/json',
-      },
-    }, userTokens, session?.user?.id)
+    const [response, roomsInfoRes] = await Promise.all([
+      fetchWithTokenRefresh(url.toString(), {
+        headers: { 'content-type': 'application/json' },
+      }, userTokens, session?.user?.id),
+      fetchWithTokenRefresh(roomsInfoUrl.toString(), {}, userTokens, session?.user?.id),
+    ])
 
     if (!response.ok) {
       const details = await response.text()
@@ -182,7 +198,55 @@ export async function GET(request: Request) {
       )
     }
 
-    const data = await response.json()
+    let data = await response.json()
+
+    // If primary query returned empty and we have a fallback, retry without propertyId
+    const primaryEmpty = Array.isArray(data?.data) ? data.data.length === 0 : !data?.data
+    if (primaryEmpty && fallbackUrl) {
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('[rooms GET] primary empty, retrying without propertyId:', fallbackUrl.toString())
+      }
+      const fallbackRes = await fetchWithTokenRefresh(fallbackUrl.toString(), {
+        headers: { 'content-type': 'application/json' },
+      }, userTokens, session?.user?.id)
+      if (fallbackRes.ok) {
+        const fallbackData = await fallbackRes.json()
+        const fallbackHasData = Array.isArray(fallbackData?.data) ? fallbackData.data.length > 0 : !!fallbackData?.data
+        if (fallbackHasData) {
+          if (process.env.NODE_ENV !== 'production') {
+            console.log('[rooms GET] fallback returned data:', JSON.stringify(fallbackData).slice(0, 500))
+          }
+          data = fallbackData
+        }
+      }
+    }
+    let roomsInfoData = null
+    if (roomsInfoRes.ok) {
+      roomsInfoData = await roomsInfoRes.json()
+    } else if (process.env.NODE_ENV !== 'production') {
+      const errText = await roomsInfoRes.text()
+      console.log('[rooms GET] roomsInfo FAILED:', roomsInfoRes.status, errText.slice(0, 300))
+    }
+
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('[rooms GET] Beds24 URL:', url.toString())
+      console.log('[rooms GET] raw Beds24 response (first 1000 chars):', JSON.stringify(data).slice(0, 1000))
+      console.log('[rooms GET] roomsInfo response (first 1000 chars):', JSON.stringify(roomsInfoData).slice(0, 1000))
+    }
+
+    // Extract base price from room settings as fallback
+    const roomsInfoList = Array.isArray(roomsInfoData?.data) ? roomsInfoData.data : []
+    const matchingRoom = roomsInfoList.find((r: Record<string, unknown>) =>
+      String(r.id ?? r.roomId) === String(roomId)
+    )
+    const basePrice: number | undefined =
+      getNumber(matchingRoom, ['price', 'price1', 'basePrice', 'roomPrice', 'defaultPrice']) ??
+      getNumber(matchingRoom?.prices, ['price', 'price1', 'basePrice']) ??
+      undefined
+
+    if (process.env.NODE_ENV !== 'production' && basePrice !== undefined) {
+      console.log('[rooms GET] base price from room settings:', basePrice)
+    }
 
     const rooms = Array.isArray(data?.data) ? data.data : []
   const calendarOnly = !rooms.length && data?.calendar ? [{ calendar: data.calendar }] : []
@@ -199,6 +263,7 @@ export async function GET(request: Request) {
         ? ((calendar as Record<string, unknown>).rows as unknown[])
         : []
 
+      // Case 1: calendar item contains a rows[] array
       if (rows.length) {
         return rows.flatMap((row: unknown) => {
           const date = getString(row, ['date', 'day', 'startDate'])
@@ -214,12 +279,29 @@ export async function GET(request: Request) {
               date,
               price,
               roomId: roomId ?? calendarId ?? null,
-              numAvail: numAvail !== undefined ? numAvail : 1, // Only default if truly undefined
+              numAvail: numAvail !== undefined ? numAvail : 1,
             },
           ]
         })
       }
 
+      // Case 2: calendar item is itself a single-day entry (date field directly on the object)
+      const directDate = getString(calendar, ['date', 'day'])
+      if (directDate) {
+        const price = extractRowPrice(calendar)
+        const numAvail = getNumber(calendar, ['numAvail', 'avail', 'available', 'availability', 'units'])
+        if (price === undefined) return []
+        return [
+          {
+            date: directDate,
+            price,
+            roomId: roomId ?? calendarId ?? null,
+            numAvail: numAvail !== undefined ? numAvail : 1,
+          },
+        ]
+      }
+
+      // Case 3: calendar item is a date range (from / to)
       const from = getString(calendar, ['from', 'startDate'])
       const to = getString(calendar, ['to', 'endDate'])
       const price = extractRowPrice(calendar)
@@ -243,7 +325,7 @@ export async function GET(request: Request) {
           date: formatLocalDate(cursor),
           price,
           roomId: roomId ?? calendarId ?? null,
-          numAvail: numAvail !== undefined ? numAvail : 1, // Only default if truly undefined
+          numAvail: numAvail !== undefined ? numAvail : 1,
         })
         cursor = addDays(cursor, 1)
       }
@@ -251,6 +333,24 @@ export async function GET(request: Request) {
       return entries
     })
   })
+
+    // If no calendar overrides exist but we have a base price, fill the date range with it
+    if (!prices.length && basePrice !== undefined && roomId) {
+      const start = normalizeDate(new Date(queryStartDate))
+      const end = normalizeDate(new Date(queryEndDate))
+      const filled: typeof prices = []
+      let cursor = start
+      while (cursor <= end) {
+        filled.push({
+          date: formatLocalDate(cursor),
+          price: basePrice,
+          roomId,
+          numAvail: 1,
+        })
+        cursor = addDays(cursor, 1)
+      }
+      return NextResponse.json({ prices: filled, raw: data, basePriceUsed: true })
+    }
 
     return NextResponse.json({ prices, raw: data })
   } catch (error) {
@@ -293,7 +393,8 @@ export async function POST(request: Request) {
         roomId: (payload as { roomId?: number }).roomId ?? (defaultRoomId ? Number(defaultRoomId) : undefined),
       }
 
-  console.log('Beds24 rooms calendar payload', normalizedPayload)
+  console.log('[rooms POST] sending to Beds24 URL:', url.toString())
+  console.log('[rooms POST] payload:', JSON.stringify(normalizedPayload))
 
   // Prepare user-specific tokens if available
   const userTokens = session?.user?.beds24Token && session?.user?.beds24RefreshToken
@@ -322,6 +423,7 @@ export async function POST(request: Request) {
 
     const data = await response.json()
     if (process.env.NODE_ENV !== 'production') {
+      console.log('[rooms POST] Beds24 response:', JSON.stringify(data))
       return NextResponse.json({ data, debugPayload: normalizedPayload, requestUrl: url.toString() })
     }
     return NextResponse.json(data)

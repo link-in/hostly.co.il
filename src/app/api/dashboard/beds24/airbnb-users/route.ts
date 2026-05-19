@@ -32,8 +32,17 @@ export async function GET() {
       )
     }
 
-    // Beds24 returns an array of airbnb user objects: [{ userId, userName, ... }]
-    const users = Array.isArray(data) ? data : (data as { data?: unknown[] })?.data ?? []
+    // Beds24 V2 response shape:
+    // { success: true, data: [ { airbnbUser: { airbnbUserId, firstName, ... } }, ... ] }
+    const rawItems: unknown[] = Array.isArray(data)
+      ? data
+      : (data as { data?: unknown[] })?.data ?? []
+
+    // Flatten nested { airbnbUser: {...} } wrapper if present
+    const users = rawItems.map((item) => {
+      const nested = (item as Record<string, unknown>).airbnbUser
+      return nested && typeof nested === 'object' ? nested : item
+    })
 
     return NextResponse.json({ users })
   } catch (err) {
