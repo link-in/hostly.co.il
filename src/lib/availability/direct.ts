@@ -167,7 +167,7 @@ async function fetchBlockedDates(
 
 	try {
 		const url = new URL( `${ BEDS24_BASE_URL }/bookings` )
-		url.searchParams.set( 'propertyId', propertyId )
+		if ( propertyId ) url.searchParams.set( 'propertyId', propertyId )
 		url.searchParams.set( 'roomId', roomId )
 		url.searchParams.set( 'arrivalFrom', startDate )
 		url.searchParams.set( 'departureFrom', startDate )
@@ -252,11 +252,13 @@ export async function fetchLiveAvailability(
 	try {
 		// ── Fetch calendar from Beds24 ──────────────────────────────────────
 		const calUrl = new URL( `${ BEDS24_BASE_URL }/inventory/rooms/calendar` )
-		calUrl.searchParams.set( 'propertyId', propertyId )
+		if ( propertyId ) calUrl.searchParams.set( 'propertyId', propertyId )
 		calUrl.searchParams.set( 'roomId', roomId )
 		calUrl.searchParams.set( 'startDate', from )
 		calUrl.searchParams.set( 'endDate', to )
 		calUrl.searchParams.set( 'includePrices', '1' )
+
+		console.log( `[LiveAvail] Fetching calendar: ${ calUrl.toString() }` )
 
 		const calResponse = await fetchWithTokenRefresh(
 			calUrl.toString(),
@@ -266,17 +268,24 @@ export async function fetchLiveAvailability(
 		)
 
 		if ( ! calResponse.ok ) {
-			console.error( `[LiveAvail] /inventory/rooms/calendar returned ${ calResponse.status }` )
+			const errBody = await calResponse.text().catch( () => '(unreadable)' )
+			console.error(
+				`[LiveAvail] /inventory/rooms/calendar returned ${ calResponse.status } — body: ${ errBody }`,
+			)
 			return null
 		}
 
 		const calData: unknown = await calResponse.json()
 
 		// ── Parse calendar ──────────────────────────────────────────────────
+		console.log( '[LiveAvail] Raw calendar response:', JSON.stringify( calData ).slice( 0, 500 ) )
 		const days = flattenCalendar( calData, numGuest )
 
 		if ( days.length === 0 ) {
-			console.warn( '[LiveAvail] Calendar parsed 0 days — check propertyId/roomId' )
+			console.warn(
+				'[LiveAvail] Calendar parsed 0 days — check propertyId/roomId. Raw data sample:',
+				JSON.stringify( calData ).slice( 0, 300 ),
+			)
 			return null
 		}
 
@@ -301,7 +310,7 @@ export async function fetchLiveAvailability(
 			availability,
 		}
 	} catch ( err ) {
-		console.error( '[LiveAvail] Unexpected error:', err )
+		console.error( '[LiveAvail] Unexpected error:', err instanceof Error ? err.message : err )
 		return null
 	}
 }
