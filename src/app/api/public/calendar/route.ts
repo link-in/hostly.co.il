@@ -162,6 +162,19 @@ export async function GET(request: NextRequest) {
     )
   }
 
+  if (result.availability.length === 0) {
+    return json(
+      {
+        roomId,
+        propertyId: result.propertyId,
+        cachedAt: result.cachedAt,
+        availability: [],
+        message: 'No pricing data configured for this room in the requested date range.',
+      },
+      200,
+    )
+  }
+
   // Update last_used_at in the background (non-blocking)
   supabase
     .from('api_keys')

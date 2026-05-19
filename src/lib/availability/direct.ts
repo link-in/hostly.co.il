@@ -283,10 +283,19 @@ export async function fetchLiveAvailability(
 
 		if ( days.length === 0 ) {
 			console.warn(
-				'[LiveAvail] Calendar parsed 0 days — check propertyId/roomId. Raw data sample:',
-				JSON.stringify( calData ).slice( 0, 300 ),
+				'[LiveAvail] Calendar has 0 pricing days for room',
+				roomId,
+				'— no pricing rules configured in Beds24 for this date range.',
 			)
-			return null
+			// Return an empty (but valid) availability response rather than null.
+			// An empty calendar means no dates are priced/open in Beds24,
+			// not that the request itself failed.
+			return {
+				roomId,
+				propertyId,
+				cachedAt: new Date().toISOString(),
+				availability: [],
+			}
 		}
 
 		// ── Fetch blocked dates (bookings) ──────────────────────────────────
