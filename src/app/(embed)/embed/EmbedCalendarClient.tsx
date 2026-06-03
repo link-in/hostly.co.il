@@ -31,6 +31,10 @@ type Props = {
   initialNumAdult?: number
   /** Pre-selected child count from search widget */
   initialNumChild?: number
+  /** When false, allow booking even if price could not be calculated (no-payment mode). */
+  requirePrice?: boolean
+  /** Room label from WordPress settings (fallback when property API has no name). */
+  initialRoomName?: string
 }
 
 const SKINS: Record<Skin, { from: string; to: string; mid?: string; light: string; text: string }> = {
@@ -79,7 +83,9 @@ const isSameDay    = (a: Date, b: Date) => a.getTime() === b.getTime()
 
 export default function EmbedCalendarClient({
   apiKey, roomId, baseUrl, wpUrl = '', skin = 'purple',
-  initialCheckIn, initialCheckOut, initialNumAdult, initialNumChild,
+  initialCheckIn, initialCheckOut, initialNumAdult,   initialNumChild,
+  requirePrice = true,
+  initialRoomName,
 }: Props) {
   const sk = SKINS[skin] ?? SKINS.purple
   const grad = `linear-gradient(135deg, ${sk.from} 0%, ${sk.mid ?? sk.to} ${sk.mid ? '50%,' : ''} ${sk.to} 100%)`
@@ -130,7 +136,14 @@ export default function EmbedCalendarClient({
   const [submitting, setSubmitting] = useState(false)
   const [bookingError, setBookingError]   = useState<string | null>(null)
   const [bookingSuccess, setBookingSuccess] = useState(false)
-  const [roomName, setRoomName] = useState<string | null>(null)
+  const [roomName, setRoomName] = useState<string | null>(() => {
+    const label = initialRoomName?.trim()
+    return label ? label : null
+  })
+
+  // Payment method selection
+  type PaymentMethod = 'cardcom' | 'bank_transfer' | 'cash'
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cardcom')
 
   // Payment flow
   const [paymentUrl, setPaymentUrl]         = useState<string | null>(null)
@@ -146,8 +159,11 @@ export default function EmbedCalendarClient({
     fetch(`${baseUrl}/api/public/property`, { headers: { 'x-api-key': apiKey } })
       .then(r => r.ok ? r.json() : null)
       .then(data => {
-        const found = data?.rooms?.find((r: { id: string; name: string }) => r.id === roomId)
-        if (found?.name) setRoomName(found.name)
+        const found = data?.rooms?.find(
+          (r: { id: string | number; name: string }) => String(r.id) === String(roomId),
+        )
+        const apiName = found?.name?.trim()
+        if (apiName) setRoomName(apiName)
       })
       .catch(() => null)
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -161,8 +177,21 @@ export default function EmbedCalendarClient({
       setLoading(true)
       setError(null)
       try {
-        const from     = toKey(startOfMonth(currentMonth))
-        const to       = toKey(endOfMonth(addMonths(currentMonth, 2)))
+        let fromDate = startOfMonth(currentMonth)
+        let toDate   = endOfMonth(addMonths(currentMonth, 2))
+
+        /* Always include the selected stay in the fetch window (search widget flow). */
+        if (checkIn) {
+          const ciMonth = startOfMonth(checkIn)
+          if (ciMonth < fromDate) fromDate = ciMonth
+        }
+        if (checkOut) {
+          const coMonthEnd = endOfMonth(checkOut)
+          if (coMonthEnd > toDate) toDate = coMonthEnd
+        }
+
+        const from     = toKey(fromDate)
+        const to       = toKey(toDate)
         const numGuest = Math.max(1, numAdult + numChild)
 
         const res = await fetch(
@@ -186,7 +215,7 @@ export default function EmbedCalendarClient({
 
     fetchData()
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentMonth, apiKey, roomId, baseUrl, numAdult, numChild])
+  }, [currentMonth, apiKey, roomId, baseUrl, numAdult, numChild, checkIn, checkOut])
 
 
   // ── Availability map ─────────────────────────────────────────────────────
@@ -260,6 +289,8 @@ export default function EmbedCalendarClient({
     return { nights: n, total: t }
   }, [checkIn, checkOut, availMap])
 
+  const canSubmitBooking = total > 0 || !requirePrice
+
   // ── Booking submission ───────────────────────────────────────────────────
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -288,6 +319,7 @@ export default function EmbedCalendarClient({
             checkIn: toKey(checkIn),
             checkOut: toKey(checkOut),
             total,
+            paymentMethod,
           }),
         })
       } else {
@@ -428,6 +460,7 @@ export default function EmbedCalendarClient({
 
         <div className="hc-summary-card" style={{ marginBottom: 18 }}>
           <div className="hc-summary-grid">
+            {roomName && <div style={{ gridColumn: '1 / -1' }}><strong>חדר:</strong> {roomName}</div>}
             <div><strong>כניסה:</strong> {checkIn?.toLocaleDateString('he-IL')}</div>
             <div><strong>יציאה:</strong> {checkOut?.toLocaleDateString('he-IL')}</div>
             <div className="hc-total"><strong>לתשלום:</strong> ₪{total.toLocaleString()}</div>
@@ -570,6 +603,16 @@ export default function EmbedCalendarClient({
 
         {/* Summary strip */}
         <div className="hcf-summary">
+          {roomName && (
+            <div className="hcf-summary__item hcf-summary__item--room">
+              <span className="hcf-summary__ico">{icons.star}</span>
+              <div>
+                <div className="hcf-summary__lbl">חדר</div>
+                <div className="hcf-summary__val">{roomName}</div>
+              </div>
+            </div>
+          )}
+          {roomName && <div className="hcf-summary__div" />}
           <div className="hcf-summary__item">
             <span className="hcf-summary__ico">{icons.calendar}</span>
             <div>
@@ -672,22 +715,50 @@ export default function EmbedCalendarClient({
             />
           </Field>
 
+          {/* ── Payment method tabs ── */}
+          <div className="hcf-section-title" style={{ marginTop: 16 }}>אמצעי תשלום</div>
+          <div className="hcf-payment-tabs" role="tablist">
+            {([
+              { id: 'cardcom',       icon: '💳', label: 'כרטיס אשראי' },
+              { id: 'bank_transfer', icon: '🏦', label: 'העברה בנקאית' },
+              { id: 'cash',          icon: '💵', label: 'מזומן' },
+            ] as { id: typeof paymentMethod; icon: string; label: string }[]).map(tab => (
+              <button
+                key={tab.id}
+                type="button"
+                role="tab"
+                aria-selected={paymentMethod === tab.id}
+                className={`hcf-payment-tab${paymentMethod === tab.id ? ' hcf-payment-tab--active' : ''}`}
+                onClick={() => setPaymentMethod(tab.id)}
+              >
+                <span className="hcf-payment-tab__icon">{tab.icon}</span>
+                <span>{tab.label}</span>
+              </button>
+            ))}
+          </div>
+
           {bookingError && (
             <div className="hcf-error-box">
               <span>⚠️</span> {bookingError}
             </div>
           )}
 
-          {!loading && total === 0 && (
+          {!loading && total === 0 && requirePrice && (
             <div className="hcf-error-box">
               <span>⚠️</span> לא ניתן לאחזר מחיר עבור התאריכים שנבחרו. אנא חזור ובחר תאריכים אחרים.
+            </div>
+          )}
+
+          {!loading && total === 0 && !requirePrice && (
+            <div className="hcf-info-box">
+              מחיר לא זמין — ההזמנה תאושר ללא חיוב מקוון.
             </div>
           )}
 
           <button
             type="submit"
             className={`hcf-submit ${(submitting || loading) ? 'hcf-submit--loading' : ''}`}
-            disabled={submitting || loading || total === 0}
+            disabled={submitting || loading || !canSubmitBooking}
             suppressHydrationWarning
           >
             <span suppressHydrationWarning>
@@ -695,7 +766,11 @@ export default function EmbedCalendarClient({
                 ? <><span className="hcf-spinner" /> מעבד הזמנה…</>
                 : loading
                   ? <><span className="hcf-spinner" /> מחשב מחיר…</>
-                  : <>אשר הזמנה — ₪{total.toLocaleString('he-IL')}</>
+                  : paymentMethod === 'cardcom' && requirePrice && total > 0
+                    ? <>המשך לתשלום — ₪{total.toLocaleString('he-IL')}</>
+                    : total > 0
+                      ? <>אשר הזמנה — ₪{total.toLocaleString('he-IL')}</>
+                      : <>אשר הזמנה</>
               }
             </span>
           </button>
@@ -814,6 +889,28 @@ export default function EmbedCalendarClient({
             padding: 14px 16px; color: #c62828; font-weight: 600; margin-bottom: 18px;
             display: flex; gap: 8px; align-items: flex-start;
           }
+          .hcf-info-box {
+            background: #f0f6fc; border: 2px solid #c3d9ed; border-radius: 12px;
+            padding: 14px 16px; color: #135e96; font-weight: 600; margin-bottom: 18px;
+          }
+
+          /* ── Payment tabs ── */
+          .hcf-payment-tabs {
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+            margin-bottom: 20px;
+          }
+          .hcf-payment-tab {
+            display: flex; flex-direction: column; align-items: center; gap: 5px;
+            padding: 12px 8px; border: 2px solid #e8e8e8; border-radius: 12px;
+            background: #fafafa; cursor: pointer; font-size: .82rem; font-weight: 600;
+            color: #666; transition: all .18s; line-height: 1.3;
+          }
+          .hcf-payment-tab:hover { border-color: var(--hc-text); color: var(--hc-text); background: var(--hc-light); }
+          .hcf-payment-tab--active {
+            border-color: var(--hc-text); background: var(--hc-light);
+            color: var(--hc-text); box-shadow: 0 2px 10px rgba(0,0,0,.08);
+          }
+          .hcf-payment-tab__icon { font-size: 1.4rem; line-height: 1; }
 
           /* ── Submit ── */
           .hcf-submit {

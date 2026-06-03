@@ -16,11 +16,13 @@ interface PageProps {
     checkOut?: string
     numAdult?: string
     numChild?: string
+    requirePrice?: string
+    roomName?: string
   }>
 }
 
 export default async function EmbedPage({ searchParams }: PageProps) {
-  const { apiKey, roomId, wpUrl, skin, checkIn, checkOut, numAdult, numChild } = await searchParams
+  const { apiKey, roomId, wpUrl, skin, checkIn, checkOut, numAdult, numChild, requirePrice, roomName } = await searchParams
 
   if (!apiKey || !roomId) {
     return (
@@ -49,6 +51,8 @@ export default async function EmbedPage({ searchParams }: PageProps) {
         initialCheckOut={checkOut}
         initialNumAdult={numAdult ? parseInt(numAdult, 10) : undefined}
         initialNumChild={numChild ? parseInt(numChild, 10) : undefined}
+        requirePrice={requirePrice !== '0'}
+        initialRoomName={roomName}
       />
     </div>
   )
