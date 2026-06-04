@@ -13,7 +13,7 @@ type CalendarPricingProps = {
   onPricesUpdated?: () => Promise<void> | void
 }
 
-const DEFAULT_PRICE = 650
+const DEFAULT_PRICE = undefined
 
 const startOfMonth = (date: Date) => new Date(date.getFullYear(), date.getMonth(), 1)
 const endOfMonth = (date: Date) => new Date(date.getFullYear(), date.getMonth() + 1, 0)
@@ -625,6 +625,7 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated }: CalendarPric
                 const isBlocked = numAvail === 0 && !isBooked
                 const isSelected = selectedDates.some((item) => isSameDay(item, date))
                 const price = priceOverrides[key] ?? priceMap[key] ?? DEFAULT_PRICE
+                const hasPrice = price !== undefined
                 const isToday = key === todayKey
                 const showTodayHighlight = isToday && !isSelected && !isBlocked
                 const isBookingStart = isBooked && !isBookedOn(bookingMap, addDays(date, -1))
@@ -698,8 +699,8 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated }: CalendarPric
                         חסום
                       </span>
                     ) : null}
-                    <div className="small mt-1" style={{ color: isBlocked ? 'rgba(255, 152, 0, 0.7)' : 'rgba(249, 147, 251, 0.8)' }}>
-                      {isBlocked ? 'לא זמין' : formatCurrency(price)}
+                    <div className="small mt-1" style={{ color: isBlocked ? 'rgba(255, 152, 0, 0.7)' : hasPrice ? 'rgba(249, 147, 251, 0.8)' : 'rgba(255,255,255,0.25)' }}>
+                      {isBlocked ? 'לא זמין' : hasPrice ? formatCurrency(price) : '—'}
                     </div>
                   </button>
                 )

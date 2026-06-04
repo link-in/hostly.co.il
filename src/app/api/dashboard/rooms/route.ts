@@ -27,7 +27,7 @@ const buildDefaultRange = () => {
   const start = new Date()
   start.setHours(0, 0, 0, 0)
   const end = new Date(start)
-  end.setMonth(end.getMonth() + 3) // Get 3 months ahead instead of 1
+  end.setFullYear(end.getFullYear() + 1) // 12 months ahead — covers all visible calendar cells
   const toDateString = (value: Date) => value.toISOString().slice(0, 10)
   return {
     startDate: toDateString(start),
