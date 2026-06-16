@@ -35,6 +35,8 @@ type Props = {
   requirePrice?: boolean
   /** Room label from WordPress settings (fallback when property API has no name). */
   initialRoomName?: string
+  /** When true, pre-fills the form with test data — for local development only. */
+  debugFill?: boolean
 }
 
 const SKINS: Record<Skin, { from: string; to: string; mid?: string; light: string; text: string }> = {
@@ -78,6 +80,64 @@ const endOfMonth   = (d: Date) => new Date(d.getFullYear(), d.getMonth() + 1, 0)
 const isSameDay    = (a: Date, b: Date) => a.getTime() === b.getTime()
 
 // ---------------------------------------------------------------------------
+// Form helpers — defined outside component to prevent focus loss on re-render
+// ---------------------------------------------------------------------------
+
+const isValidEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)
+const isValidPhone = (v: string) => /^0\d{8,9}$/.test(v.replace(/[\s-]/g, ''))
+
+const _S = { fill: 'none', stroke: 'currentColor', strokeWidth: '1.5', strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const }
+const FormSvg = ({ children }: { children: React.ReactNode }) => (
+  <svg width="17" height="17" viewBox="0 0 20 20" aria-hidden="true" {..._S}>{children}</svg>
+)
+
+const formIcons = {
+  calendar: <FormSvg><rect x="3" y="4" width="14" height="14" rx="2"/><path d="M3 9h14M7 2v4M13 2v4"/></FormSvg>,
+  moon:     <FormSvg><path d="M17 13A7 7 0 0 1 7 3a7 7 0 1 0 10 10z"/></FormSvg>,
+  person:   <FormSvg><circle cx="10" cy="7" r="3"/><path d="M4 18a6 6 0 0 1 12 0"/></FormSvg>,
+  email:    <FormSvg><rect x="2" y="5" width="16" height="12" rx="2"/><path d="m2 7 8 5 8-5"/></FormSvg>,
+  phone:    <FormSvg><path d="M6.5 2h3l1 4-2 1.5a10 10 0 0 0 4 4L14 9.5l4 1V14a2 2 0 0 1-2 2A16 16 0 0 1 2 6a2 2 0 0 1 2-2z"/></FormSvg>,
+  notes:    <FormSvg><path d="M6 2h8a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/><path d="M7 7h6M7 10h6M7 13h4"/></FormSvg>,
+  adults:   <FormSvg><circle cx="8" cy="7" r="3"/><path d="M2 18a6 6 0 0 1 12 0"/><circle cx="15" cy="7" r="2.5"/><path d="M13 18a4 4 0 0 1 6 0"/></FormSvg>,
+  children: <FormSvg><circle cx="10" cy="7" r="3"/><path d="M5 18c0-3 2-5 5-5s5 2 5 5"/><path d="M13.5 3.5a2 2 0 0 1 0 3"/></FormSvg>,
+  shield:   <FormSvg><path d="M10 2 L17 5 V9 C17 13.5 13.5 17 10 18 C6.5 17 3 13.5 3 9 V5 Z"/><path d="M7 10l2 2 4-4"/></FormSvg>,
+  arrow:    <FormSvg><path d="M4 10h12"/><path d="m12 6 4 4-4 4"/></FormSvg>,
+  star:     <FormSvg><path d="M10 2l2.4 4.9 5.4.8-3.9 3.8.9 5.4L10 14.2l-4.8 2.7.9-5.4L2.2 7.7l5.4-.8z"/></FormSvg>,
+}
+
+const Field = ({
+  label, icon, children, valid, touched,
+}: { label: string; icon: React.ReactNode; children: React.ReactNode; valid?: boolean; touched?: boolean }) => (
+  <div className="hcf-field">
+    <label className="hcf-label">
+      <span className="hcf-icon">{icon}</span>
+      {label}
+      {touched && valid !== undefined && (
+        <span className={`hcf-badge ${valid ? 'hcf-badge--ok' : 'hcf-badge--err'}`}>
+          {valid ? '✓' : '✗'}
+        </span>
+      )}
+    </label>
+    {children}
+  </div>
+)
+
+const Counter = ({ label, icon, value, min, max, onChange }: {
+  label: string; icon: React.ReactNode; value: number; min: number; max: number; onChange: (n: number) => void
+}) => (
+  <div className="hcf-counter">
+    <div className="hcf-counter__label">
+      <span style={{ display:'flex', alignItems:'center' }}>{icon}</span> {label}
+    </div>
+    <div className="hcf-counter__ctrl">
+      <button type="button" className="hcf-counter__btn" onClick={() => onChange(Math.max(min, value - 1))} disabled={value <= min}>−</button>
+      <span className="hcf-counter__val">{value}</span>
+      <button type="button" className="hcf-counter__btn" onClick={() => onChange(Math.min(max, value + 1))} disabled={value >= max}>+</button>
+    </div>
+  </div>
+)
+
+// ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
@@ -86,6 +146,7 @@ export default function EmbedCalendarClient({
   initialCheckIn, initialCheckOut, initialNumAdult,   initialNumChild,
   requirePrice = true,
   initialRoomName,
+  debugFill = false,
 }: Props) {
   const sk = SKINS[skin] ?? SKINS.purple
   const grad = `linear-gradient(135deg, ${sk.from} 0%, ${sk.mid ?? sk.to} ${sk.mid ? '50%,' : ''} ${sk.to} 100%)`
@@ -125,14 +186,13 @@ export default function EmbedCalendarClient({
   // skip the calendar entirely and open the booking form immediately.
   const hasPrefilled = !!(initialCheckIn && initialCheckOut)
   const [showForm, setShowForm]     = useState(hasPrefilled)
-  // TODO: remove dev prefill before production
-  const [firstName, setFirstName]   = useState('ישראל')
-  const [lastName, setLastName]     = useState('ישראלי')
-  const [email, setEmail]           = useState('test@hostly.co.il')
-  const [phone, setPhone]           = useState('0501234567')
+  const [firstName, setFirstName]   = useState(() => debugFill ? 'ישראל'          : '')
+  const [lastName, setLastName]     = useState(() => debugFill ? 'ישראלי'         : '')
+  const [email, setEmail]           = useState(() => debugFill ? 'test@hostly.co.il' : '')
+  const [phone, setPhone]           = useState(() => debugFill ? '0501234567'     : '')
   const [numAdult, setNumAdult]     = useState(() => initialNumAdult ?? 2)
   const [numChild, setNumChild]     = useState(() => initialNumChild ?? 0)
-  const [notes, setNotes]           = useState('הזמנת בדיקה — פיתוח')
+  const [notes, setNotes]           = useState(() => debugFill ? 'הזמנת בדיקה — פיתוח' : '')
   const [submitting, setSubmitting] = useState(false)
   const [bookingError, setBookingError]   = useState<string | null>(null)
   const [bookingSuccess, setBookingSuccess] = useState(false)
@@ -383,7 +443,9 @@ export default function EmbedCalendarClient({
 
     const poll = async () => {
       try {
-        const res = await fetch(`${wpUrl}/booking-status?bookingId=${paymentBookingId}`)
+        const statusUrl = new URL(`${wpUrl}/booking-status`)
+        statusUrl.searchParams.set('bookingId', paymentBookingId)
+        const res = await fetch(statusUrl.toString())
         if (res.status === 202) return  // still pending
         if (!res.ok) return
         const data = await res.json()
@@ -525,59 +587,7 @@ export default function EmbedCalendarClient({
   // ── Render: booking form ─────────────────────────────────────────────────
 
   if (showForm) {
-    const isValidEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)
-    const isValidPhone = (v: string) => /^0\d{8,9}$/.test(v.replace(/[\s-]/g, ''))
-
-    // Luxury SVG icon set — 20×20 viewBox, stroke-based thin lines
-    const S = { fill: 'none', stroke: 'currentColor', strokeWidth: '1.5', strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const }
-    const Svg = ({ children }: { children: React.ReactNode }) => (
-      <svg width="17" height="17" viewBox="0 0 20 20" aria-hidden="true" {...S}>{children}</svg>
-    )
-    const icons = {
-      calendar: <Svg><rect x="3" y="4" width="14" height="14" rx="2"/><path d="M3 9h14M7 2v4M13 2v4"/></Svg>,
-      moon:     <Svg><path d="M17 13A7 7 0 0 1 7 3a7 7 0 1 0 10 10z"/></Svg>,
-      person:   <Svg><circle cx="10" cy="7" r="3"/><path d="M4 18a6 6 0 0 1 12 0"/></Svg>,
-      email:    <Svg><rect x="2" y="5" width="16" height="12" rx="2"/><path d="m2 7 8 5 8-5"/></Svg>,
-      phone:    <Svg><path d="M6.5 2h3l1 4-2 1.5a10 10 0 0 0 4 4L14 9.5l4 1V14a2 2 0 0 1-2 2A16 16 0 0 1 2 6a2 2 0 0 1 2-2z"/></Svg>,
-      notes:    <Svg><path d="M6 2h8a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/><path d="M7 7h6M7 10h6M7 13h4"/></Svg>,
-      adults:   <Svg><circle cx="8" cy="7" r="3"/><path d="M2 18a6 6 0 0 1 12 0"/><circle cx="15" cy="7" r="2.5"/><path d="M13 18a4 4 0 0 1 6 0"/></Svg>,
-      children: <Svg><circle cx="10" cy="7" r="3"/><path d="M5 18c0-3 2-5 5-5s5 2 5 5"/><path d="M13.5 3.5a2 2 0 0 1 0 3"/></Svg>,
-      shield:   <Svg><path d="M10 2 L17 5 V9 C17 13.5 13.5 17 10 18 C6.5 17 3 13.5 3 9 V5 Z"/><path d="M7 10l2 2 4-4"/></Svg>,
-      arrow:    <Svg><path d="M4 10h12"/><path d="m12 6 4 4-4 4"/></Svg>,
-      star:     <Svg><path d="M10 2l2.4 4.9 5.4.8-3.9 3.8.9 5.4L10 14.2l-4.8 2.7.9-5.4L2.2 7.7l5.4-.8z"/></Svg>,
-    }
-
-    const Field = ({
-      label, icon, children, valid, touched,
-    }: { label: string; icon: React.ReactNode; children: React.ReactNode; valid?: boolean; touched?: boolean }) => (
-      <div className="hcf-field">
-        <label className="hcf-label">
-          <span className="hcf-icon">{icon}</span>
-          {label}
-          {touched && valid  !== undefined && (
-            <span className={`hcf-badge ${valid ? 'hcf-badge--ok' : 'hcf-badge--err'}`}>
-              {valid ? '✓' : '✗'}
-            </span>
-          )}
-        </label>
-        {children}
-      </div>
-    )
-
-    const Counter = ({ label, icon, value, min, max, onChange }: {
-      label: string; icon: React.ReactNode; value: number; min: number; max: number; onChange: (n: number) => void
-    }) => (
-      <div className="hcf-counter">
-        <div className="hcf-counter__label">
-          <span style={{ display:'flex', alignItems:'center' }}>{icon}</span> {label}
-        </div>
-        <div className="hcf-counter__ctrl">
-          <button type="button" className="hcf-counter__btn" onClick={() => onChange(Math.max(min, value - 1))} disabled={value <= min}>−</button>
-          <span className="hcf-counter__val">{value}</span>
-          <button type="button" className="hcf-counter__btn" onClick={() => onChange(Math.min(max, value + 1))} disabled={value >= max}>+</button>
-        </div>
-      </div>
-    )
+    const icons = formIcons
 
     return (
       <div className="hc-wrap hcf-wrap" style={{ direction: 'rtl' }}>
@@ -715,27 +725,31 @@ export default function EmbedCalendarClient({
             />
           </Field>
 
-          {/* ── Payment method tabs ── */}
-          <div className="hcf-section-title" style={{ marginTop: 16 }}>אמצעי תשלום</div>
-          <div className="hcf-payment-tabs" role="tablist">
-            {([
-              { id: 'cardcom',       icon: '💳', label: 'כרטיס אשראי' },
-              { id: 'bank_transfer', icon: '🏦', label: 'העברה בנקאית' },
-              { id: 'cash',          icon: '💵', label: 'מזומן' },
-            ] as { id: typeof paymentMethod; icon: string; label: string }[]).map(tab => (
-              <button
-                key={tab.id}
-                type="button"
-                role="tab"
-                aria-selected={paymentMethod === tab.id}
-                className={`hcf-payment-tab${paymentMethod === tab.id ? ' hcf-payment-tab--active' : ''}`}
-                onClick={() => setPaymentMethod(tab.id)}
-              >
-                <span className="hcf-payment-tab__icon">{tab.icon}</span>
-                <span>{tab.label}</span>
-              </button>
-            ))}
-          </div>
+          {/* ── Payment method tabs — only when payment processing is active ── */}
+          {requirePrice && (
+            <>
+              <div className="hcf-section-title" style={{ marginTop: 16 }}>אמצעי תשלום</div>
+              <div className="hcf-payment-tabs" role="tablist">
+                {([
+                  { id: 'cardcom',       icon: '💳', label: 'כרטיס אשראי' },
+                  { id: 'bank_transfer', icon: '🏦', label: 'העברה בנקאית' },
+                  { id: 'cash',          icon: '💵', label: 'מזומן' },
+                ] as { id: typeof paymentMethod; icon: string; label: string }[]).map(tab => (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    role="tab"
+                    aria-selected={paymentMethod === tab.id}
+                    className={`hcf-payment-tab${paymentMethod === tab.id ? ' hcf-payment-tab--active' : ''}`}
+                    onClick={() => setPaymentMethod(tab.id)}
+                  >
+                    <span className="hcf-payment-tab__icon">{tab.icon}</span>
+                    <span>{tab.label}</span>
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
 
           {bookingError && (
             <div className="hcf-error-box">
@@ -766,9 +780,9 @@ export default function EmbedCalendarClient({
                 ? <><span className="hcf-spinner" /> מעבד הזמנה…</>
                 : loading
                   ? <><span className="hcf-spinner" /> מחשב מחיר…</>
-                  : paymentMethod === 'cardcom' && requirePrice && total > 0
+                  : requirePrice && paymentMethod === 'cardcom' && total > 0
                     ? <>המשך לתשלום — ₪{total.toLocaleString('he-IL')}</>
-                    : total > 0
+                    : requirePrice && total > 0
                       ? <>אשר הזמנה — ₪{total.toLocaleString('he-IL')}</>
                       : <>אשר הזמנה</>
               }
