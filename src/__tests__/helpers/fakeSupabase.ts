@@ -1,8 +1,8 @@
 /**
  * Minimal in-memory fake of the subset of the Supabase JS query builder used
- * by `src/lib/availability/blocking.ts` and `src/lib/availability/cache.ts`:
- * `.from(table).select().eq().eq().in()`, `.update().eq().eq().in()`, and
- * `.upsert(rows, { onConflict, ignoreDuplicates })`.
+ * across the codebase: `.from(table).select().eq().eq().in().gte().lte()`,
+ * `.order()`, `.limit()`, `.single()`/`.maybeSingle()`, `.update().eq().eq().in()`,
+ * and `.upsert(rows, { onConflict, ignoreDuplicates })`.
  *
  * This is NOT a full reimplementation of PostgREST — it only supports the
  * exact call shapes this codebase uses, which keeps it easy to reason about
@@ -16,14 +16,25 @@ interface UpsertOptions {
   ignoreDuplicates?: boolean
 }
 
-type Mode = 'select' | 'update' | 'upsert'
+interface OrderOptions {
+  ascending?: boolean
+}
 
-class FakeQueryBuilder implements PromiseLike<{ data: FakeRow[] | null; error: null }> {
+type Mode = 'select' | 'update' | 'upsert'
+type SingleMode = 'none' | 'single' | 'maybeSingle'
+
+type FakeResult = { data: FakeRow | FakeRow[] | null; error: { code?: string; message: string } | null }
+
+class FakeQueryBuilder implements PromiseLike<FakeResult> {
   private filters: Array<(row: FakeRow) => boolean> = []
   private mode: Mode = 'select'
   private updatePatch: FakeRow = {}
   private upsertRows: FakeRow[] = []
   private upsertOpts: UpsertOptions = {}
+  private orderKey: string | null = null
+  private orderAscending = true
+  private limitCount: number | null = null
+  private singleMode: SingleMode = 'none'
 
   constructor(private rows: FakeRow[]) {}
 
@@ -39,6 +50,37 @@ class FakeQueryBuilder implements PromiseLike<{ data: FakeRow[] | null; error: n
 
   in(key: string, values: unknown[]): this {
     this.filters.push((row) => values.includes(row[key]))
+    return this
+  }
+
+  gte(key: string, value: unknown): this {
+    this.filters.push((row) => (row[key] as string | number) >= (value as string | number))
+    return this
+  }
+
+  lte(key: string, value: unknown): this {
+    this.filters.push((row) => (row[key] as string | number) <= (value as string | number))
+    return this
+  }
+
+  order(key: string, opts?: OrderOptions): this {
+    this.orderKey = key
+    this.orderAscending = opts?.ascending ?? true
+    return this
+  }
+
+  limit(count: number): this {
+    this.limitCount = count
+    return this
+  }
+
+  single(): this {
+    this.singleMode = 'single'
+    return this
+  }
+
+  maybeSingle(): this {
+    this.singleMode = 'maybeSingle'
     return this
   }
 
@@ -59,7 +101,25 @@ class FakeQueryBuilder implements PromiseLike<{ data: FakeRow[] | null; error: n
     return (this.upsertOpts.onConflict ?? 'id').split(',').map((k) => k.trim())
   }
 
-  private execute(): { data: FakeRow[] | null; error: null } {
+  private applyOrderAndLimit(rows: FakeRow[]): FakeRow[] {
+    let result = rows
+    if (this.orderKey) {
+      const key = this.orderKey
+      result = [...result].sort((a, b) => {
+        const av = a[key] as string | number
+        const bv = b[key] as string | number
+        if (av < bv) return this.orderAscending ? -1 : 1
+        if (av > bv) return this.orderAscending ? 1 : -1
+        return 0
+      })
+    }
+    if (this.limitCount !== null) {
+      result = result.slice(0, this.limitCount)
+    }
+    return result
+  }
+
+  private execute(): FakeResult {
     if (this.mode === 'upsert') {
       const keys = this.conflictKeys()
       for (const incoming of this.upsertRows) {
@@ -75,19 +135,33 @@ class FakeQueryBuilder implements PromiseLike<{ data: FakeRow[] | null; error: n
       return { data: this.upsertRows, error: null }
     }
 
-    const matched = this.rows.filter((row) => this.filters.every((f) => f(row)))
+    let matched = this.rows.filter((row) => this.filters.every((f) => f(row)))
 
     if (this.mode === 'update') {
       matched.forEach((row) => Object.assign(row, this.updatePatch))
       return { data: matched, error: null }
     }
 
+    matched = this.applyOrderAndLimit(matched)
+
+    if (this.singleMode === 'single') {
+      if (matched.length === 1) return { data: matched[0], error: null }
+      return {
+        data: null,
+        error: { code: 'PGRST116', message: `Expected 1 row, got ${matched.length}` },
+      }
+    }
+
+    if (this.singleMode === 'maybeSingle') {
+      return { data: matched[0] ?? null, error: null }
+    }
+
     return { data: matched, error: null }
   }
 
   // Makes the builder awaitable, matching supabase-js's thenable query builders.
-  then<TResult1 = { data: FakeRow[] | null; error: null }, TResult2 = never>(
-    onfulfilled?: ((value: { data: FakeRow[] | null; error: null }) => TResult1 | PromiseLike<TResult1>) | null,
+  then<TResult1 = FakeResult, TResult2 = never>(
+    onfulfilled?: ((value: FakeResult) => TResult1 | PromiseLike<TResult1>) | null,
     onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null,
   ): PromiseLike<TResult1 | TResult2> {
     return Promise.resolve(this.execute()).then(onfulfilled, onrejected)

@@ -6,6 +6,8 @@
  * - flattenCalendarData (internal helper, tested via mock)
  * - getAvailability response shape
  * - Public calendar route validation logic
+ * - Public calendar cache-freshness (cache-first) decision logic
+ * - Webhook cache refresh — per-user vs. global Beds24 token resolution
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
@@ -158,5 +160,78 @@ describe('Webhook — cache refresh trigger conditions', () => {
     const status = 'cancelled'
     const validStatuses = ['confirmed', 'new', '1']
     expect(validStatuses.includes(status.toLowerCase())).toBe(false)
+  })
+})
+
+// ─── Public Calendar API — cache-freshness (cache-first) decision ────────────
+
+describe('Public Calendar API — cache freshness decision', () => {
+  const CACHE_FRESHNESS_MS = 30 * 60 * 1000
+
+  function isCacheFresh(cachedAt: string | null, now: number): boolean {
+    if (!cachedAt) return false
+    const ageMs = now - new Date(cachedAt).getTime()
+    return ageMs <= CACHE_FRESHNESS_MS
+  }
+
+  it('treats a cache row written seconds ago as fresh', () => {
+    const now = Date.parse('2026-05-07T10:30:00Z')
+    const cachedAt = '2026-05-07T10:29:00Z' // 1 minute old
+    expect(isCacheFresh(cachedAt, now)).toBe(true)
+  })
+
+  it('treats a cache row right at the freshness boundary as fresh', () => {
+    const now = Date.parse('2026-05-07T10:30:00Z')
+    const cachedAt = '2026-05-07T10:00:00Z' // exactly 30 minutes old
+    expect(isCacheFresh(cachedAt, now)).toBe(true)
+  })
+
+  it('treats a cache row older than the freshness window as stale', () => {
+    const now = Date.parse('2026-05-07T10:30:01Z')
+    const cachedAt = '2026-05-07T10:00:00Z' // 30 minutes + 1 second old
+    expect(isCacheFresh(cachedAt, now)).toBe(false)
+  })
+
+  it('treats a missing cache entry as stale (forces live fetch)', () => {
+    const now = Date.parse('2026-05-07T10:30:00Z')
+    expect(isCacheFresh(null, now)).toBe(false)
+  })
+})
+
+// ─── Webhook cache refresh — Beds24 token resolution ─────────────────────────
+
+describe('Webhook — Beds24 token resolution (user-specific vs. global)', () => {
+  function resolveTokens(
+    userTokens: { accessToken: string | null; refreshToken: string | null },
+    envAccessToken: string | undefined,
+    envRefreshToken: string | undefined,
+  ): { accessToken?: string; refreshToken?: string } {
+    const accessToken = userTokens.accessToken || envAccessToken
+    const refreshToken = userTokens.refreshToken || envRefreshToken
+    return { accessToken, refreshToken }
+  }
+
+  it('prefers the specific user tokens when present', () => {
+    const result = resolveTokens(
+      { accessToken: 'user-access', refreshToken: 'user-refresh' },
+      'env-access',
+      'env-refresh',
+    )
+    expect(result).toEqual({ accessToken: 'user-access', refreshToken: 'user-refresh' })
+  })
+
+  it('falls back to global env tokens when the user has none configured', () => {
+    const result = resolveTokens(
+      { accessToken: null, refreshToken: null },
+      'env-access',
+      'env-refresh',
+    )
+    expect(result).toEqual({ accessToken: 'env-access', refreshToken: 'env-refresh' })
+  })
+
+  it('yields undefined tokens when neither user nor env tokens exist', () => {
+    const result = resolveTokens({ accessToken: null, refreshToken: null }, undefined, undefined)
+    expect(result.accessToken).toBeUndefined()
+    expect(result.refreshToken).toBeUndefined()
   })
 })

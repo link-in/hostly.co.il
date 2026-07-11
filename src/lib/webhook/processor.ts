@@ -4,7 +4,7 @@
  */
 
 import { isDuplicateNotification, insertNotification, updateNotificationStatus } from '@/lib/db/notifications'
-import { getUserIdByPropertyRoom, getOwnerInfoByPropertyRoom } from '@/lib/db/users'
+import { getUserIdByPropertyRoom, getOwnerInfoByPropertyRoom, getUserBeds24Tokens } from '@/lib/db/users'
 import { addOrUpdateCustomer } from '@/lib/customers/addOrUpdateCustomer'
 import { refreshRoomCache } from '@/lib/availability/cache'
 import { sendWhatsAppMessage } from '@/lib/whatsapp'
@@ -57,7 +57,7 @@ export async function processWebhook(webhookData: Beds24WebhookWrapper): Promise
   const userId = await getUserIdByPropertyRoom(booking.propertyId, booking.roomId)
 
   await maybeSaveCustomer(userId, guestName, guestPhone, guestEmail, booking)
-  maybeRefreshCache(userId, booking)
+  maybeRefreshCache(userId, booking).catch((e) => console.error('[Cache] refresh failed:', e))
 
   const ownerInfo = await getOwnerInfoByPropertyRoom(booking.propertyId, booking.roomId)
   const guestResult = await sendGuestNotification(guestPhone, guestName, ownerInfo.roomName, booking.arrival)
@@ -96,21 +96,28 @@ async function maybeSaveCustomer(
   }
 }
 
-function maybeRefreshCache(userId: string | null, booking: Beds24Booking): void {
+/**
+ * Refreshes the availability cache for the room affected by this booking.
+ * Prefers the specific user's own Beds24 tokens (required in multi-tenant
+ * setups where each owner has a separate Beds24 account) and falls back to
+ * the global env tokens only when the user has none configured.
+ */
+async function maybeRefreshCache(userId: string | null, booking: Beds24Booking): Promise<void> {
   if (!userId) return
-  const accessToken = process.env.BEDS24_TOKEN
-  const refreshToken = process.env.BEDS24_REFRESH_TOKEN
+
+  const userTokens = await getUserBeds24Tokens(userId)
+  const accessToken = userTokens.accessToken || process.env.BEDS24_TOKEN
+  const refreshToken = userTokens.refreshToken || process.env.BEDS24_REFRESH_TOKEN
   if (!accessToken || !refreshToken) return
 
-  refreshRoomCache(
+  const r = await refreshRoomCache(
     userId,
     String(booking.propertyId),
     String(booking.roomId),
     accessToken,
     refreshToken,
   )
-    .then((r) => console.log(`[Cache] refreshed ${r.upserted} rows for room ${booking.roomId}`))
-    .catch((e) => console.error('[Cache] refresh failed:', e))
+  console.log(`[Cache] refreshed ${r.upserted} rows for room ${booking.roomId}`)
 }
 
 async function sendGuestNotification(

@@ -12,6 +12,11 @@ export interface OwnerInfo {
   roomName: string | null
 }
 
+export interface UserBeds24Tokens {
+  accessToken: string | null
+  refreshToken: string | null
+}
+
 /** Find a user's UUID given the Beds24 propertyId + roomId from a booking. */
 export async function getUserIdByPropertyRoom(
   propertyId: number | string,
@@ -35,6 +40,31 @@ export async function getUserIdByPropertyRoom(
   } catch (err) {
     console.error('getUserIdByPropertyRoom error:', err)
     return null
+  }
+}
+
+/** Fetch a specific user's own Beds24 tokens (multi-tenant — never use env tokens for this). */
+export async function getUserBeds24Tokens(userId: string): Promise<UserBeds24Tokens> {
+  try {
+    const supabase = createServerClient()
+    const { data, error } = await supabase
+      .from('users')
+      .select('beds24_token, beds24_refresh_token')
+      .eq('id', userId)
+      .single()
+
+    if (error || !data) {
+      console.warn(`⚠️ No Beds24 tokens found for user ${userId}`)
+      return { accessToken: null, refreshToken: null }
+    }
+
+    return {
+      accessToken: data.beds24_token ?? null,
+      refreshToken: data.beds24_refresh_token ?? null,
+    }
+  } catch (err) {
+    console.error('getUserBeds24Tokens error:', err)
+    return { accessToken: null, refreshToken: null }
   }
 }
 

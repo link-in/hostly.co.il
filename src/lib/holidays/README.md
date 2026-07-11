@@ -1,6 +1,6 @@
 # Hebrew Holidays Integration
 
-תכונה זו מציגה חגים יהודיים בלוח השנה של הדשבורד וב-BookingCalendar.
+תכונה זו מציגה חגים יהודיים בלוח השנה של הדשבורד.
 
 ## רכיבים
 
@@ -38,7 +38,6 @@ const { holidays, loading, error } = useHolidays(currentMonth)
 
 הרכיב כבר משולב ב:
 1. **CalendarPricing** (`src/app/dashboard/components/CalendarPricing.tsx`)
-2. **BookingCalendar** (`src/app/sites/components/BookingCalendar.tsx`)
 
 ### דוגמת שימוש
 

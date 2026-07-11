@@ -1,9 +1,8 @@
 /**
  * Public Calendar API
  *
- * Returns live availability & pricing for a room directly from Beds24,
- * intended for embedding in customer websites.
- * Authenticated via API Key (x-api-key header).
+ * Returns availability & pricing for a room, intended for embedding in
+ * customer websites. Authenticated via API Key (x-api-key header).
  *
  * GET /api/public/calendar?roomId=<id>&from=YYYY-MM-DD&to=YYYY-MM-DD[&numGuest=N]
  *
@@ -11,12 +10,14 @@
  *   1. Validate API key exists and is active          → 401 if not
  *   2. Verify user subscription is active/trial       → 403 subscription_inactive
  *   3. Verify roomId is in the key's allowed_room_ids → 403 room_not_allowed
- *   4. Fetch live data directly from Beds24
+ *   4. Serve from `availability_cache` when fresh (< CACHE_FRESHNESS_MS old);
+ *      otherwise fetch live from Beds24 and warm the cache in the background.
  */
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceRoleClient } from '@/lib/supabase/server'
 import { fetchLiveAvailability } from '@/lib/availability/direct'
+import { getAvailability, refreshRoomCache } from '@/lib/availability/cache'
 
 export const dynamic = 'force-dynamic'
 
@@ -29,6 +30,9 @@ const CORS_HEADERS = {
 
 // Max range a caller can request in one call
 const MAX_DAYS = 365
+
+// How long a cached row is considered fresh enough to serve without hitting Beds24
+const CACHE_FRESHNESS_MS = 30 * 60 * 1000
 
 // Subscription statuses that grant API access
 const ACTIVE_STATUSES = new Set(['active', 'trial'])
@@ -140,17 +144,30 @@ export async function GET(request: NextRequest) {
     return json( { error: 'beds24_not_configured', message: 'Beds24 token not set for this account.' }, 503 )
   }
 
-  // ── Step 5: Fetch live from Beds24 ────────────────────────────────────────
-  const result = await fetchLiveAvailability( {
-    userId,
-    propertyId,
-    roomId,
-    from: resolvedFrom,
-    to: resolvedTo,
-    accessToken,
-    refreshToken,
-    numGuest,
-  } )
+  // ── Step 5: Serve from cache when fresh, otherwise fetch live ─────────────
+  const cached = await getAvailability(userId, roomId, resolvedFrom, resolvedTo, numGuest)
+  const cacheAgeMs = cached ? Date.now() - new Date(cached.cachedAt).getTime() : Infinity
+  const cacheIsFresh = !!cached && cacheAgeMs <= CACHE_FRESHNESS_MS
+
+  let result = cacheIsFresh ? cached : null
+
+  if (!result) {
+    result = await fetchLiveAvailability( {
+      userId,
+      propertyId,
+      roomId,
+      from: resolvedFrom,
+      to: resolvedTo,
+      accessToken,
+      refreshToken,
+      numGuest,
+    } )
+
+    // Warm the cache in the background for the next request; failures are
+    // logged but never block or fail the current response.
+    refreshRoomCache(userId, propertyId, roomId, accessToken, refreshToken)
+      .catch((err) => console.error('[public/calendar] background cache refresh failed:', err))
+  }
 
   if (!result) {
     return json(
