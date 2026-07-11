@@ -6,6 +6,7 @@ import { useHolidays } from '@/hooks/useHolidays'
 import HolidayIndicator from '@/components/HolidayIndicator'
 import { useSelectedRoom } from '@/lib/rooms/RoomContext'
 import { toast } from 'sonner'
+import { normalizeDate, toKey, isSameDay, addDays, buildDateRanges } from '@/lib/dashboard/calendarDates'
 
 type CalendarPricingProps = {
   reservations: Reservation[]
@@ -18,63 +19,11 @@ const DEFAULT_PRICE = undefined
 const startOfMonth = (date: Date) => new Date(date.getFullYear(), date.getMonth(), 1)
 const endOfMonth = (date: Date) => new Date(date.getFullYear(), date.getMonth() + 1, 0)
 
-const normalizeDate = (value: Date) => {
-  const normalized = new Date(value)
-  normalized.setHours(0, 0, 0, 0)
-  return normalized
-}
-
-const toKey = (value: Date) => {
-  const year = value.getFullYear()
-  const month = String(value.getMonth() + 1).padStart(2, '0')
-  const day = String(value.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
-}
-
-const isSameDay = (a: Date, b: Date) => a.getTime() === b.getTime()
-
-const addDays = (date: Date, days: number) => {
-  const copy = new Date(date)
-  copy.setDate(copy.getDate() + days)
-  return copy
-}
-
 const addMonths = (date: Date, months: number) => {
   const copy = new Date(date)
   copy.setDate(1)
   copy.setMonth(copy.getMonth() + months)
   return copy
-}
-
-const sortDates = (dates: Date[]) => {
-  return [...dates].sort((a, b) => a.getTime() - b.getTime())
-}
-
-const buildDateRanges = (dates: Date[]) => {
-  const sorted = sortDates(dates)
-  if (!sorted.length) {
-    return []
-  }
-
-  const ranges: { from: string; to: string }[] = []
-  let rangeStart = sorted[0]
-  let prev = sorted[0]
-
-  for (let i = 1; i < sorted.length; i += 1) {
-    const current = sorted[i]
-    const expected = addDays(prev, 1)
-    if (isSameDay(current, expected)) {
-      prev = current
-      continue
-    }
-
-    ranges.push({ from: toKey(rangeStart), to: toKey(prev) })
-    rangeStart = current
-    prev = current
-  }
-
-  ranges.push({ from: toKey(rangeStart), to: toKey(prev) })
-  return ranges
 }
 
 const buildBookingMap = (reservations: Reservation[]) => {
@@ -181,12 +130,15 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated }: CalendarPric
   const [saveError, setSaveError] = useState<string | null>(null)
   const [saveSuccess, setSaveSuccess] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
+  // Optimistic local-only availability overrides (dates blocked by the user in this session)
+  const [manuallyBlockedDates, setManuallyBlockedDates] = useState<Set<string>>(new Set())
 
   // Reset local overrides and selection whenever the user switches to a different room
   const prevRoomRef = useRef<string | null>(null)
   useEffect(() => {
     if (prevRoomRef.current !== null && prevRoomRef.current !== selectedRoomId) {
       setPriceOverrides({})
+      setManuallyBlockedDates(new Set())
       setSelectedDates([])
       setSaveError(null)
       setSaveSuccess(null)
@@ -231,7 +183,8 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated }: CalendarPric
   const priceMap = useMemo(() => {
     const map: Record<string, number> = {}
     prices.forEach((entry) => {
-      if (!entry?.date || typeof entry.price !== 'number') {
+      // price: 0 is a sentinel for "blocked with no explicit price" — skip it in the price map
+      if (!entry?.date || typeof entry.price !== 'number' || entry.price === 0) {
         return
       }
       const existing = map[entry.date]
@@ -253,8 +206,12 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated }: CalendarPric
       // numAvail: 0 = blocked, >0 = available
       map[entry.date] = entry.numAvail ?? 1
     })
+    // Overlay optimistic manual blocks so UI reflects changes before re-fetch
+    manuallyBlockedDates.forEach((date) => {
+      map[date] = 0
+    })
     return map
-  }, [prices])
+  }, [prices, manuallyBlockedDates])
 
   const days = useMemo(() => {
     const start = startOfMonth(currentMonth)
@@ -285,14 +242,9 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated }: CalendarPric
       return
     }
     
-    // Check if date is blocked (numAvail === 0)
-    if (numAvail === 0) {
-      return
-    }
-    
     setSelectedReservation(null)
 
-    // SHIFT+click: select range from last anchor to this date
+    // SHIFT+click: select range from last anchor to this date (includes blocked dates)
     if (shiftKey && lastSelectedRef.current) {
       const anchor = lastSelectedRef.current
       const rangeStart = anchor.getTime() <= date.getTime() ? anchor : date
@@ -301,8 +253,7 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated }: CalendarPric
       let cursor = new Date(rangeStart)
       while (cursor.getTime() <= rangeEnd.getTime()) {
         const cursorKey = toKey(cursor)
-        const cursorAvail = availabilityMap[cursorKey] ?? 1
-        if (!bookingMap.has(cursorKey) && cursorAvail !== 0) {
+        if (!bookingMap.has(cursorKey)) {
           range.push(new Date(cursor))
         }
         cursor = addDays(cursor, 1)
@@ -385,6 +336,12 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated }: CalendarPric
         })
         return next
       })
+      // Unblock dates that were manually blocked when a price is applied (opening them)
+      setManuallyBlockedDates((prev) => {
+        const next = new Set(prev)
+        selectedDates.forEach((d) => next.delete(toKey(d)))
+        return next
+      })
       setSelectedDates([])
       lastSelectedRef.current = null
       if (onPricesUpdated) {
@@ -409,10 +366,161 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated }: CalendarPric
     }
   }
 
+  const blockDates = async () => {
+    if (!selectedDates.length || saving) return
+    setSaveError(null)
+    setSaveSuccess(null)
+    setSaving(true)
+
+    const resolvedRoomId =
+      selectedRoomId ||
+      prices.find((entry) => entry.roomId)?.roomId ||
+      null
+
+    // Send one entry per date so each can carry its current price1.
+    // Beds24 only returns calendar records in GET when a price override exists;
+    // including price1 ensures the blocked entry appears in future GET calls.
+    const calendarEntries = selectedDates.map((date) => {
+      const key = toKey(date)
+      const currentPrice = priceOverrides[key] ?? priceMap[key]
+      return {
+        from: key,
+        to: key,
+        numAvail: 0,
+        ...(currentPrice !== undefined && currentPrice > 0 ? { price1: currentPrice } : {}),
+      }
+    })
+
+    const payload = [
+      {
+        ...(resolvedRoomId ? { roomId: Number(resolvedRoomId) } : {}),
+        calendar: calendarEntries,
+      },
+    ]
+
+    try {
+      const response = await fetch('/api/dashboard/rooms', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+      if (!response.ok) {
+        const details = await response.text()
+        throw new Error(details || 'סגירת התאריכים נכשלה')
+      }
+
+      // Optimistic update — block dates in local state immediately for instant feedback
+      const blockedKeys = selectedDates.map(toKey)
+      setManuallyBlockedDates((prev) => {
+        const next = new Set(prev)
+        blockedKeys.forEach((k) => next.add(k))
+        return next
+      })
+
+      setSelectedDates([])
+      lastSelectedRef.current = null
+      if (onPricesUpdated) {
+        await onPricesUpdated()
+      }
+      if (resolvedRoomId) {
+        fetch('/api/dashboard/cache/refresh', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ roomId: String(resolvedRoomId) }),
+        }).catch(() => {})
+      }
+      setSaveSuccess('התאריכים נסגרו להזמנות.')
+      toast.success('התאריכים נסגרו להזמנות')
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'סגירת התאריכים נכשלה'
+      setSaveError(msg)
+      toast.error(msg)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const unblockDates = async () => {
+    if (!selectedBlockedDates.length || saving) return
+    setSaveError(null)
+    setSaveSuccess(null)
+    setSaving(true)
+
+    const resolvedRoomId =
+      selectedRoomId ||
+      prices.find((entry) => entry.roomId)?.roomId ||
+      null
+
+    // Send numAvail: 1 per date, preserving current price so the calendar record stays in Beds24
+    const calendarEntries = selectedBlockedDates.map((date) => {
+      const key = toKey(date)
+      const currentPrice = priceOverrides[key] ?? priceMap[key]
+      return {
+        from: key,
+        to: key,
+        numAvail: 1,
+        ...(currentPrice !== undefined && currentPrice > 0 ? { price1: currentPrice } : {}),
+      }
+    })
+
+    const payload = [
+      {
+        ...(resolvedRoomId ? { roomId: Number(resolvedRoomId) } : {}),
+        calendar: calendarEntries,
+      },
+    ]
+
+    try {
+      const response = await fetch('/api/dashboard/rooms', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+      if (!response.ok) {
+        const details = await response.text()
+        throw new Error(details || 'שחרור החסימה נכשל')
+      }
+
+      // Remove from optimistic local blocks
+      setManuallyBlockedDates((prev) => {
+        const next = new Set(prev)
+        selectedBlockedDates.forEach((d) => next.delete(toKey(d)))
+        return next
+      })
+
+      setSelectedDates([])
+      lastSelectedRef.current = null
+      if (onPricesUpdated) {
+        await onPricesUpdated()
+      }
+      if (resolvedRoomId) {
+        fetch('/api/dashboard/cache/refresh', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ roomId: String(resolvedRoomId) }),
+        }).catch(() => {})
+      }
+      setSaveSuccess('החסימה שוחררה בהצלחה.')
+      toast.success('החסימה שוחררה בהצלחה')
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'שחרור החסימה נכשל'
+      setSaveError(msg)
+      toast.error(msg)
+    } finally {
+      setSaving(false)
+    }
+  }
+
   const clearSelection = () => {
     setSelectedDates([])
     lastSelectedRef.current = null
   }
+
+  // Derived selection state for sidebar logic
+  const selectedHasBooked = selectedDates.some((d) => bookingMap.has(toKey(d)))
+  const selectedBlockedDates = selectedDates.filter((d) => (availabilityMap[toKey(d)] ?? 1) === 0)
+  const selectedFreeDates = selectedDates.filter((d) => (availabilityMap[toKey(d)] ?? 1) !== 0)
+  const allSelectedAreBlocked = selectedDates.length > 0 && selectedBlockedDates.length === selectedDates.length
 
   const monthLabel = new Intl.DateTimeFormat('he-IL', { month: 'long', year: 'numeric' }).format(currentMonth)
   const [pickerYear, setPickerYear] = useState(() => new Date().getFullYear())
@@ -624,6 +732,7 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated }: CalendarPric
                 const numAvail = availabilityMap[key] ?? 1
                 const isBlocked = numAvail === 0 && !isBooked
                 const isSelected = selectedDates.some((item) => isSameDay(item, date))
+                const isBlockedSelected = isBlocked && isSelected
                 const price = priceOverrides[key] ?? priceMap[key] ?? DEFAULT_PRICE
                 const hasPrice = price !== undefined
                 const isToday = key === todayKey
@@ -643,10 +752,14 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated }: CalendarPric
                     key={key}
                     type="button"
                     className="text-start p-2"
+                    data-testid="calendar-day"
+                    data-date={key}
                     style={{
                       position: 'relative',
                       minHeight: '90px',
-                      background: isBlocked
+                      background: isBlockedSelected
+                        ? 'repeating-linear-gradient(45deg, rgba(239, 68, 68, 0.2), rgba(239, 68, 68, 0.2) 10px, rgba(239, 68, 68, 0.3) 10px, rgba(239, 68, 68, 0.3) 20px)'
+                        : isBlocked
                         ? 'repeating-linear-gradient(45deg, rgba(255, 152, 0, 0.1), rgba(255, 152, 0, 0.1) 10px, rgba(255, 152, 0, 0.15) 10px, rgba(255, 152, 0, 0.15) 20px)'
                         : isSelected 
                         ? 'rgba(102, 126, 234, 0.3)' 
@@ -654,24 +767,32 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated }: CalendarPric
                         ? 'rgba(102, 126, 234, 0.15)' 
                         : 'transparent',
                       color: 'rgba(255, 255, 255, 0.9)',
-                      opacity: isCurrentMonth ? (isBlocked ? 0.6 : 1) : 0.4,
-                      cursor: isBooked || isBlocked ? 'not-allowed' : 'pointer',
-                      border: isToday ? '2px solid rgba(102, 126, 234, 0.6)' : isBlocked ? '1px solid rgba(255, 152, 0, 0.3)' : '1px solid rgba(102, 126, 234, 0.25)',
+                      opacity: isCurrentMonth ? (isBlocked && !isBlockedSelected ? 0.6 : 1) : 0.4,
+                      cursor: isBooked ? 'not-allowed' : 'pointer',
+                      border: isToday ? '2px solid rgba(102, 126, 234, 0.6)' : isBlockedSelected ? '1px solid rgba(239, 68, 68, 0.6)' : isBlocked ? '1px solid rgba(255, 152, 0, 0.3)' : '1px solid rgba(102, 126, 234, 0.25)',
                       borderRadius: '0',
                       transition: 'all 0.2s ease',
                     }}
                     onMouseEnter={(e) => {
-                      if (!isBooked && !isBlocked) {
-                        e.currentTarget.style.background = 'rgba(102, 126, 234, 0.2)'
+                      if (!isBooked) {
+                        if (isBlocked) {
+                          e.currentTarget.style.opacity = '1'
+                        } else {
+                          e.currentTarget.style.background = 'rgba(102, 126, 234, 0.2)'
+                        }
                       }
                     }}
                     onMouseLeave={(e) => {
-                      if (!isBooked && !isBlocked) {
-                        e.currentTarget.style.background = isSelected 
-                          ? 'rgba(102, 126, 234, 0.3)' 
-                          : showTodayHighlight 
-                          ? 'rgba(102, 126, 234, 0.15)' 
-                          : 'transparent'
+                      if (!isBooked) {
+                        if (isBlocked) {
+                          e.currentTarget.style.opacity = isCurrentMonth ? '1' : '0.4'
+                        } else {
+                          e.currentTarget.style.background = isSelected 
+                            ? 'rgba(102, 126, 234, 0.3)' 
+                            : showTodayHighlight 
+                            ? 'rgba(102, 126, 234, 0.15)' 
+                            : 'transparent'
+                        }
                       }
                     }}
                     onClick={(e) => handleDateToggle(date, e.shiftKey)}
@@ -694,13 +815,13 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated }: CalendarPric
                     {isBlocked ? (
                       <span
                         className="badge"
-                        style={{ position: 'absolute', top: '8px', right: '8px', background: 'rgba(255, 152, 0, 0.8)', color: 'white', fontSize: '10px' }}
+                        style={{ position: 'absolute', top: '8px', right: '8px', background: isBlockedSelected ? 'rgba(239, 68, 68, 0.9)' : 'rgba(255, 152, 0, 0.8)', color: 'white', fontSize: '10px' }}
                       >
-                        חסום
+                        {isBlockedSelected ? 'לפתיחה' : 'חסום'}
                       </span>
                     ) : null}
-                    <div className="small mt-1" style={{ color: isBlocked ? 'rgba(255, 152, 0, 0.7)' : hasPrice ? 'rgba(249, 147, 251, 0.8)' : 'rgba(255,255,255,0.25)' }}>
-                      {isBlocked ? 'לא זמין' : hasPrice ? formatCurrency(price) : '—'}
+                    <div className="small mt-1" style={{ color: isBlockedSelected ? 'rgba(239, 68, 68, 0.9)' : isBlocked ? 'rgba(255, 152, 0, 0.7)' : hasPrice ? 'rgba(249, 147, 251, 0.8)' : 'rgba(255,255,255,0.25)' }}>
+                      {isBlocked ? 'חסום' : hasPrice ? formatCurrency(price) : '—'}
                     </div>
                   </button>
                 )
@@ -755,7 +876,7 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated }: CalendarPric
           <div className="card-body">
             <h3 className="h6 fw-bold mb-3" style={{ color: 'rgba(249, 147, 251, 0.9)' }}>שינוי מחיר לפי תאריך</h3>
             <div className="small mb-3" style={{ color: 'rgba(255, 255, 255, 0.7)' }}>
-              בחר תאריכים בלוח משמאל, ועדכן מחיר ללילה.
+              בחר תאריכים בלוח משמאל — עדכן מחיר או סגור להזמנות. לחץ על תאריך חסום כדי לסמן אותו לפתיחה.
             </div>
             <div className="row g-2 mb-3">
               <div className="col-6">
@@ -813,7 +934,39 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated }: CalendarPric
               onClick={applyPrice}
               disabled={!selectedDates.length || !priceInput.trim() || saving}
             >
-              {saving ? 'שומר מחיר...' : 'עדכן מחיר לתאריכים שנבחרו'}
+              {saving ? 'שומר...' : allSelectedAreBlocked ? 'עדכן מחיר ופתח תאריכים' : 'עדכן מחיר לתאריכים שנבחרו'}
+            </button>
+            <button
+              type="button"
+              className="btn w-100 mt-2"
+              style={{
+                background: selectedDates.length && !selectedHasBooked && selectedFreeDates.length > 0
+                  ? 'linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)'
+                  : 'rgba(239, 68, 68, 0.2)',
+                border: '1px solid rgba(239, 68, 68, 0.4)',
+                color: 'white',
+              }}
+              onClick={blockDates}
+              disabled={!selectedFreeDates.length || selectedHasBooked || saving}
+              title={selectedHasBooked ? 'לא ניתן לסגור תאריכים עם הזמנות קיימות' : 'סגור תאריכים חופשיים נבחרים להזמנות'}
+            >
+              {saving ? 'שומר...' : 'סגור להזמנות'}
+            </button>
+            <button
+              type="button"
+              className="btn w-100 mt-2"
+              style={{
+                background: selectedBlockedDates.length > 0
+                  ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
+                  : 'rgba(16, 185, 129, 0.2)',
+                border: '1px solid rgba(16, 185, 129, 0.4)',
+                color: 'white',
+              }}
+              onClick={unblockDates}
+              disabled={!selectedBlockedDates.length || saving}
+              title="שחרר חסימה לתאריכים חסומים שנבחרו"
+            >
+              {saving ? 'שומר...' : 'שחרר חסימה'}
             </button>
             <div className="mt-4">
               <div className="d-flex align-items-center justify-content-between mb-2">
@@ -860,8 +1013,12 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated }: CalendarPric
                   תאריך חסום ב-Beds24
                 </div>
                 <div>
+                  <span className="badge me-2" style={{ background: 'rgba(239, 68, 68, 0.9)' }}>לפתיחה</span>
+                  תאריך חסום שנבחר לפתיחה
+                </div>
+                <div>
                   <span className="badge me-2" style={{ background: 'rgba(102, 126, 234, 0.6)' }}>נבחר</span>
-                  תאריך שנבחר לעדכון מחיר
+                  תאריך פנוי שנבחר לעדכון / סגירה
                 </div>
                 <div>
                   <span 

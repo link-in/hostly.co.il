@@ -357,13 +357,33 @@ export async function refreshRoomCache(
     const supabase = createServiceRoleClient()
     const now = new Date().toISOString()
 
+    // ── Preserve manually-blocked dates ──────────────────────────────────────
+    // Beds24 calendar GET never returns numAvail, so manually blocked dates
+    // (written by writeCacheAvailability in the POST handler) would be reset
+    // to 1 on every cache refresh.  We preserve them by reading existing rows
+    // that are blocked for reasons other than an active booking.
+    const { data: existingCacheRows } = await supabase
+      .from('availability_cache')
+      .select('date, num_avail')
+      .eq('user_id', userId)
+      .eq('room_id', roomId)
+      .eq('num_avail', 0)
+
+    const manuallyBlockedDates = new Set(
+      (existingCacheRows ?? [])
+        .filter((r) => !blockedDates.has(r.date)) // not a booking block — must be manual
+        .map((r) => r.date),
+    )
+
     const upsertRowsBase = rows.map((row) => ({
       user_id: userId,
       room_id: roomId,
       property_id: propertyId,
       date: row.date,
       price: row.price,
-      num_avail: blockedDates.has(row.date) ? 0 : row.numAvail,
+      num_avail: blockedDates.has(row.date) ? 0
+        : manuallyBlockedDates.has(row.date) ? 0
+        : row.numAvail,
       min_stay: row.minStay,
       cached_at: now,
     }))

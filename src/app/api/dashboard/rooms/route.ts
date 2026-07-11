@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth/authOptions'
 import { fetchWithTokenRefresh } from '@/lib/beds24/tokenManager'
+import { overlayAvailabilityCache, writeCacheAvailability } from '@/lib/availability/blocking'
 
 export const dynamic = 'force-dynamic'
 
@@ -230,7 +231,7 @@ export async function GET(request: Request) {
 
     if (process.env.NODE_ENV !== 'production') {
       console.log('[rooms GET] Beds24 URL:', url.toString())
-      console.log('[rooms GET] raw Beds24 response (first 1000 chars):', JSON.stringify(data).slice(0, 1000))
+      console.log('[rooms GET] raw Beds24 response (first 5000 chars):', JSON.stringify(data).slice(0, 5000))
       console.log('[rooms GET] roomsInfo response (first 1000 chars):', JSON.stringify(roomsInfoData).slice(0, 1000))
     }
 
@@ -269,15 +270,17 @@ export async function GET(request: Request) {
           const date = getString(row, ['date', 'day', 'startDate'])
           const price = extractRowPrice(row)
           const numAvail = getNumber(row, ['numAvail', 'avail', 'available', 'availability', 'units'])
+          const isBlocked = numAvail === 0
 
-          if (!date || price === undefined) {
+          // Skip entries with no date. Allow blocked entries (numAvail=0) even without a price.
+          if (!date || (price === undefined && !isBlocked)) {
             return []
           }
 
           return [
             {
               date,
-              price,
+              price: price ?? 0,
               roomId: roomId ?? calendarId ?? null,
               numAvail: numAvail !== undefined ? numAvail : 1,
             },
@@ -290,11 +293,12 @@ export async function GET(request: Request) {
       if (directDate) {
         const price = extractRowPrice(calendar)
         const numAvail = getNumber(calendar, ['numAvail', 'avail', 'available', 'availability', 'units'])
-        if (price === undefined) return []
+        const isBlocked = numAvail === 0
+        if (price === undefined && !isBlocked) return []
         return [
           {
             date: directDate,
-            price,
+            price: price ?? 0,
             roomId: roomId ?? calendarId ?? null,
             numAvail: numAvail !== undefined ? numAvail : 1,
           },
@@ -306,8 +310,9 @@ export async function GET(request: Request) {
       const to = getString(calendar, ['to', 'endDate'])
       const price = extractRowPrice(calendar)
       const numAvail = getNumber(calendar, ['numAvail', 'avail', 'available', 'availability', 'units'])
+      const isBlockedRange = numAvail === 0
 
-      if (!from || !to || price === undefined) {
+      if (!from || !to || (price === undefined && !isBlockedRange)) {
         return []
       }
 
@@ -323,7 +328,7 @@ export async function GET(request: Request) {
       while (cursor <= end) {
         entries.push({
           date: formatLocalDate(cursor),
-          price,
+          price: price ?? 0,
           roomId: roomId ?? calendarId ?? null,
           numAvail: numAvail !== undefined ? numAvail : 1,
         })
@@ -352,7 +357,10 @@ export async function GET(request: Request) {
       return NextResponse.json({ prices: filled, raw: data, basePriceUsed: true })
     }
 
-    return NextResponse.json({ prices, raw: data })
+    // Overlay numAvail from availability_cache so manually-blocked dates appear correctly.
+    // Beds24 calendar GET never returns numAvail — we track it in Supabase instead.
+    const overlaidPrices = await overlayAvailabilityCache(prices, session?.user?.id, roomId)
+    return NextResponse.json({ prices: overlaidPrices, raw: data })
   } catch (error) {
     return NextResponse.json(
       {
@@ -422,6 +430,13 @@ export async function POST(request: Request) {
     }
 
     const data = await response.json()
+
+    // Persist numAvail changes to availability_cache so the next GET reflects blocking state.
+    // Beds24 calendar GET never returns numAvail, so we track it in Supabase.
+    if (session?.user?.id) {
+      await writeCacheAvailability(normalizedPayload, session.user.id, defaultRoomId, propertyId ?? undefined)
+    }
+
     if (process.env.NODE_ENV !== 'production') {
       console.log('[rooms POST] Beds24 response:', JSON.stringify(data))
       return NextResponse.json({ data, debugPayload: normalizedPayload, requestUrl: url.toString() })

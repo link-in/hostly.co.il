@@ -6,9 +6,27 @@ on:
   pull_request:
     branches: [main]
 
+# Dummy values only — no real secrets are used or required, since all tests
+# (unit/integration/E2E) mock Beds24 and Supabase. These just need to be
+# *present and well-formed* so module-level env checks (e.g. Supabase client
+# creation) don't crash the build.
+env:
+  NEXT_PUBLIC_SUPABASE_URL: https://ci-placeholder.supabase.co
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder-anon-key
+  SUPABASE_SERVICE_ROLE_KEY: ci-placeholder-service-role-key
+  NEXTAUTH_SECRET: ci-placeholder-nextauth-secret
+  GOOGLE_CLIENT_ID: ci-placeholder-google-client-id
+  GOOGLE_CLIENT_SECRET: ci-placeholder-google-client-secret
+  BEDS24_API_BASE_URL: https://api.beds24.com/v2
+  BEDS24_PROPERTY_ID: '306559'
+  BEDS24_ROOM_ID: '638851'
+  BEDS24_TOKEN: ci-placeholder-token
+  BEDS24_REFRESH_TOKEN: ci-placeholder-refresh-token
+  ADMIN_CACHE_SECRET: ci-placeholder-cache-secret
+
 jobs:
   test:
-    name: Unit Tests
+    name: Unit Tests + Build
     runs-on: ubuntu-latest
 
     steps:
@@ -29,3 +47,37 @@ jobs:
 
       - name: Type check
         run: npx tsc --noEmit
+
+      - name: Build (catches build-time regressions before merge)
+        run: npm run build
+
+  e2e:
+    name: E2E Tests (mocked, no live Beds24/Supabase)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run Playwright E2E suite
+        run: npx playwright test
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
