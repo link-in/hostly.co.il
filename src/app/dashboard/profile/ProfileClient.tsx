@@ -49,6 +49,15 @@ const ProfileClient = () => {
   const [liabilityWaiverText, setLiabilityWaiverText] = useState('')
   const [defaultAccessCode, setDefaultAccessCode] = useState('')
 
+  // Post-checkout review reminder
+  const [googleReviewUrl, setGoogleReviewUrl] = useState('')
+  const [testSending, setTestSending] = useState(false)
+  const [testResult, setTestResult] = useState<string | null>(null)
+  const [testError, setTestError] = useState<string | null>(null)
+  const [liveSending, setLiveSending] = useState(false)
+  const [liveResult, setLiveResult] = useState<string | null>(null)
+  const [liveError, setLiveError] = useState<string | null>(null)
+
   // Custom styles for inputs
   const inputStyle = {
     borderRadius: '8px',
@@ -88,6 +97,48 @@ const ProfileClient = () => {
     }
   }
 
+  const handleTestSend = async () => {
+    setTestError(null)
+    setTestResult(null)
+    setTestSending(true)
+    try {
+      const res = await fetch('/api/dashboard/review-reminders/test-send', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ channel: 'direct' }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? 'שליחת הודעת הבדיקה נכשלה')
+      setTestResult(`✅ הודעת בדיקה נשלחה למספר שלך (${phoneNumber || 'המספר בפרופיל'})`)
+    } catch (err) {
+      setTestError(err instanceof Error ? err.message : 'שגיאה לא ידועה')
+    } finally {
+      setTestSending(false)
+    }
+  }
+
+  const handleSendNow = async () => {
+    setLiveError(null)
+    setLiveResult(null)
+    setLiveSending(true)
+    try {
+      const res = await fetch('/api/dashboard/review-reminders/send-now', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({}),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? 'השליחה נכשלה')
+      setLiveResult(
+        `✅ נבדקו ${data.bookingsFound} הזמנות ל-${data.date}: ${data.sent} נשלחו, ${data.skipped} דולגו (כבר נשלחו/אין טלפון), ${data.failed} נכשלו`,
+      )
+    } catch (err) {
+      setLiveError(err instanceof Error ? err.message : 'שגיאה לא ידועה')
+    } finally {
+      setLiveSending(false)
+    }
+  }
+
   const handleCancelSubscription = async () => {
     setCancelling(true)
     try {
@@ -115,6 +166,7 @@ const ProfileClient = () => {
       setEmail(session.user.email ?? '')
       setLandingPageUrl(session.user.landingPageUrl ?? '')
       setPhoneNumber(session.user.phoneNumber ?? '')
+      setGoogleReviewUrl(session.user.googleReviewUrl ?? '')
       
       // Load check-in settings
       const settings = session.user.checkInSettings
@@ -159,6 +211,7 @@ const ProfileClient = () => {
           email: email.trim(),
           landingPageUrl: landingPageUrl.trim(),
           phoneNumber: phoneNumber.trim(),
+          googleReviewUrl: googleReviewUrl.trim(),
           checkInSettings: {
             wifi_ssid: wifiSsid.trim(),
             wifi_password: wifiPassword.trim(),
@@ -183,6 +236,7 @@ const ProfileClient = () => {
         displayName: displayName.trim(),
         landingPageUrl: landingPageUrl.trim(),
         phoneNumber: phoneNumber.trim(),
+        googleReviewUrl: googleReviewUrl.trim(),
         checkInSettings: {
           wifi_ssid: wifiSsid.trim(),
           wifi_password: wifiPassword.trim(),
@@ -478,6 +532,84 @@ const ProfileClient = () => {
                       </div>
                     </div>
                   )}
+
+                  {/* Post-Checkout Review Reminder Section */}
+                  <div className="col-12">
+                    <hr
+                      className="my-4"
+                      style={{
+                        background: 'linear-gradient(90deg, transparent, #667eea, transparent)',
+                        height: '2px',
+                        border: 'none',
+                      }}
+                    />
+                    <h3
+                      className="h5 fw-bold mb-3"
+                      style={{
+                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        backgroundClip: 'text',
+                      }}
+                    >
+                      ⭐ הודעת ביקורת אחרי צ'ק-אאוט
+                    </h3>
+                    <p className="text-muted small mb-3">
+                      בבוקר שאחרי הצ'ק-אאוט תישלח לאורח הודעת WhatsApp אוטומטית עם תודה ובקשה לכתוב ביקורת.
+                      בהזמנה ישירה תישלח ההודעה עם הקישור שתגדירו כאן; בהזמנה מ-Airbnb או Booking.com תישלח תזכורת לכתוב ביקורת באפליקציה עצמה.
+                    </p>
+                  </div>
+
+                  <div className="col-12">
+                    <label className="form-label fw-semibold" style={{ color: '#667eea' }}>
+                      🔗 קישור לביקורת בגוגל (Google Review)
+                    </label>
+                    <input
+                      type="url"
+                      className="form-control shadow-sm profile-input"
+                      style={inputStyle}
+                      value={googleReviewUrl}
+                      onChange={(e) => setGoogleReviewUrl(e.target.value)}
+                      disabled={!editing}
+                      placeholder="https://g.page/r/..."
+                      dir="ltr"
+                    />
+                    <small className="text-muted">
+                      יישלח לאורחים שהזמינו ישירות (לא דרך Airbnb/Booking.com). אם נשאר ריק, ההודעה תבקש משוב בלבד ללא קישור.
+                    </small>
+                  </div>
+
+                  <div className="col-12">
+                    <div className="d-flex flex-wrap gap-2 align-items-center">
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-outline-primary fw-semibold"
+                        style={{ borderRadius: '8px' }}
+                        onClick={handleTestSend}
+                        disabled={testSending}
+                      >
+                        {testSending ? '⏳ שולח...' : '📱 שלח הודעת בדיקה למספר שלי'}
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-outline-secondary fw-semibold"
+                        style={{ borderRadius: '8px' }}
+                        onClick={handleSendNow}
+                        disabled={liveSending}
+                        title="מריץ עכשיו את הבדיקה האמיתית מול Beds24 לאורחים שיצאו אתמול — בטוח ללחוץ כמה פעמים, הזמנות שכבר נשלחו לא יישלחו שוב"
+                      >
+                        {liveSending ? '⏳ מריץ...' : '🔄 הפעל שליחה עבור אתמול (מול הזמנות אמיתיות)'}
+                      </button>
+                    </div>
+                    {testError ? <div className="alert alert-danger py-2 mt-2 mb-0 small">⚠️ {testError}</div> : null}
+                    {testResult ? <div className="alert alert-success py-2 mt-2 mb-0 small">{testResult}</div> : null}
+                    {liveError ? <div className="alert alert-danger py-2 mt-2 mb-0 small">⚠️ {liveError}</div> : null}
+                    {liveResult ? <div className="alert alert-success py-2 mt-2 mb-0 small">{liveResult}</div> : null}
+                    <small className="text-muted d-block mt-1">
+                      "שלח הודעת בדיקה" — הודעת תצוגה מקדימה למספר שלך בלבד, לא נוגעת בהזמנות אמיתיות.<br />
+                      "הפעל שליחה עבור אתמול" — שולח בפועל לאורחים שיצאו אתמול (בדיוק כמו הריצה היומית האוטומטית), שימושי אם רוצים לבדוק/להריץ שוב בלי לחכות לקרון.
+                    </small>
+                  </div>
 
                   {/* Check-in Settings Section */}
                   <div className="col-12">
@@ -927,6 +1059,7 @@ const ProfileClient = () => {
                             setEmail(session?.user?.email ?? '')
                             setLandingPageUrl(session?.user?.landingPageUrl ?? '')
                             setPhoneNumber(session?.user?.phoneNumber ?? '')
+                            setGoogleReviewUrl(session?.user?.googleReviewUrl ?? '')
                             
                             // Reset check-in settings
                             const settings = session?.user?.checkInSettings

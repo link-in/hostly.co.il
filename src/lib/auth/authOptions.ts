@@ -82,6 +82,7 @@ export const authOptions: NextAuthOptions = {
           token.beds24Token = authUser.beds24Token
           token.beds24RefreshToken = authUser.beds24RefreshToken
           token.checkInSettings = authUser.checkInSettings
+          token.googleReviewUrl = authUser.googleReviewUrl
           token.issuedAt = Date.now()
           // Admins and demo users bypass subscription checks
           if (authUser.role === 'admin' || authUser.isDemo) {
@@ -114,6 +115,7 @@ export const authOptions: NextAuthOptions = {
         token.beds24Token = user.beds24Token
         token.beds24RefreshToken = user.beds24RefreshToken
         token.checkInSettings = user.checkInSettings
+        token.googleReviewUrl = user.googleReviewUrl
         token.issuedAt = Date.now()
         // Admins and demo users bypass subscription checks
         if (user.role === 'admin' || user.isDemo) {
@@ -151,6 +153,9 @@ export const authOptions: NextAuthOptions = {
         if (session.checkInSettings !== undefined) {
           token.checkInSettings = session.checkInSettings
         }
+        if (session.googleReviewUrl !== undefined) {
+          token.googleReviewUrl = session.googleReviewUrl
+        }
         if (session.propertyId !== undefined) {
           token.propertyId = session.propertyId
         }
@@ -178,6 +183,7 @@ export const authOptions: NextAuthOptions = {
           beds24Token: token.beds24Token as string | undefined,
           beds24RefreshToken: token.beds24RefreshToken as string | undefined,
           checkInSettings: token.checkInSettings as any,
+          googleReviewUrl: token.googleReviewUrl as string | undefined,
           subscriptionStatus: token.subscriptionStatus as any,
           trialEndsAt: token.trialEndsAt as string | undefined,
           subscriptionPlanId: token.subscriptionPlanId as string | undefined,

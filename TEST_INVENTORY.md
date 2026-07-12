@@ -14,7 +14,7 @@
 
 **הערה על "סדר הרצה":** Vitest מריץ קובצי בדיקה שונים **במקביל** (בין קבצים אין סדר כרונולוגי מובטח), ובתוך קובץ בודד הבדיקות רצות בסדר שהן מוגדרות בו. הטבלאות למטה מסודרות לפי סדר **לוגי** — שכבה 1 (יחידה) ← שכבה 2 (אינטגרציה) ← שכבה 3 (E2E) — לפי הכניסה שלהן ל-CI (`.github/workflows/ci.yml`): קודם ה-job `test` (Vitest + build), ואז ה-job `e2e` (Playwright, רץ במקביל אבל תלוי-build בפני עצמו).
 
-**סה"כ נכון להיום:** 143 בדיקות Vitest (9 קבצים) + 1 תרחיש Playwright = 144 בדיקות.
+**סה"כ נכון להיום:** 180 בדיקות Vitest (15 קבצים) + 1 תרחיש Playwright = 181 בדיקות.
 
 ---
 
@@ -30,6 +30,8 @@
 | 4 | `src/lib/webhook/processor.test.ts` | 13 | סינון סטטוס הזמנה, בניית שם אורח, זיהוי מקור הזמנה (Airbnb/Booking), בניית הודעת בעל דירה | קיים מלפני פיצ'ר החסימה |
 | 5 | `src/__tests__/availability-cache.test.ts` | 23 | יצירת API key, ולידציית תאריכים/טווחים ל-Calendar API הציבורי, צורת תגובת `CachedAvailability`, ולידציית חדרים מורשים, תנאי הפעלת רענון cache מ-webhook, **(חדש)** לוגיקת טריות ה-cache ב-`/api/public/calendar` (cache-first), **(חדש)** לוגיקת פתרון טוקן Beds24 (משתמש מול env) | קיים מלפני פיצ'ר החסימה; הורחב עם תיקון פערי ה-cache |
 | 6 | `src/lib/utils/phoneFormatter.test.ts` | 18 | נירמול וולידציה של מספרי טלפון ישראליים (נייד/קווי, פורמטים שונים) | קיים מלפני פיצ'ר החסימה |
+| 7 | `src/lib/reviewReminders/message.test.ts` **(חדש)** | 6 | בניית הודעת WhatsApp לביקורת אחרי צ'ק-אאוט: קישור לביקורת בגוגל להזמנה ישירה/לא ידועה, השמטת השורה כשאין קישור מוגדר, תזכורת Airbnb/Booking.com בלי קישור | פונקציה טהורה (`buildReviewReminderMessage`), חלק מפיצ'ר תזכורת הביקורת אחרי צ'ק-אאוט |
+| 8 | `src/lib/reviewReminders/dateUtils.test.ts` **(חדש)** | 6 | חישוב "אתמול" באזור הזמן של ישראל (`getDateStringInTimeZone`, `getYesterdayInIsrael`): חציית חודש/שנה, וגם רגע לילה שבו UTC ו-Israel חלוקים על היום הקלנדרי | פונקציה טהורה מבוססת `Intl.DateTimeFormat` עם `timeZone` מפורש — לא תלויה ב-TZ של מכונת ההרצה |
 
 ## שכבה 2 — אינטגרציה (Integration, Vitest + מוקים)
 
@@ -37,9 +39,13 @@
 
 | # | קובץ | # בדיקות | מה נבדק | הערות |
 |---|---|---|---|---|
-| 7 | `src/app/api/dashboard/rooms/route.test.ts` **(חדש)** | 4 | `POST` שולח `numAvail:0` ל-Beds24 וכותב ל-`availability_cache`; `GET` מציג תאריך חסום גם כש-Beds24 לא מחזיר אותו (2 תרחישים); **round-trip מלא**: חסימה → GET מציג חסום → שחרור → GET מציג פתוח | מחליף את הבדיקה המנואלית שבוצעה בעבר עם scripts (`check-availability.mjs`, `test-block-roundtrip.mjs`) מול Beds24 חי. משתמש ב-`src/__tests__/fixtures/beds24.ts` ו-`src/__tests__/helpers/fakeSupabase.ts` (שניהם חדשים) |
-| 8 | `src/app/api/public/calendar/route.test.ts` **(חדש)** | 6 | `GET` בפועל: מגיש מה-cache כשהוא טרי בלי לגעת ב-Beds24; fetch חי כשאין cache; fetch חי כש-cache ישן (חוצה את `CACHE_FRESHNESS_MS`); 503 כשאין טוקנים בכלל; 401 מפתח לא תקין; 403 חדר לא מורשה | בודק את לוגיקת ה-cache-first שנוספה ב-`/api/public/calendar`; דרש הרחבת `fakeSupabase.ts` עם `.single()`/`.order()`/`.limit()`/`.gte()`/`.lte()` |
-| 9 | `src/lib/webhook/processor.integration.test.ts` **(חדש)** | 5 | `processWebhook` בפועל: מעדיף טוקן Beds24 של המשתמש; נופל לטוקן env כשלמשתמש אין; לא מרענן cache כשאין טוקן בכלל; לא מרענן כשלא נמצא משתמש להזמנה; לא מרענן להזמנה מבוטלת | בודק את פתרון הטוקן שנוסף ל-`maybeRefreshCache()` (multi-tenant) |
+| 9 | `src/app/api/dashboard/rooms/route.test.ts` **(חדש)** | 4 | `POST` שולח `numAvail:0` ל-Beds24 וכותב ל-`availability_cache`; `GET` מציג תאריך חסום גם כש-Beds24 לא מחזיר אותו (2 תרחישים); **round-trip מלא**: חסימה → GET מציג חסום → שחרור → GET מציג פתוח | מחליף את הבדיקה המנואלית שבוצעה בעבר עם scripts (`check-availability.mjs`, `test-block-roundtrip.mjs`) מול Beds24 חי. משתמש ב-`src/__tests__/fixtures/beds24.ts` ו-`src/__tests__/helpers/fakeSupabase.ts` (שניהם חדשים) |
+| 10 | `src/app/api/public/calendar/route.test.ts` **(חדש)** | 6 | `GET` בפועל: מגיש מה-cache כשהוא טרי בלי לגעת ב-Beds24; fetch חי כשאין cache; fetch חי כש-cache ישן (חוצה את `CACHE_FRESHNESS_MS`); 503 כשאין טוקנים בכלל; 401 מפתח לא תקין; 403 חדר לא מורשה | בודק את לוגיקת ה-cache-first שנוספה ב-`/api/public/calendar`; דרש הרחבת `fakeSupabase.ts` עם `.single()`/`.order()`/`.limit()`/`.gte()`/`.lte()` |
+| 11 | `src/lib/webhook/processor.integration.test.ts` **(חדש)** | 5 | `processWebhook` בפועל: מעדיף טוקן Beds24 של המשתמש; נופל לטוקן env כשלמשתמש אין; לא מרענן cache כשאין טוקן בכלל; לא מרענן כשלא נמצא משתמש להזמנה; לא מרענן להזמנה מבוטלת | בודק את פתרון הטוקן שנוסף ל-`maybeRefreshCache()` (multi-tenant) |
+| 12 | `src/lib/reviewReminders/service.test.ts` **(חדש)** | 8 | `processReviewRemindersForUser` בפועל: הודעת גוגל להזמנה ישירה/לא ידועה, הודעת Airbnb ללא קישור, דילוג על סטטוס לא מאושר, דילוג + לוג כשאין טלפון, דדופליקציה לפי `booking_id`, לוג כשלון שליחה, אין קריסה כש-Beds24 מחזיר שגיאה, עיבוד עצמאי של כמה הזמנות בריצה אחת | מוקים ל-`fetchWithTokenRefresh`, `sendWhatsAppMessage`, ול-`review_reminders_log` (`@/lib/db/reviewReminders`) |
+| 13 | `src/app/api/cron/review-reminders/route.test.ts` **(חדש)** | 6 | שומר-הרשאה (401 בלי `CRON_SECRET`/עם סוד שגוי/כשלא מוגדר בסביבה כלל, 200 עם הסוד הנכון); סכימת סיכומים מכמה משתמשים; בידוד כשלון של משתמש אחד כך שהמשתמשים האחרים עדיין מעובדים | מוקים ל-`getUsersWithBeds24Access`, `processReviewRemindersForUser` ו-`getYesterdayInIsrael` |
+| 14 | `src/app/api/dashboard/review-reminders/test-send/route.test.ts` **(חדש)** | 5 | כפתור "שלח הודעת בדיקה" בפרופיל: 401 ללא סשן, 400 בלי מספר טלפון, שליחת תצוגה מקדימה למספר של המשתמש עצמו (לא לאורח אמיתי), בחירת ערוץ מפורש/נפילה ל-`direct` בערוץ לא תקין, 502 כשה-WhatsApp נכשל | מוקים ל-`next-auth` ול-`sendWhatsAppMessage`; אינו נוגע ב-Beds24/DB בכלל |
+| 15 | `src/app/api/dashboard/review-reminders/send-now/route.test.ts` **(חדש)** | 6 | כפתור "הפעל שליחה עבור אתמול" בפרופיל: 401 ללא סשן, 403 למשתמש דמו, 400 בלי חיבור Beds24, ריצה מול `processReviewRemindersForUser` עם משתמש הסשן ותאריך "אתמול" כברירת מחדל, תאריך מפורש תקין, נפילה ל"אתמול" בתאריך לא תקין | מוקים ל-`next-auth`, ל-`processReviewRemindersForUser` ול-`getYesterdayInIsrael`; מפעיל את אותה לוגיקה אמיתית שהקרון היומי מפעיל, עבור המשתמש המחובר בלבד |
 
 ## שכבה 3 — E2E מדומה (Playwright)
 
@@ -47,7 +53,7 @@
 
 | # | קובץ | # תרחישים | מה נבדק | הערות |
 |---|---|---|---|---|
-| 10 | `e2e/calendar-blocking.spec.ts` **(חדש)** | 1 | זרימת משתמש מלאה: כניסה כמשתמש דמו → ניווט קדימה בלוח השנה → בחירת תאריך פנוי → "סגור להזמנות" → אימות Toast + badge "חסום" → בחירה מחדש → "שחרר חסימה" → אימות שהתאריך נפתח מחדש | התחברות בהזרקת session cookie חתום (`e2e/helpers/session.ts`) ולא טופס login אמיתי — כדי לא להיות תלויים ב-Supabase. `**/api/dashboard/rooms` (POST) ו-`**/api/dashboard/cache/refresh` מיורטים; `**/api/auth/**` **לא** מיורט (עובד אמיתי, בלי I/O ל-DB בפועל). ריצה: `next build && next start` פנימי דרך `playwright.config.ts` — ריצה ראשונה איטית יותר (build) |
+| 16 | `e2e/calendar-blocking.spec.ts` **(חדש)** | 1 | זרימת משתמש מלאה: כניסה כמשתמש דמו → ניווט קדימה בלוח השנה → בחירת תאריך פנוי → "סגור להזמנות" → אימות Toast + badge "חסום" → בחירה מחדש → "שחרר חסימה" → אימות שהתאריך נפתח מחדש | התחברות בהזרקת session cookie חתום (`e2e/helpers/session.ts`) ולא טופס login אמיתי — כדי לא להיות תלויים ב-Supabase. `**/api/dashboard/rooms` (POST) ו-`**/api/dashboard/cache/refresh` מיורטים; `**/api/auth/**` **לא** מיורט (עובד אמיתי, בלי I/O ל-DB בפועל). ריצה: `next build && next start` פנימי דרך `playwright.config.ts` — ריצה ראשונה איטית יותר (build) |
 
 ---
 
@@ -63,6 +69,12 @@
 | `src/app/api/public/calendar/route.ts` | `src/app/api/public/calendar/route.test.ts` |
 | `src/lib/webhook/processor.ts` (`maybeRefreshCache`) | `src/lib/webhook/processor.integration.test.ts` |
 | `src/lib/db/users.ts` (`getUserBeds24Tokens`) | מכוסה בעקיפין דרך `processor.integration.test.ts` (מדומה עם `vi.mock`) |
+| `src/lib/reviewReminders/message.ts` | `src/lib/reviewReminders/message.test.ts` |
+| `src/lib/reviewReminders/dateUtils.ts` | `src/lib/reviewReminders/dateUtils.test.ts` |
+| `src/lib/reviewReminders/service.ts` | `src/lib/reviewReminders/service.test.ts` |
+| `src/app/api/cron/review-reminders/route.ts` | `src/app/api/cron/review-reminders/route.test.ts` |
+| `src/app/api/dashboard/review-reminders/test-send/route.ts` | `src/app/api/dashboard/review-reminders/test-send/route.test.ts` |
+| `src/app/api/dashboard/review-reminders/send-now/route.ts` | `src/app/api/dashboard/review-reminders/send-now/route.test.ts` |
 
 ## פערים / מועמדים לבדיקות עתידיות
 

@@ -4,7 +4,7 @@
  * Route handlers should call these functions instead of querying directly.
  */
 
-import { createServerClient } from '@/lib/supabase/server'
+import { createServerClient, createServiceRoleClient } from '@/lib/supabase/server'
 import { normalizePhoneNumber } from '@/lib/utils/phoneFormatter'
 
 export interface OwnerInfo {
@@ -15,6 +15,16 @@ export interface OwnerInfo {
 export interface UserBeds24Tokens {
   accessToken: string | null
   refreshToken: string | null
+}
+
+/** A host with enough Beds24 credentials configured to be queried by scheduled jobs (e.g. the review-reminders cron). */
+export interface UserWithBeds24Access {
+  id: string
+  propertyId: string
+  displayName: string | null
+  googleReviewUrl: string | null
+  beds24Token: string
+  beds24RefreshToken: string
 }
 
 /** Find a user's UUID given the Beds24 propertyId + roomId from a booking. */
@@ -65,6 +75,43 @@ export async function getUserBeds24Tokens(userId: string): Promise<UserBeds24Tok
   } catch (err) {
     console.error('getUserBeds24Tokens error:', err)
     return { accessToken: null, refreshToken: null }
+  }
+}
+
+/**
+ * List every host that has both a `property_id` and Beds24 tokens configured —
+ * the set of tenants scheduled jobs (like the review-reminders cron) should iterate over.
+ * Uses the service-role client since this runs from an unauthenticated cron context.
+ */
+export async function getUsersWithBeds24Access(): Promise<UserWithBeds24Access[]> {
+  try {
+    const supabase = createServiceRoleClient()
+    const { data, error } = await supabase
+      .from('users')
+      .select('id, property_id, display_name, google_review_url, beds24_token, beds24_refresh_token')
+      .not('property_id', 'is', null)
+      .neq('property_id', '')
+      .not('beds24_token', 'is', null)
+      .not('beds24_refresh_token', 'is', null)
+
+    if (error || !data) {
+      console.error('getUsersWithBeds24Access error:', error)
+      return []
+    }
+
+    return data
+      .filter((row) => row.beds24_token && row.beds24_refresh_token && row.property_id)
+      .map((row) => ({
+        id: row.id,
+        propertyId: String(row.property_id),
+        displayName: row.display_name ?? null,
+        googleReviewUrl: row.google_review_url ?? null,
+        beds24Token: row.beds24_token as string,
+        beds24RefreshToken: row.beds24_refresh_token as string,
+      }))
+  } catch (err) {
+    console.error('getUsersWithBeds24Access error:', err)
+    return []
   }
 }
 

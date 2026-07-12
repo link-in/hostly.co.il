@@ -27,6 +27,7 @@ export async function POST(request: Request) {
       liability_waiver_text?: string
       default_access_code?: string
     }
+    googleReviewUrl?: string
   }
 
   try {
@@ -97,6 +98,14 @@ export async function POST(request: Request) {
     // Update check-in settings if provided
     if (payload.checkInSettings !== undefined) {
       updates.checkInSettings = payload.checkInSettings
+    }
+
+    if (payload.googleReviewUrl !== undefined) {
+      const trimmedUrl = payload.googleReviewUrl.trim()
+      if (trimmedUrl && !trimmedUrl.match(/^https?:\/\/.+/)) {
+        return NextResponse.json({ error: 'קישור לביקורת בגוגל חייב להיות כתובת URL תקינה (מתחילה ב-http:// או https://)' }, { status: 400 })
+      }
+      updates.googleReviewUrl = trimmedUrl
     }
 
     // Update user in database

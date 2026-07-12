@@ -28,6 +28,7 @@ export interface User {
   beds24RefreshToken?: string
   beds24AccountId?: string
   checkInSettings?: CheckInSettings
+  googleReviewUrl?: string
   subscriptionStatus?: SubscriptionStatus
   trialEndsAt?: string
   subscriptionPlanId?: string
@@ -49,6 +50,7 @@ export interface AuthUser {
   beds24RefreshToken?: string
   beds24AccountId?: string
   checkInSettings?: CheckInSettings
+  googleReviewUrl?: string
   subscriptionStatus?: SubscriptionStatus
   trialEndsAt?: string
   subscriptionPlanId?: string

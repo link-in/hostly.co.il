@@ -21,6 +21,7 @@ function mapRowToUser(data: Record<string, unknown>): User {
     beds24RefreshToken: (data.beds24_refresh_token as string) || undefined,
     beds24AccountId: (data.beds24_account_id as string) || undefined,
     checkInSettings: data.check_in_settings as User['checkInSettings'],
+    googleReviewUrl: (data.google_review_url as string) || undefined,
   }
 }
 
@@ -125,6 +126,7 @@ export const updateUser = async (userId: string, updates: Partial<User>): Promis
     if (updates.beds24Token !== undefined) dbUpdates.beds24_token = updates.beds24Token
     if (updates.beds24RefreshToken !== undefined) dbUpdates.beds24_refresh_token = updates.beds24RefreshToken
     if (updates.checkInSettings !== undefined) dbUpdates.check_in_settings = updates.checkInSettings
+    if (updates.googleReviewUrl !== undefined) dbUpdates.google_review_url = updates.googleReviewUrl
 
     const { data, error } = await supabase
       .from('users')
@@ -159,6 +161,7 @@ export const updateUser = async (userId: string, updates: Partial<User>): Promis
       beds24Token: data.beds24_token || undefined,
       beds24RefreshToken: data.beds24_refresh_token || undefined,
       checkInSettings: data.check_in_settings || undefined,
+      googleReviewUrl: data.google_review_url || undefined,
     }
   } catch (error) {
     console.error('Failed to update user:', error)
@@ -366,6 +369,7 @@ export const toAuthUser = (user: User): AuthUser => {
     beds24RefreshToken: user.beds24RefreshToken,
     beds24AccountId: user.beds24AccountId,
     checkInSettings: user.checkInSettings,
+    googleReviewUrl: user.googleReviewUrl,
   }
 }
 

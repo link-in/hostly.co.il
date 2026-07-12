@@ -18,10 +18,11 @@ export function extractInvoiceTotal(items: unknown[]): number {
   }, 0)
 }
 
+/** Canonical booking source/channel label, shared across the codebase. */
+export type BookingSource = 'airbnb' | 'booking.com' | 'direct' | 'other'
+
 /** Map Beds24 apiSource field to a canonical booking source label. */
-export function parseBookingSource(
-  apiSource: unknown,
-): 'airbnb' | 'booking.com' | 'direct' | 'other' {
+export function parseBookingSource(apiSource: unknown): BookingSource {
   const src = String(apiSource ?? '').toLowerCase()
   if (src.includes('airbnb')) return 'airbnb'
   if (src.includes('booking')) return 'booking.com'
