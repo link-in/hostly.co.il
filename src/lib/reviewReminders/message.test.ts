@@ -14,6 +14,7 @@ describe('buildReviewReminderMessage', () => {
     expect(message).toContain('Mountain View')
     expect(message).toContain('https://g.page/r/abc123')
     expect(message).toContain('ביקורת בגוגל')
+    expect(message).toContain('👉 לחצו כאן: https://g.page/r/abc123')
   })
 
   it('treats an unknown/"other" channel the same as direct (Google review ask)', () => {
@@ -36,7 +37,7 @@ describe('buildReviewReminderMessage', () => {
       googleReviewUrl: null,
     })
 
-    expect(message).not.toContain('⭐')
+    expect(message).not.toContain('לחצו כאן')
     expect(message).not.toContain('ביקורת בגוגל')
     expect(message).toContain('נשמח מאוד לשמוע ולהשתפר')
   })

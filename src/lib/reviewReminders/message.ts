@@ -26,7 +26,7 @@ function buildGoogleReviewAsk(googleReviewUrl?: string | null): string {
   if (!googleReviewUrl) {
     return 'ואם הכל היה מצוין, נשמח מאוד אם תכתבו לנו כמה מילים בתגובה כאן 💬'
   }
-  return `ואם הכל היה מצוין, נשמח מאוד אם תרשמו לנו ביקורת בגוגל – זה עוזר לנו המשך :)\n⭐ ${googleReviewUrl}`
+  return `ואם הכל היה מצוין, נשמח מאוד אם תרשמו לנו ביקורת בגוגל – זה עוזר לנו המשך :)\n👉 לחצו כאן: ${googleReviewUrl}`
 }
 
 function buildOtaReviewAsk(channel: 'airbnb' | 'booking.com'): string {
