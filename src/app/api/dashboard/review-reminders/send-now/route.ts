@@ -25,7 +25,7 @@ export async function POST(request: Request) {
     )
   }
 
-  if (!session.user.propertyId || !session.user.beds24Token || !session.user.beds24RefreshToken) {
+  if (!session.user.propertyId || !session.user.beds24Token) {
     return NextResponse.json(
       { error: 'חשבון Beds24 לא מחובר — לא ניתן לשלוף הזמנות' },
       { status: 400 },
@@ -49,7 +49,7 @@ export async function POST(request: Request) {
     displayName: session.user.displayName || null,
     googleReviewUrl: session.user.googleReviewUrl || null,
     beds24Token: session.user.beds24Token,
-    beds24RefreshToken: session.user.beds24RefreshToken,
+    beds24RefreshToken: session.user.beds24RefreshToken || '',
   }
 
   const summary = await processReviewRemindersForUser(user, dateStr)

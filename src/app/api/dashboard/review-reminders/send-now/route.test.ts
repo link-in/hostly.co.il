@@ -75,6 +75,19 @@ describe('POST /api/dashboard/review-reminders/send-now', () => {
     expect(processReviewRemindersForUser).not.toHaveBeenCalled()
   })
 
+  it('still runs for a host with an access token but no refresh token (long-lived token, common case)', async () => {
+    vi.mocked(getServerSession).mockResolvedValue({
+      user: { ...TEST_SESSION_USER, beds24RefreshToken: undefined },
+    } as never)
+
+    const response = await POST(postRequest({}))
+    expect(response.status).toBe(200)
+    expect(processReviewRemindersForUser).toHaveBeenCalledWith(
+      expect.objectContaining({ beds24Token: 'token', beds24RefreshToken: '' }),
+      '2026-07-10',
+    )
+  })
+
   it('defaults to yesterday (Israel time) and forwards the session user', async () => {
     vi.mocked(getServerSession).mockResolvedValue({ user: TEST_SESSION_USER } as never)
 

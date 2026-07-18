@@ -79,8 +79,12 @@ export async function getUserBeds24Tokens(userId: string): Promise<UserBeds24Tok
 }
 
 /**
- * List every host that has both a `property_id` and Beds24 tokens configured —
+ * List every host that has a `property_id` and a Beds24 access token configured —
  * the set of tenants scheduled jobs (like the review-reminders cron) should iterate over.
+ * `beds24_refresh_token` is NOT required here: many hosts only have a long-lived access
+ * token and no refresh token, same as every other Beds24 call site in this app
+ * (see `fetchWithTokenRefresh`, which falls back to the global env tokens when a
+ * user has no refresh token of their own).
  * Uses the service-role client since this runs from an unauthenticated cron context.
  */
 export async function getUsersWithBeds24Access(): Promise<UserWithBeds24Access[]> {
@@ -92,7 +96,6 @@ export async function getUsersWithBeds24Access(): Promise<UserWithBeds24Access[]
       .not('property_id', 'is', null)
       .neq('property_id', '')
       .not('beds24_token', 'is', null)
-      .not('beds24_refresh_token', 'is', null)
 
     if (error || !data) {
       console.error('getUsersWithBeds24Access error:', error)
@@ -100,14 +103,14 @@ export async function getUsersWithBeds24Access(): Promise<UserWithBeds24Access[]
     }
 
     return data
-      .filter((row) => row.beds24_token && row.beds24_refresh_token && row.property_id)
+      .filter((row) => row.beds24_token && row.property_id)
       .map((row) => ({
         id: row.id,
         propertyId: String(row.property_id),
         displayName: row.display_name ?? null,
         googleReviewUrl: row.google_review_url ?? null,
         beds24Token: row.beds24_token as string,
-        beds24RefreshToken: row.beds24_refresh_token as string,
+        beds24RefreshToken: (row.beds24_refresh_token as string) ?? '',
       }))
   } catch (err) {
     console.error('getUsersWithBeds24Access error:', err)
