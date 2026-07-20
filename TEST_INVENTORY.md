@@ -14,7 +14,7 @@
 
 **הערה על "סדר הרצה":** Vitest מריץ קובצי בדיקה שונים **במקביל** (בין קבצים אין סדר כרונולוגי מובטח), ובתוך קובץ בודד הבדיקות רצות בסדר שהן מוגדרות בו. הטבלאות למטה מסודרות לפי סדר **לוגי** — שכבה 1 (יחידה) ← שכבה 2 (אינטגרציה) ← שכבה 3 (E2E) — לפי הכניסה שלהן ל-CI (`.github/workflows/ci.yml`): קודם ה-job `test` (Vitest + build), ואז ה-job `e2e` (Playwright, רץ במקביל אבל תלוי-build בפני עצמו).
 
-**סה"כ נכון להיום:** 185 בדיקות Vitest (17 קבצים) + 1 תרחיש Playwright = 186 בדיקות.
+**סה"כ נכון להיום:** 193 בדיקות Vitest (17 קבצים) + 1 תרחיש Playwright = 194 בדיקות.
 
 ---
 
@@ -29,7 +29,7 @@
 | 3 | `src/lib/dashboard/calendarDates.test.ts` **(חדש)** | 19 | עזרי תאריכים ללוח השנה: `normalizeDate`, `toKey`, `isSameDay`, `addDays`, `sortDates`, `buildDateRanges` | חולצו מ-`CalendarPricing.tsx` כדי שיהיו ניתנים לבדיקה ישירה; כוללות בדיקות גבול (חציית חודש/שנה) |
 | 4 | `src/lib/webhook/processor.test.ts` | 13 | סינון סטטוס הזמנה, בניית שם אורח, זיהוי מקור הזמנה (Airbnb/Booking), בניית הודעת בעל דירה | קיים מלפני פיצ'ר החסימה |
 | 5 | `src/__tests__/availability-cache.test.ts` | 23 | יצירת API key, ולידציית תאריכים/טווחים ל-Calendar API הציבורי, צורת תגובת `CachedAvailability`, ולידציית חדרים מורשים, תנאי הפעלת רענון cache מ-webhook, **(חדש)** לוגיקת טריות ה-cache ב-`/api/public/calendar` (cache-first), **(חדש)** לוגיקת פתרון טוקן Beds24 (משתמש מול env) | קיים מלפני פיצ'ר החסימה; הורחב עם תיקון פערי ה-cache |
-| 6 | `src/lib/utils/phoneFormatter.test.ts` | 18 | נירמול וולידציה של מספרי טלפון ישראליים (נייד/קווי, פורמטים שונים) | קיים מלפני פיצ'ר החסימה |
+| 6 | `src/lib/utils/phoneFormatter.test.ts` | 26 | נירמול וולידציה של מספרי טלפון ישראליים (נייד/קווי, פורמטים שונים); **(חדש)** `formatPhoneForDisplay` — עיצוב תצוגה מקומי (`050-595-2822`) ממחרוזת גולמית מ-Beds24 בכל פורמט, כולל שמירת מספרים בין-לאומיים לא-ישראליים כמו שהם | קיים מלפני פיצ'ר החסימה; הורחב בגלל תצוגת טלפון שגויה בטבלת הזמנות/לקוחות |
 | 7 | `src/lib/reviewReminders/message.test.ts` **(חדש)** | 6 | בניית הודעת WhatsApp לביקורת אחרי צ'ק-אאוט: קישור לביקורת בגוגל להזמנה ישירה/לא ידועה, השמטת השורה כשאין קישור מוגדר, תזכורת Airbnb/Booking.com בלי קישור | פונקציה טהורה (`buildReviewReminderMessage`), חלק מפיצ'ר תזכורת הביקורת אחרי צ'ק-אאוט |
 | 8 | `src/lib/reviewReminders/dateUtils.test.ts` **(חדש)** | 6 | חישוב "אתמול" באזור הזמן של ישראל (`getDateStringInTimeZone`, `getYesterdayInIsrael`): חציית חודש/שנה, וגם רגע לילה שבו UTC ו-Israel חלוקים על היום הקלנדרי | פונקציה טהורה מבוססת `Intl.DateTimeFormat` עם `timeZone` מפורש — לא תלויה ב-TZ של מכונת ההרצה |
 | 9 | `src/lib/db/users.test.ts` **(חדש)** | 4 | `getUsersWithBeds24Access`: מחזיר משתמש עם access token בלבד (בלי refresh token — המקרה האמיתי הנפוץ, טוקן ארוך-חיים), מחזיר משתמש עם שני הטוקנים, מסנן משתמש בלי access token בכלל, מסנן משתמש בלי `property_id` | בדיקת **רגרסיה** לבאג שגילינו בפרודקשן: השאילתה חסמה `.not('beds24_refresh_token','is',null)` וכך הוציאה מהרשימה כל מארח עם טוקן ארוך-חיים בלי refresh token — כולל המשתמש האמיתי הראשון של המערכת, מה שגרם לקרון היומי (`review-reminders`) לא לעבד אף משתמש (`usersProcessed: 0`) |

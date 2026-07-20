@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { normalizePhoneNumber, isValidPhoneNumber } from './phoneFormatter'
+import { normalizePhoneNumber, isValidPhoneNumber, formatPhoneForDisplay } from './phoneFormatter'
 
 describe('normalizePhoneNumber', () => {
   it.each([
@@ -18,6 +18,21 @@ describe('normalizePhoneNumber', () => {
     ['031234567',    '+97231234567',  'Tel Aviv landline'],
   ])('%s → %s (%s)', (input, expected) => {
     expect(normalizePhoneNumber(input)).toBe(expected)
+  })
+})
+
+describe('formatPhoneForDisplay', () => {
+  it.each([
+    ['0528676516',    '052-867-6516', 'Israeli mobile, already local format'],
+    ['972505952822',  '050-595-2822', 'Israeli mobile from Beds24, no leading 0/plus'],
+    ['+972505952822', '050-595-2822', 'Israeli mobile, already international'],
+    ['052 867 6516',  '052-867-6516', 'Israeli mobile with spaces'],
+    ['052-867-6516',  '052-867-6516', 'Israeli mobile with dashes (idempotent)'],
+    ['021234567',     '02-123-4567', 'Jerusalem landline'],
+    ['+33612345678',  '+33612345678', 'Non-Israeli international number — unchanged'],
+    ['',              '', 'Empty string'],
+  ])('%s → %s (%s)', (input, expected) => {
+    expect(formatPhoneForDisplay(input)).toBe(expected)
   })
 })
 

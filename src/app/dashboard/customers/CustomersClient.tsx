@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { toast, Toaster } from 'sonner'
 import DashboardHeader from '@/components/DashboardHeader'
+import { normalizePhoneNumber, formatPhoneForDisplay } from '@/lib/utils/phoneFormatter'
 
 type Customer = {
   id: string
@@ -462,11 +463,11 @@ export default function CustomersClient() {
                         <td style={{ padding: '1rem', verticalAlign: 'middle' }}>
                           {customer.phone ? (
                             <a 
-                              href={`tel:${customer.phone}`} 
+                              href={`tel:${normalizePhoneNumber(customer.phone)}`} 
                               className="text-decoration-none"
                               style={{ color: '#667eea' }}
                             >
-                              {customer.phone}
+                              {formatPhoneForDisplay(customer.phone)}
                             </a>
                           ) : (
                             <span className="text-muted">-</span>

@@ -1,8 +1,57 @@
 'use client'
 
 import React, { useState } from 'react'
+import { Phone } from 'lucide-react'
+import { Icon } from '@iconify/react'
 import type { Reservation } from '@/lib/dashboard/types'
 import { formatCurrency, formatDate, formatStatus } from '@/lib/dashboard/utils'
+import { normalizePhoneNumber, formatPhoneForDisplay } from '@/lib/utils/phoneFormatter'
+
+/**
+ * Call + WhatsApp icon-only buttons for a guest phone number — shared by the
+ * mobile and desktop reservation-detail views. No number is shown, just large
+ * (40px) circular tap targets, sized for comfortable use on a phone screen.
+ */
+const PhoneActions = ({ phone }: { phone: string }) => {
+  const normalized = normalizePhoneNumber(phone)
+  const whatsappUrl = `https://wa.me/${normalized.replace('+', '')}`
+  const displayPhone = formatPhoneForDisplay(phone)
+
+  const buttonStyle: React.CSSProperties = {
+    width: '40px',
+    height: '40px',
+    borderRadius: '50%',
+    color: '#fff',
+    flexShrink: 0,
+  }
+
+  return (
+    <span className="d-inline-flex align-items-center gap-2">
+      <a
+        href={`tel:${normalized}`}
+        className="d-inline-flex align-items-center justify-content-center"
+        style={{ ...buttonStyle, background: '#f093fb' }}
+        onClick={(e) => e.stopPropagation()}
+        aria-label={`התקשר ל-${displayPhone}`}
+        title={`התקשר ל-${displayPhone}`}
+      >
+        <Phone size={20} />
+      </a>
+      <a
+        href={whatsappUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="d-inline-flex align-items-center justify-content-center"
+        style={{ ...buttonStyle, background: '#25D366' }}
+        onClick={(e) => e.stopPropagation()}
+        aria-label={`שלח הודעה בוואטסאפ ל-${displayPhone}`}
+        title="שלח הודעה בוואטסאפ"
+      >
+        <Icon icon="mdi:whatsapp" style={{ fontSize: '22px' }} />
+      </a>
+    </span>
+  )
+}
 
 // Add styles for nearest reservation, table scrolling, and mobile list
 const styles = `
@@ -288,13 +337,9 @@ const ReservationsTable = ({ reservations, onReservationViewed }: ReservationsTa
                 {reservation.phone && (
                   <div className="reservation-detail-row">
                     <span className="reservation-detail-label">טלפון</span>
-                    <a 
-                      href={`tel:${reservation.phone}`} 
-                      className="reservation-detail-value text-decoration-none"
-                      style={{ color: '#f093fb' }}
-                    >
-                      {reservation.phone}
-                    </a>
+                    <span className="reservation-detail-value">
+                      <PhoneActions phone={reservation.phone} />
+                    </span>
                   </div>
                 )}
                 
@@ -469,9 +514,7 @@ const ReservationsTable = ({ reservations, onReservationViewed }: ReservationsTa
                           <div className="col-md-6">
                             <div className="small text-muted mb-1">טלפון</div>
                             <div>
-                              <a href={`tel:${reservation.phone}`} className="text-decoration-none">
-                                {reservation.phone}
-                              </a>
+                              <PhoneActions phone={reservation.phone} />
                             </div>
                           </div>
                         ) : null}
