@@ -8,6 +8,7 @@ import { getUserIdByPropertyRoom, getOwnerInfoByPropertyRoom, getUserBeds24Token
 import { addOrUpdateCustomer } from '@/lib/customers/addOrUpdateCustomer'
 import { refreshRoomCache } from '@/lib/availability/cache'
 import { sendWhatsAppMessage } from '@/lib/whatsapp'
+import { sendWhatsAppToAll } from '@/lib/notifications/ownerPhones'
 import { normalizePhoneNumber } from '@/lib/utils/phoneFormatter'
 import { parseBookingSource, isConfirmedBookingStatus } from '@/lib/bookings/normalizer'
 import type { Beds24Booking, Beds24WebhookWrapper } from './types'
@@ -61,7 +62,7 @@ export async function processWebhook(webhookData: Beds24WebhookWrapper): Promise
 
   const ownerInfo = await getOwnerInfoByPropertyRoom(booking.propertyId, booking.roomId)
   const guestResult = await sendGuestNotification(guestPhone, guestName, ownerInfo.roomName, booking.arrival)
-  await sendOwnerNotification(ownerInfo.phoneNumber, guestName, guestPhone, booking, ownerInfo.roomName)
+  await sendOwnerNotification(ownerInfo.phoneNumbers, guestName, guestPhone, booking, ownerInfo.roomName)
 
   if (notificationId) {
     await updateNotificationStatus(notificationId, {
@@ -138,13 +139,13 @@ async function sendGuestNotification(
 }
 
 async function sendOwnerNotification(
-  ownerPhone: string | null,
+  ownerPhones: string[],
   guestName: string,
   guestPhone: string,
   booking: Beds24Booking,
   roomName: string | null,
 ): Promise<void> {
-  if (!ownerPhone) {
+  if (ownerPhones.length === 0) {
     console.warn('⚠️ No owner phone - skipping owner notification')
     return
   }
@@ -159,8 +160,10 @@ async function sendOwnerNotification(
     `🔖 מספר הזמנה: ${booking.id}`,
   ].filter(Boolean)
 
-  const result = await sendWhatsAppMessage({ to: ownerPhone, message: lines.join('\n') })
-  if (!result.success) {
-    console.error(`❌ Owner notification failed:`, result.error)
+  const results = await sendWhatsAppToAll(ownerPhones, lines.join('\n'))
+  for (const result of results) {
+    if (!result.success) {
+      console.error(`❌ Owner notification failed for ${result.to}:`, result.error)
+    }
   }
 }

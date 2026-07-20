@@ -16,8 +16,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServiceRoleClient } from '@/lib/supabase/server'
 import { fetchWithTokenRefresh } from '@/lib/beds24/tokenManager'
 import { normalizeBookingItem, extractBookingId } from '@/lib/bookings/normalizer'
-import { sendWhatsAppMessage } from '@/lib/whatsapp'
 import { normalizePhoneNumber } from '@/lib/utils/phoneFormatter'
+import { buildOwnerPhoneList, sendWhatsAppToAll } from '@/lib/notifications/ownerPhones'
 
 export const dynamic = 'force-dynamic'
 
@@ -99,7 +99,7 @@ export async function POST(request: NextRequest) {
   // ── Load owner's Beds24 tokens ──────────────────────────────────────────────
   const { data: userRow, error: userError } = await supabase
     .from('users')
-    .select('beds24_token, beds24_refresh_token, property_id, display_name, phone_number')
+    .select('beds24_token, beds24_refresh_token, property_id, display_name, phone_number, secondary_phone_number')
     .eq('id', userId)
     .single()
 
@@ -144,7 +144,10 @@ export async function POST(request: NextRequest) {
 
   // ── Notify owner via WhatsApp ───────────────────────────────────────────────
   await notifyOwner({
-    ownerPhone: (userRow.phone_number as string | null) ?? null,
+    ownerPhones: buildOwnerPhoneList(
+      userRow.phone_number as string | null,
+      userRow.secondary_phone_number as string | null,
+    ),
     ownerName: (userRow.display_name as string | null) ?? 'בעל הנכס',
     guestName: `${firstName} ${lastName}`,
     guestPhone: String(phone),
@@ -260,7 +263,7 @@ async function createBeds24Booking(
 }
 
 async function notifyOwner(opts: {
-  ownerPhone: string | null
+  ownerPhones: string[]
   ownerName: string
   guestName: string
   guestPhone: string
@@ -270,7 +273,7 @@ async function notifyOwner(opts: {
   paidByCard: boolean
   wpBookingId: string | null
 }) {
-  if (!opts.ownerPhone) return
+  if (opts.ownerPhones.length === 0) return
 
   const paymentNote = opts.paidByCard
     ? `💳 *שולם בכרטיס אשראי* — ₪${opts.total.toLocaleString('he-IL')}`
@@ -283,8 +286,8 @@ async function notifyOwner(opts: {
     `${paymentNote}\n\n` +
     `ניתן לפתוח ב-Beds24 לאישור`
 
-  await sendWhatsAppMessage({
-    to: normalizePhoneNumber(opts.ownerPhone),
-    message,
-  }).catch((err) => console.error('[booking/confirm] WhatsApp failed:', err))
+  const results = await sendWhatsAppToAll(opts.ownerPhones, message)
+  for (const result of results) {
+    if (!result.success) console.error(`[booking/confirm] WhatsApp failed for ${result.to}:`, result.error)
+  }
 }

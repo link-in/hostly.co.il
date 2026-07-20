@@ -77,7 +77,7 @@ beforeEach(() => {
   vi.mocked(insertNotification).mockResolvedValue({ id: 'notif-1', error: null })
   vi.mocked(updateNotificationStatus).mockResolvedValue(undefined)
   vi.mocked(getUserIdByPropertyRoom).mockResolvedValue(TEST_USER_ID)
-  vi.mocked(getOwnerInfoByPropertyRoom).mockResolvedValue({ phoneNumber: null, roomName: 'Mountain View' })
+  vi.mocked(getOwnerInfoByPropertyRoom).mockResolvedValue({ phoneNumber: null, phoneNumbers: [], roomName: 'Mountain View' })
   vi.mocked(addOrUpdateCustomer).mockResolvedValue({ success: true, customerId: 'customer-1' })
   vi.mocked(refreshRoomCache).mockResolvedValue({ upserted: 3 })
   vi.mocked(sendWhatsAppMessage).mockResolvedValue({ success: true, provider: 'mock' })

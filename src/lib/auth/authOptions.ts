@@ -77,6 +77,7 @@ export const authOptions: NextAuthOptions = {
           token.roomId = authUser.roomId
           token.landingPageUrl = authUser.landingPageUrl
           token.phoneNumber = authUser.phoneNumber
+          token.secondaryPhoneNumber = authUser.secondaryPhoneNumber
           token.role = authUser.role
           token.isDemo = authUser.isDemo
           token.beds24Token = authUser.beds24Token
@@ -110,6 +111,7 @@ export const authOptions: NextAuthOptions = {
         token.roomId = user.roomId
         token.landingPageUrl = user.landingPageUrl
         token.phoneNumber = user.phoneNumber
+        token.secondaryPhoneNumber = user.secondaryPhoneNumber
         token.role = user.role
         token.isDemo = user.isDemo
         token.beds24Token = user.beds24Token
@@ -147,6 +149,9 @@ export const authOptions: NextAuthOptions = {
         if (session.phoneNumber !== undefined) {
           token.phoneNumber = session.phoneNumber
         }
+        if (session.secondaryPhoneNumber !== undefined) {
+          token.secondaryPhoneNumber = session.secondaryPhoneNumber
+        }
         if (session.role !== undefined) {
           token.role = session.role
         }
@@ -178,6 +183,7 @@ export const authOptions: NextAuthOptions = {
           roomId: (token.roomId as string) ?? '',
           landingPageUrl: token.landingPageUrl as string | undefined,
           phoneNumber: token.phoneNumber as string | undefined,
+          secondaryPhoneNumber: token.secondaryPhoneNumber as string | undefined,
           role: token.role as 'admin' | 'owner',
           isDemo: token.isDemo as boolean | undefined,
           beds24Token: token.beds24Token as string | undefined,

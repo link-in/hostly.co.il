@@ -15,6 +15,7 @@ function mapRowToUser(data: Record<string, unknown>): User {
     roomId: (data.room_id as string) ?? '',
     landingPageUrl: (data.landing_page_url as string) || undefined,
     phoneNumber: (data.phone_number as string) || undefined,
+    secondaryPhoneNumber: (data.secondary_phone_number as string) || undefined,
     role: (data.role as User['role']) || 'owner',
     isDemo: (data.is_demo as boolean) || false,
     beds24Token: (data.beds24_token as string) || undefined,
@@ -122,6 +123,7 @@ export const updateUser = async (userId: string, updates: Partial<User>): Promis
     if (updates.roomId !== undefined) dbUpdates.room_id = updates.roomId
     if (updates.landingPageUrl !== undefined) dbUpdates.landing_page_url = updates.landingPageUrl
     if (updates.phoneNumber !== undefined) dbUpdates.phone_number = updates.phoneNumber
+    if (updates.secondaryPhoneNumber !== undefined) dbUpdates.secondary_phone_number = updates.secondaryPhoneNumber
     if (updates.role !== undefined) dbUpdates.role = updates.role
     if (updates.beds24Token !== undefined) dbUpdates.beds24_token = updates.beds24Token
     if (updates.beds24RefreshToken !== undefined) dbUpdates.beds24_refresh_token = updates.beds24RefreshToken
@@ -156,6 +158,7 @@ export const updateUser = async (userId: string, updates: Partial<User>): Promis
       roomId: data.room_id,
       landingPageUrl: data.landing_page_url || undefined,
       phoneNumber: data.phone_number || undefined,
+      secondaryPhoneNumber: data.secondary_phone_number || undefined,
       role: data.role || 'owner',
       isDemo: data.is_demo || false,
       beds24Token: data.beds24_token || undefined,
@@ -363,6 +366,7 @@ export const toAuthUser = (user: User): AuthUser => {
     roomId: user.roomId,
     landingPageUrl: user.landingPageUrl,
     phoneNumber: user.phoneNumber,
+    secondaryPhoneNumber: user.secondaryPhoneNumber,
     role: user.role,
     isDemo: user.isDemo,
     beds24Token: user.beds24Token,

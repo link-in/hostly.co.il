@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase/server'
 import { sendWhatsAppMessage } from '@/lib/whatsapp'
+import { buildOwnerPhoneList, sendWhatsAppToAll } from '@/lib/notifications/ownerPhones'
 import { generateAccessCode } from '@/lib/check-in/generateAccessCode'
 import { getUserByEmail } from '@/lib/auth/getUsersDb'
 import type { SubmitCheckInRequest, SubmitCheckInResponse } from '@/lib/check-in/types'
@@ -69,7 +70,7 @@ export async function POST(request: Request) {
     // Fetch user settings
     const { data: user } = await supabase
       .from('users')
-      .select('check_in_settings, display_name, phone_number, email')
+      .select('check_in_settings, display_name, phone_number, secondary_phone_number, email')
       .eq('id', checkIn.user_id)
       .single()
 
@@ -116,6 +117,7 @@ export async function POST(request: Request) {
     const propertyGuide = settings.property_guide || ''
     const propertyName = user?.display_name || 'הנכס'
     const ownerPhone = user?.phone_number || ''
+    const ownerPhones = buildOwnerPhoneList(user?.phone_number, user?.secondary_phone_number)
 
     // Build guest message
     let guestMessage = `מעולה ${checkIn.guest_name}! ✅\n\n`
@@ -162,12 +164,11 @@ export async function POST(request: Request) {
                         `👥 מספר אורחים: ${formData.actual_num_guests}\n` +
                         `📞 טלפון: ${checkIn.guest_phone}`
 
-    if (ownerPhone) {
-      const ownerWhatsAppResult = await sendWhatsAppMessage({
-        to: ownerPhone,
-        message: ownerMessage
-      })
-      console.log('📱 Owner WhatsApp:', ownerWhatsAppResult.success ? '✅' : '❌')
+    if (ownerPhones.length > 0) {
+      const ownerWhatsAppResults = await sendWhatsAppToAll(ownerPhones, ownerMessage)
+      for (const result of ownerWhatsAppResults) {
+        console.log(`📱 Owner WhatsApp (${result.to}):`, result.success ? '✅' : `❌ ${result.error}`)
+      }
     }
 
     // Update customer record to mark check-in completed

@@ -22,6 +22,8 @@ export interface User {
   roomId: string
   landingPageUrl?: string
   phoneNumber?: string
+  /** Optional additional phone number (e.g. co-host/manager) that receives the same owner-facing WhatsApp notifications. */
+  secondaryPhoneNumber?: string
   role: UserRole
   isDemo?: boolean
   beds24Token?: string
@@ -44,6 +46,8 @@ export interface AuthUser {
   roomId: string
   landingPageUrl?: string
   phoneNumber?: string
+  /** Optional additional phone number (e.g. co-host/manager) that receives the same owner-facing WhatsApp notifications. */
+  secondaryPhoneNumber?: string
   role: UserRole
   isDemo?: boolean
   beds24Token?: string

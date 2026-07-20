@@ -15,6 +15,7 @@ export async function POST(request: Request) {
     email?: string
     landingPageUrl?: string
     phoneNumber?: string
+    secondaryPhoneNumber?: string
     propertyId?: string
     roomId?: string
     currentPassword?: string
@@ -86,6 +87,14 @@ export async function POST(request: Request) {
       updates.phoneNumber = payload.phoneNumber
     }
 
+    if (payload.secondaryPhoneNumber !== undefined) {
+      // Validate phone number format (optional field — empty string clears it)
+      if (payload.secondaryPhoneNumber && !payload.secondaryPhoneNumber.match(/^\+?\d{10,15}$/)) {
+        return NextResponse.json({ error: 'פורמט מספר טלפון נוסף לא תקין. השתמש בפורמט: +972501234567' }, { status: 400 })
+      }
+      updates.secondaryPhoneNumber = payload.secondaryPhoneNumber
+    }
+
     // Allow user to set their own propertyId/roomId (used during onboarding)
     if (payload.propertyId !== undefined) {
       updates.propertyId = payload.propertyId
@@ -125,6 +134,7 @@ export async function POST(request: Request) {
         roomId: updatedUser.roomId,
         landingPageUrl: updatedUser.landingPageUrl,
         phoneNumber: updatedUser.phoneNumber,
+        secondaryPhoneNumber: updatedUser.secondaryPhoneNumber,
       },
     })
   } catch (error) {

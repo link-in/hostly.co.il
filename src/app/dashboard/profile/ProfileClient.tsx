@@ -23,6 +23,7 @@ const ProfileClient = () => {
   const [email, setEmail] = useState('')
   const [landingPageUrl, setLandingPageUrl] = useState('')
   const [phoneNumber, setPhoneNumber] = useState('')
+  const [secondaryPhoneNumber, setSecondaryPhoneNumber] = useState('')
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -166,6 +167,7 @@ const ProfileClient = () => {
       setEmail(session.user.email ?? '')
       setLandingPageUrl(session.user.landingPageUrl ?? '')
       setPhoneNumber(session.user.phoneNumber ?? '')
+      setSecondaryPhoneNumber(session.user.secondaryPhoneNumber ?? '')
       setGoogleReviewUrl(session.user.googleReviewUrl ?? '')
       
       // Load check-in settings
@@ -211,6 +213,7 @@ const ProfileClient = () => {
           email: email.trim(),
           landingPageUrl: landingPageUrl.trim(),
           phoneNumber: phoneNumber.trim(),
+          secondaryPhoneNumber: secondaryPhoneNumber.trim(),
           googleReviewUrl: googleReviewUrl.trim(),
           checkInSettings: {
             wifi_ssid: wifiSsid.trim(),
@@ -236,6 +239,7 @@ const ProfileClient = () => {
         displayName: displayName.trim(),
         landingPageUrl: landingPageUrl.trim(),
         phoneNumber: phoneNumber.trim(),
+        secondaryPhoneNumber: secondaryPhoneNumber.trim(),
         googleReviewUrl: googleReviewUrl.trim(),
         checkInSettings: {
           wifi_ssid: wifiSsid.trim(),
@@ -450,6 +454,25 @@ const ProfileClient = () => {
                     />
                     <small className="text-muted">
                       הכנס מספר טלפון ישראלי - המערכת תמיר אוטומטית לפורמט בינלאומי
+                    </small>
+                  </div>
+
+                  <div className="col-md-6">
+                    <label className="form-label fw-semibold" style={{ color: '#667eea' }}>
+                      📱 מספר טלפון נוסף (מנהל/מארח)
+                    </label>
+                    <input
+                      type="tel"
+                      className="form-control shadow-sm profile-input"
+                      style={inputStyle}
+                      value={secondaryPhoneNumber}
+                      onChange={(e) => setSecondaryPhoneNumber(e.target.value)}
+                      disabled={!editing}
+                      placeholder="0528676516"
+                      dir="ltr"
+                    />
+                    <small className="text-muted">
+                      אופציונלי - מספר נוסף שיקבל את כל אותן התראות WhatsApp כמו המספר הראשי (הזמנות חדשות, סיום צ'ק-אין)
                     </small>
                   </div>
 
@@ -1059,6 +1082,7 @@ const ProfileClient = () => {
                             setEmail(session?.user?.email ?? '')
                             setLandingPageUrl(session?.user?.landingPageUrl ?? '')
                             setPhoneNumber(session?.user?.phoneNumber ?? '')
+                            setSecondaryPhoneNumber(session?.user?.secondaryPhoneNumber ?? '')
                             setGoogleReviewUrl(session?.user?.googleReviewUrl ?? '')
                             
                             // Reset check-in settings

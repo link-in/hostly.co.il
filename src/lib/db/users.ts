@@ -5,10 +5,13 @@
  */
 
 import { createServerClient, createServiceRoleClient } from '@/lib/supabase/server'
-import { normalizePhoneNumber } from '@/lib/utils/phoneFormatter'
+import { buildOwnerPhoneList } from '@/lib/notifications/ownerPhones'
 
 export interface OwnerInfo {
+  /** Primary owner phone (kept for backward compatibility / guest-facing display). */
   phoneNumber: string | null
+  /** Every phone number that should receive owner-facing system notifications (primary + optional secondary). */
+  phoneNumbers: string[]
   roomName: string | null
 }
 
@@ -126,10 +129,14 @@ export async function getOwnerInfoByPropertyRoom(
   propertyId: number | string | undefined,
   roomId: number | string | undefined,
 ): Promise<OwnerInfo> {
-  const envFallback = (): OwnerInfo => ({
-    phoneNumber: process.env.OWNER_PHONE_NUMBER?.trim() ?? null,
-    roomName: null,
-  })
+  const envFallback = (): OwnerInfo => {
+    const phoneNumbers = buildOwnerPhoneList(process.env.OWNER_PHONE_NUMBER)
+    return {
+      phoneNumber: phoneNumbers[0] ?? null,
+      phoneNumbers,
+      roomName: null,
+    }
+  }
 
   try {
     const supabase = createServerClient()
@@ -138,7 +145,7 @@ export async function getOwnerInfoByPropertyRoom(
       return envFallback()
     }
 
-    let query = supabase.from('users').select('display_name, phone_number')
+    let query = supabase.from('users').select('display_name, phone_number, secondary_phone_number')
 
     if (propertyId) {
       query = query.eq('property_id', String(propertyId))
@@ -153,12 +160,11 @@ export async function getOwnerInfoByPropertyRoom(
       return envFallback()
     }
 
-    if (!data.phone_number?.trim()) {
-      return { phoneNumber: null, roomName: data.display_name ?? null }
-    }
+    const phoneNumbers = buildOwnerPhoneList(data.phone_number, data.secondary_phone_number)
 
     return {
-      phoneNumber: normalizePhoneNumber(data.phone_number),
+      phoneNumber: phoneNumbers[0] ?? null,
+      phoneNumbers,
       roomName: data.display_name ?? null,
     }
   } catch (err) {

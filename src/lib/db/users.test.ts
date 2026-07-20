@@ -6,8 +6,8 @@
  * Beds24 access token (no refresh token) — i.e. it excluded real, working hosts
  * from any scheduled job (like the review-reminders cron) that relies on this list.
  */
-import { vi, describe, it, expect } from 'vitest'
-import { getUsersWithBeds24Access } from './users'
+import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { getUsersWithBeds24Access, getOwnerInfoByPropertyRoom } from './users'
 
 type FakeRow = Record<string, unknown>
 
@@ -45,7 +45,22 @@ vi.mock('@/lib/supabase/server', () => ({
   createServerClient: vi.fn(),
 }))
 
-import { createServiceRoleClient } from '@/lib/supabase/server'
+import { createServiceRoleClient, createServerClient } from '@/lib/supabase/server'
+
+/** Minimal chainable stub for the `.select().eq().single()` shape used by `getOwnerInfoByPropertyRoom`. */
+function makeSingleRowClient(row: FakeRow | null) {
+  return {
+    from(_table: string) {
+      return {
+        select: () => ({
+          eq: () => ({
+            single: () => Promise.resolve(row ? { data: row, error: null } : { data: null, error: { message: 'not found' } }),
+          }),
+        }),
+      }
+    },
+  }
+}
 
 describe('getUsersWithBeds24Access', () => {
   it('includes a host with an access token but NO refresh token (long-lived token — the common real-world case)', async () => {
@@ -129,5 +144,67 @@ describe('getUsersWithBeds24Access', () => {
     const users = await getUsersWithBeds24Access()
 
     expect(users).toHaveLength(0)
+  })
+})
+
+describe('getOwnerInfoByPropertyRoom — secondary phone number support', () => {
+  const ORIGINAL_ENV = process.env.OWNER_PHONE_NUMBER
+
+  beforeEach(() => {
+    delete process.env.OWNER_PHONE_NUMBER
+  })
+
+  afterEach(() => {
+    process.env.OWNER_PHONE_NUMBER = ORIGINAL_ENV
+  })
+
+  it('returns both the primary and secondary phone in phoneNumbers when both are set', async () => {
+    vi.mocked(createServerClient).mockReturnValue(
+      makeSingleRowClient({
+        display_name: 'נוף הרים בדפנה',
+        phone_number: '0501111111',
+        secondary_phone_number: '0502222222',
+      }) as never,
+    )
+
+    const info = await getOwnerInfoByPropertyRoom('306559', undefined)
+
+    expect(info.phoneNumbers).toEqual(['+972501111111', '+972502222222'])
+    expect(info.phoneNumber).toBe('+972501111111')
+    expect(info.roomName).toBe('נוף הרים בדפנה')
+  })
+
+  it('falls back to just the primary phone when no secondary is configured', async () => {
+    vi.mocked(createServerClient).mockReturnValue(
+      makeSingleRowClient({
+        display_name: 'Host',
+        phone_number: '0501111111',
+        secondary_phone_number: null,
+      }) as never,
+    )
+
+    const info = await getOwnerInfoByPropertyRoom('306559', undefined)
+
+    expect(info.phoneNumbers).toEqual(['+972501111111'])
+  })
+
+  it('returns an empty phoneNumbers array when neither phone is configured', async () => {
+    vi.mocked(createServerClient).mockReturnValue(
+      makeSingleRowClient({ display_name: 'Host', phone_number: null, secondary_phone_number: null }) as never,
+    )
+
+    const info = await getOwnerInfoByPropertyRoom('306559', undefined)
+
+    expect(info.phoneNumbers).toEqual([])
+    expect(info.phoneNumber).toBeNull()
+  })
+
+  it('falls back to OWNER_PHONE_NUMBER env var when the user is not found in the DB', async () => {
+    process.env.OWNER_PHONE_NUMBER = '0509999999'
+    vi.mocked(createServerClient).mockReturnValue(makeSingleRowClient(null) as never)
+
+    const info = await getOwnerInfoByPropertyRoom('unknown-property', undefined)
+
+    expect(info.phoneNumbers).toEqual(['+972509999999'])
   })
 })

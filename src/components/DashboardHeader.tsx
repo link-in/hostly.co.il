@@ -542,7 +542,7 @@ export default function DashboardHeader({
                         <path d="M16 3.13a4 4 0 0 1 0 7.75" />
                       </svg>
                     </div>
-                    <span style={{ fontSize: '15px', fontWeight: '500', color: '#333' }}>ניהול לקוחות</span>
+                    <span style={{ fontSize: '15px', fontWeight: '500', color: '#333' }}>מאגר לקוחות</span>
                   </Link>
                   
                   <Link 
