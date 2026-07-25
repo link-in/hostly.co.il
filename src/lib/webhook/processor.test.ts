@@ -4,7 +4,18 @@
  * but we unit-test all extracted pure helpers here.
  */
 import { describe, it, expect } from 'vitest'
-import { isConfirmedBookingStatus, parseBookingSource } from '@/lib/bookings/normalizer'
+import {
+  isConfirmedBookingStatus,
+  isCancelledBookingStatus,
+  isBookingRequestStatus,
+  parseBookingSource,
+} from '@/lib/bookings/normalizer'
+import {
+  buildOwnerNewBookingMessage,
+  buildOwnerCancellationMessage,
+  buildOwnerBookingRequestMessage,
+  bookingAlertNotificationKey,
+} from '@/lib/notifications/bookingAlerts'
 
 // ─── Status filtering (mirrors processor logic) ───────────────────────────────
 
@@ -21,13 +32,36 @@ describe('Webhook — booking status filtering', () => {
     expect(isConfirmedBookingStatus('1')).toBe(true)
   })
 
-  it('skips cancelled bookings', () => {
+  it('does not treat cancelled as confirmed', () => {
     expect(isConfirmedBookingStatus('cancelled')).toBe(false)
   })
 
   it('skips pending bookings', () => {
     expect(isConfirmedBookingStatus('pending')).toBe(false)
   })
+})
+
+describe('Webhook — cancellation status filtering', () => {
+  it.each(['cancelled', 'CANCELLED', '0'])('detects "%s" as cancelled', (status) => {
+    expect(isCancelledBookingStatus(status)).toBe(true)
+  })
+
+  it.each(['confirmed', 'new', '1', 'pending'])('does not treat "%s" as cancelled', (status) => {
+    expect(isCancelledBookingStatus(status)).toBe(false)
+  })
+})
+
+describe('Webhook — booking request status filtering', () => {
+  it.each(['request', 'inquiry', '3', '5'])('detects "%s" as a booking request', (status) => {
+    expect(isBookingRequestStatus(status)).toBe(true)
+  })
+
+  it.each(['confirmed', 'new', '1', 'cancelled', '0'])(
+    'does not treat "%s" as a booking request',
+    (status) => {
+      expect(isBookingRequestStatus(status)).toBe(false)
+    },
+  )
 })
 
 // ─── Guest name formatting ────────────────────────────────────────────────────
@@ -69,30 +103,17 @@ describe('Webhook — booking source', () => {
 // ─── Owner message building ───────────────────────────────────────────────────
 
 describe('Webhook — owner message building', () => {
-  const buildOwnerMessage = (
-    guestName: string,
-    guestPhone: string,
-    booking: { id: number; arrival: string; departure?: string; numAdult?: number },
-    roomName: string | null,
-  ) => {
-    const lines = [
-      '🔔 הזמנה חדשה!',
-      `👤 אורח: ${guestName}`,
-      `📱 טלפון: ${guestPhone || 'לא צוין'}`,
-      `📅 כניסה: ${booking.arrival}`,
-      booking.departure ? `📅 יציאה: ${booking.departure}` : '',
-      roomName ? `🏠 יחידה: ${roomName}` : '',
-      booking.numAdult ? `👥 מספר אורחים: ${booking.numAdult}` : '',
-      `🔖 מספר הזמנה: ${booking.id}`,
-    ].filter(Boolean)
-    return lines.join('\n')
-  }
-
   it('includes all fields when complete', () => {
-    const msg = buildOwnerMessage('Yossi Cohen', '+972521234567',
-      { id: 42, arrival: '2026-06-01', departure: '2026-06-05', numAdult: 2 },
-      'Mountain View',
-    )
+    const msg = buildOwnerNewBookingMessage({
+      guestName: 'Yossi Cohen',
+      guestPhone: '+972521234567',
+      arrival: '2026-06-01',
+      departure: '2026-06-05',
+      roomName: 'Mountain View',
+      bookingId: 42,
+      numAdult: 2,
+    })
+    expect(msg).toContain('הזמנה חדשה')
     expect(msg).toContain('Yossi Cohen')
     expect(msg).toContain('+972521234567')
     expect(msg).toContain('2026-06-01')
@@ -103,10 +124,67 @@ describe('Webhook — owner message building', () => {
   })
 
   it('omits optional lines when missing', () => {
-    const msg = buildOwnerMessage('Yossi', '', { id: 1, arrival: '2026-06-01' }, null)
+    const msg = buildOwnerNewBookingMessage({
+      guestName: 'Yossi',
+      arrival: '2026-06-01',
+      bookingId: 1,
+    })
     expect(msg).toContain('לא צוין')
     expect(msg).not.toContain('יציאה')
     expect(msg).not.toContain('יחידה')
     expect(msg).not.toContain('אורחים')
+  })
+})
+
+describe('Webhook — owner cancellation message', () => {
+  it('builds a cancellation alert with booking details', () => {
+    const msg = buildOwnerCancellationMessage({
+      guestName: 'Yossi Cohen',
+      guestPhone: '+972521234567',
+      arrival: '2026-06-01',
+      departure: '2026-06-05',
+      roomName: 'Mountain View',
+      bookingId: 42,
+    })
+    expect(msg).toContain('הזמנה בוטלה')
+    expect(msg).toContain('Yossi Cohen')
+    expect(msg).toContain('+972521234567')
+    expect(msg).toContain('2026-06-01')
+    expect(msg).toContain('Mountain View')
+    expect(msg).toContain('42')
+  })
+
+})
+
+describe('Webhook — owner booking request message', () => {
+  it('builds a request alert with booking details', () => {
+    const msg = buildOwnerBookingRequestMessage({
+      guestName: 'Yossi Cohen',
+      guestPhone: '+972521234567',
+      arrival: '2026-06-01',
+      departure: '2026-06-05',
+      roomName: 'Mountain View',
+      bookingId: 42,
+      numAdult: 2,
+    })
+    expect(msg).toContain('בקשת הזמנה חדשה')
+    expect(msg).toContain('ממתין לאישורך')
+    expect(msg).toContain('Yossi Cohen')
+    expect(msg).toContain('2026-06-05')
+    expect(msg).toContain('Mountain View')
+    expect(msg).toContain('42')
+  })
+})
+
+describe('Webhook — owner alert dedupe keys', () => {
+  it('separates each event from the new-booking notification row', () => {
+    expect(bookingAlertNotificationKey(42, 'cancelled')).toBe('42:cancelled')
+    expect(bookingAlertNotificationKey(42, 'request')).toBe('42:request')
+  })
+
+  it('keeps cancellation and request alerts independent', () => {
+    expect(bookingAlertNotificationKey(42, 'cancelled')).not.toBe(
+      bookingAlertNotificationKey(42, 'request'),
+    )
   })
 })

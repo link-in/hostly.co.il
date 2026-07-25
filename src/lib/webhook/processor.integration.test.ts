@@ -13,6 +13,10 @@ import { getUserIdByPropertyRoom, getOwnerInfoByPropertyRoom, getUserBeds24Token
 import { addOrUpdateCustomer } from '@/lib/customers/addOrUpdateCustomer'
 import { refreshRoomCache } from '@/lib/availability/cache'
 import { sendWhatsAppMessage } from '@/lib/whatsapp'
+import {
+  notifyOwnersOfBookingCancellation,
+  notifyOwnersOfBookingRequest,
+} from '@/lib/notifications/bookingAlerts'
 import { processWebhook } from './processor'
 import type { Beds24WebhookWrapper } from './types'
 import { BEDS24_ROOM_ID, BEDS24_PROPERTY_ID } from '@/__tests__/fixtures/beds24'
@@ -30,6 +34,14 @@ vi.mock('@/lib/db/users', () => ({
 vi.mock('@/lib/customers/addOrUpdateCustomer', () => ({ addOrUpdateCustomer: vi.fn() }))
 vi.mock('@/lib/availability/cache', () => ({ refreshRoomCache: vi.fn() }))
 vi.mock('@/lib/whatsapp', () => ({ sendWhatsAppMessage: vi.fn() }))
+vi.mock('@/lib/notifications/bookingAlerts', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/notifications/bookingAlerts')>()
+  return {
+    ...actual,
+    notifyOwnersOfBookingCancellation: vi.fn(),
+    notifyOwnersOfBookingRequest: vi.fn(),
+  }
+})
 
 const TEST_USER_ID = 'user-1'
 
@@ -81,6 +93,8 @@ beforeEach(() => {
   vi.mocked(addOrUpdateCustomer).mockResolvedValue({ success: true, customerId: 'customer-1' })
   vi.mocked(refreshRoomCache).mockResolvedValue({ upserted: 3 })
   vi.mocked(sendWhatsAppMessage).mockResolvedValue({ success: true, provider: 'mock' })
+  vi.mocked(notifyOwnersOfBookingCancellation).mockResolvedValue({ sent: true })
+  vi.mocked(notifyOwnersOfBookingRequest).mockResolvedValue({ sent: true })
   vi.mocked(getUserBeds24Tokens).mockReset()
 
   process.env.BEDS24_TOKEN = 'env-access-token'
@@ -144,7 +158,7 @@ describe('processWebhook — cache refresh token resolution', () => {
     expect(refreshRoomCache).not.toHaveBeenCalled()
   })
 
-  it('skips cache refresh entirely for a cancelled booking', async () => {
+  it('refreshes the cache and notifies owners for a cancelled booking', async () => {
     vi.mocked(getUserBeds24Tokens).mockResolvedValue({
       accessToken: 'user-access-token',
       refreshToken: 'user-refresh-token',
@@ -153,7 +167,66 @@ describe('processWebhook — cache refresh token resolution', () => {
     const result = await processWebhook(buildWebhook({ status: 'cancelled' }))
     await flushMicrotasks()
 
-    expect(result.skipped).toBe(true)
-    expect(refreshRoomCache).not.toHaveBeenCalled()
+    expect(result.success).toBe(true)
+    expect(result.skipped).toBeUndefined()
+    expect(refreshRoomCache).toHaveBeenCalledWith(
+      TEST_USER_ID,
+      String(BEDS24_PROPERTY_ID),
+      String(BEDS24_ROOM_ID),
+      'user-access-token',
+      'user-refresh-token',
+    )
+    expect(notifyOwnersOfBookingCancellation).toHaveBeenCalledWith(
+      expect.objectContaining({
+        bookingId: 42,
+        propertyId: BEDS24_PROPERTY_ID,
+        roomId: BEDS24_ROOM_ID,
+        guestName: 'Yossi Cohen',
+      }),
+    )
+  })
+
+  it('still refreshes cache when cancel WhatsApp was already sent', async () => {
+    vi.mocked(getUserBeds24Tokens).mockResolvedValue({
+      accessToken: 'user-access-token',
+      refreshToken: 'user-refresh-token',
+    })
+    vi.mocked(notifyOwnersOfBookingCancellation).mockResolvedValue({ sent: false, duplicate: true })
+
+    const result = await processWebhook(buildWebhook({ status: 'cancelled' }))
+    await flushMicrotasks()
+
+    expect(result.duplicate).toBe(true)
+    expect(refreshRoomCache).toHaveBeenCalled()
+  })
+
+  it.each(['request', 'inquiry'])('notifies owners about a "%s" booking', async (status) => {
+    vi.mocked(getUserBeds24Tokens).mockResolvedValue({
+      accessToken: 'user-access-token',
+      refreshToken: 'user-refresh-token',
+    })
+
+    const result = await processWebhook(buildWebhook({ status }))
+    await flushMicrotasks()
+
+    expect(result.success).toBe(true)
+    expect(result.skipped).toBeUndefined()
+    expect(notifyOwnersOfBookingRequest).toHaveBeenCalledWith(
+      expect.objectContaining({ bookingId: 42, guestName: 'Yossi Cohen', numAdult: 2 }),
+    )
+    expect(notifyOwnersOfBookingCancellation).not.toHaveBeenCalled()
+  })
+
+  it('does not send a guest message or save a customer for a booking request', async () => {
+    vi.mocked(getUserBeds24Tokens).mockResolvedValue({
+      accessToken: 'user-access-token',
+      refreshToken: 'user-refresh-token',
+    })
+
+    await processWebhook(buildWebhook({ status: 'request' }))
+    await flushMicrotasks()
+
+    expect(sendWhatsAppMessage).not.toHaveBeenCalled()
+    expect(addOrUpdateCustomer).not.toHaveBeenCalled()
   })
 })

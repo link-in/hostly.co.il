@@ -9,8 +9,20 @@ import { addOrUpdateCustomer } from '@/lib/customers/addOrUpdateCustomer'
 import { refreshRoomCache } from '@/lib/availability/cache'
 import { sendWhatsAppMessage } from '@/lib/whatsapp'
 import { sendWhatsAppToAll } from '@/lib/notifications/ownerPhones'
+import {
+  buildOwnerNewBookingMessage,
+  notifyOwnersOfBookingCancellation,
+  notifyOwnersOfBookingRequest,
+  type NotifyOwnerAlertInput,
+  type OwnerAlertResult,
+} from '@/lib/notifications/bookingAlerts'
 import { normalizePhoneNumber } from '@/lib/utils/phoneFormatter'
-import { parseBookingSource, isConfirmedBookingStatus } from '@/lib/bookings/normalizer'
+import {
+  parseBookingSource,
+  isConfirmedBookingStatus,
+  isCancelledBookingStatus,
+  isBookingRequestStatus,
+} from '@/lib/bookings/normalizer'
 import type { Beds24Booking, Beds24WebhookWrapper } from './types'
 
 export type { Beds24Booking, Beds24WebhookWrapper }
@@ -25,6 +37,14 @@ export interface WebhookResult {
 /** Main entry point — processes one Beds24 webhook event end-to-end. */
 export async function processWebhook(webhookData: Beds24WebhookWrapper): Promise<WebhookResult> {
   const { booking } = webhookData
+
+  if (isCancelledBookingStatus(booking.status)) {
+    return processOwnerAlertOnly(webhookData, 'cancellation', notifyOwnersOfBookingCancellation)
+  }
+
+  if (isBookingRequestStatus(booking.status)) {
+    return processOwnerAlertOnly(webhookData, 'booking request', notifyOwnersOfBookingRequest)
+  }
 
   if (await isDuplicateNotification(booking.id)) {
     console.log(`⚠️ Duplicate webhook for booking ${booking.id}`)
@@ -72,6 +92,53 @@ export async function processWebhook(webhookData: Beds24WebhookWrapper): Promise
   }
 
   return { success: true, message: 'Webhook processed successfully' }
+}
+
+/**
+ * Handles statuses that only affect the owner (cancellation, booking request):
+ * refresh the availability cache and alert the owner phones — no guest message
+ * and no customer record, since the stay is not confirmed.
+ *
+ * Each event has its own dedupe key (`{id}:cancelled`, `{id}:request`), so a
+ * prior "new booking" row never blocks these alerts.
+ */
+async function processOwnerAlertOnly(
+  webhookData: Beds24WebhookWrapper,
+  label: string,
+  notifyOwners: (input: NotifyOwnerAlertInput) => Promise<OwnerAlertResult>,
+): Promise<WebhookResult> {
+  const { booking } = webhookData
+  const guestName = `${booking.firstName} ${booking.lastName}`.trim() || 'אורח'
+  const guestPhoneRaw = booking.mobile || booking.phone || ''
+  const guestPhone = guestPhoneRaw ? normalizePhoneNumber(guestPhoneRaw) : ''
+
+  console.log(`📣 Processing ${label} for booking ${booking.id}`)
+
+  const userId = await getUserIdByPropertyRoom(booking.propertyId, booking.roomId)
+  // Always refresh cache — even when WhatsApp was already sent from another flow
+  maybeRefreshCache(userId, booking).catch((e) => console.error('[Cache] refresh failed:', e))
+
+  const result = await notifyOwners({
+    bookingId: booking.id,
+    propertyId: booking.propertyId,
+    roomId: booking.roomId,
+    guestName,
+    guestPhone,
+    arrival: booking.arrival,
+    departure: booking.departure,
+    numAdult: booking.numAdult,
+    rawPayload: webhookData,
+  })
+
+  if (result.duplicate) {
+    return {
+      success: true,
+      message: `Booking ${booking.id} ${label} already notified`,
+      duplicate: true,
+    }
+  }
+
+  return { success: true, message: `Booking ${label} processed successfully` }
 }
 
 async function maybeSaveCustomer(
@@ -149,18 +216,18 @@ async function sendOwnerNotification(
     console.warn('⚠️ No owner phone - skipping owner notification')
     return
   }
-  const lines = [
-    '🔔 הזמנה חדשה!',
-    `👤 אורח: ${guestName}`,
-    `📱 טלפון: ${guestPhone || 'לא צוין'}`,
-    `📅 כניסה: ${booking.arrival}`,
-    booking.departure ? `📅 יציאה: ${booking.departure}` : '',
-    roomName ? `🏠 יחידה: ${roomName}` : '',
-    booking.numAdult ? `👥 מספר אורחים: ${booking.numAdult}` : '',
-    `🔖 מספר הזמנה: ${booking.id}`,
-  ].filter(Boolean)
 
-  const results = await sendWhatsAppToAll(ownerPhones, lines.join('\n'))
+  const message = buildOwnerNewBookingMessage({
+    guestName,
+    guestPhone,
+    arrival: booking.arrival,
+    departure: booking.departure,
+    roomName,
+    bookingId: booking.id,
+    numAdult: booking.numAdult,
+  })
+
+  const results = await sendWhatsAppToAll(ownerPhones, message)
   for (const result of results) {
     if (!result.success) {
       console.error(`❌ Owner notification failed for ${result.to}:`, result.error)

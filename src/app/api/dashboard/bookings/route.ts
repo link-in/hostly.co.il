@@ -8,6 +8,7 @@ import { getUserByEmail } from '@/lib/auth/getUsersDb'
 import { normalizePhoneNumber } from '@/lib/utils/phoneFormatter'
 import { addOrUpdateCustomer } from '@/lib/customers/addOrUpdateCustomer'
 import { normalizeBookingItem, extractBookingId, extractUserTokens } from '@/lib/bookings/normalizer'
+import { notifyOwnersOfBookingCancellation } from '@/lib/notifications/bookingAlerts'
 
 export const dynamic = 'force-dynamic'  // Allow POST requests for creating bookings
 export const revalidate = 0
@@ -635,7 +636,16 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: 'Missing bookingId in request' }, { status: 400 })
   }
 
-  const { bookingId, source, propertyId, roomId, arrival, departure } = requestBody as Record<string, unknown>
+  const {
+    bookingId,
+    source,
+    propertyId,
+    roomId,
+    arrival,
+    departure,
+    guestName,
+    guestPhone,
+  } = requestBody as Record<string, unknown>
 
   // Validate that it's a Direct booking
   if (!source || typeof source !== 'string' || !source.toLowerCase().includes('direct')) {
@@ -711,6 +721,18 @@ export async function DELETE(request: Request) {
 
     const data = await response.json()
     console.log('📦 Beds24 cancel response:', JSON.stringify(data, null, 2))
+
+    const sendCancelWhatsApp = () =>
+      notifyOwnersOfBookingCancellation({
+        bookingId: bookingIdInt as number | string,
+        propertyId: propertyIdInt as number | string,
+        roomId: roomIdInt as number | string,
+        guestName: typeof guestName === 'string' && guestName.trim() ? guestName.trim() : 'אורח',
+        guestPhone: typeof guestPhone === 'string' ? guestPhone : undefined,
+        arrival: typeof arrival === 'string' ? arrival : '',
+        departure: typeof departure === 'string' ? departure : undefined,
+        rawPayload: { event: 'cancelled', source: 'dashboard', bookingId, beds24Response: data },
+      }).catch((e) => console.error('❌ Cancel WhatsApp failed:', e))
     
     // POST returns array of results
     if (Array.isArray(data) && data.length > 0) {
@@ -733,6 +755,7 @@ export async function DELETE(request: Request) {
         // If there are warnings but success=true, it's still OK
         if (result.success === true) {
           console.log('✅ Booking cancelled with warnings:', bookingId)
+          await sendCancelWhatsApp()
           return NextResponse.json({ success: true, data, bookingId, warnings: result.warnings })
         }
       }
@@ -740,6 +763,7 @@ export async function DELETE(request: Request) {
       // Check success
       if (result.success === true) {
         console.log('✅ Booking cancelled successfully:', bookingId)
+        await sendCancelWhatsApp()
         return NextResponse.json({ success: true, data, bookingId })
       }
       

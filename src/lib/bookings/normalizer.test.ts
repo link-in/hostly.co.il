@@ -5,6 +5,8 @@ import {
   extractBookingId,
   normalizeBookingItem,
   isConfirmedBookingStatus,
+  isCancelledBookingStatus,
+  isBookingRequestStatus,
   extractUserTokens,
 } from './normalizer'
 
@@ -81,6 +83,28 @@ describe('isConfirmedBookingStatus', () => {
 
   it.each(['cancelled', 'pending', 'rejected', '0'])('rejects "%s"', (status) => {
     expect(isConfirmedBookingStatus(status)).toBe(false)
+  })
+})
+
+describe('isCancelledBookingStatus', () => {
+  it.each(['cancelled', 'CANCELLED', '0'])('accepts "%s"', (status) => {
+    expect(isCancelledBookingStatus(status)).toBe(true)
+  })
+
+  it.each(['confirmed', 'new', '1', 'pending', 'rejected'])('rejects "%s"', (status) => {
+    expect(isCancelledBookingStatus(status)).toBe(false)
+  })
+})
+
+// ─── isBookingRequestStatus ───────────────────────────────────────────────────
+
+describe('isBookingRequestStatus', () => {
+  it.each(['request', 'REQUEST', 'inquiry', '3', '5'])('accepts "%s"', (status) => {
+    expect(isBookingRequestStatus(status)).toBe(true)
+  })
+
+  it.each(['confirmed', 'new', '1', 'cancelled', '0', 'black', '4'])('rejects "%s"', (status) => {
+    expect(isBookingRequestStatus(status)).toBe(false)
   })
 })
 

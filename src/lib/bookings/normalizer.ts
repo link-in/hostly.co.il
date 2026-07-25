@@ -83,6 +83,21 @@ export function isConfirmedBookingStatus(status: string): boolean {
   return valid.includes(status.toLowerCase()) || status === '1'
 }
 
+/** Returns true if the booking was cancelled (Beds24 string or numeric `0`). */
+export function isCancelledBookingStatus(status: string): boolean {
+  const normalized = String(status).toLowerCase()
+  return normalized === 'cancelled' || normalized === '0'
+}
+
+/**
+ * Returns true for a channel booking request awaiting owner approval —
+ * Beds24 `request` (3) and `inquiry` (5), sent by Airbnb / Booking.com.
+ */
+export function isBookingRequestStatus(status: string): boolean {
+  const normalized = String(status).toLowerCase()
+  return ['request', 'inquiry', '3', '5'].includes(normalized)
+}
+
 /** Extract user-specific Beds24 tokens from a session object, or undefined for global tokens. */
 export function extractUserTokens(
   session: { user?: { beds24Token?: string; beds24RefreshToken?: string } } | null,

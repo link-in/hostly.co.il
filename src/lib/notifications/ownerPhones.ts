@@ -1,7 +1,8 @@
 /**
  * Shared helpers for sending the same owner-facing WhatsApp message to every
  * configured recipient (primary owner phone + optional secondary phone, e.g.
- * a co-host or property manager).
+ * a co-host or property manager). Used for new bookings, cancellations, and
+ * check-in completion alerts.
  */
 import { normalizePhoneNumber } from '@/lib/utils/phoneFormatter'
 import { sendWhatsAppMessage } from '@/lib/whatsapp'

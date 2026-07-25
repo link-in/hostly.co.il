@@ -665,6 +665,8 @@ const DashboardClient = () => {
           roomId,
           arrival: reservation.checkIn,
           departure: reservation.checkOut,
+          guestName: reservation.guestName,
+          guestPhone: reservation.phone,
         }),
       })
 

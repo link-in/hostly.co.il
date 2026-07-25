@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react'
+import { Tag, Lock, Unlock } from 'lucide-react'
 import { createPortal } from 'react-dom'
 import type { Reservation, RoomPrice } from '@/lib/dashboard/types'
 import { formatCurrency } from '@/lib/dashboard/utils'
@@ -7,6 +8,7 @@ import HolidayIndicator from '@/components/HolidayIndicator'
 import { useSelectedRoom } from '@/lib/rooms/RoomContext'
 import { toast } from 'sonner'
 import { normalizeDate, toKey, isSameDay, addDays, buildDateRanges } from '@/lib/dashboard/calendarDates'
+import { buildBookingMap, isBookedOn, buildBookingSegments } from '@/lib/dashboard/bookingSegments'
 
 type CalendarPricingProps = {
   reservations: Reservation[]
@@ -24,95 +26,6 @@ const addMonths = (date: Date, months: number) => {
   copy.setDate(1)
   copy.setMonth(copy.getMonth() + months)
   return copy
-}
-
-const buildBookingMap = (reservations: Reservation[]) => {
-  const booked = new Map<string, Reservation[]>()
-
-  reservations.forEach((reservation) => {
-    if (!reservation.checkIn || !reservation.checkOut) {
-      return
-    }
-
-    const checkIn = normalizeDate(new Date(reservation.checkIn))
-    const checkOut = normalizeDate(new Date(reservation.checkOut))
-
-    if (Number.isNaN(checkIn.getTime()) || Number.isNaN(checkOut.getTime())) {
-      return
-    }
-
-    let cursor = checkIn
-    while (cursor < checkOut) {
-      const key = toKey(cursor)
-      const list = booked.get(key) ?? []
-      list.push(reservation)
-      booked.set(key, list)
-      cursor = addDays(cursor, 1)
-    }
-  })
-
-  return booked
-}
-
-const isBookedOn = (bookingMap: Map<string, Reservation[]>, date: Date) => {
-  const key = toKey(date)
-  return bookingMap.has(key)
-}
-
-type BookingSegment = {
-  id: string
-  row: number
-  startCol: number
-  endCol: number
-  label: string
-}
-
-const buildBookingSegments = (reservations: Reservation[], days: Date[]) => {
-  const indexMap = new Map<string, number>()
-  days.forEach((date, index) => {
-    indexMap.set(toKey(date), index)
-  })
-
-  const segments = new Map<string, BookingSegment>()
-
-  reservations.forEach((reservation) => {
-    if (!reservation.checkIn || !reservation.checkOut) {
-      return
-    }
-
-    const checkIn = normalizeDate(new Date(reservation.checkIn))
-    const checkOut = normalizeDate(new Date(reservation.checkOut))
-    if (Number.isNaN(checkIn.getTime()) || Number.isNaN(checkOut.getTime())) {
-      return
-    }
-
-    let cursor = checkIn
-    while (cursor < checkOut) {
-      const key = toKey(cursor)
-      const index = indexMap.get(key)
-      if (index !== undefined) {
-        const row = Math.floor(index / 7)
-        const col = index % 7
-        const segmentKey = `${reservation.id}-${row}`
-        const existing = segments.get(segmentKey)
-        if (existing) {
-          existing.startCol = Math.min(existing.startCol, col)
-          existing.endCol = Math.max(existing.endCol, col)
-        } else {
-          segments.set(segmentKey, {
-            id: segmentKey,
-            row,
-            startCol: col,
-            endCol: col,
-            label: reservation.guestName,
-          })
-        }
-      }
-      cursor = addDays(cursor, 1)
-    }
-  })
-
-  return Array.from(segments.values())
 }
 
 const HEBREW_MONTHS = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר']
@@ -831,7 +744,10 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated }: CalendarPric
                 className="position-absolute top-0 start-0 w-100 h-100"
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(7, 1fr)',
+                  // 14 half-day columns (2 per weekday) so check-in/check-out days can
+                  // show a half-width bar (arrival = PM half, departure = AM half),
+                  // letting turnover days visually overlap with the adjoining booking.
+                  gridTemplateColumns: 'repeat(14, 1fr)',
                   gridTemplateRows: `repeat(${weeksCount}, 1fr)`,
                   gap: '6px',
                   padding: '8px',
@@ -923,51 +839,69 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated }: CalendarPric
                 {saveSuccess}
               </div>
             ) : null}
-            <button
-              type="button"
-              className="btn w-100"
-              style={{ 
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                border: 'none',
-                color: 'white',
-              }}
-              onClick={applyPrice}
-              disabled={!selectedDates.length || !priceInput.trim() || saving}
-            >
-              {saving ? 'שומר...' : allSelectedAreBlocked ? 'עדכן מחיר ופתח תאריכים' : 'עדכן מחיר לתאריכים שנבחרו'}
-            </button>
-            <button
-              type="button"
-              className="btn w-100 mt-2"
-              style={{
-                background: selectedDates.length && !selectedHasBooked && selectedFreeDates.length > 0
-                  ? 'linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)'
-                  : 'rgba(239, 68, 68, 0.2)',
-                border: '1px solid rgba(239, 68, 68, 0.4)',
-                color: 'white',
-              }}
-              onClick={blockDates}
-              disabled={!selectedFreeDates.length || selectedHasBooked || saving}
-              title={selectedHasBooked ? 'לא ניתן לסגור תאריכים עם הזמנות קיימות' : 'סגור תאריכים חופשיים נבחרים להזמנות'}
-            >
-              {saving ? 'שומר...' : 'סגור להזמנות'}
-            </button>
-            <button
-              type="button"
-              className="btn w-100 mt-2"
-              style={{
-                background: selectedBlockedDates.length > 0
-                  ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
-                  : 'rgba(16, 185, 129, 0.2)',
-                border: '1px solid rgba(16, 185, 129, 0.4)',
-                color: 'white',
-              }}
-              onClick={unblockDates}
-              disabled={!selectedBlockedDates.length || saving}
-              title="שחרר חסימה לתאריכים חסומים שנבחרו"
-            >
-              {saving ? 'שומר...' : 'שחרר חסימה'}
-            </button>
+            <div className="d-flex gap-2">
+              <button
+                type="button"
+                className="btn flex-fill d-flex flex-column align-items-center justify-content-center gap-1"
+                style={{
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  border: 'none',
+                  color: 'white',
+                  padding: '8px 4px',
+                  fontSize: '11px',
+                  lineHeight: 1.2,
+                }}
+                onClick={applyPrice}
+                disabled={!selectedDates.length || !priceInput.trim() || saving}
+                title={allSelectedAreBlocked ? 'עדכן מחיר ופתח תאריכים' : 'עדכן מחיר לתאריכים שנבחרו'}
+                aria-label={allSelectedAreBlocked ? 'עדכן מחיר ופתח תאריכים' : 'עדכן מחיר לתאריכים שנבחרו'}
+              >
+                <Tag size={16} />
+                <span>{saving ? 'שומר...' : allSelectedAreBlocked ? 'עדכן ופתח' : 'עדכן מחיר'}</span>
+              </button>
+              <button
+                type="button"
+                className="btn flex-fill d-flex flex-column align-items-center justify-content-center gap-1"
+                style={{
+                  background: selectedDates.length && !selectedHasBooked && selectedFreeDates.length > 0
+                    ? 'linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)'
+                    : 'rgba(239, 68, 68, 0.2)',
+                  border: '1px solid rgba(239, 68, 68, 0.4)',
+                  color: 'white',
+                  padding: '8px 4px',
+                  fontSize: '11px',
+                  lineHeight: 1.2,
+                }}
+                onClick={blockDates}
+                disabled={!selectedFreeDates.length || selectedHasBooked || saving}
+                title={selectedHasBooked ? 'לא ניתן לסגור תאריכים עם הזמנות קיימות' : 'סגור תאריכים חופשיים נבחרים להזמנות'}
+                aria-label="סגור להזמנות"
+              >
+                <Lock size={16} />
+                <span>{saving ? 'שומר...' : 'סגור'}</span>
+              </button>
+              <button
+                type="button"
+                className="btn flex-fill d-flex flex-column align-items-center justify-content-center gap-1"
+                style={{
+                  background: selectedBlockedDates.length > 0
+                    ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
+                    : 'rgba(16, 185, 129, 0.2)',
+                  border: '1px solid rgba(16, 185, 129, 0.4)',
+                  color: 'white',
+                  padding: '8px 4px',
+                  fontSize: '11px',
+                  lineHeight: 1.2,
+                }}
+                onClick={unblockDates}
+                disabled={!selectedBlockedDates.length || saving}
+                title="שחרר חסימה לתאריכים חסומים שנבחרו"
+                aria-label="שחרר חסימה"
+              >
+                <Unlock size={16} />
+                <span>{saving ? 'שומר...' : 'שחרר'}</span>
+              </button>
+            </div>
             <div className="mt-4">
               <div className="d-flex align-items-center justify-content-between mb-2">
                 <div className="small fw-semibold" style={{ color: 'rgba(249, 147, 251, 0.9)' }}>תאריכים שנבחרו</div>
