@@ -2,22 +2,71 @@
 
 import { signOut } from 'next-auth/react'
 import Link from 'next/link'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, type CSSProperties, type ReactNode } from 'react'
+import { ExternalLink, Home, LogOut, Menu } from 'lucide-react'
+import DashboardSideDrawer, { type DashboardPage } from './DashboardSideDrawer'
 
 interface DashboardHeaderProps {
   session: any
   title?: string
   subtitle?: string
   showLandingPageButton?: boolean
-  currentPage?: 'dashboard' | 'reservations' | 'customers' | 'price-check' | 'profile' | 'landing' | 'pricing-demo' | 'check-ins' | 'admin' | 'pricing' | 'api-keys'
+  currentPage?: DashboardPage
 }
 
-export default function DashboardHeader({ 
-  session, 
-  title, 
+const ICON_PROPS = {
+  size: 18,
+  strokeWidth: 1.75,
+} as const
+
+const headerBtnStyle: CSSProperties = {
+  width: '36px',
+  height: '36px',
+  border: '2px solid rgba(255, 255, 255, 0.5)',
+  color: 'white',
+  backgroundColor: 'rgba(255, 255, 255, 0.1)',
+  padding: 0,
+}
+
+function HeaderIconButton({
+  onClick,
+  title,
+  ariaLabel,
+  children,
+}: {
+  onClick?: () => void
+  title: string
+  ariaLabel: string
+  children: ReactNode
+}) {
+  return (
+    <button
+      type="button"
+      className="btn btn-sm d-flex align-items-center justify-content-center"
+      style={headerBtnStyle}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.25)'
+        e.currentTarget.style.borderColor = 'white'
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)'
+        e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.5)'
+      }}
+      onClick={onClick}
+      title={title}
+      aria-label={ariaLabel}
+    >
+      {children}
+    </button>
+  )
+}
+
+export default function DashboardHeader({
+  session,
+  title,
   subtitle,
   showLandingPageButton = true,
-  currentPage = 'dashboard'
+  currentPage = 'dashboard',
 }: DashboardHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [logoVisible, setLogoVisible] = useState(true)
@@ -49,10 +98,12 @@ export default function DashboardHeader({
     checkLogo()
   }, [])
 
-  const handleLogout = async () => {
+  const handleLogout = useCallback(async () => {
     await signOut({ redirect: false })
     window.location.href = '/'
-  }
+  }, [])
+
+  const closeMenu = useCallback(() => setMenuOpen(false), [])
 
   const displayTitle = title || session?.user?.displayName || 'Hostly'
 
@@ -62,73 +113,41 @@ export default function DashboardHeader({
         .dashboard-header-card {
           padding: 0.75rem !important;
         }
-        
+
         .dashboard-header-logo {
           height: 40px !important;
           width: auto !important;
           display: block !important;
         }
-        
+
         .dashboard-header-title {
           font-size: 1.25rem !important;
           line-height: 1.3 !important;
         }
-        
+
         @media (min-width: 768px) {
           .dashboard-header-card {
             padding: 1.5rem !important;
           }
-          
+
           .dashboard-header-logo {
             height: 48px !important;
           }
-          
+
           .dashboard-header-title {
             font-size: 1.75rem !important;
             line-height: 1.2 !important;
           }
         }
-        
-        @keyframes slideDown {
-          from {
-            opacity: 0;
-            transform: translateY(-10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        
-        .menu-item {
-          transition: all 0.2s ease;
-          border-radius: 8px;
-          margin: 4px 8px;
-        }
-        
-        .menu-item:hover {
-          background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(249, 147, 251, 0.08) 100%);
-          padding-right: 16px !important;
-        }
-        
-        .menu-item-active {
-          background: linear-gradient(135deg, rgba(102, 126, 234, 0.12) 0%, rgba(249, 147, 251, 0.12) 100%);
-        }
-        
-        .menu-divider {
-          height: 1px;
-          background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.2), transparent);
-          margin: 8px 0;
-        }
       `}</style>
 
-      <div 
+      <div
         className="dashboard-header-card d-flex align-items-center justify-content-between gap-2 gap-md-3"
         style={{
           background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
           borderRadius: '12px',
           boxShadow: '0 6px 20px rgba(102, 126, 234, 0.3)',
-          position: 'relative'
+          position: 'relative',
         }}
       >
         {/* Right: Logo */}
@@ -142,14 +161,14 @@ export default function DashboardHeader({
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)'
+                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
               }}
             >
               <img
                 src={logoSrc}
                 alt="Hostly"
                 className="dashboard-header-logo"
-                style={{ 
+                style={{
                   objectFit: 'contain',
                   height: '40px',
                   maxHeight: '48px',
@@ -163,8 +182,11 @@ export default function DashboardHeader({
         </div>
 
         {/* Center: Title */}
-        <div className="position-absolute" style={{ left: '50%', transform: 'translateX(-50%)', textAlign: 'center' }}>
-          <h1 
+        <div
+          className="position-absolute"
+          style={{ left: '50%', transform: 'translateX(-50%)', textAlign: 'center' }}
+        >
+          <h1
             className="dashboard-header-title fw-bold mb-0"
             style={{
               color: 'white',
@@ -174,73 +196,30 @@ export default function DashboardHeader({
             {displayTitle}
           </h1>
           {session?.user?.firstName && session?.user?.lastName && (
-            <p className="small mb-0 d-none d-md-block" style={{ color: 'rgba(255, 255, 255, 0.95)', fontWeight: '500' }}>
+            <p
+              className="small mb-0 d-none d-md-block"
+              style={{ color: 'rgba(255, 255, 255, 0.95)', fontWeight: '500' }}
+            >
               שלום {session.user.firstName} {session.user.lastName}
             </p>
           )}
           {subtitle && (
-            <p className="small mb-0 d-none d-md-block" style={{ color: 'rgba(255, 255, 255, 0.85)' }}>{subtitle}</p>
+            <p className="small mb-0 d-none d-md-block" style={{ color: 'rgba(255, 255, 255, 0.85)' }}>
+              {subtitle}
+            </p>
           )}
         </div>
 
-        {/* Left: Desktop Buttons + Mobile Menu */}
-        <div className="d-flex align-items-center gap-2 position-relative">
-          {/* Desktop Buttons - Hidden on Mobile */}
+        {/* Left: Desktop Buttons + Menu */}
+        <div className="d-flex align-items-center gap-2">
           <div className="d-none d-md-flex align-items-center gap-2">
             {currentPage !== 'dashboard' && (
-              <Link href="/dashboard">
-                <button
-                  type="button"
-                  className="btn btn-sm d-flex align-items-center justify-content-center"
-                  style={{
-                    width: '36px',
-                    height: '36px',
-                    border: '2px solid rgba(255, 255, 255, 0.5)',
-                    color: 'white',
-                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                    padding: 0,
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.25)'
-                    e.currentTarget.style.borderColor = 'white'
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)'
-                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.5)'
-                  }}
-                  title="דף הבית"
-                  aria-label="דף הבית"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="18"
-                    height="18"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-                    <polyline points="9 22 9 12 15 12 15 22" />
-                  </svg>
-                </button>
-              </Link>
-            )}
-
-            {showLandingPageButton && session?.user?.landingPageUrl && (
-              <button
-                type="button"
+              <Link
+                href="/dashboard"
                 className="btn btn-sm d-flex align-items-center justify-content-center"
-                style={{
-                  width: '36px',
-                  height: '36px',
-                  border: '2px solid rgba(255, 255, 255, 0.5)',
-                  color: 'white',
-                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                  padding: 0,
-                }}
+                style={headerBtnStyle}
+                title="דף הבית"
+                aria-label="דף הבית"
                 onMouseEnter={(e) => {
                   e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.25)'
                   e.currentTarget.style.borderColor = 'white'
@@ -249,584 +228,44 @@ export default function DashboardHeader({
                   e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)'
                   e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.5)'
                 }}
-                onClick={() => window.open(session.user.landingPageUrl, '_blank')}
-                title="צפה באתר"
-                aria-label="צפה באתר"
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                  <polyline points="15 3 21 3 21 9" />
-                  <line x1="10" y1="14" x2="21" y2="3" />
-                </svg>
-              </button>
+                <Home {...ICON_PROPS} />
+              </Link>
             )}
 
-            <button
-              type="button"
-              className="btn btn-sm d-flex align-items-center justify-content-center"
-              style={{
-                width: '36px',
-                height: '36px',
-                border: '2px solid rgba(255, 255, 255, 0.5)',
-                color: 'white',
-                backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                padding: 0,
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.25)'
-                e.currentTarget.style.borderColor = 'white'
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = 'transparent'
-                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.5)'
-              }}
-              onClick={handleLogout}
-              title="התנתק"
-              aria-label="התנתק"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
+            {showLandingPageButton && session?.user?.landingPageUrl && (
+              <HeaderIconButton
+                title="צפה באתר"
+                ariaLabel="צפה באתר"
+                onClick={() => window.open(session.user.landingPageUrl, '_blank')}
               >
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                <polyline points="16 17 21 12 16 7" />
-                <line x1="21" y1="12" x2="9" y2="12" />
-              </svg>
-            </button>
+                <ExternalLink {...ICON_PROPS} />
+              </HeaderIconButton>
+            )}
+
+            <HeaderIconButton title="התנתק" ariaLabel="התנתק" onClick={handleLogout}>
+              <LogOut {...ICON_PROPS} />
+            </HeaderIconButton>
           </div>
 
-          {/* Menu Button - Always visible */}
-          <button
-            type="button"
-            className="btn btn-sm d-flex align-items-center justify-content-center"
-            style={{
-              width: '36px',
-              height: '36px',
-              border: '2px solid rgba(255, 255, 255, 0.5)',
-              color: 'white',
-              backgroundColor: 'rgba(255, 255, 255, 0.1)',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.25)'
-              e.currentTarget.style.borderColor = 'white'
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)'
-              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.5)'
-            }}
-            aria-label="תפריט"
+          <HeaderIconButton
+            title="תפריט"
+            ariaLabel="תפריט"
             onClick={() => setMenuOpen((prev) => !prev)}
           >
-            <span style={{ display: 'inline-block', lineHeight: 1, fontSize: '18px' }}>☰</span>
-          </button>
-
-          {/* Dropdown Menu */}
-          {menuOpen && (
-            <>
-              {/* Backdrop */}
-              <div
-                className="position-fixed top-0 start-0 w-100 h-100"
-                style={{ zIndex: 998 }}
-                onClick={() => setMenuOpen(false)}
-              />
-              
-              <div
-                className="position-absolute bg-white rounded-3 shadow-lg overflow-hidden"
-                dir="rtl"
-                style={{ 
-                  top: '46px', 
-                  left: 0, 
-                  minWidth: '280px', 
-                  zIndex: 999,
-                  border: '1px solid rgba(102, 126, 234, 0.1)',
-                  animation: 'slideDown 0.2s ease-out'
-                }}
-              >
-                {/* Mobile-only buttons */}
-                <div className="d-md-none pt-2">
-                  {showLandingPageButton && session?.user?.landingPageUrl && (
-                    <button
-                      className="menu-item w-100 border-0 bg-transparent py-3 px-3 d-flex align-items-center justify-content-start gap-3"
-                      onClick={() => {
-                        window.open(session.user.landingPageUrl, '_blank')
-                        setMenuOpen(false)
-                      }}
-                    >
-                      <div 
-                        className="d-flex align-items-center justify-content-center"
-                        style={{
-                          width: '36px',
-                          height: '36px',
-                          borderRadius: '10px',
-                          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                          color: 'white'
-                        }}
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="18"
-                          height="18"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                          <polyline points="15 3 21 3 21 9" />
-                          <line x1="10" y1="14" x2="21" y2="3" />
-                        </svg>
-                      </div>
-                      <span style={{ fontSize: '15px', fontWeight: '500', color: '#333' }}>צפה באתר</span>
-                    </button>
-                  )}
-                  <button
-                    className="menu-item w-100 border-0 bg-transparent py-3 px-3 d-flex align-items-center justify-content-start gap-3"
-                    onClick={() => {
-                      handleLogout()
-                      setMenuOpen(false)
-                    }}
-                  >
-                    <div 
-                      className="d-flex align-items-center justify-content-center"
-                      style={{
-                        width: '36px',
-                        height: '36px',
-                        borderRadius: '10px',
-                        background: 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)',
-                        color: 'white'
-                      }}
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="18"
-                        height="18"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                        <polyline points="16 17 21 12 16 7" />
-                        <line x1="21" y1="12" x2="9" y2="12" />
-                      </svg>
-                    </div>
-                    <span style={{ fontSize: '15px', fontWeight: '500', color: '#dc3545' }}>התנתק</span>
-                  </button>
-                  
-                  <div className="menu-divider" />
-                </div>
-
-                {/* Navigation Links */}
-                <div className="py-2">
-                  <Link 
-                    className={`menu-item w-100 border-0 bg-transparent py-3 px-3 d-flex align-items-center justify-content-start gap-3 text-decoration-none ${currentPage === 'dashboard' ? 'menu-item-active' : ''}`}
-                    href="/dashboard" 
-                    onClick={() => setMenuOpen(false)}
-                  >
-                    <div 
-                      className="d-flex align-items-center justify-content-center"
-                      style={{
-                        width: '36px',
-                        height: '36px',
-                        borderRadius: '10px',
-                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                        color: 'white'
-                      }}
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="18"
-                        height="18"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                        <line x1="16" y1="2" x2="16" y2="6" />
-                        <line x1="8" y1="2" x2="8" y2="6" />
-                        <line x1="3" y1="10" x2="21" y2="10" />
-                      </svg>
-                    </div>
-                    <span style={{ fontSize: '15px', fontWeight: '500', color: '#333' }}>ניהול זמינות/מחירים</span>
-                  </Link>
-                  
-                  <Link 
-                    className={`menu-item w-100 border-0 bg-transparent py-3 px-3 d-flex align-items-center justify-content-start gap-3 text-decoration-none ${currentPage === 'reservations' ? 'menu-item-active' : ''}`}
-                    href="/dashboard/reservations" 
-                    onClick={() => setMenuOpen(false)}
-                  >
-                    <div 
-                      className="d-flex align-items-center justify-content-center"
-                      style={{
-                        width: '36px',
-                        height: '36px',
-                        borderRadius: '10px',
-                        background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-                        color: 'white'
-                      }}
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="18"
-                        height="18"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                        <polyline points="14 2 14 8 20 8" />
-                        <line x1="16" y1="13" x2="8" y2="13" />
-                        <line x1="16" y1="17" x2="8" y2="17" />
-                        <polyline points="10 9 9 9 8 9" />
-                      </svg>
-                    </div>
-                    <span style={{ fontSize: '15px', fontWeight: '500', color: '#333' }}>כל ההזמנות</span>
-                  </Link>
-                  
-                  <Link 
-                    className={`menu-item w-100 border-0 bg-transparent py-3 px-3 d-flex align-items-center justify-content-start gap-3 text-decoration-none ${currentPage === 'customers' ? 'menu-item-active' : ''}`}
-                    href="/dashboard/customers" 
-                    onClick={() => setMenuOpen(false)}
-                  >
-                    <div 
-                      className="d-flex align-items-center justify-content-center"
-                      style={{
-                        width: '36px',
-                        height: '36px',
-                        borderRadius: '10px',
-                        background: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)',
-                        color: 'white'
-                      }}
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="18"
-                        height="18"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                        <circle cx="9" cy="7" r="4" />
-                        <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                      </svg>
-                    </div>
-                    <span style={{ fontSize: '15px', fontWeight: '500', color: '#333' }}>מאגר לקוחות</span>
-                  </Link>
-                  
-                  <Link 
-                    className={`menu-item w-100 border-0 bg-transparent py-3 px-3 d-flex align-items-center justify-content-start gap-3 text-decoration-none ${currentPage === 'check-ins' ? 'menu-item-active' : ''}`}
-                    href="/dashboard/check-ins" 
-                    onClick={() => setMenuOpen(false)}
-                  >
-                    <div 
-                      className="d-flex align-items-center justify-content-center"
-                      style={{
-                        width: '36px',
-                        height: '36px',
-                        borderRadius: '10px',
-                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                        color: 'white'
-                      }}
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="18"
-                        height="18"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                        <polyline points="22 4 12 14.01 9 11.01" />
-                      </svg>
-                    </div>
-                    <span style={{ fontSize: '15px', fontWeight: '500', color: '#333' }}>צ'ק-אין דיגיטלי ⭐</span>
-                  </Link>
-                  
-                  <Link 
-                    className={`menu-item w-100 border-0 bg-transparent py-3 px-3 d-flex align-items-center justify-content-start gap-3 text-decoration-none ${currentPage === 'price-check' ? 'menu-item-active' : ''}`}
-                    href="/dashboard/price-check" 
-                    onClick={() => setMenuOpen(false)}
-                  >
-                    <div 
-                      className="d-flex align-items-center justify-content-center"
-                      style={{
-                        width: '36px',
-                        height: '36px',
-                        borderRadius: '10px',
-                        background: 'linear-gradient(135deg, #30cfd0 0%, #330867 100%)',
-                        color: 'white'
-                      }}
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="18"
-                        height="18"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <circle cx="12" cy="12" r="10" />
-                        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
-                        <line x1="12" y1="17" x2="12.01" y2="17" />
-                      </svg>
-                    </div>
-                    <span style={{ fontSize: '15px', fontWeight: '500', color: '#333' }}>בדיקת מחיר</span>
-                  </Link>
-                  
-                  <Link 
-                    className={`menu-item w-100 border-0 bg-transparent py-3 px-3 d-flex align-items-center justify-content-start gap-3 text-decoration-none ${currentPage === 'pricing-demo' ? 'menu-item-active' : ''}`}
-                    href="/dashboard/pricing-demo" 
-                    onClick={() => setMenuOpen(false)}
-                  >
-                    <div 
-                      className="d-flex align-items-center justify-content-center"
-                      style={{
-                        width: '36px',
-                        height: '36px',
-                        borderRadius: '10px',
-                        background: 'linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%)',
-                        color: 'white'
-                      }}
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="18"
-                        height="18"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <line x1="12" y1="1" x2="12" y2="23" />
-                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-                      </svg>
-                    </div>
-                    <span style={{ fontSize: '15px', fontWeight: '500', color: '#333' }}>מחשבון מחירים</span>
-                  </Link>
-                  
-                  <Link 
-                    className={`menu-item w-100 border-0 bg-transparent py-3 px-3 d-flex align-items-center justify-content-start gap-3 text-decoration-none ${currentPage === 'profile' ? 'menu-item-active' : ''}`}
-                    href="/dashboard/profile" 
-                    onClick={() => setMenuOpen(false)}
-                  >
-                    <div 
-                      className="d-flex align-items-center justify-content-center"
-                      style={{
-                        width: '36px',
-                        height: '36px',
-                        borderRadius: '10px',
-                        background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
-                        color: 'white'
-                      }}
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="18"
-                        height="18"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                        <circle cx="12" cy="7" r="4" />
-                      </svg>
-                    </div>
-                    <span style={{ fontSize: '15px', fontWeight: '500', color: '#333' }}>איזור אישי</span>
-                  </Link>
-                  
-                  {/* Admin Panel - Only for Admins */}
-                  {session?.user?.role === 'admin' && (
-                    <>
-                      <div className="menu-divider" />
-                      <div style={{ padding: '4px 16px 2px', fontSize: '11px', fontWeight: '700', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                        ניהול מערכת
-                      </div>
-                      <Link 
-                        className={`menu-item w-100 border-0 bg-transparent py-3 px-3 d-flex align-items-center justify-content-start gap-3 text-decoration-none ${currentPage === 'admin' ? 'menu-item-active' : ''}`}
-                        href="/admin" 
-                        onClick={() => setMenuOpen(false)}
-                      >
-                        <div 
-                          className="d-flex align-items-center justify-content-center"
-                          style={{
-                            width: '36px',
-                            height: '36px',
-                            borderRadius: '10px',
-                            background: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
-                            color: 'white'
-                          }}
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="18"
-                            height="18"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          >
-                            <circle cx="12" cy="12" r="3" />
-                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
-                          </svg>
-                        </div>
-                        <span style={{ fontSize: '15px', fontWeight: '500', color: '#333' }}>לוח בקרה אדמין 👑</span>
-                      </Link>
-
-                      <Link 
-                        className="menu-item w-100 border-0 bg-transparent py-3 px-3 d-flex align-items-center justify-content-start gap-3 text-decoration-none"
-                        href="/admin/users" 
-                        onClick={() => setMenuOpen(false)}
-                      >
-                        <div 
-                          className="d-flex align-items-center justify-content-center"
-                          style={{
-                            width: '36px',
-                            height: '36px',
-                            borderRadius: '10px',
-                            background: 'linear-gradient(135deg, #667eea 0%, #f093fb 100%)',
-                            color: 'white'
-                          }}
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="18"
-                            height="18"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          >
-                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                            <circle cx="9" cy="7" r="4" />
-                            <line x1="19" y1="8" x2="19" y2="14" />
-                            <line x1="22" y1="11" x2="16" y2="11" />
-                          </svg>
-                        </div>
-                        <span style={{ fontSize: '15px', fontWeight: '500', color: '#333' }}>ניהול משתמשים</span>
-                      </Link>
-                      <div className="menu-divider" />
-                    </>
-                  )}
-                  
-                  <Link 
-                    className={`menu-item w-100 border-0 bg-transparent py-3 px-3 d-flex align-items-center justify-content-start gap-3 text-decoration-none ${currentPage === 'api-keys' ? 'menu-item-active' : ''}`}
-                    href="/dashboard/api-keys" 
-                    onClick={() => setMenuOpen(false)}
-                  >
-                    <div 
-                      className="d-flex align-items-center justify-content-center"
-                      style={{
-                        width: '36px',
-                        height: '36px',
-                        borderRadius: '10px',
-                        background: 'linear-gradient(135deg, #f7971e 0%, #ffd200 100%)',
-                        color: 'white'
-                      }}
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="18"
-                        height="18"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" />
-                      </svg>
-                    </div>
-                    <span style={{ fontSize: '15px', fontWeight: '500', color: '#333' }}>מפתחות API</span>
-                  </Link>
-
-                  <Link 
-                    className={`menu-item w-100 border-0 bg-transparent py-3 px-3 d-flex align-items-center justify-content-start gap-3 text-decoration-none ${currentPage === 'landing' ? 'menu-item-active' : ''}`}
-                    href="/dashboard/landing" 
-                    onClick={() => setMenuOpen(false)}
-                  >
-                    <div 
-                      className="d-flex align-items-center justify-content-center"
-                      style={{
-                        width: '36px',
-                        height: '36px',
-                        borderRadius: '10px',
-                        background: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
-                        color: 'white'
-                      }}
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="18"
-                        height="18"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M12 2L2 7l10 5 10-5-10-5z" />
-                        <path d="M2 17l10 5 10-5" />
-                        <path d="M2 12l10 5 10-5" />
-                      </svg>
-                    </div>
-                    <span style={{ fontSize: '15px', fontWeight: '500', color: '#333' }}>ניהול דף נחיתה</span>
-                  </Link>
-                </div>
-              </div>
-            </>
-          )}
+            <Menu {...ICON_PROPS} />
+          </HeaderIconButton>
         </div>
       </div>
+
+      <DashboardSideDrawer
+        open={menuOpen}
+        onClose={closeMenu}
+        session={session}
+        currentPage={currentPage}
+        showLandingPageButton={showLandingPageButton}
+        onLogout={handleLogout}
+      />
     </>
   )
 }
