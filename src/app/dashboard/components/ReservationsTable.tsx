@@ -197,6 +197,8 @@ const getStatusClass = (status: Reservation['status']) => {
       return 'bg-success'
     case 'pending':
       return 'bg-warning text-dark'
+    case 'request':
+      return 'bg-warning text-dark'
     case 'cancelled':
       return 'bg-secondary'
     default:
@@ -424,7 +426,14 @@ const ReservationsTable = ({ reservations, onReservationViewed, onEditReservatio
                 <div className="reservation-detail-row">
                   <span className="reservation-detail-label">סטטוס</span>
                   <span className="reservation-detail-value">
-                    <span className={`badge ${getStatusClass(reservation.status)}`}>
+                    <span
+                      className={`badge ${getStatusClass(reservation.status)}`}
+                      style={
+                        reservation.status === 'request'
+                          ? { border: '1px dashed rgba(0,0,0,0.35)' }
+                          : undefined
+                      }
+                    >
                       {formatStatus(reservation.status)}
                     </span>
                   </span>
@@ -661,7 +670,14 @@ const ReservationsTable = ({ reservations, onReservationViewed, onEditReservatio
                 </td>
                 <td className="fw-semibold">{formatCurrency(reservation.total)}</td>
                 <td>
-                  <span className={`badge ${getStatusClass(reservation.status)}`}>
+                  <span
+                    className={`badge ${getStatusClass(reservation.status)}`}
+                    style={
+                      reservation.status === 'request'
+                        ? { border: '1px dashed rgba(0,0,0,0.35)' }
+                        : undefined
+                    }
+                  >
                     {formatStatus(reservation.status)}
                   </span>
                 </td>

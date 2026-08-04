@@ -25,6 +25,8 @@ export const formatStatus = (status: string) => {
       return 'מאושר'
     case 'pending':
       return 'ממתין'
+    case 'request':
+      return 'בקשת הזמנה'
     case 'cancelled':
       return 'בוטל'
     default:

@@ -1,4 +1,4 @@
-export type ReservationStatus = 'confirmed' | 'pending' | 'cancelled'
+export type ReservationStatus = 'confirmed' | 'pending' | 'request' | 'cancelled'
 
 export interface Reservation {
   id: string
@@ -9,6 +9,10 @@ export interface Reservation {
   total: number
   status: ReservationStatus
   source?: string
+  /** Channel confirmation / reservation code from Beds24 (apiReference / reference). */
+  apiReference?: string
+  /** Deep-link into the OTA host UI when a reliable specific URL can be built. */
+  channelUrl?: string
   unitName?: string
   createdAt?: string
   phone?: string

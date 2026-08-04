@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useSession, signOut } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import type { Reservation } from '@/lib/dashboard/types'
-import { formatCurrency } from '@/lib/dashboard/utils'
+import { formatCurrency, formatStatus } from '@/lib/dashboard/utils'
 import { getDashboardProvider } from '@/lib/dashboard/getDashboardProvider'
 import DashboardHeader from '@/components/DashboardHeader'
 import RoomTabs from '../components/RoomTabs'
@@ -486,8 +486,9 @@ export default function ReservationsClient() {
                     >
                       <option value="all">כל הסטטוסים</option>
                       <option value="confirmed">מאושר</option>
-                      <option value="cancelled">מבוטל</option>
+                      <option value="request">בקשת הזמנה</option>
                       <option value="pending">ממתין</option>
+                      <option value="cancelled">מבוטל</option>
                     </select>
                   </div>
                   <div className="col-md-3">
@@ -698,14 +699,17 @@ export default function ReservationsClient() {
                                       ? 'bg-success'
                                       : reservation.status === 'cancelled'
                                       ? 'bg-danger'
+                                      : reservation.status === 'request'
+                                      ? 'bg-warning text-dark'
                                       : 'bg-warning'
                                   }`}
+                                  style={
+                                    reservation.status === 'request'
+                                      ? { border: '1px dashed rgba(0,0,0,0.35)' }
+                                      : undefined
+                                  }
                                 >
-                                  {reservation.status === 'confirmed'
-                                    ? 'מאושר'
-                                    : reservation.status === 'cancelled'
-                                    ? 'מבוטל'
-                                    : 'ממתין'}
+                                  {formatStatus(reservation.status)}
                                 </span>
                               </td>
                             </tr>

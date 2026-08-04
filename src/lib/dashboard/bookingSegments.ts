@@ -48,12 +48,14 @@ export const isBookedOn = (bookingMap: Map<string, Reservation[]>, date: Date) =
 
 export type BookingSegment = {
   id: string
+  reservationId: string
   row: number
   /** Half-day column unit (0-13 within a 7-day week: col*2 = AM half, col*2+1 = PM half). */
   startCol: number
   /** Half-day column unit, inclusive. */
   endCol: number
   label: string
+  status: Reservation['status']
 }
 
 /**
@@ -107,10 +109,12 @@ export const buildBookingSegments = (reservations: Reservation[], days: Date[]):
         } else {
           segments.set(segmentKey, {
             id: segmentKey,
+            reservationId: reservation.id,
             row,
             startCol: startUnit,
             endCol: endUnit,
             label: reservation.guestName,
+            status: reservation.status,
           })
         }
       }

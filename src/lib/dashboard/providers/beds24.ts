@@ -1,4 +1,5 @@
 import type { DashboardProvider, PriceRule, Reservation, RoomPrice } from '@/lib/dashboard/types'
+import { buildChannelBookingUrl } from '@/lib/dashboard/channelLinks'
 
 type Beds24ProviderConfig = {
   baseUrl?: string
@@ -153,6 +154,18 @@ const mapBookingToReservation = (booking: Record<string, unknown>, index: number
   const validStatus = (typeof rawStatus === 'string' || typeof rawStatus === 'number') ? rawStatus : undefined
   const status = normalizeStatus(validStatus)
 
+  const source =
+    (typeof booking.channel === 'string' && booking.channel) ||
+    (typeof booking.apiSource === 'string' && booking.apiSource) ||
+    (typeof booking.referer === 'string' && booking.referer) ||
+    undefined
+
+  const apiReference =
+    (typeof booking.apiReference === 'string' && booking.apiReference.trim()) ||
+    (typeof booking.reference === 'string' && booking.reference.trim()) ||
+    (typeof booking.voucher === 'string' && booking.voucher.trim()) ||
+    undefined
+
   return {
     id: String(booking.id ?? booking.bookingId ?? booking.reservationId ?? `booking_${index}`),
     guestName,
@@ -161,11 +174,9 @@ const mapBookingToReservation = (booking: Record<string, unknown>, index: number
     nights,
     total,
     status,
-    source:
-      (typeof booking.channel === 'string' && booking.channel) ||
-      (typeof booking.apiSource === 'string' && booking.apiSource) ||
-      (typeof booking.referer === 'string' && booking.referer) ||
-      undefined,
+    source,
+    apiReference,
+    channelUrl: buildChannelBookingUrl(source, apiReference) ?? undefined,
     unitName:
       (typeof booking.roomName === 'string' && booking.roomName) ||
       (typeof booking.unitName === 'string' && booking.unitName) ||
@@ -216,22 +227,27 @@ const mapBookingToReservation = (booking: Record<string, unknown>, index: number
   }
 }
 
-const normalizeStatus = (value: string | number | undefined): Reservation['status'] => {
+export const normalizeBeds24BookingStatus = (
+  value: string | number | undefined,
+): Reservation['status'] => {
   // Handle numeric status values from Beds24 API
   // 0=Cancelled, 1=Confirmed, 2=New, 3=Request, 4=Black, 5=Inquiry
   if (typeof value === 'number') {
     if (value === 0) return 'cancelled'
     if (value === 1) return 'confirmed'
     if (value === 2) return 'pending' // New
-    if (value === 3) return 'pending' // Request
+    if (value === 3) return 'request'
     if (value === 4) return 'cancelled' // Black (blocked dates)
-    if (value === 5) return 'pending' // Inquiry
+    if (value === 5) return 'request' // Inquiry
     return 'pending'
   }
-  
+
   // Handle string status values
   if (!value) return 'pending'
   const normalized = String(value).toLowerCase()
+  if (normalized.includes('request') || normalized.includes('inquiry')) {
+    return 'request'
+  }
   if (normalized.includes('new')) {
     return 'pending'
   }
@@ -243,6 +259,9 @@ const normalizeStatus = (value: string | number | undefined): Reservation['statu
   }
   return 'pending'
 }
+
+/** @deprecated Use normalizeBeds24BookingStatus — kept as alias for local call sites. */
+const normalizeStatus = normalizeBeds24BookingStatus
 
 const calculateNights = (checkIn: string, checkOut: string) => {
   const start = new Date(checkIn)

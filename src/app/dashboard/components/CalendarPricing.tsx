@@ -1,8 +1,9 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react'
-import { Tag, Lock, Unlock } from 'lucide-react'
+import { Tag, Lock, Unlock, ExternalLink } from 'lucide-react'
 import { createPortal } from 'react-dom'
-import type { Reservation, RoomPrice } from '@/lib/dashboard/types'
-import { formatCurrency } from '@/lib/dashboard/utils'
+import type { Reservation, ReservationStatus, RoomPrice } from '@/lib/dashboard/types'
+import { formatCurrency, formatStatus } from '@/lib/dashboard/utils'
+import { channelLinkLabel } from '@/lib/dashboard/channelLinks'
 import { useHolidays } from '@/hooks/useHolidays'
 import HolidayIndicator from '@/components/HolidayIndicator'
 import { useSelectedRoom } from '@/lib/rooms/RoomContext'
@@ -17,6 +18,28 @@ type CalendarPricingProps = {
 }
 
 const DEFAULT_PRICE = undefined
+
+function getSegmentBarStyle(status: ReservationStatus): React.CSSProperties {
+  if (status === 'request') {
+    return {
+      background: 'rgba(245, 158, 11, 0.3)',
+      border: '1.5px dashed rgba(251, 191, 36, 0.9)',
+      color: 'rgba(254, 243, 199, 0.98)',
+    }
+  }
+  if (status === 'pending') {
+    return {
+      background: 'rgba(251, 191, 36, 0.2)',
+      border: '1px solid rgba(252, 211, 77, 0.55)',
+      color: 'rgba(254, 243, 199, 0.92)',
+    }
+  }
+  return {
+    background: 'rgba(239, 68, 68, 0.3)',
+    border: '1px solid rgba(239, 68, 68, 0.5)',
+    color: 'rgba(255, 200, 200, 0.95)',
+  }
+}
 
 const startOfMonth = (date: Date) => new Date(date.getFullYear(), date.getMonth(), 1)
 const endOfMonth = (date: Date) => new Date(date.getFullYear(), date.getMonth() + 1, 0)
@@ -755,33 +778,47 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated }: CalendarPric
                   direction: 'rtl',
                 }}
               >
-                {bookingSegments.map((segment) => (
-                  <div
+                {bookingSegments.map((segment) => {
+                  const isSelected = selectedReservation?.id === segment.reservationId
+                  return (
+                  <button
+                    type="button"
                     key={segment.id}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      const reservation = reservations.find((r) => r.id === segment.reservationId) ?? null
+                      setSelectedReservation(reservation)
+                      setSelectedDates([])
+                    }}
                     style={{
                       gridColumn: `${segment.startCol + 1} / ${segment.endCol + 2}`,
                       gridRow: segment.row + 1,
                       alignSelf: 'center',
                       justifySelf: 'stretch',
                       height: '20px',
-                      background: 'rgba(239, 68, 68, 0.3)',
-                      border: '1px solid rgba(239, 68, 68, 0.5)',
                       borderRadius: '999px',
                       padding: '0 10px',
                       display: 'flex',
                       alignItems: 'center',
                       fontSize: '12px',
-                      color: 'rgba(255, 200, 200, 0.95)',
                       fontWeight: '600',
                       overflow: 'hidden',
                       whiteSpace: 'nowrap',
                       textOverflow: 'ellipsis',
                       marginTop: '52px',
+                      cursor: 'pointer',
+                      pointerEvents: 'auto',
+                      textAlign: 'start' as const,
+                      appearance: 'none' as const,
+                      boxShadow: isSelected ? '0 0 0 2px rgba(255,255,255,0.55)' : undefined,
+                      ...getSegmentBarStyle(segment.status),
                     }}
+                    title={segment.status === 'request' ? `בקשת הזמנה: ${segment.label}` : segment.label}
                   >
-                    {segment.label}
-                  </div>
-                ))}
+                    {segment.status === 'request' ? `בקשה · ${segment.label}` : segment.label}
+                  </button>
+                  )
+                })}
               </div>
             </div>
           </div>
@@ -975,16 +1012,37 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated }: CalendarPric
               </div>
             </div>
             <div className="mt-4" ref={reservationDetailsRef}>
-              <div className="small fw-semibold mb-2" style={{ color: 'rgba(249, 147, 251, 0.9)' }}>פרטי הזמנה</div>
+              <div className="small fw-semibold mb-2" style={{ color: 'rgba(249, 147, 251, 0.9)' }}>
+                {selectedReservation?.status === 'request' ? 'פרטי בקשת הזמנה' : 'פרטי הזמנה'}
+              </div>
               {selectedReservation ? (
-                <div className="rounded-3 p-3" style={{ background: 'rgba(0, 0, 0, 0.3)', border: '1px solid rgba(102, 126, 234, 0.3)' }}>
-                  <div className="fw-semibold" style={{ color: 'rgba(255, 255, 255, 0.9)' }}>{selectedReservation.guestName}</div>
+                <div
+                  className="rounded-3 p-3"
+                  style={{
+                    background:
+                      selectedReservation.status === 'request'
+                        ? 'rgba(245, 158, 11, 0.12)'
+                        : 'rgba(0, 0, 0, 0.3)',
+                    border:
+                      selectedReservation.status === 'request'
+                        ? '1px dashed rgba(251, 191, 36, 0.65)'
+                        : '1px solid rgba(102, 126, 234, 0.3)',
+                  }}
+                >
+                  <div className="fw-semibold" style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
+                    {selectedReservation.guestName}
+                  </div>
                   <div className="small" style={{ color: 'rgba(255, 255, 255, 0.7)' }}>
                     {selectedReservation.checkIn} - {selectedReservation.checkOut}
                   </div>
                   <div className="small mt-2" style={{ color: 'rgba(255, 255, 255, 0.8)' }}>
-                    <span className="fw-semibold">סטטוס:</span> {selectedReservation.status}
+                    <span className="fw-semibold">סטטוס:</span> {formatStatus(selectedReservation.status)}
                   </div>
+                  {selectedReservation.status === 'request' ? (
+                    <div className="small mt-1" style={{ color: 'rgba(254, 243, 199, 0.9)' }}>
+                      ממתין לאישורך בערוץ ההזמנות (Beds24 / Airbnb)
+                    </div>
+                  ) : null}
                   <div className="small" style={{ color: 'rgba(255, 255, 255, 0.8)' }}>
                     <span className="fw-semibold">לילות:</span> {selectedReservation.nights}
                   </div>
@@ -1001,9 +1059,53 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated }: CalendarPric
                       <span className="fw-semibold">יחידה:</span> {selectedReservation.unitName}
                     </div>
                   ) : null}
+                  {selectedReservation.phone ? (
+                    <div className="small" style={{ color: 'rgba(255, 255, 255, 0.8)' }}>
+                      <span className="fw-semibold">טלפון:</span>{' '}
+                      <span dir="ltr">{selectedReservation.phone}</span>
+                    </div>
+                  ) : null}
+                  {selectedReservation.guests || selectedReservation.adults ? (
+                    <div className="small" style={{ color: 'rgba(255, 255, 255, 0.8)' }}>
+                      <span className="fw-semibold">אורחים:</span>{' '}
+                      {selectedReservation.guests || selectedReservation.adults}
+                    </div>
+                  ) : null}
+                  {selectedReservation.apiReference ? (
+                    <div className="small" style={{ color: 'rgba(255, 255, 255, 0.8)' }}>
+                      <span className="fw-semibold">מזהה ערוץ:</span>{' '}
+                      <span dir="ltr">{selectedReservation.apiReference}</span>
+                    </div>
+                  ) : null}
+                  {selectedReservation.channelUrl ? (
+                    <a
+                      href={selectedReservation.channelUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="btn btn-sm d-inline-flex align-items-center gap-2 mt-3"
+                      style={{
+                        background:
+                          selectedReservation.status === 'request'
+                            ? 'rgba(245, 158, 11, 0.25)'
+                            : 'rgba(102, 126, 234, 0.35)',
+                        border:
+                          selectedReservation.status === 'request'
+                            ? '1px solid rgba(251, 191, 36, 0.7)'
+                            : '1px solid rgba(165, 180, 252, 0.5)',
+                        color: '#fff',
+                        borderRadius: '8px',
+                        textDecoration: 'none',
+                      }}
+                    >
+                      <ExternalLink size={14} />
+                      {channelLinkLabel(selectedReservation.source)}
+                    </a>
+                  ) : null}
                 </div>
               ) : (
-                <div className="small" style={{ color: 'rgba(255, 255, 255, 0.6)' }}>בחר תאריך עם הזמנה כדי לראות פרטים.</div>
+                <div className="small" style={{ color: 'rgba(255, 255, 255, 0.6)' }}>
+                  לחץ על הזמנה או בקשה בלוח כדי לראות פרטים.
+                </div>
               )}
             </div>
           </div>

@@ -100,6 +100,26 @@ describe('buildBookingSegments', () => {
     expect(segments[0].label).toBe('דנה כהן')
   })
 
+  it('carries the reservation status onto each segment', () => {
+    const request = makeReservation({
+      id: 'req',
+      checkIn: '2026-07-28',
+      checkOut: '2026-07-30',
+      status: 'request',
+    })
+    const confirmed = makeReservation({
+      id: 'conf',
+      checkIn: '2026-07-30',
+      checkOut: '2026-07-31',
+      status: 'confirmed',
+    })
+    const segments = buildBookingSegments([request, confirmed], days)
+
+    expect(segments.find((s) => s.id.startsWith('req'))?.status).toBe('request')
+    expect(segments.find((s) => s.id.startsWith('conf'))?.status).toBe('confirmed')
+    expect(segments.find((s) => s.id.startsWith('req'))?.reservationId).toBe('req')
+  })
+
   it('ignores reservations with missing dates, invalid dates, or checkOut <= checkIn', () => {
     const missing = makeReservation({ id: 'r1', checkIn: '', checkOut: '' })
     const invalid = makeReservation({ id: 'r2', checkIn: 'nope', checkOut: '2026-07-30' })
