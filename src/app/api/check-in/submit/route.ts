@@ -150,10 +150,19 @@ export async function POST(request: Request) {
       error: 'No phone' 
     }
     if (checkIn.guest_phone) {
-      guestWhatsAppResult = await sendWhatsAppMessage({
-        to: checkIn.guest_phone,
-        message: guestMessage
-      })
+      guestWhatsAppResult = await sendWhatsAppMessage(
+        {
+          to: checkIn.guest_phone,
+          message: guestMessage,
+        },
+        {
+          userId: checkIn.user_id,
+          bookingId: checkIn.booking_id,
+          messageType: 'check_in_guest',
+          recipientRole: 'guest',
+          recipientName: checkIn.guest_name,
+        },
+      )
       console.log('📱 Guest WhatsApp:', guestWhatsAppResult.success ? '✅' : '❌')
     }
 
@@ -165,7 +174,13 @@ export async function POST(request: Request) {
                         `📞 טלפון: ${checkIn.guest_phone}`
 
     if (ownerPhones.length > 0) {
-      const ownerWhatsAppResults = await sendWhatsAppToAll(ownerPhones, ownerMessage)
+      const ownerWhatsAppResults = await sendWhatsAppToAll(ownerPhones, ownerMessage, {
+        userId: checkIn.user_id,
+        bookingId: checkIn.booking_id,
+        messageType: 'check_in_owner',
+        recipientRole: 'owner',
+        recipientName: checkIn.guest_name,
+      })
       for (const result of ownerWhatsAppResults) {
         console.log(`📱 Owner WhatsApp (${result.to}):`, result.success ? '✅' : `❌ ${result.error}`)
       }

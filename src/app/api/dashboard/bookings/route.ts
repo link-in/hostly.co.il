@@ -336,10 +336,19 @@ export async function POST(request: Request) {
       
       message += `נשמח לארח אותך! 🎉`
       
-      whatsappResult = await sendWhatsAppMessage({
-        to: guestPhone,
-        message,
-      })
+      whatsappResult = await sendWhatsAppMessage(
+        {
+          to: guestPhone,
+          message,
+        },
+        {
+          userId: session?.user?.id,
+          bookingId: firstBooking?.id ?? recordId,
+          messageType: 'manual_booking_guest',
+          recipientRole: 'guest',
+          recipientName: guestName,
+        },
+      )
       
       console.log(`📱 Guest WhatsApp (${guestPhone}):`, whatsappResult.success ? '✅ Sent' : `❌ Failed - ${whatsappResult.error}`)
     } else {

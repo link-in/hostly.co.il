@@ -122,7 +122,16 @@ async function processBooking(
     googleReviewUrl: user.googleReviewUrl,
   })
 
-  const result = await sendWhatsAppMessage({ to: guestPhone, message })
+  const result = await sendWhatsAppMessage(
+    { to: guestPhone, message },
+    {
+      userId: user.id,
+      bookingId: booking.id,
+      messageType: 'review_reminder_guest',
+      recipientRole: 'guest',
+      recipientName: guestName,
+    },
+  )
 
   await insertReviewReminderLog({
     bookingId: booking.id,

@@ -131,6 +131,8 @@ export async function POST(request: NextRequest) {
   }
 
   await notifyOwner({
+    userId,
+    bookingId: beds24Result.bookingId,
     ownerPhones: buildOwnerPhoneList(
       userRow.phone_number as string | null,
       userRow.secondary_phone_number as string | null,
@@ -246,6 +248,8 @@ async function createBeds24Booking(
 }
 
 async function notifyOwner(opts: {
+  userId: string
+  bookingId?: string
   ownerPhones: string[]
   ownerName: string
   guestName: string
@@ -267,7 +271,13 @@ async function notifyOwner(opts: {
     `${paymentNote}\n\n` +
     `ניתן לפתוח ב-Beds24 לאישור`
 
-  const results = await sendWhatsAppToAll(opts.ownerPhones, message)
+  const results = await sendWhatsAppToAll(opts.ownerPhones, message, {
+    userId: opts.userId,
+    bookingId: opts.bookingId,
+    messageType: 'public_booking_owner',
+    recipientRole: 'owner',
+    recipientName: opts.guestName,
+  })
   for (const result of results) {
     if (!result.success) console.error(`[booking] WhatsApp failed for ${result.to}:`, result.error)
   }

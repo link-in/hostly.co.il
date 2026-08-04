@@ -81,8 +81,21 @@ export async function processWebhook(webhookData: Beds24WebhookWrapper): Promise
   maybeRefreshCache(userId, booking).catch((e) => console.error('[Cache] refresh failed:', e))
 
   const ownerInfo = await getOwnerInfoByPropertyRoom(booking.propertyId, booking.roomId)
-  const guestResult = await sendGuestNotification(guestPhone, guestName, ownerInfo.roomName, booking.arrival)
-  await sendOwnerNotification(ownerInfo.phoneNumbers, guestName, guestPhone, booking, ownerInfo.roomName)
+  const guestResult = await sendGuestNotification(
+    guestPhone,
+    guestName,
+    ownerInfo.roomName,
+    booking.arrival,
+    { userId: userId ?? ownerInfo.userId, bookingId: booking.id },
+  )
+  await sendOwnerNotification(
+    ownerInfo.phoneNumbers,
+    guestName,
+    guestPhone,
+    booking,
+    ownerInfo.roomName,
+    { userId: userId ?? ownerInfo.userId, bookingId: booking.id },
+  )
 
   if (notificationId) {
     await updateNotificationStatus(notificationId, {
@@ -193,16 +206,26 @@ async function sendGuestNotification(
   guestName: string,
   roomName: string | null,
   arrival: string,
+  meta: { userId?: string | null; bookingId: number | string },
 ): Promise<{ success: boolean; provider: string; error?: string }> {
   if (!guestPhone) {
     console.warn('⚠️ Skipping guest WhatsApp - no phone')
     return { success: false, provider: 'none', error: 'No phone number' }
   }
   const property = roomName ?? 'Mountain View'
-  return sendWhatsAppMessage({
-    to: guestPhone,
-    message: `שלום ${guestName}! 🏔️\n\nקיבלנו את הזמנתך ב-${property}.\n📅 תאריך כניסה: ${arrival}\n\nנשמח לארח אותך! 🎉`,
-  })
+  return sendWhatsAppMessage(
+    {
+      to: guestPhone,
+      message: `שלום ${guestName}! 🏔️\n\nקיבלנו את הזמנתך ב-${property}.\n📅 תאריך כניסה: ${arrival}\n\nנשמח לארח אותך! 🎉`,
+    },
+    {
+      userId: meta.userId,
+      bookingId: meta.bookingId,
+      messageType: 'new_booking_guest',
+      recipientRole: 'guest',
+      recipientName: guestName,
+    },
+  )
 }
 
 async function sendOwnerNotification(
@@ -211,6 +234,7 @@ async function sendOwnerNotification(
   guestPhone: string,
   booking: Beds24Booking,
   roomName: string | null,
+  meta: { userId?: string | null; bookingId: number | string },
 ): Promise<void> {
   if (ownerPhones.length === 0) {
     console.warn('⚠️ No owner phone - skipping owner notification')
@@ -227,7 +251,13 @@ async function sendOwnerNotification(
     numAdult: booking.numAdult,
   })
 
-  const results = await sendWhatsAppToAll(ownerPhones, message)
+  const results = await sendWhatsAppToAll(ownerPhones, message, {
+    userId: meta.userId,
+    bookingId: meta.bookingId,
+    messageType: 'new_booking_owner',
+    recipientRole: 'owner',
+    recipientName: guestName,
+  })
   for (const result of results) {
     if (!result.success) {
       console.error(`❌ Owner notification failed for ${result.to}:`, result.error)

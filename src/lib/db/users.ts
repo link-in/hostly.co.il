@@ -8,6 +8,8 @@ import { createServerClient, createServiceRoleClient } from '@/lib/supabase/serv
 import { buildOwnerPhoneList } from '@/lib/notifications/ownerPhones'
 
 export interface OwnerInfo {
+  /** Host user id when resolved from DB (null for env fallback). */
+  userId: string | null
   /** Primary owner phone (kept for backward compatibility / guest-facing display). */
   phoneNumber: string | null
   /** Every phone number that should receive owner-facing system notifications (primary + optional secondary). */
@@ -132,6 +134,7 @@ export async function getOwnerInfoByPropertyRoom(
   const envFallback = (): OwnerInfo => {
     const phoneNumbers = buildOwnerPhoneList(process.env.OWNER_PHONE_NUMBER)
     return {
+      userId: null,
       phoneNumber: phoneNumbers[0] ?? null,
       phoneNumbers,
       roomName: null,
@@ -145,7 +148,7 @@ export async function getOwnerInfoByPropertyRoom(
       return envFallback()
     }
 
-    let query = supabase.from('users').select('display_name, phone_number, secondary_phone_number')
+    let query = supabase.from('users').select('id, display_name, phone_number, secondary_phone_number')
 
     if (propertyId) {
       query = query.eq('property_id', String(propertyId))
@@ -163,6 +166,7 @@ export async function getOwnerInfoByPropertyRoom(
     const phoneNumbers = buildOwnerPhoneList(data.phone_number, data.secondary_phone_number)
 
     return {
+      userId: data.id ?? null,
       phoneNumber: phoneNumbers[0] ?? null,
       phoneNumbers,
       roomName: data.display_name ?? null,

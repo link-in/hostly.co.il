@@ -13,6 +13,7 @@ import {
   KeyRound,
   LayoutTemplate,
   LogOut,
+  MessageSquare,
   Shield,
   UserCog,
   UserRound,
@@ -32,6 +33,7 @@ export type DashboardPage =
   | 'admin'
   | 'pricing'
   | 'api-keys'
+  | 'messages'
 
 type IconComponent = ComponentType<LucideProps>
 
@@ -49,6 +51,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: '/dashboard/reservations', label: 'כל ההזמנות', icon: ClipboardList, page: 'reservations', section: 'main' },
   { href: '/dashboard/customers', label: 'מאגר לקוחות', icon: Users, page: 'customers', section: 'main' },
   { href: '/dashboard/check-ins', label: "צ'ק-אין דיגיטלי", icon: BadgeCheck, page: 'check-ins', section: 'main' },
+  { href: '/dashboard/messages', label: 'הודעות WhatsApp', icon: MessageSquare, page: 'messages', section: 'main' },
   { href: '/dashboard/price-check', label: 'בדיקת מחיר', icon: CircleHelp, page: 'price-check', section: 'main' },
   { href: '/dashboard/pricing-demo', label: 'מחשבון מחירים', icon: Calculator, page: 'pricing-demo', section: 'main' },
   { href: '/dashboard/profile', label: 'איזור אישי', icon: UserRound, page: 'profile', section: 'main' },

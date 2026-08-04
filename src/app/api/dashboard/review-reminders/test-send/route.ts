@@ -47,10 +47,18 @@ export async function POST(request: Request) {
 
   const preview = `🧪 *זו הודעת בדיקה* — כך תיראה ההודעה לאורח (ערוץ: ${channel})\n\n${message}`
 
-  const result = await sendWhatsAppMessage({
-    to: normalizePhoneNumber(session.user.phoneNumber),
-    message: preview,
-  })
+  const result = await sendWhatsAppMessage(
+    {
+      to: normalizePhoneNumber(session.user.phoneNumber),
+      message: preview,
+    },
+    {
+      userId: session.user.id,
+      messageType: 'review_reminder_test',
+      recipientRole: 'owner',
+      recipientName: session.user.displayName,
+    },
+  )
 
   if (!result.success) {
     return NextResponse.json({ error: result.error || 'שליחת ההודעה נכשלה' }, { status: 502 })

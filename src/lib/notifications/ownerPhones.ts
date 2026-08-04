@@ -6,6 +6,7 @@
  */
 import { normalizePhoneNumber } from '@/lib/utils/phoneFormatter'
 import { sendWhatsAppMessage } from '@/lib/whatsapp'
+import type { WhatsAppSendMeta } from '@/lib/whatsapp'
 
 /** Builds a deduplicated, normalized list of phone numbers from any number of optional inputs. */
 export function buildOwnerPhoneList(...phones: Array<string | null | undefined>): string[] {
@@ -28,10 +29,19 @@ export interface WhatsAppSendResult {
 export async function sendWhatsAppToAll(
   phones: string[],
   message: string,
+  meta?: WhatsAppSendMeta,
 ): Promise<WhatsAppSendResult[]> {
   const results: WhatsAppSendResult[] = []
   for (const to of phones) {
-    const result = await sendWhatsAppMessage({ to, message })
+    const result = await sendWhatsAppMessage(
+      { to, message },
+      meta
+        ? {
+            ...meta,
+            recipientRole: meta.recipientRole ?? 'owner',
+          }
+        : undefined,
+    )
     results.push({ to, ...result })
   }
   return results

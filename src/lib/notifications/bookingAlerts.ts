@@ -148,7 +148,13 @@ async function notifyOwnersOfBookingEvent(
     numAdult: input.numAdult,
   })
 
-  const results = await sendWhatsAppToAll(ownerInfo.phoneNumbers, message)
+  const results = await sendWhatsAppToAll(ownerInfo.phoneNumbers, message, {
+    userId: ownerInfo.userId,
+    bookingId: input.bookingId,
+    messageType: event === 'cancelled' ? 'cancellation_owner' : 'booking_request_owner',
+    recipientRole: 'owner',
+    recipientName: input.guestName,
+  })
   for (const result of results) {
     if (!result.success) {
       console.error(`❌ '${event}' notification failed for ${result.to}:`, result.error)
