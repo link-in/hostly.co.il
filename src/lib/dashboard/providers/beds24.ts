@@ -230,31 +230,44 @@ const mapBookingToReservation = (booking: Record<string, unknown>, index: number
 export const normalizeBeds24BookingStatus = (
   value: string | number | undefined,
 ): Reservation['status'] => {
-  // Handle numeric status values from Beds24 API
-  // 0=Cancelled, 1=Confirmed, 2=New, 3=Request, 4=Black, 5=Inquiry
-  if (typeof value === 'number') {
-    if (value === 0) return 'cancelled'
-    if (value === 1) return 'confirmed'
-    if (value === 2) return 'pending' // New
-    if (value === 3) return 'request'
-    if (value === 4) return 'cancelled' // Black (blocked dates)
-    if (value === 5) return 'request' // Inquiry
-    return 'pending'
+  // Beds24: 0=Cancelled, 1=Confirmed, 2=New, 3=Request, 4=Black, 5=Inquiry
+  // "New" is a real accepted booking (same as webhook isConfirmedBookingStatus), not a request.
+  const fromNumeric = (n: number): Reservation['status'] | null => {
+    if (n === 0) return 'cancelled'
+    if (n === 1 || n === 2) return 'confirmed'
+    if (n === 3) return 'request'
+    if (n === 4) return 'cancelled' // Black (blocked dates)
+    if (n === 5) return 'cancelled' // Inquiry/question — not a reservation; hide from calendar
+    return null
   }
 
-  // Handle string status values
-  if (!value) return 'pending'
-  const normalized = String(value).toLowerCase()
-  if (normalized.includes('request') || normalized.includes('inquiry')) {
-    return 'request'
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return fromNumeric(value) ?? 'pending'
   }
-  if (normalized.includes('new')) {
-    return 'pending'
+
+  if (!value) return 'pending'
+  const normalized = String(value).trim().toLowerCase()
+
+  // Beds24 often returns status as a digit string ("1", "2", …)
+  if (/^\d+$/.test(normalized)) {
+    return fromNumeric(Number(normalized)) ?? 'pending'
+  }
+
+  if (normalized.includes('inquiry')) {
+    return 'cancelled'
+  }
+  if (normalized.includes('request')) {
+    return 'request'
   }
   if (normalized.includes('cancel')) {
     return 'cancelled'
   }
-  if (normalized.includes('confirm') || normalized.includes('booked')) {
+  // "new" / "confirmed" / "booked" are real bookings on the calendar
+  if (
+    normalized.includes('new') ||
+    normalized.includes('confirm') ||
+    normalized.includes('booked')
+  ) {
     return 'confirmed'
   }
   return 'pending'

@@ -60,7 +60,7 @@ export function buildOwnerCancellationMessage(fields: OwnerBookingAlertFields): 
     .join('\n')
 }
 
-/** Hebrew WhatsApp body for a channel booking request / inquiry awaiting the owner's approval. */
+/** Hebrew WhatsApp body for a channel booking request awaiting the owner's approval. */
 export function buildOwnerBookingRequestMessage(fields: OwnerBookingAlertFields): string {
   return [
     '📩 בקשת הזמנה חדשה',
@@ -171,7 +171,7 @@ export function notifyOwnersOfBookingCancellation(
   return notifyOwnersOfBookingEvent('cancelled', input)
 }
 
-/** Alerts every owner phone that a channel booking request/inquiry needs approval. */
+/** Alerts every owner phone that a channel booking request needs approval. */
 export function notifyOwnersOfBookingRequest(
   input: NotifyOwnerAlertInput,
 ): Promise<OwnerAlertResult> {

@@ -99,13 +99,16 @@ describe('isCancelledBookingStatus', () => {
 // ─── isBookingRequestStatus ───────────────────────────────────────────────────
 
 describe('isBookingRequestStatus', () => {
-  it.each(['request', 'REQUEST', 'inquiry', '3', '5'])('accepts "%s"', (status) => {
+  it.each(['request', 'REQUEST', '3'])('accepts "%s"', (status) => {
     expect(isBookingRequestStatus(status)).toBe(true)
   })
 
-  it.each(['confirmed', 'new', '1', 'cancelled', '0', 'black', '4'])('rejects "%s"', (status) => {
-    expect(isBookingRequestStatus(status)).toBe(false)
-  })
+  it.each(['inquiry', '5', 'confirmed', 'new', '1', 'cancelled', '0', 'black', '4'])(
+    'rejects "%s"',
+    (status) => {
+      expect(isBookingRequestStatus(status)).toBe(false)
+    },
+  )
 })
 
 // ─── normalizeBookingItem ─────────────────────────────────────────────────────

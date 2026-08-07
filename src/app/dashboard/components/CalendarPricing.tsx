@@ -20,18 +20,12 @@ type CalendarPricingProps = {
 const DEFAULT_PRICE = undefined
 
 function getSegmentBarStyle(status: ReservationStatus): React.CSSProperties {
+  // Only channel requests get amber; confirmed/new/pending bookings stay red.
   if (status === 'request') {
     return {
       background: 'rgba(245, 158, 11, 0.3)',
       border: '1.5px dashed rgba(251, 191, 36, 0.9)',
       color: 'rgba(254, 243, 199, 0.98)',
-    }
-  }
-  if (status === 'pending') {
-    return {
-      background: 'rgba(251, 191, 36, 0.2)',
-      border: '1px solid rgba(252, 211, 77, 0.55)',
-      color: 'rgba(254, 243, 199, 0.92)',
     }
   }
   return {

@@ -52,11 +52,11 @@ describe('Webhook — cancellation status filtering', () => {
 })
 
 describe('Webhook — booking request status filtering', () => {
-  it.each(['request', 'inquiry', '3', '5'])('detects "%s" as a booking request', (status) => {
+  it.each(['request', '3'])('detects "%s" as a booking request', (status) => {
     expect(isBookingRequestStatus(status)).toBe(true)
   })
 
-  it.each(['confirmed', 'new', '1', 'cancelled', '0'])(
+  it.each(['inquiry', '5', 'confirmed', 'new', '1', 'cancelled', '0'])(
     'does not treat "%s" as a booking request',
     (status) => {
       expect(isBookingRequestStatus(status)).toBe(false)

@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import {
@@ -14,6 +14,10 @@ import {
 } from 'lucide-react'
 import DashboardHeader from '@/components/DashboardHeader'
 import type { WhatsAppMessageLogRow } from '@/lib/db/whatsappMessages'
+import {
+  groupWhatsAppMessageLogs,
+  type WhatsAppMessageLogGroup,
+} from '@/lib/whatsapp/groupMessageLogs'
 
 const MESSAGE_TYPE_LABELS: Record<string, string> = {
   new_booking_guest: 'הזמנה חדשה — אורח',
@@ -64,6 +68,13 @@ function StatusBadge({ status }: { status: string }) {
       </span>
     )
   }
+  if (status === 'partial') {
+    return (
+      <span className="badge d-inline-flex align-items-center gap-1 bg-warning text-dark">
+        <Clock size={13} /> חלקי
+      </span>
+    )
+  }
   return (
     <span className="badge d-inline-flex align-items-center gap-1 bg-secondary">
       <Clock size={13} /> {status}
@@ -75,7 +86,7 @@ export default function WhatsAppMessagesPage() {
   const { data: session, status: authStatus } = useSession()
   const router = useRouter()
   const [messages, setMessages] = useState<WhatsAppMessageLogRow[]>([])
-  const [total, setTotal] = useState(0)
+  const [rawTotal, setRawTotal] = useState(0)
   const [loading, setLoading] = useState(true)
   const [statusFilter, setStatusFilter] = useState<'all' | 'sent' | 'failed'>('all')
   const [typeFilter, setTypeFilter] = useState('all')
@@ -102,11 +113,11 @@ export default function WhatsAppMessagesPage() {
       }
       const data = await res.json()
       setMessages(data.messages || [])
-      setTotal(data.total || 0)
+      setRawTotal(data.total || 0)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'שגיאה בטעינת ההודעות')
       setMessages([])
-      setTotal(0)
+      setRawTotal(0)
     } finally {
       setLoading(false)
     }
@@ -116,8 +127,9 @@ export default function WhatsAppMessagesPage() {
     if (authStatus === 'authenticated') fetchMessages()
   }, [authStatus, fetchMessages])
 
-  const sentCount = messages.filter((m) => m.status === 'sent').length
-  const failedCount = messages.filter((m) => m.status === 'failed').length
+  const groups = useMemo(() => groupWhatsAppMessageLogs(messages), [messages])
+  const sentCount = groups.filter((g) => g.status === 'sent').length
+  const failedCount = groups.filter((g) => g.status === 'failed' || g.status === 'partial').length
 
   const pageShell = (children: ReactNode) => (
     <main
@@ -156,8 +168,13 @@ export default function WhatsAppMessagesPage() {
       <div className="row g-3 mb-3">
         <div className="col-4">
           <div className="bg-white rounded-3 p-3 shadow-sm text-center">
-            <div className="text-muted small">סה״כ</div>
-            <div className="fw-bold fs-4">{total}</div>
+            <div className="text-muted small">הודעות</div>
+            <div className="fw-bold fs-4">{groups.length}</div>
+            {rawTotal > groups.length && (
+              <div className="text-muted" style={{ fontSize: 11 }}>
+                {rawTotal} שליחות
+              </div>
+            )}
           </div>
         </div>
         <div className="col-4">
@@ -168,7 +185,7 @@ export default function WhatsAppMessagesPage() {
         </div>
         <div className="col-4">
           <div className="bg-white rounded-3 p-3 shadow-sm text-center">
-            <div className="text-muted small">נכשלו</div>
+            <div className="text-muted small">נכשלו / חלקי</div>
             <div className="fw-bold fs-4 text-danger">{failedCount}</div>
           </div>
         </div>
@@ -227,7 +244,7 @@ export default function WhatsAppMessagesPage() {
           </div>
         )}
 
-        {!error && messages.length === 0 && (
+        {!error && groups.length === 0 && (
           <div className="text-center text-muted py-5">
             <MessageSquare size={36} className="mb-2 opacity-50" />
             <div>עדיין אין הודעות ביומן</div>
@@ -235,7 +252,7 @@ export default function WhatsAppMessagesPage() {
           </div>
         )}
 
-        {messages.length > 0 && (
+        {groups.length > 0 && (
           <div className="table-responsive">
             <table className="table table-hover align-middle mb-0">
               <thead className="table-light">
@@ -243,75 +260,56 @@ export default function WhatsAppMessagesPage() {
                   <th style={{ minWidth: 130 }}>תאריך</th>
                   <th>סוג</th>
                   <th>נמען</th>
-                  <th>טלפון</th>
+                  <th>טלפונים</th>
                   <th>סטטוס</th>
                   <th>הזמנה</th>
                   <th style={{ width: 40 }} />
                 </tr>
               </thead>
               <tbody>
-                {messages.map((row) => {
-                  const expanded = expandedId === row.id
-                  return (
-                    <tr key={row.id}>
-                      <td className="small text-nowrap">{formatDate(row.created_at)}</td>
-                      <td className="small">
-                        {MESSAGE_TYPE_LABELS[row.message_type] || row.message_type}
-                      </td>
-                      <td className="small">
-                        <div>{row.recipient_name || '—'}</div>
-                        <div className="text-muted" style={{ fontSize: 11 }}>
-                          {ROLE_LABELS[row.recipient_role] || row.recipient_role}
-                        </div>
-                      </td>
-                      <td className="small font-monospace" dir="ltr">
-                        {row.recipient_phone}
-                      </td>
-                      <td>
-                        <StatusBadge status={row.status} />
-                        {row.error && (
-                          <div className="text-danger small mt-1" style={{ maxWidth: 180 }}>
-                            {row.error}
-                          </div>
-                        )}
-                      </td>
-                      <td className="small font-monospace" dir="ltr">
-                        {row.booking_id || '—'}
-                      </td>
-                      <td>
-                        <button
-                          type="button"
-                          className="btn btn-sm btn-link text-muted p-0"
-                          aria-label={expanded ? 'הסתר תוכן' : 'הצג תוכן'}
-                          onClick={() => setExpandedId(expanded ? null : row.id)}
-                        >
-                          {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                        </button>
-                      </td>
-                    </tr>
-                  )
-                })}
+                {groups.map((group) => (
+                  <GroupRow
+                    key={group.id}
+                    group={group}
+                    expanded={expandedId === group.id}
+                    onToggle={() => setExpandedId(expandedId === group.id ? null : group.id)}
+                  />
+                ))}
               </tbody>
             </table>
 
             {expandedId && (
               <div className="border-top mt-0 p-3 bg-light rounded-bottom">
                 {(() => {
-                  const row = messages.find((m) => m.id === expandedId)
-                  if (!row) return null
+                  const group = groups.find((g) => g.id === expandedId)
+                  if (!group) return null
                   return (
                     <div>
                       <div className="small text-muted mb-1">תוכן ההודעה</div>
                       <pre
-                        className="mb-2 p-3 bg-white border rounded small"
+                        className="mb-3 p-3 bg-white border rounded small"
                         style={{ whiteSpace: 'pre-wrap', direction: 'rtl' }}
                       >
-                        {row.message_body || '(ריק)'}
+                        {group.message_body || '(ריק)'}
                       </pre>
-                      <div className="d-flex flex-wrap gap-3 small text-muted">
-                        <span>ספק: {row.provider || '—'}</span>
-                        <span dir="ltr">ID: {row.provider_message_id || '—'}</span>
-                      </div>
+                      <div className="small text-muted mb-1">נמענים</div>
+                      <ul className="list-unstyled mb-2 small">
+                        {group.recipients.map((r) => (
+                          <li key={r.id} className="d-flex flex-wrap gap-2 align-items-center mb-1">
+                            <span className="font-monospace" dir="ltr">
+                              {r.phone}
+                            </span>
+                            <StatusBadge status={r.status} />
+                            {r.error && <span className="text-danger">{r.error}</span>}
+                            {r.provider_message_id && (
+                              <span className="text-muted" dir="ltr">
+                                ID: {r.provider_message_id}
+                              </span>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                      <div className="small text-muted">ספק: {group.provider || '—'}</div>
                     </div>
                   )
                 })()}
@@ -332,5 +330,64 @@ export default function WhatsAppMessagesPage() {
         }
       `}</style>
     </>,
+  )
+}
+
+function GroupRow({
+  group,
+  expanded,
+  onToggle,
+}: {
+  group: WhatsAppMessageLogGroup
+  expanded: boolean
+  onToggle: () => void
+}) {
+  const phones = group.recipients.map((r) => r.phone)
+  const recipientErrors = group.recipients.filter((r) => r.error)
+
+  return (
+    <tr>
+      <td className="small text-nowrap">{formatDate(group.created_at)}</td>
+      <td className="small">{MESSAGE_TYPE_LABELS[group.message_type] || group.message_type}</td>
+      <td className="small">
+        <div>{group.recipient_name || '—'}</div>
+        <div className="text-muted" style={{ fontSize: 11 }}>
+          {ROLE_LABELS[group.recipient_role] || group.recipient_role}
+          {group.recipients.length > 1 ? ` · ${group.recipients.length} נמענים` : ''}
+        </div>
+      </td>
+      <td className="small font-monospace" dir="ltr">
+        {phones.length === 1 ? (
+          phones[0]
+        ) : (
+          <div className="d-flex flex-column gap-1">
+            {phones.map((phone) => (
+              <span key={phone}>{phone}</span>
+            ))}
+          </div>
+        )}
+      </td>
+      <td>
+        <StatusBadge status={group.status} />
+        {recipientErrors.length > 0 && (
+          <div className="text-danger small mt-1" style={{ maxWidth: 180 }}>
+            {recipientErrors[0].error}
+          </div>
+        )}
+      </td>
+      <td className="small font-monospace" dir="ltr">
+        {group.booking_id || '—'}
+      </td>
+      <td>
+        <button
+          type="button"
+          className="btn btn-sm btn-link text-muted p-0"
+          aria-label={expanded ? 'הסתר תוכן' : 'הצג תוכן'}
+          onClick={onToggle}
+        >
+          {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+        </button>
+      </td>
+    </tr>
   )
 }

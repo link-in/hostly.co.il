@@ -91,11 +91,18 @@ export function isCancelledBookingStatus(status: string): boolean {
 
 /**
  * Returns true for a channel booking request awaiting owner approval —
- * Beds24 `request` (3) and `inquiry` (5), sent by Airbnb / Booking.com.
+ * Beds24 `request` (3). Airbnb "inquiry"/question (5) is excluded — that is
+ * only a guest message, not a reservation request, and must not trigger WhatsApp.
  */
 export function isBookingRequestStatus(status: string): boolean {
   const normalized = String(status).toLowerCase()
-  return ['request', 'inquiry', '3', '5'].includes(normalized)
+  return normalized === 'request' || normalized === '3'
+}
+
+/** Airbnb/Beds24 inquiry (guest question) — not a bookable reservation request. */
+export function isInquiryBookingStatus(status: string): boolean {
+  const normalized = String(status).toLowerCase()
+  return normalized === 'inquiry' || normalized === '5'
 }
 
 /** Extract user-specific Beds24 tokens from a session object, or undefined for global tokens. */

@@ -200,7 +200,7 @@ describe('processWebhook — cache refresh token resolution', () => {
     expect(refreshRoomCache).toHaveBeenCalled()
   })
 
-  it.each(['request', 'inquiry'])('notifies owners about a "%s" booking', async (status) => {
+  it.each(['request', '3'])('notifies owners about a "%s" booking', async (status) => {
     vi.mocked(getUserBeds24Tokens).mockResolvedValue({
       accessToken: 'user-access-token',
       refreshToken: 'user-refresh-token',
@@ -215,6 +215,15 @@ describe('processWebhook — cache refresh token resolution', () => {
       expect.objectContaining({ bookingId: 42, guestName: 'Yossi Cohen', numAdult: 2 }),
     )
     expect(notifyOwnersOfBookingCancellation).not.toHaveBeenCalled()
+  })
+
+  it.each(['inquiry', '5'])('skips Airbnb inquiry/question status "%s" without WhatsApp', async (status) => {
+    const result = await processWebhook(buildWebhook({ status }))
+    await flushMicrotasks()
+
+    expect(result.skipped).toBe(true)
+    expect(notifyOwnersOfBookingRequest).not.toHaveBeenCalled()
+    expect(sendWhatsAppMessage).not.toHaveBeenCalled()
   })
 
   it('does not send a guest message or save a customer for a booking request', async () => {
