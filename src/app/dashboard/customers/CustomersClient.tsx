@@ -132,7 +132,12 @@ export default function CustomersClient() {
   const fetchAudit = async () => {
     setAuditing(true)
     try {
-      const response = await fetch('/api/dashboard/customers/import')
+      const controller = new AbortController()
+      const timeout = window.setTimeout(() => controller.abort(), 45_000)
+      const response = await fetch('/api/dashboard/customers/import', {
+        signal: controller.signal,
+      })
+      window.clearTimeout(timeout)
       if (!response.ok) return
       const data = await response.json()
       setMissingCount(data.missingCount || 0)
@@ -146,18 +151,18 @@ export default function CustomersClient() {
     }
   }
 
-  // Fetch customers + audit gaps against Beds24
+  // Load customers immediately; audit Beds24 gaps in the background (must not block UI)
   useEffect(() => {
     const load = async () => {
       try {
         await fetchCustomers()
-        await fetchAudit()
       } catch (error) {
         console.error('Error fetching customers:', error)
         toast.error('שגיאה בטעינת לקוחות')
       } finally {
         setLoading(false)
       }
+      void fetchAudit()
     }
 
     if (status === 'authenticated') {
@@ -210,16 +215,29 @@ export default function CustomersClient() {
     })
 
     try {
+      const controller = new AbortController()
+      const timeout = window.setTimeout(() => controller.abort(), 55_000)
       const response = await fetch('/api/dashboard/customers/import', {
         method: 'POST',
+        signal: controller.signal,
       })
+      window.clearTimeout(timeout)
 
       if (!response.ok) {
-        throw new Error('Import failed')
+        const errBody = await response.json().catch(() => ({}))
+        throw new Error(errBody.error || 'Import failed')
       }
 
       const result = await response.json()
       toast.dismiss(loadingToastId)
+
+      if (result.success === false && result.stats?.totalBookings === 0) {
+        toast.error('לא התקבלו הזמנות מ-Beds24', {
+          description: 'בדוק חיבור Beds24 / טוקן ונסה שוב',
+          duration: 5000,
+        })
+        return
+      }
 
       const created = result.stats?.customersCreated ?? 0
       const updated = result.stats?.customersUpdated ?? 0
@@ -242,9 +260,12 @@ export default function CustomersClient() {
     } catch (error) {
       console.error('Error importing customers:', error)
       toast.dismiss(loadingToastId)
-      toast.error('סנכרון נכשל', {
-        description: 'אנא נסה שוב מאוחר יותר',
-        duration: 4000,
+      const aborted = error instanceof Error && error.name === 'AbortError'
+      toast.error(aborted ? 'הסנכרון ארך מדי ובוטל' : 'סנכרון נכשל', {
+        description: aborted
+          ? 'נסה שוב — השליפה מ-Beds24 הואטה'
+          : 'אנא נסה שוב מאוחר יותר',
+        duration: 5000,
       })
     } finally {
       setImporting(false)

@@ -7,9 +7,10 @@ import { fetchWithTokenRefresh } from '@/lib/beds24/tokenManager'
 import { extractBookingSource } from '@/lib/bookings/normalizer'
 
 export const dynamic = 'force-dynamic'
-export const maxDuration = 300
+export const maxDuration = 60
 
 const DEFAULT_BASE_URL = 'https://api.beds24.com/v2'
+const MAX_PAGES_PER_ROOM = 15
 
 type GuestFromBooking = {
   fullName: string
@@ -28,19 +29,25 @@ function parseRoomIds(sessionRoomId: string | null | undefined): string[] {
     .filter(Boolean)
 }
 
+function isSkippedStatus(status: unknown): boolean {
+  const normalized = String(status ?? '').toLowerCase()
+  return (
+    normalized === '0' ||
+    normalized === 'cancelled' ||
+    normalized === '4' ||
+    normalized === 'black' ||
+    normalized === '5' ||
+    normalized === 'inquiry'
+  )
+}
+
 function bookingToGuest(booking: Record<string, unknown>): GuestFromBooking | null {
   const firstName = String(booking.firstName || '').trim()
   const lastName = String(booking.lastName || '').trim()
   const fullName = `${firstName} ${lastName}`.trim()
   if (!fullName || fullName.length < 2) return null
+  if (isSkippedStatus(booking.status)) return null
 
-  const status = String(booking.status ?? '').toLowerCase()
-  // Skip cancelled / blocked only — keep Airbnb confirmed/new/request guests
-  if (status === '0' || status === 'cancelled' || status === '4' || status === 'black') {
-    return null
-  }
-
-  // Prefer real contact fields; Airbnb often leaves phone empty or uses a proxy
   const rawPhone = String(booking.mobile || booking.phone || '').trim() || null
   const phone =
     rawPhone && !/airbnb/i.test(rawPhone) && rawPhone.replace(/\D/g, '').length >= 8
@@ -57,6 +64,88 @@ function bookingToGuest(booking: Record<string, unknown>): GuestFromBooking | nu
   }
 }
 
+function extractBookingsPage(payload: unknown): Record<string, unknown>[] {
+  if (!payload) return []
+  if (Array.isArray(payload)) return payload as Record<string, unknown>[]
+  if (typeof payload !== 'object') return []
+
+  const obj = payload as { data?: unknown; bookings?: unknown }
+  if (Array.isArray(obj.data)) return obj.data as Record<string, unknown>[]
+  if (Array.isArray(obj.bookings)) return obj.bookings as Record<string, unknown>[]
+  return []
+}
+
+function hasMorePages(payload: unknown, page: number, pageSize: number): boolean {
+  if (!payload || typeof payload !== 'object') return pageSize > 0
+  const obj = payload as {
+    pages?: number | { nextPageExists?: boolean; nextPageLink?: string | null }
+    count?: number
+  }
+
+  if (typeof obj.pages === 'number') return page < obj.pages
+  if (obj.pages && typeof obj.pages === 'object') {
+    if (typeof obj.pages.nextPageExists === 'boolean') return obj.pages.nextPageExists
+    if (obj.pages.nextPageLink) return true
+  }
+  return pageSize > 0
+}
+
+async function fetchBookingsForRoom(opts: {
+  propertyId: string
+  roomId: string | null
+  userId?: string
+  accessToken?: string
+  refreshToken?: string
+}): Promise<Record<string, unknown>[]> {
+  const collected: Record<string, unknown>[] = []
+  const userTokens =
+    opts.accessToken && opts.refreshToken
+      ? { accessToken: opts.accessToken, refreshToken: opts.refreshToken }
+      : undefined
+
+  for (let page = 1; page <= MAX_PAGES_PER_ROOM; page += 1) {
+    const url = new URL(`${process.env.BEDS24_API_BASE_URL ?? DEFAULT_BASE_URL}/bookings`)
+    // Lightweight payload — no invoices (was causing hang / timeouts)
+    url.searchParams.set('arrivalFrom', '2024-01-01')
+    url.searchParams.set('propertyId', opts.propertyId)
+    url.searchParams.set('page', String(page))
+    if (opts.roomId) url.searchParams.set('roomId', opts.roomId)
+
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 20_000)
+
+    let response: Response
+    try {
+      response = await fetchWithTokenRefresh(
+        url.toString(),
+        { signal: controller.signal },
+        userTokens,
+        opts.userId,
+      )
+    } catch (error) {
+      clearTimeout(timeout)
+      console.error('❌ Beds24 bookings fetch error:', opts.roomId, error)
+      break
+    }
+    clearTimeout(timeout)
+
+    if (!response.ok) {
+      console.error('❌ Beds24 bookings fetch failed:', response.status, opts.roomId, `page=${page}`)
+      break
+    }
+
+    const payload = await response.json()
+    const pageRows = extractBookingsPage(payload)
+    collected.push(...pageRows)
+
+    if (pageRows.length === 0 || !hasMorePages(payload, page, pageRows.length)) {
+      break
+    }
+  }
+
+  return collected
+}
+
 async function fetchAllBookingsForSession(session: {
   user?: {
     id?: string
@@ -67,46 +156,30 @@ async function fetchAllBookingsForSession(session: {
   }
 }): Promise<Record<string, unknown>[]> {
   const propertyId = session.user?.propertyId ?? process.env.BEDS24_PROPERTY_ID
-  if (!propertyId) return []
+  if (!propertyId) {
+    console.warn('⚠️ No propertyId for customer sync')
+    return []
+  }
 
   const roomIds = parseRoomIds(session.user?.roomId)
-  // If no room list, one fetch without room filter
   const targets = roomIds.length > 0 ? roomIds : [null]
 
-  const userTokens =
-    session.user?.beds24Token && session.user?.beds24RefreshToken
-      ? {
-          accessToken: session.user.beds24Token,
-          refreshToken: session.user.beds24RefreshToken,
-        }
-      : undefined
+  const results = await Promise.all(
+    targets.map((roomId) =>
+      fetchBookingsForRoom({
+        propertyId: String(propertyId),
+        roomId,
+        userId: session.user?.id,
+        accessToken: session.user?.beds24Token,
+        refreshToken: session.user?.beds24RefreshToken,
+      }),
+    ),
+  )
 
   const all: Record<string, unknown>[] = []
   const seenIds = new Set<string>()
-
-  for (const roomId of targets) {
-    const url = new URL(`${process.env.BEDS24_API_BASE_URL ?? DEFAULT_BASE_URL}/bookings`)
-    url.searchParams.set('arrivalFrom', '2024-01-01')
-    url.searchParams.set('includeInvoice', 'true')
-    url.searchParams.set('propertyId', String(propertyId))
-    if (roomId) url.searchParams.set('roomId', roomId)
-
-    const response = await fetchWithTokenRefresh(
-      url.toString(),
-      {},
-      userTokens,
-      session.user?.id,
-    )
-    if (!response.ok) {
-      console.error('❌ Beds24 bookings fetch failed:', response.status, roomId)
-      continue
-    }
-
-    const data = await response.json()
-    const list = Array.isArray(data) ? data : Array.isArray(data?.data) ? data.data : []
-    for (const item of list) {
-      if (!item || typeof item !== 'object') continue
-      const booking = item as Record<string, unknown>
+  for (const list of results) {
+    for (const booking of list) {
       const id = String(booking.id ?? `${booking.firstName}-${booking.arrival}`)
       if (seenIds.has(id)) continue
       seenIds.add(id)
@@ -114,6 +187,7 @@ async function fetchAllBookingsForSession(session: {
     }
   }
 
+  console.log(`📦 Customer sync fetched ${all.length} bookings across ${targets.length} room(s)`)
   return all
 }
 
@@ -141,7 +215,7 @@ function collectUniqueGuests(bookings: Record<string, unknown>[]): GuestFromBook
  * GET — audit: compare Beds24 guests vs CRM customers (no writes).
  * POST — import/sync missing customers from Beds24 bookings.
  */
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
@@ -188,13 +262,16 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Error in GET /api/dashboard/customers/import:', error)
     return NextResponse.json(
-      { error: 'Internal server error', details: error instanceof Error ? error.message : String(error) },
+      {
+        error: 'Internal server error',
+        details: error instanceof Error ? error.message : String(error),
+      },
       { status: 500 },
     )
   }
 }
 
-export async function POST(request: NextRequest) {
+export async function POST() {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
@@ -206,6 +283,22 @@ export async function POST(request: NextRequest) {
     const bookings = await fetchAllBookingsForSession(session)
     const guests = collectUniqueGuests(bookings)
     const currentUserId = session.user.id
+
+    if (bookings.length === 0) {
+      return NextResponse.json({
+        success: false,
+        message: 'No bookings returned from Beds24',
+        stats: {
+          totalBookings: 0,
+          uniqueGuests: 0,
+          customersCreated: 0,
+          customersUpdated: 0,
+          customersImported: 0,
+          errors: 0,
+          createdNames: [] as string[],
+        },
+      })
+    }
 
     let createdCount = 0
     let updatedCount = 0
@@ -225,6 +318,7 @@ export async function POST(request: NextRequest) {
 
       if (!result.success) {
         errorCount++
+        console.error('❌ Failed to upsert', guest.fullName, result.error)
         continue
       }
       if (result.created) {
