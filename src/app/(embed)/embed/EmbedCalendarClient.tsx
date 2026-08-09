@@ -799,7 +799,7 @@ export default function EmbedCalendarClient({
         <style>{`
           .hcf-wrap {
             max-width: 640px; margin: 0 auto;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            font-family: var(--font-heebo), Heebo, system-ui, -apple-system, sans-serif;
             --hc-grad: ${grad};
             --hc-from: ${sk.from};
             --hc-to: ${sk.to};
@@ -962,7 +962,7 @@ export default function EmbedCalendarClient({
   // WordPress search widget. Show a friendly prompt if they are missing.
 
   return (
-    <div className="hc-wrap" style={{ direction: 'rtl', textAlign: 'center', padding: '60px 20px', fontFamily: 'sans-serif' }}>
+    <div className="hc-wrap" style={{ direction: 'rtl', textAlign: 'center', padding: '60px 20px', fontFamily: 'var(--font-heebo), Heebo, sans-serif' }}>
       <p style={{ fontSize: '1.1rem', color: '#555', marginBottom: 20 }}>
         אנא בחר תאריכים דרך חלון ההזמנה
       </p>

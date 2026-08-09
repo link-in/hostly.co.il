@@ -68,7 +68,7 @@ export default function LandingPageClient({ landingPage }: LandingPageClientProp
   const { whatsapp_number, waze_link } = landingPage.meta_settings || {}
   
   return (
-    <div style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }} dir="rtl">
+    <div style={{ fontFamily: 'var(--font-heebo), Heebo, sans-serif' }} dir="rtl">
       {/* Hero Section with Slider */}
       {heroImages.length > 0 && (
         <section style={{ 

@@ -11,6 +11,7 @@ import DashboardHeader from '@/components/DashboardHeader'
 import DashboardLoader from '@/components/DashboardLoader'
 import RoomTabs from '../components/RoomTabs'
 import { useSelectedRoom } from '@/lib/rooms/RoomContext'
+import { RefreshCw, Calendar, Banknote, Sparkles, ArrowUp, ArrowDown } from 'lucide-react'
 
 // LocalStorage key for viewed reservations
 const VIEWED_RESERVATIONS_KEY = 'hostly_viewed_reservations'
@@ -330,7 +331,7 @@ export default function ReservationsClient() {
             {/* Statistics Cards */}
             <div className="row g-3 mb-4">
               <div className="col-4 col-md-3">
-                <div className="card border-0 shadow-sm h-100" style={{ borderRadius: '12px' }}>
+                <div className="card border-0 shadow-sm h-100 hostly-dark-stat">
                   <div className="card-body text-center d-flex flex-column justify-content-center" style={{ minHeight: '85px' }}>
                     <div className="small text-muted mb-1">סה"כ הזמנות</div>
                     <div
@@ -348,7 +349,7 @@ export default function ReservationsClient() {
                 </div>
               </div>
               <div className="col-4 col-md-3 d-none d-md-block">
-                <div className="card border-0 shadow-sm h-100" style={{ borderRadius: '12px' }}>
+                <div className="card border-0 shadow-sm h-100 hostly-dark-stat">
                   <div className="card-body text-center d-flex flex-column justify-content-center" style={{ minHeight: '85px' }}>
                     <div className="small text-muted mb-1">סה"כ לילות</div>
                     <div
@@ -366,7 +367,7 @@ export default function ReservationsClient() {
                 </div>
               </div>
               <div className="col-4 col-md-3">
-                <div className="card border-0 shadow-sm h-100" style={{ borderRadius: '12px' }}>
+                <div className="card border-0 shadow-sm h-100 hostly-dark-stat">
                   <div className="card-body text-center d-flex flex-column justify-content-center" style={{ minHeight: '85px' }}>
                     <div className="small text-muted mb-1">מחיר ממוצע ללילה</div>
                     <div
@@ -384,7 +385,7 @@ export default function ReservationsClient() {
                 </div>
               </div>
               <div className="col-4 col-md-3">
-                <div className="card border-0 shadow-sm h-100" style={{ borderRadius: '12px' }}>
+                <div className="card border-0 shadow-sm h-100 hostly-dark-stat">
                   <div className="card-body text-center d-flex flex-column justify-content-center" style={{ minHeight: '85px' }}>
                     <div className="small text-muted mb-1">ממוצע להזמנה</div>
                     <div
@@ -406,9 +407,9 @@ export default function ReservationsClient() {
             {/* Revenue Cards */}
             <div className="row g-3 mb-4">
               <div className="col-4 col-md-4">
-                <div className="card border-0 shadow-sm h-100" style={{ borderRadius: '12px' }}>
+                <div className="card border-0 shadow-sm h-100 hostly-dark-stat">
                   <div className="card-body d-flex flex-column justify-content-center" style={{ minHeight: '85px' }}>
-                    <div className="small text-muted mb-2">💰 הכנסות ברוטו</div>
+                    <div className="small text-muted mb-2">הכנסות ברוטו</div>
                     <div className="h5 fw-bold text-success mb-0">
                       {formatCurrency(stats.totalRevenue)}
                     </div>
@@ -416,7 +417,7 @@ export default function ReservationsClient() {
                 </div>
               </div>
               <div className="col-4 col-md-4">
-                <div className="card border-0 shadow-sm h-100" style={{ borderRadius: '12px' }}>
+                <div className="card border-0 shadow-sm h-100 hostly-dark-stat">
                   <div className="card-body d-flex flex-column justify-content-center" style={{ minHeight: '85px' }}>
                     <div className="small text-muted mb-2">💸 סה"כ עמלות</div>
                     <div className="h5 fw-bold text-danger mb-0">
@@ -426,7 +427,7 @@ export default function ReservationsClient() {
                 </div>
               </div>
               <div className="col-4 col-md-4">
-                <div className="card border-0 shadow-sm h-100" style={{ borderRadius: '12px' }}>
+                <div className="card border-0 shadow-sm h-100 hostly-dark-stat">
                   <div className="card-body d-flex flex-column justify-content-center" style={{ minHeight: '85px' }}>
                     <div className="small text-muted mb-2">✅ תשלום צפוי (נטו)</div>
                     <div
@@ -446,7 +447,7 @@ export default function ReservationsClient() {
             </div>
 
             {/* Filters and Search */}
-            <div className="card border-0 shadow-sm mb-4" style={{ borderRadius: '12px' }}>
+            <div className="card border-0 shadow-sm mb-4 hostly-dark-card">
               <div
                 className="card-body"
                 style={{
@@ -455,7 +456,7 @@ export default function ReservationsClient() {
               >
                 <div className="row g-3 mb-3">
                   <div className="col-md-4">
-                    <label className="form-label small fw-semibold">🔍 חיפוש</label>
+                    <label className="form-label small fw-semibold">חיפוש</label>
                     <input
                       type="text"
                       className="form-control"
@@ -469,7 +470,7 @@ export default function ReservationsClient() {
                     />
                   </div>
                   <div className="col-md-3">
-                    <label className="form-label small fw-semibold">📊 סטטוס</label>
+                    <label className="form-label small fw-semibold">סטטוס</label>
                     <select
                       className="form-select"
                       value={statusFilter}
@@ -506,15 +507,15 @@ export default function ReservationsClient() {
                   <div className="col-md-2 d-flex align-items-end">
                     <button
                       type="button"
-                      className="btn btn-outline-secondary w-100"
+                      className="hostly-btn hostly-btn-ghost w-100"
                       onClick={() => {
                         setSearchQuery('')
                         setStatusFilter('all')
                         setSourceFilter('all')
                       }}
-                      style={{ borderRadius: '8px' }}
                     >
-                      🔄 אפס
+                      <RefreshCw size={14} />
+                      אפס
                     </button>
                   </div>
                 </div>
@@ -526,7 +527,7 @@ export default function ReservationsClient() {
                   <div className="d-flex gap-2">
                     <button
                       type="button"
-                      className={`btn btn-sm sort-btn ${sortField === 'checkIn' ? 'btn-primary' : 'btn-outline-secondary'}`}
+                      className={`hostly-btn hostly-btn-sm ${sortField === 'checkIn' ? 'hostly-btn-primary' : 'hostly-btn-ghost'}`}
                       onClick={() => {
                         if (sortField === 'checkIn') {
                           setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
@@ -535,13 +536,14 @@ export default function ReservationsClient() {
                           setSortDirection('desc')
                         }
                       }}
-                      style={{ borderRadius: '8px' }}
                     >
-                      📅 תאריך {sortField === 'checkIn' && (sortDirection === 'asc' ? '↑' : '↓')}
+                      <Calendar size={14} />
+                      תאריך
+                      {sortField === 'checkIn' && (sortDirection === 'asc' ? <ArrowUp size={13} /> : <ArrowDown size={13} />)}
                     </button>
                     <button
                       type="button"
-                      className={`btn btn-sm sort-btn ${sortField === 'total' ? 'btn-primary' : 'btn-outline-secondary'}`}
+                      className={`hostly-btn hostly-btn-sm ${sortField === 'total' ? 'hostly-btn-primary' : 'hostly-btn-ghost'}`}
                       onClick={() => {
                         if (sortField === 'total') {
                           setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
@@ -550,9 +552,10 @@ export default function ReservationsClient() {
                           setSortDirection('desc')
                         }
                       }}
-                      style={{ borderRadius: '8px' }}
                     >
-                      💰 סכום {sortField === 'total' && (sortDirection === 'asc' ? '↑' : '↓')}
+                      <Banknote size={14} />
+                      סכום
+                      {sortField === 'total' && (sortDirection === 'asc' ? <ArrowUp size={13} /> : <ArrowDown size={13} />)}
                     </button>
                   </div>
                 </div>
@@ -560,48 +563,11 @@ export default function ReservationsClient() {
             </div>
 
             {/* Reservations Table */}
-            <div className="card border-0 shadow-sm" style={{ borderRadius: '12px' }}>
+            <div className="card border-0 shadow-sm hostly-dark-card">
               <div className="card-body p-0">
-                <div 
-                  className="table-responsive table-scroll-container"
-                  style={{
-                    maxHeight: '120vh',
-                    overflowY: 'auto',
-                    overflowX: 'auto',
-                  }}
-                >
-                  <style dangerouslySetInnerHTML={{ __html: `
-                    @media (max-width: 768px) {
-                      .table-scroll-container {
-                        max-height: 100vh !important;
-                      }
-                    }
-                    .table-scroll-container::-webkit-scrollbar {
-                      width: 8px;
-                      height: 8px;
-                    }
-                    .table-scroll-container::-webkit-scrollbar-track {
-                      background: #f1f1f1;
-                      border-radius: 4px;
-                    }
-                    .table-scroll-container::-webkit-scrollbar-thumb {
-                      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                      border-radius: 4px;
-                    }
-                    .table-scroll-container::-webkit-scrollbar-thumb:hover {
-                      background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
-                    }
-                  `}} />
-                  <table className="table table-hover mb-0">
-                    <thead 
-                      style={{ 
-                        background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(249, 147, 251, 0.1) 100%)',
-                        position: 'sticky',
-                        top: 0,
-                        zIndex: 5,
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
-                      }}
-                    >
+                <div className="table-responsive dashboard-table-scroll-container" style={{ maxHeight: '120vh' }}>
+                  <table className="table table-hover mb-0 hostly-dark-table">
+                    <thead>
                       <tr>
                         <th className="p-3 fw-semibold">מזהה</th>
                         <th className="p-3 fw-semibold">שם אורח</th>
@@ -647,7 +613,7 @@ export default function ReservationsClient() {
                                   <span className="fw-semibold">{reservation.guestName || 'N/A'}</span>
                                   {reservation.isNew && !isReservationViewed(reservation.id) && (
                                     <span 
-                                      className="badge" 
+                                      className="badge d-inline-flex align-items-center gap-1" 
                                       style={{
                                         background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
                                         color: 'white',
@@ -655,7 +621,8 @@ export default function ReservationsClient() {
                                         padding: '2px 6px',
                                       }}
                                     >
-                                      חדש ✨
+                                      חדש
+                                      <Sparkles size={11} />
                                     </span>
                                   )}
                                 </div>

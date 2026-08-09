@@ -1,0 +1,167 @@
+/* Soft unified buttons — matte glass on dark/purple dashboard surfaces */
+
+.hostly-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 38px;
+  padding: 0.35rem 0.95rem;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.92);
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  line-height: 1.2;
+  white-space: nowrap;
+  cursor: pointer;
+  text-decoration: none;
+  box-shadow: none;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, opacity 0.15s ease;
+}
+
+.hostly-btn:hover,
+.hostly-btn:focus-visible {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.24);
+  color: #fff;
+  outline: none;
+}
+
+.hostly-btn:active {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.hostly-btn:disabled,
+.hostly-btn.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.hostly-btn svg {
+  flex-shrink: 0;
+}
+
+.hostly-btn-sm {
+  min-height: 34px;
+  padding: 0.28rem 0.75rem;
+  font-size: 0.78rem;
+  border-radius: 9px;
+  gap: 0.35rem;
+}
+
+.hostly-btn-lg {
+  min-height: 44px;
+  padding: 0.55rem 1.2rem;
+  font-size: 0.9rem;
+}
+
+.hostly-btn-primary {
+  border-color: rgba(147, 163, 240, 0.38);
+  background: rgba(102, 126, 234, 0.24);
+  color: rgba(226, 232, 255, 0.98);
+}
+
+.hostly-btn-primary:hover,
+.hostly-btn-primary:focus-visible {
+  background: rgba(102, 126, 234, 0.34);
+  border-color: rgba(147, 163, 240, 0.5);
+  color: #fff;
+}
+
+.hostly-btn-success {
+  border-color: rgba(74, 222, 128, 0.35);
+  background: rgba(34, 197, 94, 0.16);
+  color: rgba(187, 247, 208, 0.98);
+}
+
+.hostly-btn-success:hover,
+.hostly-btn-success:focus-visible {
+  background: rgba(34, 197, 94, 0.26);
+  border-color: rgba(74, 222, 128, 0.5);
+  color: #fff;
+}
+
+.hostly-btn-danger {
+  border-color: rgba(248, 113, 113, 0.4);
+  background: rgba(239, 68, 68, 0.14);
+  color: rgba(254, 202, 202, 0.98);
+}
+
+.hostly-btn-danger:hover,
+.hostly-btn-danger:focus-visible {
+  background: rgba(239, 68, 68, 0.24);
+  border-color: rgba(248, 113, 113, 0.55);
+  color: #fff;
+}
+
+.hostly-btn-ghost {
+  border-color: rgba(255, 255, 255, 0.12);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.86);
+}
+
+.hostly-btn-ghost:hover,
+.hostly-btn-ghost:focus-visible {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+.hostly-btn-icon {
+  width: 38px;
+  min-width: 38px;
+  padding: 0;
+}
+
+.hostly-btn-icon.hostly-btn-sm {
+  width: 34px;
+  min-width: 34px;
+}
+
+/* Light surfaces (guest check-in, modals on white) */
+.hostly-btn-on-light {
+  border-color: rgba(15, 23, 42, 0.14);
+  background: rgba(15, 23, 42, 0.04);
+  color: rgba(15, 23, 42, 0.88);
+}
+
+.hostly-btn-on-light:hover,
+.hostly-btn-on-light:focus-visible {
+  background: rgba(15, 23, 42, 0.08);
+  border-color: rgba(15, 23, 42, 0.22);
+  color: #0f172a;
+}
+
+.hostly-btn-on-light.hostly-btn-primary {
+  border-color: rgba(102, 126, 234, 0.4);
+  background: rgba(102, 126, 234, 0.12);
+  color: #4338ca;
+}
+
+.hostly-btn-on-light.hostly-btn-primary:hover,
+.hostly-btn-on-light.hostly-btn-primary:focus-visible {
+  background: rgba(102, 126, 234, 0.2);
+  color: #3730a3;
+}
+
+.hostly-btn-on-light.hostly-btn-success {
+  border-color: rgba(34, 197, 94, 0.4);
+  background: rgba(34, 197, 94, 0.12);
+  color: #15803d;
+}
+
+.hostly-btn-on-light.hostly-btn-ghost {
+  background: transparent;
+}
+
+@keyframes hostly-spin {
+  to { transform: rotate(360deg); }
+}
+
+.spin {
+  animation: hostly-spin 0.9s linear infinite;
+}

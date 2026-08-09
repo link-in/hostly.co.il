@@ -63,8 +63,8 @@ function HeaderIconButton({
 
 export default function DashboardHeader({
   session,
-  title,
-  subtitle,
+  title: _title,
+  subtitle: _subtitle,
   showLandingPageButton = true,
   currentPage = 'dashboard',
 }: DashboardHeaderProps) {
@@ -105,59 +105,108 @@ export default function DashboardHeader({
 
   const closeMenu = useCallback(() => setMenuOpen(false), [])
 
-  const displayTitle = title || session?.user?.displayName || 'Hostly'
+  // Business / property display name under the logo (e.g. "נוף הרים בדפנה")
+  const underLogoLabel = session?.user?.displayName?.trim() || 'Hostly'
 
   return (
     <>
       <style jsx global>{`
         .dashboard-header-card {
-          padding: 0.75rem !important;
+          padding: 0.85rem 0.85rem !important;
         }
 
         .dashboard-header-logo {
-          height: 40px !important;
+          height: 36px !important;
           width: auto !important;
           display: block !important;
         }
 
         .dashboard-header-title {
-          font-size: 1.25rem !important;
+          font-size: 0.9rem !important;
           line-height: 1.3 !important;
+          font-weight: 600 !important;
+        }
+
+        .dashboard-header-brand {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          max-width: min(55vw, 280px);
+          min-width: 0;
+        }
+
+        .dashboard-header-actions {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 0.35rem;
+          min-width: 0;
+          max-width: min(42vw, 220px);
+        }
+
+        .dashboard-header-actions-row {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
         }
 
         @media (min-width: 768px) {
           .dashboard-header-card {
-            padding: 1.5rem !important;
+            padding: 1rem 1.25rem !important;
           }
 
           .dashboard-header-logo {
-            height: 48px !important;
+            height: 42px !important;
           }
 
           .dashboard-header-title {
-            font-size: 1.75rem !important;
-            line-height: 1.2 !important;
+            font-size: 0.95rem !important;
+            line-height: 1.25 !important;
+          }
+
+          .dashboard-header-brand {
+            max-width: min(50vw, 360px);
+          }
+
+          .dashboard-header-actions {
+            max-width: min(38vw, 260px);
           }
         }
       `}</style>
 
       <div
-        className="dashboard-header-card d-flex align-items-center justify-content-between gap-2 gap-md-3"
+        className="dashboard-header-card"
         style={{
           background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
           borderRadius: '12px',
           boxShadow: '0 6px 20px rgba(102, 126, 234, 0.3)',
           position: 'relative',
+          display: 'grid',
+          gridTemplateColumns: 'auto minmax(0, 1fr) auto',
+          alignItems: 'center',
+          columnGap: '0.75rem',
         }}
       >
-        {/* Right: Logo */}
-        <div className="d-flex align-items-center gap-2 gap-md-3">
-          {logoVisible && (
+        {/* Right (RTL start): menu only */}
+        <div className="d-flex align-items-center" style={{ zIndex: 1 }}>
+          <HeaderIconButton
+            title="תפריט"
+            ariaLabel="תפריט"
+            onClick={() => setMenuOpen((prev) => !prev)}
+          >
+            <Menu {...ICON_PROPS} />
+          </HeaderIconButton>
+        </div>
+
+        {/* Center: Logo only */}
+        <div className="dashboard-header-brand justify-self-center">
+          {logoVisible ? (
             <div
               style={{
                 backgroundColor: 'white',
                 borderRadius: '10px',
-                padding: '8px 12px',
+                padding: '6px 10px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -170,91 +219,65 @@ export default function DashboardHeader({
                 className="dashboard-header-logo"
                 style={{
                   objectFit: 'contain',
-                  height: '40px',
-                  maxHeight: '48px',
+                  height: '36px',
+                  maxHeight: '42px',
                   width: 'auto',
                   display: 'block',
                 }}
                 onError={() => setLogoVisible(false)}
               />
             </div>
-          )}
+          ) : null}
         </div>
 
-        {/* Center: Title */}
-        <div
-          className="position-absolute"
-          style={{ left: '50%', transform: 'translateX(-50%)', textAlign: 'center' }}
-        >
+        {/* Left (RTL end): action buttons + business name under them */}
+        <div className="dashboard-header-actions" style={{ zIndex: 1 }}>
+          <div className="dashboard-header-actions-row">
+            <Link
+              href="/dashboard"
+              className="btn btn-sm d-flex align-items-center justify-content-center"
+              style={headerBtnStyle}
+              title="דף הבית"
+              aria-label="דף הבית"
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.25)'
+                e.currentTarget.style.borderColor = 'white'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)'
+                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.5)'
+              }}
+            >
+              <Home {...ICON_PROPS} />
+            </Link>
+
+            <div className="d-none d-md-flex align-items-center gap-2">
+              {showLandingPageButton && session?.user?.landingPageUrl && (
+                <HeaderIconButton
+                  title="צפה באתר"
+                  ariaLabel="צפה באתר"
+                  onClick={() => window.open(session.user.landingPageUrl, '_blank')}
+                >
+                  <ExternalLink {...ICON_PROPS} />
+                </HeaderIconButton>
+              )}
+
+              <HeaderIconButton title="התנתק" ariaLabel="התנתק" onClick={handleLogout}>
+                <LogOut {...ICON_PROPS} />
+              </HeaderIconButton>
+            </div>
+          </div>
+
           <h1
-            className="dashboard-header-title fw-bold mb-0"
+            className="dashboard-header-title fw-bold mb-0 text-truncate text-center"
             style={{
               color: 'white',
               textShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+              maxWidth: '100%',
             }}
           >
-            {displayTitle}
+            {underLogoLabel}
           </h1>
-          {session?.user?.firstName && session?.user?.lastName && (
-            <p
-              className="small mb-0 d-none d-md-block"
-              style={{ color: 'rgba(255, 255, 255, 0.95)', fontWeight: '500' }}
-            >
-              שלום {session.user.firstName} {session.user.lastName}
-            </p>
-          )}
-          {subtitle && (
-            <p className="small mb-0 d-none d-md-block" style={{ color: 'rgba(255, 255, 255, 0.85)' }}>
-              {subtitle}
-            </p>
-          )}
-        </div>
-
-        {/* Left: Desktop Buttons + Menu */}
-        <div className="d-flex align-items-center gap-2">
-          <div className="d-none d-md-flex align-items-center gap-2">
-            {currentPage !== 'dashboard' && (
-              <Link
-                href="/dashboard"
-                className="btn btn-sm d-flex align-items-center justify-content-center"
-                style={headerBtnStyle}
-                title="דף הבית"
-                aria-label="דף הבית"
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.25)'
-                  e.currentTarget.style.borderColor = 'white'
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)'
-                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.5)'
-                }}
-              >
-                <Home {...ICON_PROPS} />
-              </Link>
-            )}
-
-            {showLandingPageButton && session?.user?.landingPageUrl && (
-              <HeaderIconButton
-                title="צפה באתר"
-                ariaLabel="צפה באתר"
-                onClick={() => window.open(session.user.landingPageUrl, '_blank')}
-              >
-                <ExternalLink {...ICON_PROPS} />
-              </HeaderIconButton>
-            )}
-
-            <HeaderIconButton title="התנתק" ariaLabel="התנתק" onClick={handleLogout}>
-              <LogOut {...ICON_PROPS} />
-            </HeaderIconButton>
-          </div>
-
-          <HeaderIconButton
-            title="תפריט"
-            ariaLabel="תפריט"
-            onClick={() => setMenuOpen((prev) => !prev)}
-          >
-            <Menu {...ICON_PROPS} />
-          </HeaderIconButton>
         </div>
       </div>
 

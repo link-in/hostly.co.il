@@ -3,6 +3,7 @@ import { SessionProvider } from './SessionProvider'
 import { RoomProvider } from '@/lib/rooms/RoomContext'
 import SubscriptionBanner from '@/components/SubscriptionBanner'
 import type { ReactNode } from 'react'
+import './dashboard-surfaces.css'
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (

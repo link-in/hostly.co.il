@@ -9,6 +9,7 @@ import DashboardLoader from '@/components/DashboardLoader'
 import RoomTabs from '../components/RoomTabs'
 import { useSelectedRoom } from '@/lib/rooms/RoomContext'
 import { formatCurrency } from '@/lib/dashboard/utils'
+import { Search } from 'lucide-react'
 
 type PriceCheckResult = {
   available: boolean
@@ -147,11 +148,10 @@ export default function PriceCheckClient() {
           <div className="col-12">
             {/* Main Card */}
             <div 
-              className="card shadow-lg"
+              className="card shadow-lg hostly-dark-card"
               style={{
                 borderRadius: '12px',
                 border: 'none',
-                background: 'white',
               }}
             >
               <div 
@@ -162,7 +162,7 @@ export default function PriceCheckClient() {
                   padding: '1.5rem',
                 }}
               >
-                <h4 className="mb-0" style={{ fontWeight: '600' }}>💰 בדיקת מחיר וזמינות</h4>
+                <h4 className="mb-0" style={{ fontWeight: '600' }}>בדיקת מחיר וזמינות</h4>
                 <p className="mb-0 mt-2" style={{ fontSize: '0.9rem', opacity: 0.9 }}>
                   הזן תאריכים ומספר אורחים לבדיקת מחיר
                 </p>
@@ -243,33 +243,21 @@ export default function PriceCheckClient() {
                   {/* Check Price Button */}
                   <div className="col-12 text-center mt-4">
                     <button
+                      type="button"
                       onClick={handleCheckPrice}
                       disabled={loading}
-                      className="btn btn-lg text-white fw-semibold"
-                      style={{
-                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                        border: 'none',
-                        borderRadius: '25px',
-                        padding: '0.75rem 3rem',
-                        boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)',
-                        transition: 'all 0.3s ease',
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.transform = 'translateY(-2px)'
-                        e.currentTarget.style.boxShadow = '0 6px 20px rgba(102, 126, 234, 0.6)'
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.transform = 'translateY(0)'
-                        e.currentTarget.style.boxShadow = '0 4px 15px rgba(102, 126, 234, 0.4)'
-                      }}
+                      className="hostly-btn hostly-btn-lg hostly-btn-primary"
                     >
                       {loading ? (
                         <>
-                          <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                          <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
                           בודק מחיר...
                         </>
                       ) : (
-                        '🔍 בדוק מחיר'
+                        <>
+                          <Search size={18} />
+                          בדוק מחיר
+                        </>
                       )}
                     </button>
                   </div>
@@ -381,15 +369,15 @@ export default function PriceCheckClient() {
                       <div 
                         className="text-center p-4"
                         style={{
-                          background: 'linear-gradient(135deg, #a8b3cf 0%, #c6cbd9 100%)',
+                          background: 'rgba(0,0,0,0.25)',
                           borderRadius: '12px',
-                          color: '#333',
-                          border: '2px solid #667eea',
+                          color: 'rgba(255,255,255,0.92)',
+                          border: '1px solid rgba(249,147,251,0.25)',
                         }}
                       >
                         <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📅</div>
-                        <h4 className="mb-2" style={{ color: '#667eea', fontWeight: '600' }}>לא זמין</h4>
-                        <p className="mb-0" style={{ color: '#555' }}>
+                        <h4 className="mb-2" style={{ color: '#c4b5fd', fontWeight: '600' }}>לא זמין</h4>
+                        <p className="mb-0" style={{ color: 'rgba(255,255,255,0.7)' }}>
                           התאריכים שבחרת אינם זמינים להזמנה
                         </p>
                       </div>

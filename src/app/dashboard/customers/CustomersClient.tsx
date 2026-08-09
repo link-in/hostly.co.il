@@ -4,6 +4,18 @@ import React, { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { toast, Toaster } from 'sonner'
+import {
+  Search,
+  Users,
+  RefreshCw,
+  Download,
+  Map,
+  Plane,
+  Home,
+  Hotel,
+  Globe,
+  Bird,
+} from 'lucide-react'
 import DashboardHeader from '@/components/DashboardHeader'
 import DashboardLoader from '@/components/DashboardLoader'
 import { normalizePhoneNumber, formatPhoneForDisplay } from '@/lib/utils/phoneFormatter'
@@ -30,7 +42,8 @@ const getPlatformIcon = (source: string | null | undefined, size: number = 24) =
     justifyContent: 'center',
     width: `${size}px`,
     height: `${size}px`,
-    flexShrink: 0
+    flexShrink: 0,
+    color: 'rgba(226, 232, 255, 0.9)',
   }
   
   if (sourceLower.includes('airbnb')) {
@@ -68,22 +81,22 @@ const getPlatformIcon = (source: string | null | undefined, size: number = 24) =
     )
   }
   if (sourceLower.includes('agoda')) {
-    return <div style={containerStyle}><span style={{ fontSize: `${size}px`, lineHeight: 1 }}>🗺️</span></div>
+    return <div style={containerStyle}><Map size={size * 0.85} strokeWidth={1.75} /></div>
   }
   if (sourceLower.includes('expedia')) {
-    return <div style={containerStyle}><span style={{ fontSize: `${size}px`, lineHeight: 1 }}>✈️</span></div>
+    return <div style={containerStyle}><Plane size={size * 0.85} strokeWidth={1.75} /></div>
   }
   if (sourceLower.includes('vrbo') || sourceLower.includes('homeaway')) {
-    return <div style={containerStyle}><span style={{ fontSize: `${size}px`, lineHeight: 1 }}>🏡</span></div>
+    return <div style={containerStyle}><Home size={size * 0.85} strokeWidth={1.75} /></div>
   }
   if (sourceLower.includes('tripadvisor')) {
-    return <div style={containerStyle}><span style={{ fontSize: `${size}px`, lineHeight: 1 }}>🦉</span></div>
+    return <div style={containerStyle}><Bird size={size * 0.85} strokeWidth={1.75} /></div>
   }
   if (sourceLower.includes('hotels.com')) {
-    return <div style={containerStyle}><span style={{ fontSize: `${size}px`, lineHeight: 1 }}>🏨</span></div>
+    return <div style={containerStyle}><Hotel size={size * 0.85} strokeWidth={1.75} /></div>
   }
   // הזמנה ישירה או לא מוכר
-  return <div style={containerStyle}><span style={{ fontSize: `${size}px`, lineHeight: 1 }}>🌐</span></div>
+  return <div style={containerStyle}><Globe size={size * 0.85} strokeWidth={1.75} /></div>
 }
 
 // Helper function to get source label text
@@ -390,101 +403,83 @@ export default function CustomersClient() {
             </div>
             <button
               type="button"
-              className="btn btn-sm text-white"
+              className="hostly-btn hostly-btn-sm hostly-btn-primary"
               disabled={importing || auditing}
               onClick={() => {
                 setImporting(true)
                 void performImport()
               }}
-              style={{
-                background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-                border: 'none',
-                borderRadius: 8,
-                whiteSpace: 'nowrap',
-              }}
             >
-              {importing ? 'מסנכרן…' : `הוסף ${missingCount} חסרים`}
+              {importing ? (
+                <>
+                  <RefreshCw size={14} className="spin" />
+                  מסנכרן…
+                </>
+              ) : (
+                <>
+                  <Users size={14} />
+                  {`הוסף ${missingCount} חסרים`}
+                </>
+              )}
             </button>
           </div>
         )}
 
         {/* Search and Actions Card */}
-        <div className="card border-0 shadow-sm mb-4" style={{ borderRadius: '12px' }}>
+        <div className="card border-0 shadow-sm mb-4 hostly-dark-card">
           <div className="card-body p-3 p-md-4">
             <div className="row g-3 align-items-center">
               <div className="col-12 col-md-6">
-                <input
-                  type="text"
-                  className="form-control"
-                  placeholder="🔍 חיפוש לפי שם, טלפון או אימייל..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  style={{ 
-                    borderRadius: '8px',
-                    border: '1px solid rgba(102, 126, 234, 0.2)',
-                  }}
-                />
+                <div className="position-relative">
+                  <Search
+                    size={16}
+                    style={{
+                      position: 'absolute',
+                      right: 12,
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      color: 'rgba(255,255,255,0.45)',
+                      pointerEvents: 'none',
+                    }}
+                  />
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="חיפוש לפי שם, טלפון או אימייל..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    style={{ borderRadius: '8px', paddingInlineEnd: '2.25rem' }}
+                  />
+                </div>
               </div>
-              <div className="col-12 col-md-6 d-flex gap-2 justify-content-end">
-                {/* Import Button */}
+              <div className="col-12 col-md-6 d-flex gap-2 justify-content-end flex-wrap">
                 <button
-                  className="btn"
+                  type="button"
+                  className="hostly-btn hostly-btn-primary"
                   onClick={handleImportFromBeds24}
                   disabled={importing}
-                  style={{ 
-                    borderRadius: '8px',
-                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                    border: 'none',
-                    color: 'white',
-                    fontWeight: '500',
-                    transition: 'all 0.2s',
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!importing) {
-                      e.currentTarget.style.transform = 'translateY(-2px)'
-                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.4)'
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'translateY(0)'
-                    e.currentTarget.style.boxShadow = 'none'
-                  }}
                 >
                   {importing ? (
                     <>
-                      <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                      <RefreshCw size={15} className="spin" />
                       מייבא...
                     </>
                   ) : (
-                    '🔄 סנכרון מהזמנות'
+                    <>
+                      <RefreshCw size={15} />
+                      סנכרון מהזמנות
+                    </>
                   )}
                 </button>
                 
-                {/* Export Button */}
                 <button
-                  className="btn"
+                  type="button"
+                  className="hostly-btn hostly-btn-success"
                   onClick={handleExport}
                   disabled={filteredCustomers.length === 0}
-                  style={{ 
-                    borderRadius: '8px',
-                    background: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
-                    border: 'none',
-                    color: 'white',
-                    fontWeight: '500',
-                    transition: 'all 0.2s',
-                  }}
-                  onMouseEnter={(e) => {
-                    if (filteredCustomers.length > 0) {
-                      e.currentTarget.style.transform = 'translateY(-2px)'
-                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(67, 233, 123, 0.4)'
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'translateY(0)'
-                    e.currentTarget.style.boxShadow = 'none'
-                  }}
                 >
-                  📊 ייצוא לאקסל
+                  <Download size={15} />
+                  ייצוא לאקסל
                 </button>
               </div>
             </div>
@@ -492,12 +487,12 @@ export default function CustomersClient() {
         </div>
 
         {/* Customers Table Card */}
-        <div className="card border-0 shadow-sm" style={{ borderRadius: '12px' }}>
+        <div className="card border-0 shadow-sm hostly-dark-card">
           <div className="card-body p-0">
             {filteredCustomers.length === 0 ? (
               <div className="text-center py-5">
-                <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>
-                  {searchQuery ? '🔍' : '👥'}
+                <div className="mb-3 d-inline-flex" style={{ color: 'rgba(255,255,255,0.45)' }}>
+                  {searchQuery ? <Search size={40} strokeWidth={1.5} /> : <Users size={40} strokeWidth={1.5} />}
                 </div>
                 <p className="text-muted mb-0">
                   {searchQuery ? 'לא נמצאו לקוחות תואמים לחיפוש' : 'עדיין אין לקוחות במערכת'}
@@ -509,29 +504,29 @@ export default function CustomersClient() {
                 )}
               </div>
             ) : (
-              <div className="table-responsive">
-                <table className="table table-hover mb-0">
-                  <thead style={{ background: 'rgba(102, 126, 234, 0.05)' }}>
+              <div className="table-responsive dashboard-table-scroll-container">
+                <table className="table table-hover mb-0 hostly-dark-table">
+                  <thead>
                     <tr>
-                      <th style={{ padding: '1rem', fontWeight: '600', fontSize: '0.875rem', color: '#667eea', width: 56 }}>
+                      <th style={{ padding: '1rem', fontWeight: '600', fontSize: '0.875rem', width: 56 }}>
                         #
                       </th>
-                      <th style={{ padding: '1rem', fontWeight: '600', fontSize: '0.875rem', color: '#667eea' }}>
+                      <th style={{ padding: '1rem', fontWeight: '600', fontSize: '0.875rem' }}>
                         שם מלא
                       </th>
-                      <th style={{ padding: '1rem', fontWeight: '600', fontSize: '0.875rem', color: '#667eea' }}>
+                      <th style={{ padding: '1rem', fontWeight: '600', fontSize: '0.875rem' }}>
                         טלפון
                       </th>
-                      <th style={{ padding: '1rem', fontWeight: '600', fontSize: '0.875rem', color: '#667eea' }}>
+                      <th style={{ padding: '1rem', fontWeight: '600', fontSize: '0.875rem' }}>
                         אימייל
                       </th>
-                      <th style={{ padding: '1rem', fontWeight: '600', fontSize: '0.875rem', color: '#667eea' }}>
+                      <th style={{ padding: '1rem', fontWeight: '600', fontSize: '0.875rem' }}>
                         מקור
                       </th>
-                      <th style={{ padding: '1rem', fontWeight: '600', fontSize: '0.875rem', color: '#667eea' }}>
+                      <th style={{ padding: '1rem', fontWeight: '600', fontSize: '0.875rem' }}>
                         הזמנה ראשונה
                       </th>
-                      <th style={{ padding: '1rem', fontWeight: '600', fontSize: '0.875rem', color: '#667eea' }}>
+                      <th style={{ padding: '1rem', fontWeight: '600', fontSize: '0.875rem' }}>
                         הזמנה אחרונה
                       </th>
                     </tr>
@@ -554,14 +549,14 @@ export default function CustomersClient() {
                           {index + 1}
                         </td>
                         <td style={{ padding: '1rem', verticalAlign: 'middle' }}>
-                          <strong style={{ color: '#333' }}>{customer.fullName}</strong>
+                          <strong style={{ color: 'rgba(255, 255, 255, 0.95)' }}>{customer.fullName}</strong>
                         </td>
                         <td style={{ padding: '1rem', verticalAlign: 'middle' }}>
                           {customer.phone ? (
                             <a
                               href={`tel:${normalizePhoneNumber(customer.phone)}`}
                               className="text-decoration-none"
-                              style={{ color: '#667eea' }}
+                              style={{ color: '#c4b5fd' }}
                             >
                               {formatPhoneForDisplay(customer.phone)}
                             </a>
@@ -574,7 +569,7 @@ export default function CustomersClient() {
                             <a
                               href={`mailto:${customer.email}`}
                               className="text-decoration-none"
-                              style={{ color: '#667eea' }}
+                              style={{ color: '#c4b5fd' }}
                             >
                               {customer.email}
                             </a>

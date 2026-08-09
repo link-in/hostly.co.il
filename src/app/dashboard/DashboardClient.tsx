@@ -15,6 +15,7 @@ import RoomTabs from './components/RoomTabs'
 import DashboardHeader from '@/components/DashboardHeader'
 import DashboardLoader from '@/components/DashboardLoader'
 import { useSelectedRoom } from '@/lib/rooms/RoomContext'
+import { Trash2, Plus, X } from 'lucide-react'
 
 const toLocalKey = (value: Date) => {
   const year = value.getFullYear()
@@ -127,6 +128,62 @@ const clearDemoReservations = () => {
   sessionStorage.removeItem(DEMO_RESERVATIONS_KEY)
   console.log('🗑️ Demo reservations cleared')
 }
+
+/** Matte toolbar controls for the dark reservations card. */
+const glassControlBase: React.CSSProperties = {
+  height: '34px',
+  borderRadius: '10px',
+  fontSize: '0.8rem',
+  fontWeight: 400,
+  letterSpacing: '0.01em',
+  lineHeight: 1.2,
+  direction: 'rtl',
+  transition: 'background 0.15s ease, border-color 0.15s ease, color 0.15s ease',
+}
+
+const glassSelectChevron =
+  "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 16 16'%3E%3Cpath fill='rgba(255,255,255,0.55)' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3E%3C/svg%3E\")"
+
+const glassSelectStyle: React.CSSProperties = {
+  ...glassControlBase,
+  width: 'auto',
+  minWidth: '118px',
+  maxWidth: '168px',
+  appearance: 'none',
+  WebkitAppearance: 'none',
+  MozAppearance: 'none',
+  backgroundColor: 'rgba(255, 255, 255, 0.06)',
+  backgroundImage: glassSelectChevron,
+  backgroundRepeat: 'no-repeat',
+  backgroundPosition: 'left 0.65rem center',
+  backgroundSize: '11px',
+  border: '1px solid rgba(255, 255, 255, 0.12)',
+  color: 'rgba(255, 255, 255, 0.82)',
+  padding: '0.3rem 0.75rem 0.3rem 1.85rem',
+  boxShadow: 'none',
+  cursor: 'pointer',
+}
+
+const glassCtaStyle = (closing: boolean): React.CSSProperties => ({
+  ...glassControlBase,
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: '0.3rem',
+  border: closing
+    ? '1px solid rgba(248, 113, 113, 0.35)'
+    : '1px solid rgba(147, 163, 240, 0.35)',
+  background: closing
+    ? 'rgba(239, 68, 68, 0.14)'
+    : 'rgba(102, 126, 234, 0.22)',
+  color: closing ? 'rgba(254, 202, 202, 0.95)' : 'rgba(226, 232, 255, 0.95)',
+  padding: '0.3rem 0.9rem',
+  fontWeight: 500,
+  whiteSpace: 'nowrap',
+  minWidth: '112px',
+  boxShadow: 'none',
+  cursor: 'pointer',
+})
 
 const DashboardClient = () => {
   const { data: session, status } = useSession()
@@ -955,18 +1012,32 @@ const DashboardClient = () => {
   }, [roomPrices, monthRange])
 
   const bookingSummary = useMemo(() => {
-    if (!reservations.length) {
-      return null
-    }
+    const today = normalizeDate(new Date())
+    const monthStart = normalizeDate(monthRange.monthStart)
+    const monthEnd = normalizeDate(monthRange.monthEnd)
+    // Mid-month: only remaining nights count as "still available"
+    const availableFrom = today > monthStart ? today : monthStart
+    const availableFromKey = toLocalKey(availableFrom)
 
     const bookedDates = new Set<string>()
+    const blockedDates = new Set<string>()
     let monthRevenue = 0
     let monthCommission = 0
+
+    roomPrices.forEach((entry) => {
+      if (entry.numAvail !== 0) return
+      if (entry.date < availableFromKey || entry.date > monthRange.endKey) return
+      blockedDates.add(entry.date)
+    })
 
     reservations.forEach((reservation) => {
       if (!reservation.checkIn || !reservation.checkOut) {
         return
       }
+      if (reservation.status === 'cancelled') {
+        return
+      }
+
       const checkIn = normalizeDate(new Date(reservation.checkIn))
       const checkOut = normalizeDate(new Date(reservation.checkOut))
       if (Number.isNaN(checkIn.getTime()) || Number.isNaN(checkOut.getTime())) {
@@ -995,15 +1066,22 @@ const DashboardClient = () => {
       let cursor = checkIn
       while (cursor < checkOut) {
         const key = toLocalKey(cursor)
-        if (key >= monthRange.startKey && key <= monthRange.endKey) {
+        if (key >= availableFromKey && key <= monthRange.endKey) {
           bookedDates.add(key)
         }
         cursor = addDays(cursor, 1)
       }
     })
 
+    let availableDays = 0
+    for (let cursor = availableFrom; cursor <= monthEnd; cursor = addDays(cursor, 1)) {
+      const key = toLocalKey(cursor)
+      if (!bookedDates.has(key) && !blockedDates.has(key)) {
+        availableDays += 1
+      }
+    }
+
     const bookedDays = bookedDates.size
-    const availableDays = Math.max(0, monthRange.daysInMonth - bookedDays)
     const netRevenue = monthRevenue - monthCommission
 
     return {
@@ -1013,7 +1091,7 @@ const DashboardClient = () => {
       monthCommission,
       netRevenue,
     }
-  }, [reservations, monthRange, commissionRates])
+  }, [reservations, monthRange, commissionRates, roomPrices])
 
   // Show loading while checking authentication
   if (status === 'loading') {
@@ -1221,63 +1299,38 @@ const DashboardClient = () => {
                 {/* New Reservation Button - Enhanced CTA */}
                 <button
                   type="button"
-                  className="btn btn-sm d-flex align-items-center justify-content-center gap-1"
-                  style={{ 
-                    background: showNewReservation 
-                      ? 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)' 
-                      : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                    border: 'none',
-                    color: 'white',
-                    padding: '0.375rem 0.75rem',
-                    height: '36px',
-                    fontSize: '0.8125rem',
-                    fontWeight: '700',
-                    whiteSpace: 'nowrap',
-                    borderRadius: '8px',
-                    boxShadow: showNewReservation 
-                      ? '0 4px 12px rgba(220, 53, 69, 0.4)' 
-                      : '0 4px 12px rgba(102, 126, 234, 0.4)',
-                    transition: 'all 0.2s ease',
+                  className="hostly-btn hostly-btn-sm hostly-btn-primary"
+                  style={{
+                    ...glassCtaStyle(showNewReservation),
                     flexShrink: 0,
+                    height: '34px',
+                    padding: '0.3rem 0.8rem',
+                    minWidth: 'auto',
                   }}
                   onMouseEnter={(e) => {
                     if (!showNewReservation) {
-                      e.currentTarget.style.transform = 'translateY(-2px) scale(1.02)'
-                      e.currentTarget.style.boxShadow = '0 6px 16px rgba(102, 126, 234, 0.5)'
+                      e.currentTarget.style.background = 'rgba(102, 126, 234, 0.3)'
                     }
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'translateY(0) scale(1)'
-                    e.currentTarget.style.boxShadow = showNewReservation 
-                      ? '0 4px 12px rgba(220, 53, 69, 0.4)' 
-                      : '0 4px 12px rgba(102, 126, 234, 0.4)'
+                    Object.assign(e.currentTarget.style, {
+                      ...glassCtaStyle(showNewReservation),
+                      flexShrink: 0,
+                      height: '34px',
+                      padding: '0.3rem 0.8rem',
+                      minWidth: 'auto',
+                    })
                   }}
                   onClick={() => setShowNewReservation((prev) => !prev)}
                 >
                   {showNewReservation ? (
                     <>
-                      <svg 
-                        xmlns="http://www.w3.org/2000/svg" 
-                        width="14" 
-                        height="14" 
-                        fill="currentColor" 
-                        viewBox="0 0 16 16"
-                      >
-                        <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z"/>
-                      </svg>
+                      <X size={14} />
                       <span>סגור</span>
                     </>
                   ) : (
                     <>
-                      <svg 
-                        xmlns="http://www.w3.org/2000/svg" 
-                        width="16" 
-                        height="16" 
-                        fill="currentColor" 
-                        viewBox="0 0 16 16"
-                      >
-                        <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
-                      </svg>
+                      <Plus size={14} />
                       <span>הזמנה חדשה</span>
                     </>
                   )}
@@ -1342,17 +1395,12 @@ const DashboardClient = () => {
                     </label>
                     <select
                       id="mobile-month-filter"
-                      className="form-select form-select-sm"
+                      className="form-select form-select-sm hostly-glass-select"
                       style={{
+                        ...glassSelectStyle,
                         width: '100%',
-                        height: '38px',
-                        background: 'rgba(0, 0, 0, 0.3)',
-                        border: '1px solid rgba(102, 126, 234, 0.5)',
-                        color: 'white',
-                        padding: '0.375rem 0.75rem',
-                        fontSize: '0.875rem',
-                        direction: 'rtl',
-                        borderRadius: '8px',
+                        maxWidth: 'none',
+                        minWidth: 0,
                       }}
                       value={selectedMonth}
                       onChange={(e) => setSelectedMonth(e.target.value)}
@@ -1388,17 +1436,12 @@ const DashboardClient = () => {
                     </label>
                     <select
                       id="mobile-sort-filter"
-                      className="form-select form-select-sm"
+                      className="form-select form-select-sm hostly-glass-select"
                       style={{
+                        ...glassSelectStyle,
                         width: '100%',
-                        height: '38px',
-                        background: 'rgba(0, 0, 0, 0.3)',
-                        border: '1px solid rgba(118, 75, 162, 0.5)',
-                        color: 'white',
-                        padding: '0.375rem 0.75rem',
-                        fontSize: '0.875rem',
-                        direction: 'rtl',
-                        borderRadius: '8px',
+                        maxWidth: 'none',
+                        minWidth: 0,
                       }}
                       value={sortOrder}
                       onChange={(e) => setSortOrder(e.target.value as 'newest' | 'oldest')}
@@ -1413,6 +1456,31 @@ const DashboardClient = () => {
 
             {/* Desktop: Title + All Controls */}
             <div className="d-none d-md-flex align-items-center justify-content-between mb-3 gap-3">
+              <style>{`
+                .hostly-glass-select.form-select {
+                  background-color: rgba(255, 255, 255, 0.06) !important;
+                  background-image: ${glassSelectChevron} !important;
+                  background-repeat: no-repeat !important;
+                  background-position: left 0.65rem center !important;
+                  background-size: 11px !important;
+                  color: rgba(255, 255, 255, 0.82) !important;
+                  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+                  box-shadow: none !important;
+                  font-weight: 400;
+                }
+                .hostly-glass-select.form-select:hover,
+                .hostly-glass-select.form-select:focus {
+                  background-color: rgba(255, 255, 255, 0.09) !important;
+                  border-color: rgba(255, 255, 255, 0.2) !important;
+                  box-shadow: none !important;
+                  outline: none;
+                  color: rgba(255, 255, 255, 0.92) !important;
+                }
+                .hostly-glass-select.form-select option {
+                  background: #1e293b;
+                  color: #fff;
+                }
+              `}</style>
               <div className="d-flex align-items-center gap-2">
                 <h2 
                   className="h5 fw-bold mb-0"
@@ -1429,112 +1497,65 @@ const DashboardClient = () => {
                   </span>
                 ) : null}
               </div>
-              <div className="d-flex align-items-center justify-content-center gap-1 gap-md-2">
+              <div className="d-flex align-items-center justify-content-center gap-3">
                 <select
-                  className="form-select form-select-sm"
-                  style={{
-                    width: 'auto',
-                    minWidth: '95px',
-                    maxWidth: '140px',
-                    height: '31px',
-                    border: '1px solid #667eea',
-                    color: '#667eea',
-                    padding: '0.25rem 2rem 0.25rem 0.5rem',
-                    fontSize: '0.875rem',
-                    direction: 'rtl',
-                  }}
+                  className="form-select form-select-sm hostly-glass-select"
+                  style={glassSelectStyle}
                   value={selectedMonth}
                   onChange={(e) => setSelectedMonth(e.target.value)}
                 >
-                  <option value="all">כל החודשים</option>
+                  <option value="all" style={{ background: '#1e293b', color: 'white' }}>כל החודשים</option>
                   {availableMonths.map((monthKey) => {
                     const [year, month] = monthKey.split('-')
                     const monthName = new Intl.DateTimeFormat('he-IL', { month: 'long', year: 'numeric' }).format(
                       new Date(parseInt(year), parseInt(month) - 1)
                     )
                     return (
-                      <option key={monthKey} value={monthKey}>
+                      <option key={monthKey} value={monthKey} style={{ background: '#1e293b', color: 'white' }}>
                         {monthName}
                       </option>
                     )
                   })}
                 </select>
                 <select
-                  className="form-select form-select-sm"
-                  style={{
-                    width: 'auto',
-                    minWidth: '95px',
-                    maxWidth: '140px',
-                    height: '31px',
-                    border: '1px solid #764ba2',
-                    color: '#764ba2',
-                    padding: '0.25rem 2rem 0.25rem 0.5rem',
-                    fontSize: '0.875rem',
-                    direction: 'rtl',
-                  }}
+                  className="form-select form-select-sm hostly-glass-select"
+                  style={glassSelectStyle}
                   value={sortOrder}
                   onChange={(e) => setSortOrder(e.target.value as 'newest' | 'oldest')}
                 >
-                  <option value="oldest">קרובות תחילה</option>
-                  <option value="newest">רחוקות תחילה</option>
+                  <option value="oldest" style={{ background: '#1e293b', color: 'white' }}>קרובות תחילה</option>
+                  <option value="newest" style={{ background: '#1e293b', color: 'white' }}>רחוקות תחילה</option>
                 </select>
                 <button
                   type="button"
-                  className="btn btn-sm d-flex align-items-center justify-content-center"
-                  style={{ 
-                    background: showNewReservation 
-                      ? '#dc3545' 
-                      : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                    border: 'none',
-                    color: 'white',
-                    padding: '0.25rem 0.75rem',
-                    height: '31px',
-                    lineHeight: '1.5',
-                    fontSize: '0.875rem',
-                    fontWeight: '600',
-                    whiteSpace: 'nowrap',
-                    flex: '1 0 auto',
-                    minWidth: '110px',
-                    boxShadow: '0 2px 4px rgba(102, 126, 234, 0.3)',
-                  }}
+                  className="hostly-btn hostly-btn-sm hostly-btn-primary"
+                  style={glassCtaStyle(showNewReservation)}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.opacity = '0.9'
-                    e.currentTarget.style.transform = 'translateY(-1px)'
-                    e.currentTarget.style.boxShadow = '0 4px 8px rgba(102, 126, 234, 0.4)'
+                    e.currentTarget.style.background = showNewReservation
+                      ? 'rgba(239, 68, 68, 0.2)'
+                      : 'rgba(102, 126, 234, 0.3)'
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.opacity = '1'
-                    e.currentTarget.style.transform = 'translateY(0)'
-                    e.currentTarget.style.boxShadow = '0 2px 4px rgba(102, 126, 234, 0.3)'
+                    Object.assign(e.currentTarget.style, glassCtaStyle(showNewReservation))
                   }}
                   onClick={() => setShowNewReservation((prev) => !prev)}
                 >
-                  {showNewReservation ? 'סגור טופס' : 'הזמנה חדשה'}
+                  {showNewReservation ? (
+                    <>
+                      <X size={14} />
+                      סגור טופס
+                    </>
+                  ) : (
+                    <>
+                      <Plus size={14} />
+                      הזמנה חדשה
+                    </>
+                  )}
                 </button>
                 {meta.isMock && session?.user?.isDemo && (
                   <button
                     type="button"
-                    className="btn btn-sm d-flex align-items-center justify-content-center"
-                    style={{ 
-                      backgroundColor: 'transparent',
-                      border: '1px solid #dc3545',
-                      color: '#dc3545',
-                      padding: '0.25rem 0.5rem',
-                      height: '31px',
-                      lineHeight: '1.5',
-                      fontSize: '0.875rem',
-                      whiteSpace: 'nowrap',
-                      flex: '1 0 auto',
-                      minWidth: '80px',
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = '#dc3545'
-                      e.currentTarget.style.color = 'white'
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = 'transparent'
-                      e.currentTarget.style.color = '#dc3545'
-                    }}
+                    className="hostly-btn hostly-btn-sm hostly-btn-danger"
                     onClick={() => {
                       toast.warning(
                         'מחק הזמנות דמו?',
@@ -1558,7 +1579,8 @@ const DashboardClient = () => {
                     }}
                     title="מחיקת כל ההזמנות החדשות שהוספת במצב דמו"
                   >
-                    🗑️ איפוס
+                    <Trash2 size={14} />
+                    איפוס
                   </button>
                 )}
               </div>
@@ -1774,12 +1796,7 @@ const DashboardClient = () => {
                   <div className="col-12 d-flex flex-column flex-sm-row gap-2">
                     <button 
                       type="button" 
-                      className="btn"
-                      style={{ 
-                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                        border: 'none',
-                        color: 'white',
-                      }}
+                      className="hostly-btn hostly-btn-primary"
                       onClick={isEditing ? handleUpdateReservation : handleCreateReservation} 
                       disabled={savingReservation}
                     >
@@ -1790,12 +1807,7 @@ const DashboardClient = () => {
                     </button>
                     <button
                       type="button"
-                      className="btn"
-                      style={{
-                        border: '1px solid #cbd5e1',
-                        color: '#64748b',
-                        backgroundColor: 'transparent',
-                      }}
+                      className="hostly-btn hostly-btn-ghost"
                       onClick={() => {
                         setShowNewReservation(false)
                         resetReservationForm()
@@ -1810,42 +1822,12 @@ const DashboardClient = () => {
             {loadingReservations && !reservations.length ? (
               <DashboardLoader variant="section" tone="onDark" label="טוען הזמנות…" minHeight={220} />
             ) : filteredReservations.length > 0 ? (
-              <>
                 <ReservationsTable 
                   reservations={filteredReservations} 
                   onReservationViewed={markReservationAsViewed}
                   onEditReservation={startEditReservation}
                   onDeleteReservation={handleDeleteReservation}
                 />
-                {/* Desktop Only: View All Reservations Button */}
-                <div className="d-none d-md-block text-center mt-4 pt-3" style={{ borderTop: '1px solid rgba(102, 126, 234, 0.15)' }}>
-                  <Link href="/dashboard/reservations">
-                    <button
-                      type="button"
-                      className="btn btn-lg"
-                      style={{
-                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '8px',
-                        padding: '0.75rem 2rem',
-                        fontWeight: '500',
-                        transition: 'transform 0.2s, box-shadow 0.2s',
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.transform = 'translateY(-2px)'
-                        e.currentTarget.style.boxShadow = '0 8px 20px rgba(102, 126, 234, 0.4)'
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.transform = 'translateY(0)'
-                        e.currentTarget.style.boxShadow = 'none'
-                      }}
-                    >
-                      📊 צפייה בכל ההזמנות + סטטיסטיקות מתקדמות
-                    </button>
-                  </Link>
-                </div>
-              </>
             ) : (
               <div className="text-center py-4" style={{ color: 'rgba(255, 255, 255, 0.7)' }}>
                 {selectedMonth === 'all' ? 'אין הזמנות להצגה' : 'אין הזמנות בחודש זה'}
@@ -1909,7 +1891,7 @@ const DashboardClient = () => {
                   />
                 </div>
                 <div className="col-4 col-md-4">
-                  <StatCard title="ימים פנויים" value={`${bookingSummary?.availableDays ?? 0}`} helper="ללא הזמנה" />
+                  <StatCard title="ימים פנויים" value={`${bookingSummary?.availableDays ?? 0}`} helper="מהיום, בלי הזמנה/חסימה" />
                 </div>
                 <div className="col-4 col-md-4">
                   <StatCard title="מחיר מינימום" value={formatCurrency(priceSummary.minPrice)} />

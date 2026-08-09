@@ -74,7 +74,7 @@ export default function LandingPageClient({
           color: '#0d9488',
           margin: '0', 
           textShadow: '0px 0px 1px #ffffff', 
-          fontFamily: 'Rubik, sans-serif' 
+          fontFamily: 'var(--font-heebo), Heebo, sans-serif' 
         }}> 
           {landingPage.site_title}
         </h1>
@@ -83,7 +83,7 @@ export default function LandingPageClient({
             margin: '0',
             fontSize: '12px',
             textShadow: '0px 0px 3px #000', 
-            fontFamily: 'Rubik, sans-serif'
+            fontFamily: 'var(--font-heebo), Heebo, sans-serif'
           }}>
             {landingPage.site_subtitle}
           </h2>

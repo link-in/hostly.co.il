@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { useSession, signOut } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ExternalLink, Loader2 } from 'lucide-react'
+import { ExternalLink, Loader2, Pencil, RefreshCw, MessageSquare } from 'lucide-react'
 import DashboardHeader from '@/components/DashboardHeader'
 import DashboardLoader from '@/components/DashboardLoader'
 
@@ -588,22 +588,40 @@ const ProfileClient = () => {
                     <div className="d-flex flex-wrap gap-2 align-items-center">
                       <button
                         type="button"
-                        className="btn btn-sm btn-outline-primary fw-semibold"
-                        style={{ borderRadius: '8px' }}
+                        className="hostly-btn hostly-btn-sm hostly-btn-primary"
                         onClick={handleTestSend}
                         disabled={testSending}
                       >
-                        {testSending ? '⏳ שולח...' : '📱 שלח הודעת בדיקה למספר שלי'}
+                        {testSending ? (
+                          <>
+                            <Loader2 size={14} className="spin" />
+                            שולח...
+                          </>
+                        ) : (
+                          <>
+                            <MessageSquare size={14} />
+                            שלח הודעת בדיקה למספר שלי
+                          </>
+                        )}
                       </button>
                       <button
                         type="button"
-                        className="btn btn-sm btn-outline-secondary fw-semibold"
-                        style={{ borderRadius: '8px' }}
+                        className="hostly-btn hostly-btn-sm hostly-btn-ghost"
                         onClick={handleSendNow}
                         disabled={liveSending}
                         title="מריץ עכשיו את הבדיקה האמיתית מול Beds24 לאורחים שיצאו אתמול — בטוח ללחוץ כמה פעמים, הזמנות שכבר נשלחו לא יישלחו שוב"
                       >
-                        {liveSending ? '⏳ מריץ...' : '🔄 הפעל שליחה עבור אתמול (מול הזמנות אמיתיות)'}
+                        {liveSending ? (
+                          <>
+                            <Loader2 size={14} className="spin" />
+                            מריץ...
+                          </>
+                        ) : (
+                          <>
+                            <RefreshCw size={14} />
+                            הפעל שליחה עבור אתמול (מול הזמנות אמיתיות)
+                          </>
+                        )}
                       </button>
                     </div>
                     {testError ? <div className="alert alert-danger py-2 mt-2 mb-0 small">⚠️ {testError}</div> : null}
@@ -1089,18 +1107,11 @@ const ProfileClient = () => {
                     ) : (
                       <button 
                         type="button" 
-                        className="btn shadow profile-btn-gradient"
-                        style={{
-                          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '8px',
-                          padding: '0.5rem 1.5rem',
-                          fontWeight: '500',
-                        }}
+                        className="hostly-btn hostly-btn-primary"
                         onClick={() => setEditing(true)}
                       >
-                        ✏️ עריכת פרטים
+                        <Pencil size={15} />
+                        עריכת פרטים
                       </button>
                     )}
                   </div>

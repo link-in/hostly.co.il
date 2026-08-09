@@ -108,7 +108,7 @@ function CheckInDetailsPageContent() {
             <div className="row g-4">
               {/* Guest Information */}
               <div className="col-md-6">
-                <div className="card border-0 shadow-sm" style={{ borderRadius: '12px' }}>
+                <div className="card border-0 shadow-sm hostly-dark-card" style={{ borderRadius: '12px' }}>
                   <div 
                     className="card-header text-white" 
                     style={{
@@ -120,7 +120,7 @@ function CheckInDetailsPageContent() {
                     <h5 className="mb-0">פרטי האורח</h5>
                   </div>
             <div className="card-body">
-              <table className="table table-borderless mb-0">
+              <table className="table table-borderless mb-0 hostly-dark-table">
                 <tbody>
                   <tr>
                     <td width="40%"><strong>שם מלא:</strong></td>
@@ -156,7 +156,7 @@ function CheckInDetailsPageContent() {
 
               {/* Check-in Status */}
               <div className="col-md-6">
-                <div className="card border-0 shadow-sm" style={{ borderRadius: '12px' }}>
+                <div className="card border-0 shadow-sm hostly-dark-card" style={{ borderRadius: '12px' }}>
                   <div 
                     className="card-header text-white"
                     style={{
@@ -168,7 +168,7 @@ function CheckInDetailsPageContent() {
                     <h5 className="mb-0">מצב צ'ק-אין</h5>
                   </div>
             <div className="card-body">
-              <table className="table table-borderless mb-0">
+              <table className="table table-borderless mb-0 hostly-dark-table">
                 <tbody>
                   <tr>
                     <td width="40%"><strong>סטטוס:</strong></td>
@@ -206,12 +206,12 @@ function CheckInDetailsPageContent() {
         {checkIn.status === 'completed' && (
           <>
             <div className="col-md-6">
-              <div className="card">
+              <div className="card hostly-dark-card">
                 <div className="card-header bg-secondary text-white">
                   <h5 className="mb-0">פרטים אישיים</h5>
                 </div>
                 <div className="card-body">
-                  <table className="table table-borderless mb-0">
+                  <table className="table table-borderless mb-0 hostly-dark-table">
                     <tbody>
                       {checkIn.id_document_type && (
                         <tr>
@@ -260,7 +260,7 @@ function CheckInDetailsPageContent() {
             </div>
 
             <div className="col-md-6">
-              <div className="card border-0 shadow-sm" style={{ borderRadius: '12px' }}>
+              <div className="card border-0 shadow-sm hostly-dark-card" style={{ borderRadius: '12px' }}>
                 <div 
                   className="card-header text-white"
                   style={{
@@ -273,7 +273,7 @@ function CheckInDetailsPageContent() {
                 </div>
                 <div className="card-body">
                   {checkIn.emergency_contact_name || checkIn.emergency_contact_phone ? (
-                    <table className="table table-borderless mb-0">
+                    <table className="table table-borderless mb-0 hostly-dark-table">
                       <tbody>
                         {checkIn.emergency_contact_name && (
                           <tr>
@@ -299,7 +299,7 @@ function CheckInDetailsPageContent() {
             {/* ID Document */}
             {checkIn.id_document_url && (
               <div className="col-12">
-                <div className="card border-0 shadow-sm" style={{ borderRadius: '12px' }}>
+                <div className="card border-0 shadow-sm hostly-dark-card" style={{ borderRadius: '12px' }}>
                   <div 
                     className="card-header text-white"
                     style={{
@@ -329,7 +329,7 @@ function CheckInDetailsPageContent() {
             {/* Digital Signature */}
             {checkIn.signature_data_url && (
               <div className="col-12">
-                <div className="card border-0 shadow-sm" style={{ borderRadius: '12px' }}>
+                <div className="card border-0 shadow-sm hostly-dark-card" style={{ borderRadius: '12px' }}>
                   <div 
                     className="card-header text-white"
                     style={{
@@ -348,7 +348,7 @@ function CheckInDetailsPageContent() {
                         maxWidth: '400px',
                         border: '2px solid #dee2e6',
                         borderRadius: '8px',
-                        background: 'white'
+                        background: 'rgba(0,0,0,0.25)'
                       }}
                     />
                     {checkIn.signature_timestamp && (
@@ -370,7 +370,7 @@ function CheckInDetailsPageContent() {
 
             {/* Actions */}
             <div className="col-12">
-              <div className="card border-0 shadow-sm" style={{ borderRadius: '12px' }}>
+              <div className="card border-0 shadow-sm hostly-dark-card" style={{ borderRadius: '12px' }}>
                 <div className="card-body">
                   <div className="d-flex gap-2 justify-content-end">
                     {checkIn.status === 'completed' && (

@@ -46,7 +46,7 @@ export default function Testimonials() {
                   fontWeight: '700',
                   color: '#1e293b',
                   marginBottom: '16px',
-                  fontFamily: 'Heebo, Assistant, sans-serif',
+                  fontFamily: 'var(--font-heebo), Heebo, sans-serif',
                 }}
               >
                 מה אומרים בעלי צימרים שכבר עובדים איתנו?
@@ -56,7 +56,7 @@ export default function Testimonials() {
                   fontSize: '18px',
                   color: '#64748b',
                   lineHeight: '1.8',
-                  fontFamily: 'Heebo, Assistant, sans-serif',
+                  fontFamily: 'var(--font-heebo), Heebo, sans-serif',
                 }}
               >
                 הצטרפו למאות בעלי נכסים מרוצים שכבר משתמשים במערכת
@@ -117,7 +117,7 @@ export default function Testimonials() {
                     lineHeight: '1.7',
                     marginBottom: '24px',
                     fontStyle: 'italic',
-                    fontFamily: 'Heebo, Assistant, sans-serif',
+                    fontFamily: 'var(--font-heebo), Heebo, sans-serif',
                     position: 'relative',
                     zIndex: 1,
                   }}
@@ -150,7 +150,7 @@ export default function Testimonials() {
                         color: '#1e293b',
                         margin: 0,
                         marginBottom: '4px',
-                        fontFamily: 'Heebo, Assistant, sans-serif',
+                        fontFamily: 'var(--font-heebo), Heebo, sans-serif',
                       }}
                     >
                       {testimonial.name}
@@ -160,7 +160,7 @@ export default function Testimonials() {
                         fontSize: '14px',
                         color: '#64748b',
                         margin: 0,
-                        fontFamily: 'Heebo, Assistant, sans-serif',
+                        fontFamily: 'var(--font-heebo), Heebo, sans-serif',
                       }}
                     >
                       {testimonial.location}
@@ -187,19 +187,19 @@ export default function Testimonials() {
               <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '24px', flexWrap: 'wrap' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                   <Icon icon="mdi:check-decagram" style={{ fontSize: '32px', color: '#4caf50' }} />
-                  <span style={{ fontSize: '16px', fontWeight: '600', color: '#1e293b', fontFamily: 'Heebo, Assistant, sans-serif' }}>
+                  <span style={{ fontSize: '16px', fontWeight: '600', color: '#1e293b', fontFamily: 'var(--font-heebo), Heebo, sans-serif' }}>
                     מאות לקוחות מרוצים
                   </span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                   <Icon icon="mdi:shield-check" style={{ fontSize: '32px', color: '#667eea' }} />
-                  <span style={{ fontSize: '16px', fontWeight: '600', color: '#1e293b', fontFamily: 'Heebo, Assistant, sans-serif' }}>
+                  <span style={{ fontSize: '16px', fontWeight: '600', color: '#1e293b', fontFamily: 'var(--font-heebo), Heebo, sans-serif' }}>
                     תמיכה מלאה בעברית
                   </span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                   <Icon icon="mdi:update" style={{ fontSize: '32px', color: '#764ba2' }} />
-                  <span style={{ fontSize: '16px', fontWeight: '600', color: '#1e293b', fontFamily: 'Heebo, Assistant, sans-serif' }}>
+                  <span style={{ fontSize: '16px', fontWeight: '600', color: '#1e293b', fontFamily: 'var(--font-heebo), Heebo, sans-serif' }}>
                     עדכונים שוטפים
                   </span>
                 </div>

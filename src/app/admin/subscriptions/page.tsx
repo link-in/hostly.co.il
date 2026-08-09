@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { RefreshCw, Banknote } from 'lucide-react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 
@@ -124,7 +125,7 @@ export default function AdminSubscriptionsPage() {
             }}
           />
           <h3 
-            className="mb-0"
+            className="mb-0 d-inline-flex align-items-center gap-2"
             style={{
               background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
               WebkitBackgroundClip: 'text',
@@ -133,19 +134,17 @@ export default function AdminSubscriptionsPage() {
               fontWeight: 'bold',
             }}
           >
-            💰 ניהול מנויים
+            <Banknote size={22} style={{ WebkitTextFillColor: 'initial', color: '#764ba2' }} />
+            ניהול מנויים
           </h3>
         </div>
         <button 
-          className="btn"
-          style={{
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            border: 'none',
-            color: 'white',
-          }}
+          type="button"
+          className="hostly-btn hostly-btn-primary"
           onClick={fetchSubscriptions}
         >
-          🔄 רענן
+          <RefreshCw size={15} />
+          רענן
         </button>
       </div>
 

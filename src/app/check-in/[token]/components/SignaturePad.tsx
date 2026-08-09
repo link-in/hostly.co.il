@@ -2,6 +2,7 @@
 
 import { useRef, useState, useEffect } from 'react'
 import SignatureCanvas from 'react-signature-canvas'
+import { Trash2, Save, Check } from 'lucide-react'
 
 interface SignaturePadProps {
   onSave: (dataUrl: string) => void
@@ -79,29 +80,30 @@ export default function SignaturePad({ onSave, value }: SignaturePadProps) {
           type="button"
           onClick={handleClear}
           disabled={isEmpty}
-          className="btn btn-outline-secondary"
-          style={{
-            borderRadius: '8px',
-            padding: '0.6rem 1.5rem',
-            opacity: isEmpty ? 0.5 : 1,
-          }}
+          className="hostly-btn hostly-btn-on-light hostly-btn-ghost"
+          style={{ opacity: isEmpty ? 0.5 : 1 }}
         >
-          🗑️ נקה
+          <Trash2 size={15} />
+          נקה
         </button>
         <button
           type="button"
           onClick={handleSave}
           disabled={isEmpty || saved}
-          className="btn btn-primary"
-          style={{
-            borderRadius: '8px',
-            padding: '0.6rem 1.5rem',
-            background: saved ? '#27ae60' : '#3498db',
-            border: 'none',
-            opacity: isEmpty ? 0.5 : 1,
-          }}
+          className={`hostly-btn hostly-btn-on-light ${saved ? 'hostly-btn-success' : 'hostly-btn-primary'}`}
+          style={{ opacity: isEmpty ? 0.5 : 1 }}
         >
-          {saved ? '✅ נשמר' : '💾 שמור חתימה'}
+          {saved ? (
+            <>
+              <Check size={15} />
+              נשמר
+            </>
+          ) : (
+            <>
+              <Save size={15} />
+              שמור חתימה
+            </>
+          )}
         </button>
       </div>
 

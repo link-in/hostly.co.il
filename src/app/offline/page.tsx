@@ -10,7 +10,7 @@ export default function OfflinePage() {
         alignItems: 'center',
         justifyContent: 'center',
         color: 'white',
-        fontFamily: 'Rubik, sans-serif',
+        fontFamily: 'var(--font-heebo), Heebo, sans-serif',
         padding: '2rem',
         textAlign: 'center',
       }}

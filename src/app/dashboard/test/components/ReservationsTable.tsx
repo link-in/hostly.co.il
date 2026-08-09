@@ -56,12 +56,13 @@ const PhoneActions = ({ phone }: { phone: string }) => {
 // Add styles for nearest reservation, table scrolling, and mobile list
 const styles = `
   .nearest-reservation {
-    background-color: #e3f2fd !important;
-    border-left: 4px solid #764ba2 !important;
+    background: linear-gradient(135deg, rgba(118, 75, 162, 0.28) 0%, rgba(102, 126, 234, 0.18) 100%) !important;
+    border-left: none !important;
+    box-shadow: none !important;
   }
   .nearest-reservation td {
-    background-color: #e3f2fd !important;
-    font-weight: 500 !important;
+    background: transparent !important;
+    color: inherit !important;
   }
   .dashboard-table-scroll-container {
     max-height: 60vh;

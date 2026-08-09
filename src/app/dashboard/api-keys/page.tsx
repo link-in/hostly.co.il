@@ -200,7 +200,7 @@ export default function ApiKeysPage() {
 
           {/* ── Create new key card ────────────────────────────────────── */}
           <div
-            className="card border-0 shadow-sm mb-4"
+            className="card border-0 shadow-sm mb-4 hostly-dark-card"
             style={{ borderRadius: 14, overflow: 'hidden' }}
           >
             <div
@@ -307,14 +307,14 @@ export default function ApiKeysPage() {
 
           {/* ── Keys list ─────────────────────────────────────────────── */}
           <div
-            className="card border-0 shadow-sm mb-4"
+            className="card border-0 shadow-sm mb-4 hostly-dark-card"
             style={{ borderRadius: 14, overflow: 'hidden' }}
           >
             <div
               className="card-header border-0 py-3 px-4 d-flex justify-content-between align-items-center"
-              style={{ background: '#f8f9fa', borderBottom: '1px solid #e9ecef' }}
+              style={{ background: 'transparent', borderBottom: '1px solid rgba(255,255,255,0.1)' }}
             >
-              <h6 className="mb-0 fw-bold text-dark">
+              <h6 className="mb-0 fw-bold hostly-dark-title">
                 המפתחות שלי
                 {keys.length > 0 && (
                   <span
@@ -331,7 +331,7 @@ export default function ApiKeysPage() {
               </h6>
               <button
                 type="button"
-                className="btn btn-sm btn-outline-secondary"
+                className="btn btn-sm btn-outline-light"
                 onClick={fetchKeys}
                 disabled={loading}
                 style={{ borderRadius: 8 }}
@@ -362,9 +362,9 @@ export default function ApiKeysPage() {
               {!loading && keys.map((key, idx) => (
                 <div
                   key={key.id}
-                  className="px-4 py-3"
+                  className="px-4 py-3 hostly-dark-list-row"
                   style={{
-                    borderBottom: idx < keys.length - 1 ? '1px solid #f3f4f6' : 'none',
+                    borderBottom: idx < keys.length - 1 ? '1px solid rgba(255,255,255,0.1)' : 'none',
                     opacity: key.isActive ? 1 : 0.55,
                   }}
                 >
@@ -463,7 +463,7 @@ export default function ApiKeysPage() {
           </div>
 
           {/* ── Embed Booking Settings ─────────────────────────────────── */}
-          <div className="card border-0 shadow-sm mt-4" style={{ borderRadius: 16 }}>
+          <div className="card border-0 shadow-sm mt-4 hostly-dark-card" style={{ borderRadius: 16 }}>
             <div className="card-body p-4">
               <h5 className="fw-bold mb-1" style={{ fontSize: '1.05rem' }}>
                 הגדרות הזמנה
@@ -513,7 +513,7 @@ export default function ApiKeysPage() {
                       width: 22,
                       height: 22,
                       borderRadius: '50%',
-                      background: '#fff',
+                      background: 'rgba(0,0,0,0.28)',
                       boxShadow: '0 1px 4px rgba(0,0,0,0.2)',
                       transition: 'all 0.2s',
                     }}

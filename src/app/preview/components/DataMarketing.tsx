@@ -22,7 +22,7 @@ export default function DataMarketing() {
                   fontWeight: '700',
                   color: '#1e293b',
                   marginBottom: '16px',
-                  fontFamily: 'Heebo, Assistant, sans-serif',
+                  fontFamily: 'var(--font-heebo), Heebo, sans-serif',
                 }}
               >
                 הלקוחות שלך – הנכס הגדול ביותר שלך 💎
@@ -32,7 +32,7 @@ export default function DataMarketing() {
                   fontSize: '18px',
                   color: '#64748b',
                   lineHeight: '1.8',
-                  fontFamily: 'Heebo, Assistant, sans-serif',
+                  fontFamily: 'var(--font-heebo), Heebo, sans-serif',
                 }}
               >
                 בנו קשרים ארוכי טווח והפכו אורחים חד-פעמיים ללקוחות קבועים
@@ -72,7 +72,7 @@ export default function DataMarketing() {
                   fontWeight: '700',
                   color: '#1e293b',
                   marginBottom: '20px',
-                  fontFamily: 'Heebo, Assistant, sans-serif',
+                  fontFamily: 'var(--font-heebo), Heebo, sans-serif',
                 }}
               >
                 המערכת שומרת את מאגר הטלפונים של הלקוחות
@@ -83,7 +83,7 @@ export default function DataMarketing() {
                   color: '#64748b',
                   lineHeight: '1.8',
                   marginBottom: '32px',
-                  fontFamily: 'Heebo, Assistant, sans-serif',
+                  fontFamily: 'var(--font-heebo), Heebo, sans-serif',
                 }}
               >
                 בנה מועדון לקוחות, שלח מבצעים וקדם הזמנות חוזרות בקלות.
@@ -106,7 +106,7 @@ export default function DataMarketing() {
                       marginBottom: '14px',
                       fontSize: '16px',
                       color: '#475569',
-                      fontFamily: 'Heebo, Assistant, sans-serif',
+                      fontFamily: 'var(--font-heebo), Heebo, sans-serif',
                     }}
                   >
                     <Icon icon="mdi:check-circle" style={{ fontSize: '24px', color: '#4caf50', flexShrink: 0 }} />

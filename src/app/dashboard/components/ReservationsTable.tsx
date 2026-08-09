@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import { Phone } from 'lucide-react'
+import { Phone, Pencil, X, Sparkles, Map, Plane, Home, Hotel, Globe, Bird } from 'lucide-react'
 import { Icon } from '@iconify/react'
 import type { Reservation } from '@/lib/dashboard/types'
 import { formatCurrency, formatDate, formatStatus } from '@/lib/dashboard/utils'
@@ -53,78 +53,43 @@ const PhoneActions = ({ phone }: { phone: string }) => {
   )
 }
 
-// Add styles for nearest reservation, table scrolling, and mobile list
+// Reservation-specific accents (shared table shell lives in dashboard-surfaces.css)
 const styles = `
-  .nearest-reservation {
-    background: linear-gradient(135deg, #2d1b3d 0%, #3d2952 50%, #4f3869 100%) !important;
-    border-left: 4px solid #f093fb !important;
-    box-shadow: 0 2px 12px rgba(249, 147, 251, 0.4) !important;
+  .dashboard-table-scroll-container tbody tr.current-stay-reservation {
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.28) 0%, rgba(102, 126, 234, 0.22) 55%, rgba(118, 75, 162, 0.2) 100%) !important;
+    box-shadow: none !important;
   }
-  .nearest-reservation td {
+  .dashboard-table-scroll-container tbody tr.current-stay-reservation:hover {
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.36) 0%, rgba(102, 126, 234, 0.28) 55%, rgba(118, 75, 162, 0.26) 100%) !important;
+    box-shadow: none !important;
+  }
+  .dashboard-table-scroll-container tbody tr.current-stay-reservation td {
     background: transparent !important;
-    font-weight: 500 !important;
     color: white !important;
   }
-  .dashboard-table-scroll-container {
-    max-height: 60vh;
-    overflow-y: auto;
-    overflow-x: auto;
+  .current-stay-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    background: rgba(34, 197, 94, 0.22);
+    border: 1px solid rgba(74, 222, 128, 0.45);
+    color: rgba(187, 247, 208, 0.98);
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    padding: 0.12rem 0.45rem;
+    border-radius: 999px;
+    white-space: nowrap;
+    line-height: 1.2;
   }
-  @media (max-width: 768px) {
-    .dashboard-table-scroll-container {
-      max-height: 50vh !important;
-    }
-  }
-  .dashboard-table-scroll-container::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-  }
-  .dashboard-table-scroll-container::-webkit-scrollbar-track {
-    background: rgba(30, 41, 59, 0.5);
-    border-radius: 4px;
-  }
-  .dashboard-table-scroll-container::-webkit-scrollbar-thumb {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border-radius: 4px;
-  }
-  .dashboard-table-scroll-container::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
-  }
-  .dashboard-table-scroll-container thead {
-    position: sticky;
-    top: 0;
-    z-index: 5;
-    background: linear-gradient(135deg, #1e293b 0%, #334155 100%) !important;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-  }
-  .dashboard-table-scroll-container thead tr {
-    background: linear-gradient(135deg, #1e293b 0%, #334155 100%) !important;
-  }
-  .dashboard-table-scroll-container thead th {
-    color: rgba(249, 147, 251, 0.9) !important;
-    background: transparent !important;
-    border-bottom: 2px solid rgba(249, 147, 251, 0.2) !important;
-    border-top: none !important;
-  }
-  .dashboard-table-scroll-container .table {
-    background: transparent;
-  }
-  .dashboard-table-scroll-container tbody tr {
-    background: linear-gradient(135deg, #1e293b 0%, #334155 50%, #475569 100%) !important;
-    color: white !important;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
-  }
-  .dashboard-table-scroll-container tbody tr:hover {
-    background: linear-gradient(135deg, #2d1b3d 0%, #3d2952 100%) !important;
-    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3) !important;
-  }
-  .dashboard-table-scroll-container tbody tr.table-active {
-    background: linear-gradient(135deg, #2d1b3d 0%, #3d2952 100%) !important;
-  }
-  .dashboard-table-scroll-container tbody td {
-    color: rgba(255, 255, 255, 0.95) !important;
-    border: none !important;
-    background: transparent !important;
+  .current-stay-badge::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #4ade80;
+    box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.2);
+    flex-shrink: 0;
   }
   
   /* Mobile stacked list styles - Dark gradient theme */
@@ -144,9 +109,9 @@ const styles = `
   .reservation-list-item.expanded {
     box-shadow: 0 8px 24px rgba(102, 126, 234, 0.5);
   }
-  .reservation-list-item.nearest {
-    box-shadow: 0 6px 20px rgba(118, 75, 162, 0.4);
-    background: linear-gradient(135deg, #2d1b3d 0%, #3d2952 50%, #4f3869 100%);
+  .reservation-list-item.current-stay {
+    box-shadow: none;
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.28) 0%, rgba(71, 85, 105, 0.95) 100%);
   }
   .reservation-avatar {
     width: 48px;
@@ -222,19 +187,22 @@ const ReservationsTable = ({ reservations, onReservationViewed, onEditReservatio
     return <div className="text-muted">אין הזמנות להצגה כרגע.</div>
   }
 
-  // Find the nearest upcoming reservation
+  // Current in-house stay: checked in today or earlier, checkout still in the future
   const today = new Date()
   today.setHours(0, 0, 0, 0)
-  
-  const upcomingReservations = reservations
-    .filter(r => {
-      const checkInDate = new Date(r.checkIn)
-      checkInDate.setHours(0, 0, 0, 0)
-      return checkInDate >= today && r.status !== 'cancelled'
-    })
-    .sort((a, b) => new Date(a.checkIn).getTime() - new Date(b.checkIn).getTime())
-  
-  const nearestReservationId = upcomingReservations.length > 0 ? upcomingReservations[0].id : null
+
+  const currentStayIds = new Set(
+    reservations
+      .filter((r) => {
+        if (r.status === 'cancelled') return false
+        const checkInDate = new Date(r.checkIn)
+        const checkOutDate = new Date(r.checkOut)
+        checkInDate.setHours(0, 0, 0, 0)
+        checkOutDate.setHours(0, 0, 0, 0)
+        return checkInDate.getTime() <= today.getTime() && checkOutDate.getTime() > today.getTime()
+      })
+      .map((r) => r.id)
+  )
 
   const toggleExpanded = (id: string, isNew?: boolean) => {
     setExpandedId((prev) => (prev === id ? null : id))
@@ -249,7 +217,7 @@ const ReservationsTable = ({ reservations, onReservationViewed, onEditReservatio
     }
   }
 
-  const isNearestReservation = (id: string) => id === nearestReservationId
+  const isCurrentStay = (id: string) => currentStayIds.has(id)
   
   const isReservationViewed = (id: string) => viewedReservations.has(id)
 
@@ -304,22 +272,22 @@ const ReservationsTable = ({ reservations, onReservationViewed, onEditReservatio
       )
     }
     if (sourceLower.includes('agoda')) {
-      return <span style={{ ...containerStyle, fontSize: '18px' }}>🗺️</span>
+      return <span style={{ ...containerStyle, color: 'rgba(226,232,255,0.9)' }}><Map size={Math.round(size * 0.85)} strokeWidth={1.75} /></span>
     }
     if (sourceLower.includes('expedia')) {
-      return <span style={{ ...containerStyle, fontSize: '18px' }}>✈️</span>
+      return <span style={{ ...containerStyle, color: 'rgba(226,232,255,0.9)' }}><Plane size={Math.round(size * 0.85)} strokeWidth={1.75} /></span>
     }
     if (sourceLower.includes('vrbo') || sourceLower.includes('homeaway')) {
-      return <span style={{ ...containerStyle, fontSize: '18px' }}>🏡</span>
+      return <span style={{ ...containerStyle, color: 'rgba(226,232,255,0.9)' }}><Home size={Math.round(size * 0.85)} strokeWidth={1.75} /></span>
     }
     if (sourceLower.includes('tripadvisor')) {
-      return <span style={{ ...containerStyle, fontSize: '18px' }}>🦉</span>
+      return <span style={{ ...containerStyle, color: 'rgba(226,232,255,0.9)' }}><Bird size={Math.round(size * 0.85)} strokeWidth={1.75} /></span>
     }
     if (sourceLower.includes('hotels.com')) {
-      return <span style={{ ...containerStyle, fontSize: '18px' }}>🏨</span>
+      return <span style={{ ...containerStyle, color: 'rgba(226,232,255,0.9)' }}><Hotel size={Math.round(size * 0.85)} strokeWidth={1.75} /></span>
     }
     // הזמנה ישירה או לא מוכר
-    return <span style={{ ...containerStyle, fontSize: '20px' }}>🌐</span>
+    return <span style={{ ...containerStyle, color: 'rgba(226,232,255,0.9)' }}><Globe size={Math.round(size * 0.85)} strokeWidth={1.75} /></span>
   }
 
   // Mobile List View Component
@@ -331,12 +299,12 @@ const ReservationsTable = ({ reservations, onReservationViewed, onEditReservatio
       <div className="d-md-none">
         {visibleReservations.map((reservation) => {
         const isExpanded = expandedId === reservation.id
-        const isNearest = isNearestReservation(reservation.id)
+        const isCurrent = isCurrentStay(reservation.id)
         
         return (
           <div
             key={reservation.id}
-            className={`reservation-list-item ${isExpanded ? 'expanded' : ''} ${isNearest ? 'nearest' : ''}`}
+            className={`reservation-list-item ${isExpanded ? 'expanded' : ''} ${isCurrent ? 'current-stay' : ''}`}
             onClick={() => toggleExpanded(reservation.id, reservation.isNew)}
           >
             <div className="d-flex align-items-start gap-3">
@@ -347,10 +315,11 @@ const ReservationsTable = ({ reservations, onReservationViewed, onEditReservatio
               
               {/* Main Content */}
               <div className="flex-grow-1" style={{ minWidth: 0 }}>
-                <div className="d-flex align-items-center gap-2 mb-1">
+                <div className="d-flex align-items-center gap-2 mb-1 flex-wrap">
                   <h6 className="mb-0 fw-bold" style={{ fontSize: '1rem', color: 'white' }}>
                     {reservation.guestName}
                   </h6>
+                  {isCurrent && <span className="current-stay-badge">בנכס</span>}
                 </div>
                 <div className="small mb-2" style={{ color: 'rgba(249, 147, 251, 0.8)' }}>
                   {formatDate(reservation.checkIn)} - {formatDate(reservation.checkOut)}
@@ -382,7 +351,7 @@ const ReservationsTable = ({ reservations, onReservationViewed, onEditReservatio
               <div className="d-flex align-items-center gap-2">
                 {reservation.isNew && !isReservationViewed(reservation.id) && (
                   <span 
-                    className="badge" 
+                    className="badge d-inline-flex align-items-center gap-1" 
                     style={{
                       background: 'linear-gradient(135deg, #a855f7 0%, #f093fb 100%)',
                       color: 'white',
@@ -391,7 +360,8 @@ const ReservationsTable = ({ reservations, onReservationViewed, onEditReservatio
                       boxShadow: '0 2px 8px rgba(168, 85, 247, 0.3)',
                     }}
                   >
-                    חדש ✨
+                    חדש
+                    <Sparkles size={11} />
                   </span>
                 )}
                 
@@ -515,39 +485,27 @@ const ReservationsTable = ({ reservations, onReservationViewed, onEditReservatio
                     {onEditReservation && (
                       <button
                         type="button"
-                        className="btn btn-sm flex-grow-1"
-                        style={{
-                          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                          border: 'none',
-                          color: 'white',
-                          padding: '8px 16px',
-                          fontSize: '0.875rem',
-                        }}
+                        className="hostly-btn hostly-btn-sm hostly-btn-primary flex-grow-1"
                         onClick={(e) => {
                           e.stopPropagation()
                           onEditReservation(reservation)
                         }}
                       >
-                        ✏️ ערוך
+                        <Pencil size={14} />
+                        ערוך
                       </button>
                     )}
                     {onDeleteReservation && (
                       <button
                         type="button"
-                        className="btn btn-sm flex-grow-1"
-                        style={{
-                          background: 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)',
-                          border: 'none',
-                          color: 'white',
-                          padding: '8px 16px',
-                          fontSize: '0.875rem',
-                        }}
+                        className="hostly-btn hostly-btn-sm hostly-btn-danger flex-grow-1"
                         onClick={(e) => {
                           e.stopPropagation()
                           onDeleteReservation(reservation)
                         }}
                       >
-                        ❌ בטל
+                        <X size={14} />
+                        בטל
                       </button>
                     )}
                   </div>
@@ -618,13 +576,13 @@ const ReservationsTable = ({ reservations, onReservationViewed, onEditReservatio
               <tr 
                 onClick={() => toggleExpanded(reservation.id, reservation.isNew)}
                 style={{ cursor: 'pointer' }}
-                className={`${expandedId === reservation.id ? 'table-active' : ''} ${isNearestReservation(reservation.id) ? 'nearest-reservation' : ''}`}
+                className={`${expandedId === reservation.id ? 'table-active' : ''} ${isCurrentStay(reservation.id) ? 'current-stay-reservation' : ''}`}
               >
                 <td>
                   <div className="d-flex align-items-center gap-2">
                     {reservation.isNew && !isReservationViewed(reservation.id) && (
                       <span 
-                        className="badge" 
+                        className="badge d-inline-flex align-items-center gap-1" 
                         style={{
                           background: 'linear-gradient(135deg, #a855f7 0%, #f093fb 100%)',
                           color: 'white',
@@ -633,7 +591,8 @@ const ReservationsTable = ({ reservations, onReservationViewed, onEditReservatio
                           boxShadow: '0 2px 8px rgba(168, 85, 247, 0.3)',
                         }}
                       >
-                        חדש ✨
+                        חדש
+                        <Sparkles size={11} />
                       </span>
                     )}
                     <svg 
@@ -656,7 +615,10 @@ const ReservationsTable = ({ reservations, onReservationViewed, onEditReservatio
                   </div>
                 </td>
                 <td>
-                  <span className="fw-semibold">{reservation.guestName}</span>
+                  <div className="d-flex align-items-center gap-2 flex-wrap">
+                    <span className="fw-semibold">{reservation.guestName}</span>
+                    {isCurrentStay(reservation.id) && <span className="current-stay-badge">בנכס</span>}
+                  </div>
                 </td>
                 <td className="small">
                   {formatDate(reservation.checkIn)} - {formatDate(reservation.checkOut)}
@@ -771,35 +733,27 @@ const ReservationsTable = ({ reservations, onReservationViewed, onEditReservatio
                               {onEditReservation && (
                                 <button
                                   type="button"
-                                  className="btn btn-sm"
-                                  style={{
-                                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                                    border: 'none',
-                                    color: 'white',
-                                  }}
+                                  className="hostly-btn hostly-btn-sm hostly-btn-primary"
                                   onClick={(e) => {
                                     e.stopPropagation()
                                     onEditReservation(reservation)
                                   }}
                                 >
-                                  ✏️ ערוך הזמנה
+                                  <Pencil size={14} />
+                                  ערוך הזמנה
                                 </button>
                               )}
                               {onDeleteReservation && (
                                 <button
                                   type="button"
-                                  className="btn btn-sm"
-                                  style={{
-                                    background: 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)',
-                                    border: 'none',
-                                    color: 'white',
-                                  }}
+                                  className="hostly-btn hostly-btn-sm hostly-btn-danger"
                                   onClick={(e) => {
                                     e.stopPropagation()
                                     onDeleteReservation(reservation)
                                   }}
                                 >
-                                  ❌ בטל הזמנה
+                                  <X size={14} />
+                                  בטל הזמנה
                                 </button>
                               )}
                             </div>

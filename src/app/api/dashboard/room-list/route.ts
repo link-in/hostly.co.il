@@ -26,6 +26,35 @@ function parseSessionRooms(roomId: string): RoomListItem[] {
         name: name || `חדר ${index + 1}`,
       }
     })
+    .filter((r) => Boolean(r.id))
+}
+
+/**
+ * Prefer the account's configured roomId list over every Beds24 property room.
+ * Preserves session order; enriches names from Beds24 when available.
+ */
+function resolveConfiguredRooms(
+  beds24Rooms: RoomListItem[],
+  sessionRoomId: string | undefined | null
+): RoomListItem[] {
+  if (!sessionRoomId?.trim()) {
+    return beds24Rooms
+  }
+
+  const configured = parseSessionRooms(sessionRoomId)
+  if (configured.length === 0) {
+    return beds24Rooms
+  }
+
+  const byId = new Map(beds24Rooms.map((r) => [r.id, r]))
+
+  return configured.map((room) => {
+    const fromBeds = byId.get(room.id)
+    return {
+      id: room.id,
+      name: fromBeds?.name || room.name,
+    }
+  })
 }
 
 const getBaseUrl = () => process.env.BEDS24_API_BASE_URL ?? DEFAULT_BASE_URL
@@ -87,7 +116,7 @@ export async function GET() {
 
     console.log(`🏠 [room-list] Parsed ${raw.length} rooms:`, raw.map((r: any) => ({ id: r.id ?? r.roomId, name: r.name ?? r.roomName })))
 
-    const rooms: RoomListItem[] = raw
+    const beds24Rooms: RoomListItem[] = raw
       .map((room) => {
         const r = room as Record<string, unknown>
         return {
@@ -98,9 +127,12 @@ export async function GET() {
       .filter((r) => r.id !== '')
 
     // Fallback: if no rooms returned, parse session room IDs
-    if (!rooms.length && session?.user?.roomId) {
+    if (!beds24Rooms.length && session?.user?.roomId) {
       return NextResponse.json(parseSessionRooms(session.user.roomId))
     }
+
+    // Only expose rooms configured on the account (hides unit switcher when < 2)
+    const rooms = resolveConfiguredRooms(beds24Rooms, session?.user?.roomId)
 
     return NextResponse.json(rooms satisfies RoomListItem[])
   } catch (error) {

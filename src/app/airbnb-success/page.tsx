@@ -6,7 +6,7 @@ export default function AirbnbSuccessPage() {
       alignItems: 'center',
       justifyContent: 'center',
       background: 'linear-gradient(135deg, #fff7ed 0%, #fef3c7 50%, #fce7f3 100%)',
-      fontFamily: 'system-ui, -apple-system, sans-serif',
+      fontFamily: 'var(--font-heebo), Heebo, sans-serif',
       direction: 'rtl',
       padding: 16,
     }}>

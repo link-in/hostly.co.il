@@ -151,7 +151,7 @@ export default function BookingsAdmin({ wpUrl, apiKey }: { wpUrl: string; apiKey
 
   // ── render ─────────────────────────────────────────────────────────────────
   return (
-    <div style={{ fontFamily: '-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif', direction: 'rtl', background: '#f6f7f7', minHeight: '100vh', padding: '20px 24px' }}>
+    <div style={{ fontFamily: 'var(--font-heebo), Heebo, sans-serif', direction: 'rtl', background: '#f6f7f7', minHeight: '100vh', padding: '20px 24px' }}>
 
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>

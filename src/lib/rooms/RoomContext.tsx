@@ -120,3 +120,8 @@ export function useSelectedRoom(): RoomContextValue {
   }
   return ctx
 }
+
+/** Safe when header is rendered outside RoomProvider (e.g. admin). */
+export function useSelectedRoomOptional(): RoomContextValue | null {
+  return useContext(RoomContext)
+}

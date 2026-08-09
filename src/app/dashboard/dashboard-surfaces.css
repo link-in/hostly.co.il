@@ -1,0 +1,207 @@
+/* Shared dark surfaces — match main dashboard reservations table */
+
+:root {
+  --hostly-dark-1: #1e293b;
+  --hostly-dark-2: #334155;
+  --hostly-dark-3: #475569;
+  --hostly-dark-hover-1: #2d1b3d;
+  --hostly-dark-hover-2: #3d2952;
+  --hostly-accent: rgba(249, 147, 251, 0.9);
+  --hostly-accent-soft: rgba(249, 147, 251, 0.2);
+  --hostly-text: rgba(255, 255, 255, 0.95);
+  --hostly-muted: rgba(255, 255, 255, 0.7);
+  --hostly-gradient: linear-gradient(135deg, #1e293b 0%, #334155 50%, #475569 100%);
+  --hostly-gradient-header: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+  --hostly-gradient-hover: linear-gradient(135deg, #2d1b3d 0%, #3d2952 100%);
+}
+
+.hostly-dark-card {
+  background: var(--hostly-gradient) !important;
+  color: var(--hostly-text) !important;
+  border: none !important;
+  border-radius: 12px !important;
+}
+
+.hostly-dark-card .card-body,
+.hostly-dark-card .card-header {
+  background: transparent !important;
+  color: var(--hostly-text) !important;
+}
+
+.hostly-dark-card .card-header {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.hostly-dark-card .text-muted,
+.hostly-dark-card .form-text {
+  color: var(--hostly-muted) !important;
+}
+
+.hostly-dark-card .form-control,
+.hostly-dark-card .form-select,
+.hostly-dark-card select,
+.hostly-dark-card input[type='text'],
+.hostly-dark-card input[type='search'],
+.hostly-dark-card input[type='email'],
+.hostly-dark-card input[type='tel'] {
+  background: rgba(0, 0, 0, 0.28) !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  color: var(--hostly-text) !important;
+}
+
+.hostly-dark-card .form-label,
+.hostly-dark-card label {
+  color: var(--hostly-accent) !important;
+}
+
+.hostly-dark-card .form-control::placeholder {
+  color: rgba(255, 255, 255, 0.45) !important;
+}
+
+.hostly-dark-card .form-control:focus,
+.hostly-dark-card .form-select:focus {
+  border-color: rgba(102, 126, 234, 0.55) !important;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2) !important;
+}
+
+.hostly-dark-card .form-select option {
+  background: #1e293b;
+  color: #fff;
+}
+
+.hostly-dark-stat {
+  background: var(--hostly-gradient) !important;
+  color: var(--hostly-text) !important;
+  border: none !important;
+  border-radius: 12px !important;
+}
+
+.hostly-dark-stat .stat-label,
+.hostly-dark-stat .text-muted {
+  color: var(--hostly-accent) !important;
+}
+
+.hostly-dark-stat .stat-value {
+  color: #fff !important;
+}
+
+/* Scrollable dark table shell (same as main dashboard) */
+.dashboard-table-scroll-container {
+  max-height: 60vh;
+  overflow-y: auto;
+  overflow-x: auto;
+}
+
+@media (max-width: 768px) {
+  .dashboard-table-scroll-container {
+    max-height: 50vh !important;
+  }
+}
+
+.dashboard-table-scroll-container::-webkit-scrollbar,
+.hostly-dark-card::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.dashboard-table-scroll-container::-webkit-scrollbar-track,
+.hostly-dark-card::-webkit-scrollbar-track {
+  background: rgba(30, 41, 59, 0.5);
+  border-radius: 4px;
+}
+
+.dashboard-table-scroll-container::-webkit-scrollbar-thumb,
+.hostly-dark-card::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 4px;
+}
+
+.dashboard-table-scroll-container::-webkit-scrollbar-thumb:hover,
+.hostly-dark-card::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+}
+
+.dashboard-table-scroll-container thead,
+.hostly-dark-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: var(--hostly-gradient-header) !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.dashboard-table-scroll-container thead tr,
+.hostly-dark-table thead tr {
+  background: var(--hostly-gradient-header) !important;
+}
+
+.dashboard-table-scroll-container thead th,
+.hostly-dark-table thead th {
+  color: var(--hostly-accent) !important;
+  background: transparent !important;
+  border-bottom: 2px solid var(--hostly-accent-soft) !important;
+  border-top: none !important;
+  white-space: nowrap;
+}
+
+.dashboard-table-scroll-container .table,
+.hostly-dark-table.table,
+.hostly-dark-table {
+  background: transparent !important;
+  --bs-table-bg: transparent;
+  --bs-table-color: var(--hostly-text);
+  --bs-table-hover-bg: transparent;
+  --bs-table-striped-bg: transparent;
+  margin-bottom: 0;
+  color: var(--hostly-text) !important;
+}
+
+.dashboard-table-scroll-container tbody tr,
+.hostly-dark-table tbody tr {
+  background: var(--hostly-gradient) !important;
+  color: white !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.dashboard-table-scroll-container tbody tr:hover,
+.hostly-dark-table tbody tr:hover {
+  background: var(--hostly-gradient-hover) !important;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3) !important;
+}
+
+.dashboard-table-scroll-container tbody tr.table-active,
+.hostly-dark-table tbody tr.table-active {
+  background: var(--hostly-gradient-hover) !important;
+}
+
+.dashboard-table-scroll-container tbody td,
+.hostly-dark-table tbody td {
+  color: var(--hostly-text) !important;
+  border: none !important;
+  background: transparent !important;
+  vertical-align: middle;
+}
+
+.hostly-dark-table.table-borderless tbody td {
+  color: var(--hostly-text) !important;
+}
+
+.hostly-dark-list-row {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: var(--hostly-text) !important;
+}
+
+.hostly-dark-list-row:hover {
+  background: rgba(45, 27, 61, 0.45) !important;
+}
+
+.hostly-dark-panel {
+  background: rgba(0, 0, 0, 0.22) !important;
+  border: 1px solid rgba(249, 147, 251, 0.12) !important;
+  border-radius: 12px !important;
+  color: var(--hostly-text) !important;
+}
+
+.hostly-dark-title {
+  color: var(--hostly-accent) !important;
+}

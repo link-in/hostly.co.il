@@ -104,7 +104,7 @@ function CheckInsPageContent() {
         <div className="row justify-content-center">
           <div className="col-lg-11 col-xl-10">
             <div 
-              className="card border-0 shadow-lg"
+              className="card border-0 shadow-lg hostly-dark-card"
               style={{ borderRadius: '16px' }}
             >
               <div className="card-body p-3 p-md-4" style={{ direction: 'rtl' }}>
@@ -112,39 +112,33 @@ function CheckInsPageContent() {
                 {/* Stats Cards */}
                 <div className="row g-2 g-md-3 mb-4">
                   <div className="col-3">
-                    <div className="card text-center border-0 shadow-sm" style={{ borderRadius: '12px' }}>
+                    <div className="card text-center border-0 shadow-sm hostly-dark-stat" style={{ borderRadius: '12px' }}>
                       <div className="card-body p-2 p-md-3">
-                        <h3 className="mb-1" style={{ color: '#f59e0b', fontSize: 'clamp(1rem, 4vw, 2rem)' }}>{stats.pending}</h3>
+                        <h3 className="mb-1" style={{ color: '#fbbf24', fontSize: 'clamp(1rem, 4vw, 2rem)' }}>{stats.pending}</h3>
                         <p className="mb-0 text-muted" style={{ fontSize: 'clamp(0.65rem, 2.5vw, 0.9rem)' }}>ממתינים</p>
                       </div>
                     </div>
                   </div>
                   <div className="col-3">
-                    <div className="card text-center border-0 shadow-sm" style={{ borderRadius: '12px' }}>
+                    <div className="card text-center border-0 shadow-sm hostly-dark-stat" style={{ borderRadius: '12px' }}>
                       <div className="card-body p-2 p-md-3">
-                        <h3 className="mb-1" style={{ color: '#10b981', fontSize: 'clamp(1rem, 4vw, 2rem)' }}>{stats.completed}</h3>
+                        <h3 className="mb-1" style={{ color: '#34d399', fontSize: 'clamp(1rem, 4vw, 2rem)' }}>{stats.completed}</h3>
                         <p className="mb-0 text-muted" style={{ fontSize: 'clamp(0.65rem, 2.5vw, 0.9rem)' }}>הושלמו</p>
                       </div>
                     </div>
                   </div>
                   <div className="col-3">
-                    <div className="card text-center border-0 shadow-sm" style={{ borderRadius: '12px' }}>
+                    <div className="card text-center border-0 shadow-sm hostly-dark-stat" style={{ borderRadius: '12px' }}>
                       <div className="card-body p-2 p-md-3">
-                        <h3 className="mb-1" style={{ 
-                          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                          WebkitBackgroundClip: 'text',
-                          WebkitTextFillColor: 'transparent',
-                          backgroundClip: 'text',
-                          fontSize: 'clamp(1rem, 4vw, 2rem)'
-                        }}>{stats.total}</h3>
+                        <h3 className="mb-1 stat-value" style={{ fontSize: 'clamp(1rem, 4vw, 2rem)' }}>{stats.total}</h3>
                         <p className="mb-0 text-muted" style={{ fontSize: 'clamp(0.65rem, 2.5vw, 0.9rem)' }}>סה"כ</p>
                       </div>
                     </div>
                   </div>
                   <div className="col-3">
-                    <div className="card text-center border-0 shadow-sm" style={{ borderRadius: '12px' }}>
+                    <div className="card text-center border-0 shadow-sm hostly-dark-stat" style={{ borderRadius: '12px' }}>
                       <div className="card-body p-2 p-md-3">
-                        <h3 className="mb-1" style={{ color: '#06b6d4', fontSize: 'clamp(1rem, 4vw, 2rem)' }}>{stats.completionRate}%</h3>
+                        <h3 className="mb-1" style={{ color: '#22d3ee', fontSize: 'clamp(1rem, 4vw, 2rem)' }}>{stats.completionRate}%</h3>
                         <p className="mb-0 text-muted" style={{ fontSize: 'clamp(0.65rem, 2.5vw, 0.9rem)' }}>אחוז</p>
                       </div>
                     </div>
@@ -217,15 +211,15 @@ function CheckInsPageContent() {
 
                 {/* Table */}
                 {filteredCheckIns.length === 0 ? (
-                  <div className="card border-0 shadow-sm">
+                  <div className="card border-0 shadow-sm hostly-dark-card">
                     <div className="card-body text-center py-5">
                       <p className="text-muted mb-0">אין צ'ק-אינים להצגה</p>
                     </div>
                   </div>
                 ) : (
-                  <div className="card border-0 shadow-sm">
-                    <div className="table-responsive">
-            <table className="table table-hover mb-0">
+                  <div className="card border-0 shadow-sm hostly-dark-card">
+                    <div className="table-responsive dashboard-table-scroll-container">
+            <table className="table table-hover mb-0 hostly-dark-table">
               <thead>
                 <tr>
                   <th>אורח</th>
@@ -241,7 +235,7 @@ function CheckInsPageContent() {
                     <td>
                       <div>
                         <strong>{checkIn.guest_name}</strong>
-                        <div style={{ fontSize: '0.85rem', color: '#6c757d' }}>
+                        <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.65)' }}>
                           {checkIn.guest_phone}
                         </div>
                       </div>
@@ -261,7 +255,8 @@ function CheckInsPageContent() {
                         {/* כפתור פתיחת קישור צ'ק-אין */}
                         {checkIn.status === 'pending' && checkIn.token && (
                           <button
-                            className="btn btn-sm btn-outline-primary"
+                            type="button"
+                            className="hostly-btn hostly-btn-sm hostly-btn-ghost hostly-btn-icon"
                             onClick={() => window.open(`${window.location.origin}/check-in/${checkIn.token}`, '_blank')}
                             title="פתח קישור צ'ק-אין"
                           >
@@ -271,12 +266,8 @@ function CheckInsPageContent() {
                         
                         {/* כפתור צפייה בפרטים */}
                         <button
-                          className="btn btn-sm"
-                          style={{
-                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                            color: 'white',
-                            border: 'none'
-                          }}
+                          type="button"
+                          className="hostly-btn hostly-btn-sm hostly-btn-primary hostly-btn-icon"
                           onClick={() => router.push(`/dashboard/check-ins/${checkIn.id}`)}
                           title="צפה בפרטים"
                         >
@@ -286,7 +277,8 @@ function CheckInsPageContent() {
                         {/* כפתור שליחה מחדש */}
                         {checkIn.status === 'pending' && (
                           <button
-                            className="btn btn-sm btn-outline-secondary"
+                            type="button"
+                            className="hostly-btn hostly-btn-sm hostly-btn-ghost hostly-btn-icon"
                             onClick={() => resendLink(checkIn)}
                             title="שלח שוב"
                           >
@@ -297,7 +289,8 @@ function CheckInsPageContent() {
                         {/* כפתור הורדת PDF */}
                         {checkIn.status === 'completed' && (
                           <button
-                            className="btn btn-sm btn-outline-success"
+                            type="button"
+                            className="hostly-btn hostly-btn-sm hostly-btn-success hostly-btn-icon"
                             onClick={() => {/* TODO: Download PDF */}}
                             title="הורד PDF"
                           >

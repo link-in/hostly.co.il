@@ -35,7 +35,7 @@ function MockCheckoutContent() {
       minHeight: '100vh',
       background: '#f3f4f6',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
-      padding: '20px', direction: 'rtl', fontFamily: 'sans-serif',
+      padding: '20px', direction: 'rtl', fontFamily: 'var(--font-heebo), Heebo, sans-serif',
     }}>
       <div style={{
         background: 'white', borderRadius: '16px',

@@ -39,7 +39,7 @@ export default function ForceLogoutPage() {
       minHeight: '100vh',
       background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
       color: 'white',
-      fontFamily: 'Rubik, sans-serif'
+      fontFamily: 'var(--font-heebo), Heebo, sans-serif'
     }}>
       <div style={{ textAlign: 'center' }}>
         <h1>מתנתק...</h1>

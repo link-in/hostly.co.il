@@ -50,7 +50,7 @@ export default function FeaturesGrid() {
                   fontWeight: '700',
                   color: '#1e293b',
                   marginBottom: '16px',
-                  fontFamily: 'Heebo, Assistant, sans-serif',
+                  fontFamily: 'var(--font-heebo), Heebo, sans-serif',
                 }}
               >
                 למה המערכת שלנו היא הפתרון המושלם לכם?
@@ -60,7 +60,7 @@ export default function FeaturesGrid() {
                   fontSize: '18px',
                   color: '#64748b',
                   lineHeight: '1.8',
-                  fontFamily: 'Heebo, Assistant, sans-serif',
+                  fontFamily: 'var(--font-heebo), Heebo, sans-serif',
                 }}
               >
                 כל הכלים שאתם צריכים לניהול מקצועי ויעיל של הנכס שלכם
@@ -113,7 +113,7 @@ export default function FeaturesGrid() {
                     fontWeight: '700',
                     color: '#1e293b',
                     marginBottom: '12px',
-                    fontFamily: 'Heebo, Assistant, sans-serif',
+                    fontFamily: 'var(--font-heebo), Heebo, sans-serif',
                   }}
                 >
                   {feature.title}
@@ -124,7 +124,7 @@ export default function FeaturesGrid() {
                     color: '#64748b',
                     lineHeight: '1.7',
                     margin: 0,
-                    fontFamily: 'Heebo, Assistant, sans-serif',
+                    fontFamily: 'var(--font-heebo), Heebo, sans-serif',
                   }}
                 >
                   {feature.description}
@@ -151,7 +151,7 @@ export default function FeaturesGrid() {
                   fontWeight: '700',
                   color: '#1e293b',
                   marginBottom: '16px',
-                  fontFamily: 'Heebo, Assistant, sans-serif',
+                  fontFamily: 'var(--font-heebo), Heebo, sans-serif',
                 }}
               >
                 💡 מוכנים לחוות את ההבדל?
@@ -161,7 +161,7 @@ export default function FeaturesGrid() {
                   fontSize: '16px',
                   color: '#64748b',
                   marginBottom: '24px',
-                  fontFamily: 'Heebo, Assistant, sans-serif',
+                  fontFamily: 'var(--font-heebo), Heebo, sans-serif',
                 }}
               >
                 התחילו עם 14 יום ניסיון חינם ותראו איך המערכת משנה את הדרך שבה אתם מנהלים את הנכס
@@ -178,7 +178,7 @@ export default function FeaturesGrid() {
                   cursor: 'pointer',
                   boxShadow: '0 6px 20px rgba(102, 126, 234, 0.3)',
                   transition: 'all 0.3s ease',
-                  fontFamily: 'Heebo, Assistant, sans-serif',
+                  fontFamily: 'var(--font-heebo), Heebo, sans-serif',
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.transform = 'scale(1.05)'

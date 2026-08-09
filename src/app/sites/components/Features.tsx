@@ -49,7 +49,7 @@ const Features = ({ content }: FeaturesProps) => {
                 lineHeight: '1.2',
                 textAlign: 'center',
                 textShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
-                fontFamily: 'Rubik, sans-serif',
+                fontFamily: 'var(--font-heebo), Heebo, sans-serif',
               }}
             >
               {content.title || 'בין פלגי הדן אל מול נופי חרמון היחידה שלנו מציעה לכם חוויה מושלמת'}
@@ -61,7 +61,7 @@ const Features = ({ content }: FeaturesProps) => {
                 lineHeight: '1.8',
                 marginBottom: '40px',
                 textAlign: 'center',
-                fontFamily: 'Rubik, sans-serif',
+                fontFamily: 'var(--font-heebo), Heebo, sans-serif',
               }}
             >
               {content.description || ''}
@@ -105,7 +105,7 @@ const Features = ({ content }: FeaturesProps) => {
                     fontWeight: '600',
                     color: '#2d3748',
                     margin: 0,
-                    fontFamily: 'Rubik, sans-serif',
+                    fontFamily: 'var(--font-heebo), Heebo, sans-serif',
                   }}
                 >
                   {feature.title}
@@ -130,7 +130,7 @@ const Features = ({ content }: FeaturesProps) => {
                 cursor: 'pointer',
                 boxShadow: '0 6px 20px rgba(102, 126, 234, 0.4)',
                 transition: 'transform 0.3s ease, box-shadow 0.3s ease',
-                fontFamily: 'Rubik, sans-serif',
+                fontFamily: 'var(--font-heebo), Heebo, sans-serif',
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.transform = 'translateY(-3px)'

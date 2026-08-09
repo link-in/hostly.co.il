@@ -62,7 +62,7 @@ export default function HeroSection() {
                     color: '#F993FB',
                     fontSize: '14px',
                     fontWeight: '600',
-                    fontFamily: 'Heebo, Assistant, sans-serif',
+                    fontFamily: 'var(--font-heebo), Heebo, sans-serif',
                   }}
                 >
                   ✨ מערכת ניהול נכסים מתקדמת
@@ -77,7 +77,7 @@ export default function HeroSection() {
                   color: 'white',
                   marginBottom: '24px',
                   lineHeight: '1.2',
-                  fontFamily: 'Heebo, Assistant, sans-serif',
+                  fontFamily: 'var(--font-heebo), Heebo, sans-serif',
                   animation: 'slideUp 0.8s ease-out 0.2s both',
                 }}
               >
@@ -103,7 +103,7 @@ export default function HeroSection() {
                   color: 'rgba(255, 255, 255, 0.85)',
                   marginBottom: '48px',
                   lineHeight: '1.6',
-                  fontFamily: 'Heebo, Assistant, sans-serif',
+                  fontFamily: 'var(--font-heebo), Heebo, sans-serif',
                   maxWidth: '900px',
                   margin: '0 auto 48px',
                   animation: 'slideUp 0.8s ease-out 0.4s both',
@@ -136,7 +136,7 @@ export default function HeroSection() {
                     cursor: 'pointer',
                     boxShadow: '0 8px 24px rgba(102, 126, 234, 0.4)',
                     transition: 'all 0.3s ease',
-                    fontFamily: 'Heebo, Assistant, sans-serif',
+                    fontFamily: 'var(--font-heebo), Heebo, sans-serif',
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.transform = 'translateY(-3px)'
@@ -163,7 +163,7 @@ export default function HeroSection() {
                     cursor: 'pointer',
                     backdropFilter: 'blur(10px)',
                     transition: 'all 0.3s ease',
-                    fontFamily: 'Heebo, Assistant, sans-serif',
+                    fontFamily: 'var(--font-heebo), Heebo, sans-serif',
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)'
@@ -194,7 +194,7 @@ export default function HeroSection() {
                     color: 'rgba(255, 255, 255, 0.6)',
                     fontSize: '14px',
                     marginBottom: '16px',
-                    fontFamily: 'Heebo, Assistant, sans-serif',
+                    fontFamily: 'var(--font-heebo), Heebo, sans-serif',
                   }}
                 >
                   מהימן על ידי בעלי צימרים ונכסי השכרה

@@ -80,7 +80,7 @@ export default function FinalCTA() {
                   color: 'white',
                   marginBottom: '24px',
                   lineHeight: '1.2',
-                  fontFamily: 'Heebo, Assistant, sans-serif',
+                  fontFamily: 'var(--font-heebo), Heebo, sans-serif',
                 }}
               >
                 שנה את הדרך שבה אתה מנהל את הצימר שלך עוד היום
@@ -93,7 +93,7 @@ export default function FinalCTA() {
                   color: 'rgba(255, 255, 255, 0.85)',
                   marginBottom: '40px',
                   lineHeight: '1.6',
-                  fontFamily: 'Heebo, Assistant, sans-serif',
+                  fontFamily: 'var(--font-heebo), Heebo, sans-serif',
                 }}
               >
                 הצטרף למאות בעלי יחידות אירוח שכבר נהנים משקט נפשי,
@@ -128,7 +128,7 @@ export default function FinalCTA() {
                     color: 'white',
                     outline: 'none',
                     minWidth: '280px',
-                    fontFamily: 'Heebo, Assistant, sans-serif',
+                    fontFamily: 'var(--font-heebo), Heebo, sans-serif',
                     transition: 'all 0.3s ease',
                   }}
                   onFocus={(e) => {
@@ -153,7 +153,7 @@ export default function FinalCTA() {
                     cursor: 'pointer',
                     boxShadow: '0 8px 24px rgba(102, 126, 234, 0.5)',
                     transition: 'all 0.3s ease',
-                    fontFamily: 'Heebo, Assistant, sans-serif',
+                    fontFamily: 'var(--font-heebo), Heebo, sans-serif',
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.transform = 'translateY(-3px)'
@@ -191,7 +191,7 @@ export default function FinalCTA() {
                       gap: '8px',
                       color: 'rgba(255, 255, 255, 0.8)',
                       fontSize: '15px',
-                      fontFamily: 'Heebo, Assistant, sans-serif',
+                      fontFamily: 'var(--font-heebo), Heebo, sans-serif',
                     }}
                   >
                     <span
@@ -249,7 +249,7 @@ export default function FinalCTA() {
                     color: 'rgba(255, 255, 255, 0.9)',
                     margin: 0,
                     textAlign: 'right',
-                    fontFamily: 'Heebo, Assistant, sans-serif',
+                    fontFamily: 'var(--font-heebo), Heebo, sans-serif',
                   }}
                 >
                   <strong style={{ color: 'white' }}>תמיכה מלאה בעברית</strong>
@@ -275,7 +275,7 @@ export default function FinalCTA() {
                   fontSize: '14px',
                   color: 'rgba(255, 255, 255, 0.5)',
                   margin: 0,
-                  fontFamily: 'Heebo, Assistant, sans-serif',
+                  fontFamily: 'var(--font-heebo), Heebo, sans-serif',
                 }}
               >
                 © 2026 Hostly. כל הזכויות שמורות.
@@ -290,7 +290,7 @@ export default function FinalCTA() {
                     fontSize: '14px',
                     textDecoration: 'none',
                     transition: 'color 0.3s ease',
-                    fontFamily: 'Heebo, Assistant, sans-serif',
+                    fontFamily: 'var(--font-heebo), Heebo, sans-serif',
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.color = '#F993FB'
@@ -309,7 +309,7 @@ export default function FinalCTA() {
                     fontSize: '14px',
                     textDecoration: 'none',
                     transition: 'color 0.3s ease',
-                    fontFamily: 'Heebo, Assistant, sans-serif',
+                    fontFamily: 'var(--font-heebo), Heebo, sans-serif',
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.color = '#F993FB'
@@ -328,7 +328,7 @@ export default function FinalCTA() {
                     fontSize: '14px',
                     textDecoration: 'none',
                     transition: 'color 0.3s ease',
-                    fontFamily: 'Heebo, Assistant, sans-serif',
+                    fontFamily: 'var(--font-heebo), Heebo, sans-serif',
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.color = '#F993FB'

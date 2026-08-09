@@ -22,7 +22,7 @@ export default function ProblemSolution() {
                 fontWeight: '700',
                 color: '#1e293b',
                 marginBottom: '16px',
-                fontFamily: 'Heebo, Assistant, sans-serif',
+                fontFamily: 'var(--font-heebo), Heebo, sans-serif',
               }}
             >
               איך היה <span style={{ color: '#ef5350' }}>לפני</span> המערכת vs{' '}
@@ -32,7 +32,7 @@ export default function ProblemSolution() {
               style={{
                 fontSize: '18px',
                 color: '#64748b',
-                fontFamily: 'Heebo, Assistant, sans-serif',
+                fontFamily: 'var(--font-heebo), Heebo, sans-serif',
               }}
             >
               תראו את ההבדל המשמעותי
@@ -68,7 +68,7 @@ export default function ProblemSolution() {
                     fontWeight: '700',
                     color: '#ef5350',
                     marginBottom: '8px',
-                    fontFamily: 'Heebo, Assistant, sans-serif',
+                    fontFamily: 'var(--font-heebo), Heebo, sans-serif',
                   }}
                 >
                   לפני המערכת
@@ -77,7 +77,7 @@ export default function ProblemSolution() {
                   style={{
                     fontSize: '16px',
                     color: '#b71c1c',
-                    fontFamily: 'Heebo, Assistant, sans-serif',
+                    fontFamily: 'var(--font-heebo), Heebo, sans-serif',
                   }}
                 >
                   כאוס וסטרס יומיומי
@@ -102,7 +102,7 @@ export default function ProblemSolution() {
                       marginBottom: '14px',
                       fontSize: '16px',
                       color: '#c62828',
-                      fontFamily: 'Heebo, Assistant, sans-serif',
+                      fontFamily: 'var(--font-heebo), Heebo, sans-serif',
                     }}
                   >
                     <Icon icon={item.icon} style={{ fontSize: '24px', color: '#ef5350', flexShrink: 0 }} />
@@ -139,7 +139,7 @@ export default function ProblemSolution() {
                     fontWeight: '700',
                     color: '#4caf50',
                     marginBottom: '8px',
-                    fontFamily: 'Heebo, Assistant, sans-serif',
+                    fontFamily: 'var(--font-heebo), Heebo, sans-serif',
                   }}
                 >
                   אחרי המערכת
@@ -148,7 +148,7 @@ export default function ProblemSolution() {
                   style={{
                     fontSize: '16px',
                     color: '#2e7d32',
-                    fontFamily: 'Heebo, Assistant, sans-serif',
+                    fontFamily: 'var(--font-heebo), Heebo, sans-serif',
                   }}
                 >
                   אוטומציה מלאה ושקט נפשי
@@ -173,7 +173,7 @@ export default function ProblemSolution() {
                       marginBottom: '14px',
                       fontSize: '16px',
                       color: '#2e7d32',
-                      fontFamily: 'Heebo, Assistant, sans-serif',
+                      fontFamily: 'var(--font-heebo), Heebo, sans-serif',
                     }}
                   >
                     <Icon icon={item.icon} style={{ fontSize: '24px', color: '#4caf50', flexShrink: 0 }} />
@@ -202,7 +202,7 @@ export default function ProblemSolution() {
                   fontWeight: '700',
                   color: 'white',
                   marginBottom: '12px',
-                  fontFamily: 'Heebo, Assistant, sans-serif',
+                  fontFamily: 'var(--font-heebo), Heebo, sans-serif',
                 }}
               >
                 ⚡ המערכת שלנו עושה את העבודה השחורה בשבילך
@@ -212,7 +212,7 @@ export default function ProblemSolution() {
                   fontSize: '18px',
                   color: 'rgba(255, 255, 255, 0.95)',
                   margin: 0,
-                  fontFamily: 'Heebo, Assistant, sans-serif',
+                  fontFamily: 'var(--font-heebo), Heebo, sans-serif',
                 }}
               >
                 כדי שתוכל להתמקד באירוח מושלם ולא בניהול מסובך

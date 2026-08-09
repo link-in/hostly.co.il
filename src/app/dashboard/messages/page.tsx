@@ -163,9 +163,9 @@ export default function WhatsAppMessagesPage() {
     <>
       <div className="row g-3 mb-3">
         <div className="col-4">
-          <div className="bg-white rounded-3 p-3 shadow-sm text-center">
-            <div className="text-muted small">הודעות</div>
-            <div className="fw-bold fs-4">{groups.length}</div>
+          <div className="hostly-dark-stat rounded-3 p-3 shadow-sm text-center">
+            <div className="stat-label small">הודעות</div>
+            <div className="stat-value fw-bold fs-4">{groups.length}</div>
             {rawTotal > groups.length && (
               <div className="text-muted" style={{ fontSize: 11 }}>
                 {rawTotal} שליחות
@@ -174,24 +174,24 @@ export default function WhatsAppMessagesPage() {
           </div>
         </div>
         <div className="col-4">
-          <div className="bg-white rounded-3 p-3 shadow-sm text-center">
-            <div className="text-muted small">נשלחו</div>
-            <div className="fw-bold fs-4 text-success">{sentCount}</div>
+          <div className="hostly-dark-stat rounded-3 p-3 shadow-sm text-center">
+            <div className="stat-label small">נשלחו</div>
+            <div className="stat-value fw-bold fs-4 text-success">{sentCount}</div>
           </div>
         </div>
         <div className="col-4">
-          <div className="bg-white rounded-3 p-3 shadow-sm text-center">
-            <div className="text-muted small">נכשלו / חלקי</div>
-            <div className="fw-bold fs-4 text-danger">{failedCount}</div>
+          <div className="hostly-dark-stat rounded-3 p-3 shadow-sm text-center">
+            <div className="stat-label small">נכשלו / חלקי</div>
+            <div className="stat-value fw-bold fs-4 text-danger">{failedCount}</div>
           </div>
         </div>
       </div>
 
-      <div className="bg-white rounded-3 shadow-sm p-3 p-md-4">
+      <div className="hostly-dark-card rounded-3 shadow-sm p-3 p-md-4">
         <div className="d-flex flex-wrap align-items-center gap-2 gap-md-3 mb-3">
-          <div className="d-flex align-items-center gap-2 text-muted">
+          <div className="d-flex align-items-center gap-2">
             <MessageSquare size={18} />
-            <span className="fw-semibold text-dark">יומן שליחות</span>
+            <span className="fw-semibold hostly-dark-title">יומן שליחות</span>
           </div>
 
           <select
@@ -221,7 +221,7 @@ export default function WhatsAppMessagesPage() {
 
           <button
             type="button"
-            className="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1 ms-auto"
+            className="hostly-btn hostly-btn-sm hostly-btn-ghost ms-auto"
             onClick={fetchMessages}
             disabled={loading}
           >
@@ -249,9 +249,9 @@ export default function WhatsAppMessagesPage() {
         )}
 
         {groups.length > 0 && (
-          <div className="table-responsive">
-            <table className="table table-hover align-middle mb-0">
-              <thead className="table-light">
+          <div className="table-responsive dashboard-table-scroll-container">
+            <table className="table table-hover align-middle mb-0 hostly-dark-table">
+              <thead>
                 <tr>
                   <th style={{ minWidth: 130 }}>תאריך</th>
                   <th>סוג</th>
@@ -275,7 +275,7 @@ export default function WhatsAppMessagesPage() {
             </table>
 
             {expandedId && (
-              <div className="border-top mt-0 p-3 bg-light rounded-bottom">
+              <div className="border-top mt-0 p-3 hostly-dark-panel rounded-bottom">
                 {(() => {
                   const group = groups.find((g) => g.id === expandedId)
                   if (!group) return null
@@ -283,7 +283,7 @@ export default function WhatsAppMessagesPage() {
                     <div>
                       <div className="small text-muted mb-1">תוכן ההודעה</div>
                       <pre
-                        className="mb-3 p-3 bg-white border rounded small"
+                        className="mb-3 p-3 hostly-dark-panel border rounded small"
                         style={{ whiteSpace: 'pre-wrap', direction: 'rtl' }}
                       >
                         {group.message_body || '(ריק)'}

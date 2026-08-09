@@ -1,11 +1,12 @@
 import type { Metadata, Viewport } from 'next'
-import { Rubik } from 'next/font/google'
+import { Heebo } from 'next/font/google'
 import 'bootstrap/dist/css/bootstrap.min.css'
 import './globals.css'
+import './hostly-buttons.css'
 import ServiceWorkerRegistrar from './components/ServiceWorkerRegistrar'
 import PWAInstallBanner from './components/PWAInstallBanner'
 
-const rubik = Rubik({ subsets: ['latin', 'hebrew'], variable: '--font-rubik' })
+const heebo = Heebo({ subsets: ['latin', 'hebrew'], variable: '--font-heebo' })
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -53,7 +54,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="he" dir="rtl" suppressHydrationWarning>
-      <body className={rubik.className} suppressHydrationWarning>
+      <body className={`${heebo.variable} ${heebo.className}`} suppressHydrationWarning>
         {children}
         <ServiceWorkerRegistrar />
         <PWAInstallBanner />

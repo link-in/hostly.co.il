@@ -29,7 +29,7 @@ export default async function EmbedPage({ searchParams }: PageProps) {
     return (
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        minHeight: '100vh', background: '#fff8e5', fontFamily: 'sans-serif',
+        minHeight: '100vh', background: '#fff8e5', fontFamily: 'var(--font-heebo), Heebo, sans-serif',
       }}>
         <div style={{ textAlign: 'center', padding: 40, color: '#7a5c00' }}>
           <strong>⚠ Hostly Calendar:</strong> חסרים פרמטרים — יש לספק <code>apiKey</code> ו-<code>roomId</code>.
