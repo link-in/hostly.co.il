@@ -5,6 +5,7 @@ import { useSession, signOut } from 'next-auth/react'
 import Link from 'next/link'
 import Image from 'next/image'
 import DashboardHeader from '@/components/DashboardHeader'
+import DashboardLoader from '@/components/DashboardLoader'
 
 export default function LandingEditor() {
   const { data: session } = useSession()
@@ -363,17 +364,7 @@ export default function LandingEditor() {
   }
 
   if (loading) {
-    return (
-      <div style={{ 
-        minHeight: '100vh', 
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center'
-      }}>
-        <div style={{ color: 'white', fontSize: '24px' }}>טוען...</div>
-      </div>
-    )
+    return <DashboardLoader variant="fullscreen" label="טוען עורך דף נחיתה…" />
   }
 
   const tabs = [

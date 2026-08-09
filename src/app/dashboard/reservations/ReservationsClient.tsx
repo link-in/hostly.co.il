@@ -8,6 +8,7 @@ import type { Reservation } from '@/lib/dashboard/types'
 import { formatCurrency, formatStatus } from '@/lib/dashboard/utils'
 import { getDashboardProvider } from '@/lib/dashboard/getDashboardProvider'
 import DashboardHeader from '@/components/DashboardHeader'
+import DashboardLoader from '@/components/DashboardLoader'
 import RoomTabs from '../components/RoomTabs'
 import { useSelectedRoom } from '@/lib/rooms/RoomContext'
 
@@ -273,13 +274,7 @@ export default function ReservationsClient() {
   `
 
   if (status === 'loading' || loading) {
-    return (
-      <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '100vh' }}>
-        <div className="spinner-border text-primary" role="status">
-          <span className="visually-hidden">טוען...</span>
-        </div>
-      </div>
-    )
+    return <DashboardLoader variant="fullscreen" label="טוען הזמנות…" />
   }
 
   if (status === 'unauthenticated') {

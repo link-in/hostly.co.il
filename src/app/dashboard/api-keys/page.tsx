@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import DashboardHeader from '@/components/DashboardHeader'
+import DashboardLoader from '@/components/DashboardLoader'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -185,11 +186,7 @@ export default function ApiKeysPage() {
 
   // ── Render ─────────────────────────────────────────────────────────────────
   if (status === 'loading' || !session) {
-    return (
-      <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '100vh' }}>
-        <div className="spinner-border text-light" />
-      </div>
-    )
+    return <DashboardLoader variant="fullscreen" label="טוען מפתחות API…" />
   }
 
   return (

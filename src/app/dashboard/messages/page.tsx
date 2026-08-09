@@ -13,6 +13,7 @@ import {
   XCircle,
 } from 'lucide-react'
 import DashboardHeader from '@/components/DashboardHeader'
+import DashboardLoader from '@/components/DashboardLoader'
 import type { WhatsAppMessageLogRow } from '@/lib/db/whatsappMessages'
 import {
   groupWhatsAppMessageLogs,
@@ -24,6 +25,7 @@ const MESSAGE_TYPE_LABELS: Record<string, string> = {
   new_booking_owner: 'הזמנה חדשה — בעלים',
   cancellation_owner: 'ביטול — בעלים',
   booking_request_owner: 'בקשת הזמנה — בעלים',
+  inquiry_owner: 'בירור מאורח — בעלים',
   check_in_guest: "צ'ק-אין — אורח",
   check_in_owner: "צ'ק-אין — בעלים",
   review_reminder_guest: 'בקשת ביקורת — אורח',
@@ -154,13 +156,7 @@ export default function WhatsAppMessagesPage() {
   )
 
   if (authStatus === 'loading' || (loading && messages.length === 0 && !error)) {
-    return pageShell(
-      <div className="text-center text-white py-5">
-        <div className="spinner-border" role="status">
-          <span className="visually-hidden">טוען...</span>
-        </div>
-      </div>,
-    )
+    return pageShell(<DashboardLoader variant="section" tone="onGradient" label="טוען הודעות…" minHeight={280} />)
   }
 
   return pageShell(

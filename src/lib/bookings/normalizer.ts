@@ -79,8 +79,8 @@ export function normalizeBookingItem(
 
 /** Returns true if the booking status should be processed (not cancelled/pending). */
 export function isConfirmedBookingStatus(status: string): boolean {
-  const valid = ['confirmed', 'new', '1']
-  return valid.includes(status.toLowerCase()) || status === '1'
+  const normalized = String(status).toLowerCase()
+  return ['confirmed', 'new', '1', '2'].includes(normalized)
 }
 
 /** Returns true if the booking was cancelled (Beds24 string or numeric `0`). */
@@ -91,18 +91,35 @@ export function isCancelledBookingStatus(status: string): boolean {
 
 /**
  * Returns true for a channel booking request awaiting owner approval —
- * Beds24 `request` (3). Airbnb "inquiry"/question (5) is excluded — that is
- * only a guest message, not a reservation request, and must not trigger WhatsApp.
+ * Beds24 `request` (3).
  */
 export function isBookingRequestStatus(status: string): boolean {
   const normalized = String(status).toLowerCase()
   return normalized === 'request' || normalized === '3'
 }
 
-/** Airbnb/Beds24 inquiry (guest question) — not a bookable reservation request. */
+/**
+ * Airbnb/Beds24 inquiry (בירור) — guest reached out before/without a confirmed stay.
+ * Distinct from chat updates on an already-confirmed booking.
+ */
 export function isInquiryBookingStatus(status: string): boolean {
   const normalized = String(status).toLowerCase()
   return normalized === 'inquiry' || normalized === '5'
+}
+
+/**
+ * True when the webhook is almost certainly an update (chat, note, price tweak)
+ * on an existing booking — not the first "new booking" event.
+ * Beds24 re-POSTs the booking on channel chat messages with a later modifiedTime.
+ */
+export function isBookingModificationWebhook(
+  booking: { bookingTime?: string; modifiedTime?: string },
+  minDeltaMs = 3 * 60 * 1000,
+): boolean {
+  const created = Date.parse(booking.bookingTime ?? '')
+  const modified = Date.parse(booking.modifiedTime ?? '')
+  if (!Number.isFinite(created) || !Number.isFinite(modified)) return false
+  return modified - created >= minDeltaMs
 }
 
 /** Extract user-specific Beds24 tokens from a session object, or undefined for global tokens. */

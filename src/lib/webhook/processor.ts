@@ -12,6 +12,7 @@ import { sendWhatsAppToAll } from '@/lib/notifications/ownerPhones'
 import {
   buildOwnerNewBookingMessage,
   notifyOwnersOfBookingCancellation,
+  notifyOwnersOfBookingInquiry,
   notifyOwnersOfBookingRequest,
   type NotifyOwnerAlertInput,
   type OwnerAlertResult,
@@ -22,6 +23,8 @@ import {
   isConfirmedBookingStatus,
   isCancelledBookingStatus,
   isBookingRequestStatus,
+  isInquiryBookingStatus,
+  isBookingModificationWebhook,
 } from '@/lib/bookings/normalizer'
 import type { Beds24Booking, Beds24WebhookWrapper } from './types'
 
@@ -46,6 +49,10 @@ export async function processWebhook(webhookData: Beds24WebhookWrapper): Promise
     return processOwnerAlertOnly(webhookData, 'booking request', notifyOwnersOfBookingRequest)
   }
 
+  if (isInquiryBookingStatus(booking.status)) {
+    return processOwnerAlertOnly(webhookData, 'booking inquiry', notifyOwnersOfBookingInquiry)
+  }
+
   if (await isDuplicateNotification(booking.id)) {
     console.log(`⚠️ Duplicate webhook for booking ${booking.id}`)
     return { success: true, message: `Booking ${booking.id} already processed`, duplicate: true }
@@ -54,6 +61,19 @@ export async function processWebhook(webhookData: Beds24WebhookWrapper): Promise
   if (!isConfirmedBookingStatus(booking.status)) {
     console.log(`⚠️ Skipping booking with status: ${booking.status}`)
     return { success: true, message: `Booking status '${booking.status}' skipped`, skipped: true }
+  }
+
+  // Chat / note / channel updates re-fire the same confirmed booking with a later
+  // modifiedTime — refresh cache only, do not send another "new booking" WhatsApp.
+  if (isBookingModificationWebhook(booking)) {
+    console.log(`ℹ️ Skipping new-booking WhatsApp for booking ${booking.id} (modification / chat update)`)
+    const userId = await getUserIdByPropertyRoom(booking.propertyId, booking.roomId)
+    maybeRefreshCache(userId, booking).catch((e) => console.error('[Cache] refresh failed:', e))
+    return {
+      success: true,
+      message: `Booking ${booking.id} modification skipped (no WhatsApp)`,
+      skipped: true,
+    }
   }
 
   const guestName = `${booking.firstName} ${booking.lastName}`.trim()
@@ -108,12 +128,12 @@ export async function processWebhook(webhookData: Beds24WebhookWrapper): Promise
 }
 
 /**
- * Handles statuses that only affect the owner (cancellation, booking request):
+ * Handles statuses that only affect the owner (cancellation, booking request, inquiry):
  * refresh the availability cache and alert the owner phones — no guest message
- * and no customer record, since the stay is not confirmed.
+ * and no customer record for non-confirmed events.
  *
- * Each event has its own dedupe key (`{id}:cancelled`, `{id}:request`), so a
- * prior "new booking" row never blocks these alerts.
+ * Each event has its own dedupe key (`{id}:cancelled`, `{id}:request`, `{id}:inquiry`),
+ * so a prior "new booking" row never blocks these alerts.
  */
 async function processOwnerAlertOnly(
   webhookData: Beds24WebhookWrapper,

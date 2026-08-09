@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { toast, Toaster } from 'sonner'
 import DashboardHeader from '@/components/DashboardHeader'
+import DashboardLoader from '@/components/DashboardLoader'
 import RoomTabs from '../components/RoomTabs'
 import { useSelectedRoom } from '@/lib/rooms/RoomContext'
 import { formatCurrency } from '@/lib/dashboard/utils'
@@ -123,13 +124,7 @@ export default function PriceCheckClient() {
   }
 
   if (status === 'loading') {
-    return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div className="spinner-border text-primary" role="status">
-          <span className="visually-hidden">טוען...</span>
-        </div>
-      </div>
-    )
+    return <DashboardLoader variant="fullscreen" label="טוען בדיקת מחיר…" />
   }
 
   if (!session) {

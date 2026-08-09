@@ -6,6 +6,7 @@ import { useSession } from 'next-auth/react'
 import { ArrowLeft, CheckCircle, Clock, XCircle, Download, Send } from 'lucide-react'
 import type { CheckIn } from '@/lib/check-in/types'
 import DashboardHeader from '@/components/DashboardHeader'
+import DashboardLoader from '@/components/DashboardLoader'
 
 function CheckInDetailsPageContent() {
   const params = useParams()
@@ -60,23 +61,7 @@ function CheckInDetailsPageContent() {
   }
 
   if (loading) {
-    return (
-      <main 
-        style={{ 
-          minHeight: '100vh',
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
-        }} 
-        dir="rtl"
-      >
-        <div className="container py-5">
-          <div className="text-center text-white">
-            <div className="spinner-border" role="status">
-              <span className="visually-hidden">טוען...</span>
-            </div>
-          </div>
-        </div>
-      </main>
-    )
+    return <DashboardLoader variant="fullscreen" label="טוען פרטי צ'ק-אין…" />
   }
 
   if (!checkIn) {

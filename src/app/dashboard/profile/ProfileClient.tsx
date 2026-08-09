@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ExternalLink, Loader2 } from 'lucide-react'
 import DashboardHeader from '@/components/DashboardHeader'
+import DashboardLoader from '@/components/DashboardLoader'
 
 interface SubscriptionInfo {
   status: 'trial' | 'active' | 'cancelled' | 'expired'
@@ -294,26 +295,7 @@ const ProfileClient = () => {
   `
 
   if (!session?.user) {
-    return (
-      <>
-        <style dangerouslySetInnerHTML={{ __html: styles }} />
-        <main 
-          style={{ 
-            minHeight: '100vh',
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
-          }} 
-          dir="rtl"
-        >
-          <div className="container py-5">
-            <div className="text-center text-white">
-              <div className="spinner-border" role="status">
-                <span className="visually-hidden">טוען...</span>
-              </div>
-            </div>
-          </div>
-        </main>
-      </>
-    )
+    return <DashboardLoader variant="fullscreen" label="טוען פרופיל…" />
   }
 
   return (

@@ -1,15 +1,16 @@
 /**
  * Pure builders + shared send helpers for owner-facing booking WhatsApp alerts
- * (new booking / booking request / cancellation).
+ * (new booking / booking request / inquiry / cancellation).
  * Recipients are always the primary owner phone + optional secondary phone.
  */
 
 import { getOwnerInfoByPropertyRoom } from '@/lib/db/users'
 import { isDuplicateNotification, insertNotification } from '@/lib/db/notifications'
 import { sendWhatsAppToAll } from '@/lib/notifications/ownerPhones'
+import type { WhatsAppSendMeta } from '@/lib/whatsapp/types'
 
 /** Owner alerts that need their own dedupe key, separate from the new-booking row. */
-export type OwnerAlertEvent = 'cancelled' | 'request'
+export type OwnerAlertEvent = 'cancelled' | 'request' | 'inquiry'
 
 /** Dedupe key stored in `notifications_log.booking_id` for a non-new-booking alert. */
 export function bookingAlertNotificationKey(
@@ -77,6 +78,24 @@ export function buildOwnerBookingRequestMessage(fields: OwnerBookingAlertFields)
     .join('\n')
 }
 
+/** Hebrew WhatsApp body for an Airbnb/channel inquiry (בירור) — not a firm booking yet. */
+export function buildOwnerBookingInquiryMessage(fields: OwnerBookingAlertFields): string {
+  return [
+    '💬 בירור מאורח',
+    `👤 אורח: ${fields.guestName}`,
+    `📱 טלפון: ${fields.guestPhone || 'לא צוין'}`,
+    fields.arrival
+      ? `📅 תאריכים: ${fields.arrival}${fields.departure ? ` → ${fields.departure}` : ''}`
+      : '',
+    fields.roomName ? `🏠 יחידה: ${fields.roomName}` : '',
+    fields.numAdult ? `👥 מספר אורחים: ${fields.numAdult}` : '',
+    `🔖 מספר פנייה: ${fields.bookingId}`,
+    '📩 יש הודעה חדשה בערוץ (לא הזמנה מאושרת)',
+  ]
+    .filter(Boolean)
+    .join('\n')
+}
+
 export interface NotifyOwnerAlertInput {
   bookingId: number | string
   propertyId: number | string
@@ -98,6 +117,13 @@ export interface OwnerAlertResult {
 const MESSAGE_BUILDERS: Record<OwnerAlertEvent, (fields: OwnerBookingAlertFields) => string> = {
   cancelled: buildOwnerCancellationMessage,
   request: buildOwnerBookingRequestMessage,
+  inquiry: buildOwnerBookingInquiryMessage,
+}
+
+const MESSAGE_TYPES: Record<OwnerAlertEvent, NonNullable<WhatsAppSendMeta['messageType']>> = {
+  cancelled: 'cancellation_owner',
+  request: 'booking_request_owner',
+  inquiry: 'inquiry_owner',
 }
 
 /**
@@ -151,7 +177,7 @@ async function notifyOwnersOfBookingEvent(
   const results = await sendWhatsAppToAll(ownerInfo.phoneNumbers, message, {
     userId: ownerInfo.userId,
     bookingId: input.bookingId,
-    messageType: event === 'cancelled' ? 'cancellation_owner' : 'booking_request_owner',
+    messageType: MESSAGE_TYPES[event],
     recipientRole: 'owner',
     recipientName: input.guestName,
   })
@@ -176,4 +202,11 @@ export function notifyOwnersOfBookingRequest(
   input: NotifyOwnerAlertInput,
 ): Promise<OwnerAlertResult> {
   return notifyOwnersOfBookingEvent('request', input)
+}
+
+/** Alerts every owner phone about a channel inquiry / בירור (not a confirmed booking). */
+export function notifyOwnersOfBookingInquiry(
+  input: NotifyOwnerAlertInput,
+): Promise<OwnerAlertResult> {
+  return notifyOwnersOfBookingEvent('inquiry', input)
 }

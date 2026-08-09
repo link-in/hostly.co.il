@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { Eye, Send, Download, CheckCircle, Clock, XCircle, ExternalLink } from 'lucide-react'
 import type { CheckIn } from '@/lib/check-in/types'
 import DashboardHeader from '@/components/DashboardHeader'
+import DashboardLoader from '@/components/DashboardLoader'
 
 function CheckInsPageContent() {
   const { data: session, status } = useSession()
@@ -75,23 +76,7 @@ function CheckInsPageContent() {
   }
 
   if (loading) {
-    return (
-      <main 
-        style={{ 
-          minHeight: '100vh',
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
-        }} 
-        dir="rtl"
-      >
-        <div className="container py-5">
-          <div className="text-center text-white">
-            <div className="spinner-border" role="status">
-              <span className="visually-hidden">טוען...</span>
-            </div>
-          </div>
-        </div>
-      </main>
-    )
+    return <DashboardLoader variant="fullscreen" label="טוען צ'ק-אינים…" />
   }
 
   return (

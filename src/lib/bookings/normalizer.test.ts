@@ -7,6 +7,8 @@ import {
   isConfirmedBookingStatus,
   isCancelledBookingStatus,
   isBookingRequestStatus,
+  isInquiryBookingStatus,
+  isBookingModificationWebhook,
   extractUserTokens,
 } from './normalizer'
 
@@ -77,11 +79,11 @@ describe('extractBookingId', () => {
 // ─── isConfirmedBookingStatus ─────────────────────────────────────────────────
 
 describe('isConfirmedBookingStatus', () => {
-  it.each(['confirmed', 'new', '1', 'CONFIRMED'])('accepts "%s"', (status) => {
+  it.each(['confirmed', 'new', '1', '2', 'CONFIRMED'])('accepts "%s"', (status) => {
     expect(isConfirmedBookingStatus(status)).toBe(true)
   })
 
-  it.each(['cancelled', 'pending', 'rejected', '0'])('rejects "%s"', (status) => {
+  it.each(['cancelled', 'pending', 'rejected', '0', 'inquiry', '5'])('rejects "%s"', (status) => {
     expect(isConfirmedBookingStatus(status)).toBe(false)
   })
 })
@@ -109,6 +111,36 @@ describe('isBookingRequestStatus', () => {
       expect(isBookingRequestStatus(status)).toBe(false)
     },
   )
+})
+
+describe('isInquiryBookingStatus', () => {
+  it.each(['inquiry', '5', 'INQUIRY'])('accepts "%s"', (status) => {
+    expect(isInquiryBookingStatus(status)).toBe(true)
+  })
+
+  it.each(['request', '3', 'confirmed', 'new', '1'])('rejects "%s"', (status) => {
+    expect(isInquiryBookingStatus(status)).toBe(false)
+  })
+})
+
+describe('isBookingModificationWebhook', () => {
+  it('detects chat/update when modifiedTime is much later than bookingTime', () => {
+    expect(
+      isBookingModificationWebhook({
+        bookingTime: '2026-08-09T08:00:00Z',
+        modifiedTime: '2026-08-09T18:00:00Z',
+      }),
+    ).toBe(true)
+  })
+
+  it('does not treat a brand-new booking as a modification', () => {
+    expect(
+      isBookingModificationWebhook({
+        bookingTime: '2026-08-09T10:00:00Z',
+        modifiedTime: '2026-08-09T10:00:45Z',
+      }),
+    ).toBe(false)
+  })
 })
 
 // ─── normalizeBookingItem ─────────────────────────────────────────────────────

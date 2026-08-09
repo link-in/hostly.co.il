@@ -5,17 +5,20 @@
  */
 import { describe, it, expect } from 'vitest'
 import {
-  isConfirmedBookingStatus,
-  isCancelledBookingStatus,
-  isBookingRequestStatus,
-  parseBookingSource,
-} from '@/lib/bookings/normalizer'
-import {
   buildOwnerNewBookingMessage,
   buildOwnerCancellationMessage,
   buildOwnerBookingRequestMessage,
+  buildOwnerBookingInquiryMessage,
   bookingAlertNotificationKey,
 } from '@/lib/notifications/bookingAlerts'
+import {
+  isConfirmedBookingStatus,
+  isCancelledBookingStatus,
+  isBookingRequestStatus,
+  isInquiryBookingStatus,
+  isBookingModificationWebhook,
+  parseBookingSource,
+} from '@/lib/bookings/normalizer'
 
 // ─── Status filtering (mirrors processor logic) ───────────────────────────────
 
@@ -176,15 +179,66 @@ describe('Webhook — owner booking request message', () => {
   })
 })
 
+describe('Webhook — owner inquiry message', () => {
+  it('builds a distinct inquiry alert (not a booking request)', () => {
+    const msg = buildOwnerBookingInquiryMessage({
+      guestName: 'Yossi Cohen',
+      guestPhone: '+972521234567',
+      arrival: '2026-06-01',
+      departure: '2026-06-05',
+      roomName: 'Mountain View',
+      bookingId: 42,
+    })
+    expect(msg).toContain('בירור מאורח')
+    expect(msg).toContain('לא הזמנה מאושרת')
+    expect(msg).not.toContain('בקשת הזמנה חדשה')
+    expect(msg).not.toContain('הזמנה חדשה!')
+  })
+})
+
+describe('Webhook — inquiry status filtering', () => {
+  it.each(['inquiry', '5', 'INQUIRY'])('detects "%s" as an inquiry', (status) => {
+    expect(isInquiryBookingStatus(status)).toBe(true)
+  })
+
+  it.each(['request', '3', 'confirmed', 'new'])('does not treat "%s" as an inquiry', (status) => {
+    expect(isInquiryBookingStatus(status)).toBe(false)
+  })
+})
+
+describe('Webhook — booking modification detection', () => {
+  it('treats a later modifiedTime as a chat/update webhook', () => {
+    expect(
+      isBookingModificationWebhook({
+        bookingTime: '2026-08-01T10:00:00Z',
+        modifiedTime: '2026-08-01T12:00:00Z',
+      }),
+    ).toBe(true)
+  })
+
+  it('treats near-identical create/modify times as a new booking', () => {
+    expect(
+      isBookingModificationWebhook({
+        bookingTime: '2026-08-01T10:00:00Z',
+        modifiedTime: '2026-08-01T10:00:30Z',
+      }),
+    ).toBe(false)
+  })
+})
+
 describe('Webhook — owner alert dedupe keys', () => {
   it('separates each event from the new-booking notification row', () => {
     expect(bookingAlertNotificationKey(42, 'cancelled')).toBe('42:cancelled')
     expect(bookingAlertNotificationKey(42, 'request')).toBe('42:request')
+    expect(bookingAlertNotificationKey(42, 'inquiry')).toBe('42:inquiry')
   })
 
-  it('keeps cancellation and request alerts independent', () => {
+  it('keeps cancellation, request and inquiry alerts independent', () => {
     expect(bookingAlertNotificationKey(42, 'cancelled')).not.toBe(
       bookingAlertNotificationKey(42, 'request'),
+    )
+    expect(bookingAlertNotificationKey(42, 'request')).not.toBe(
+      bookingAlertNotificationKey(42, 'inquiry'),
     )
   })
 })

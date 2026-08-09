@@ -13,6 +13,7 @@ import StatCard from './components/StatCard'
 import CalendarPricing from './components/CalendarPricing'
 import RoomTabs from './components/RoomTabs'
 import DashboardHeader from '@/components/DashboardHeader'
+import DashboardLoader from '@/components/DashboardLoader'
 import { useSelectedRoom } from '@/lib/rooms/RoomContext'
 
 const toLocalKey = (value: Date) => {
@@ -1016,25 +1017,7 @@ const DashboardClient = () => {
 
   // Show loading while checking authentication
   if (status === 'loading') {
-    return (
-      <main
-        dir="rtl"
-        style={{ 
-          minHeight: '100vh',
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <div className="text-center text-white">
-          <div className="spinner-border mb-3" role="status">
-            <span className="visually-hidden">טוען...</span>
-          </div>
-          <p>טוען נתונים...</p>
-        </div>
-      </main>
-    )
+    return <DashboardLoader variant="fullscreen" label="טוען את הדשבורד…" />
   }
 
   // Don't render dashboard if not authenticated (will redirect via useEffect)
@@ -1440,7 +1423,10 @@ const DashboardClient = () => {
                   הזמנות
                 </h2>
                 {loadingReservations && reservations.length ? (
-                  <span className="small" style={{ color: 'rgba(255, 255, 255, 0.6)' }}>מרענן...</span>
+                  <span className="small d-inline-flex align-items-center gap-2" style={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+                    <DashboardLoader variant="inline" tone="onDark" />
+                    מרענן…
+                  </span>
                 ) : null}
               </div>
               <div className="d-flex align-items-center justify-content-center gap-1 gap-md-2">
@@ -1822,7 +1808,7 @@ const DashboardClient = () => {
               </form>
             ) : null}
             {loadingReservations && !reservations.length ? (
-              <div style={{ color: 'rgba(255, 255, 255, 0.7)' }}>טוען נתונים...</div>
+              <DashboardLoader variant="section" tone="onDark" label="טוען הזמנות…" minHeight={220} />
             ) : filteredReservations.length > 0 ? (
               <>
                 <ReservationsTable 
@@ -1889,7 +1875,7 @@ const DashboardClient = () => {
               </div>
             ) : null}
             {loadingRoomPrices && !initialRoomPricesLoaded ? (
-              <div style={{ color: 'rgba(255, 255, 255, 0.7)' }}>טוען מחירי לילה...</div>
+              <DashboardLoader variant="section" tone="onDark" label="טוען לוח שנה ומחירים…" minHeight={320} />
             ) : (
               <CalendarPricing reservations={reservations} prices={roomPrices} onPricesUpdated={refreshRoomPrices} />
             )}
@@ -1902,7 +1888,7 @@ const DashboardClient = () => {
         }}>
           <div className="card-body" style={{ padding: 0 }}>
             {loadingRoomPrices ? (
-              <div style={{ color: 'rgba(255, 255, 255, 0.7)' }}>טוען נתונים...</div>
+              <DashboardLoader variant="section" tone="onGradient" label="טוען סיכום…" minHeight={120} />
             ) : priceSummary ? (
               <div className="row g-3">
                 <div className="col-4 col-md-4">

@@ -34,6 +34,7 @@ export interface WhatsAppSendMeta {
     | 'new_booking_owner'
     | 'cancellation_owner'
     | 'booking_request_owner'
+    | 'inquiry_owner'
     | 'check_in_guest'
     | 'check_in_owner'
     | 'review_reminder_guest'

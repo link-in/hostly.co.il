@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { toast, Toaster } from 'sonner'
 import DashboardHeader from '@/components/DashboardHeader'
+import DashboardLoader from '@/components/DashboardLoader'
 import { normalizePhoneNumber, formatPhoneForDisplay } from '@/lib/utils/phoneFormatter'
 
 type Customer = {
@@ -264,29 +265,7 @@ export default function CustomersClient() {
   }
 
   if (status === 'loading' || loading) {
-    return (
-      <main style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
-        <div className="container py-3 py-md-5">
-          <div className="mb-3 mb-md-4">
-            <DashboardHeader 
-              session={session} 
-              currentPage="customers" 
-              showLandingPageButton={true}
-            />
-          </div>
-        </div>
-        <div className="container pb-5">
-          <div className="card border-0 shadow-sm" style={{ borderRadius: '12px' }}>
-            <div className="card-body text-center py-5">
-              <div className="spinner-border text-primary mb-3" role="status">
-                <span className="visually-hidden">טוען...</span>
-              </div>
-              <p className="text-muted mb-0">טוען נתוני לקוחות...</p>
-            </div>
-          </div>
-        </div>
-      </main>
-    )
+    return <DashboardLoader variant="fullscreen" label="טוען נתוני לקוחות…" />
   }
 
   if (status === 'unauthenticated') {
