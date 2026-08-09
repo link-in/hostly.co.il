@@ -238,24 +238,21 @@ describe('processWebhook — cache refresh token resolution', () => {
     expect(sendWhatsAppMessage).not.toHaveBeenCalled()
   })
 
-  it('skips new-booking WhatsApp on chat/modification updates of an existing booking', async () => {
+  it('on duplicate confirmed webhook still upserts the customer without guest WhatsApp', async () => {
+    vi.mocked(isDuplicateNotification).mockResolvedValue(true)
     vi.mocked(getUserBeds24Tokens).mockResolvedValue({
       accessToken: 'user-access-token',
       refreshToken: 'user-refresh-token',
     })
 
-    const result = await processWebhook(
-      buildWebhook({
-        status: 'confirmed',
-        bookingTime: '2026-08-01T09:00:00Z',
-        modifiedTime: '2026-08-09T18:00:00Z',
-      }),
-    )
+    const result = await processWebhook(buildWebhook({ status: 'confirmed' }))
     await flushMicrotasks()
 
-    expect(result.skipped).toBe(true)
+    expect(result.duplicate).toBe(true)
+    expect(addOrUpdateCustomer).toHaveBeenCalledWith(
+      expect.objectContaining({ fullName: 'Yossi Cohen', userId: TEST_USER_ID }),
+    )
     expect(sendWhatsAppMessage).not.toHaveBeenCalled()
-    expect(addOrUpdateCustomer).not.toHaveBeenCalled()
     expect(refreshRoomCache).toHaveBeenCalled()
   })
 

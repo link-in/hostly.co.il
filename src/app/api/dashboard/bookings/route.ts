@@ -174,75 +174,87 @@ export async function POST(request: Request) {
   const data = await response.json()
   
   console.log('✅ Beds24 response:', JSON.stringify(data, null, 2))
-  
-  // Send WhatsApp notifications for direct bookings
-  // (Beds24 doesn't send webhooks for API-created bookings)
+
+  // Beds24 doesn't send webhooks for API-created bookings — always persist
+  // customer + check-in here. WhatsApp stays optional via sendWhatsApp.
+  const firstBooking = normalizedPayload[0]
+  const guestName = `${String(firstBooking.firstName || '')} ${String(firstBooking.lastName || '')}`.trim()
+  const guestPhoneRaw = String(firstBooking.mobile || firstBooking.phone || '')
+  const guestPhone = guestPhoneRaw ? normalizePhoneNumber(guestPhoneRaw) : ''
+  const guestEmail = String(firstBooking.email || '')
+  const checkInDate = String(firstBooking.arrival || '')
+  const checkOutDate = String(firstBooking.departure || '')
+  const numAdult = Number(firstBooking.numAdult) || 1
+  const bookingId = extractBookingId(data)
+
+  console.log(`👤 Guest: ${guestName}, Phone: ${guestPhoneRaw} → ${guestPhone}, Booking: ${bookingId}`)
+
+  let checkInLink = ''
+
+  if (session?.user?.id && guestName) {
+    try {
+      console.log('👥 Saving customer to database...')
+      const customerResult = await addOrUpdateCustomer({
+        userId: session.user.id,
+        fullName: guestName,
+        phone: guestPhone || null,
+        email: guestEmail || null,
+        bookingDate: checkInDate || new Date().toISOString(),
+        bookingSource: 'direct',
+      })
+      if (customerResult.success) {
+        console.log('✅ Customer saved/updated:', customerResult.customerId)
+      } else {
+        console.error('❌ Failed to save customer:', customerResult.error)
+      }
+    } catch (customerError) {
+      console.error('❌ Error saving customer:', customerError)
+    }
+
+    try {
+      console.log('🔐 Creating check-in record...')
+      const requestUrl = new URL(request.url)
+      const baseUrl = process.env.NEXTAUTH_URL || `${requestUrl.protocol}//${requestUrl.host}`
+      const checkInRes = await fetch(`${baseUrl}/api/check-in/create`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          bookingId,
+          guestName,
+          guestPhone,
+          guestEmail: guestEmail || null,
+          checkInDate,
+          checkOutDate,
+          numAdult,
+          numChild: Number(firstBooking.numChild) || 0,
+          userId: session.user.id,
+        }),
+      })
+      if (checkInRes.ok) {
+        const checkInData = await checkInRes.json()
+        checkInLink = checkInData.link
+        console.log('✅ Check-in created:', checkInLink)
+      } else {
+        console.error('❌ Failed to create check-in record')
+      }
+    } catch (checkInError) {
+      console.error('❌ Error creating check-in:', checkInError)
+    }
+  } else {
+    console.warn('⚠️ Skipping customer/check-in — missing session user or guest name')
+  }
+
   if (!sendWhatsApp) {
-    console.log('⏭️  Skipping WhatsApp - disabled by user')
+    console.log('⏭️ Skipping WhatsApp - disabled by user')
+    if (process.env.NODE_ENV !== 'production') {
+      return NextResponse.json({ data, debugPayload: normalizedPayload })
+    }
     return NextResponse.json(data)
   }
-  
-  try {
-    console.log('📝 Starting WhatsApp/Supabase process...')
-    
-    const firstBooking = normalizedPayload[0]
-    const guestName = `${String(firstBooking.firstName || '')} ${String(firstBooking.lastName || '')}`.trim()
-    const guestPhoneRaw = String(firstBooking.mobile || firstBooking.phone || '')
-    const guestPhone = guestPhoneRaw ? normalizePhoneNumber(guestPhoneRaw) : ''
-    const guestEmail = String(firstBooking.email || '')
-    const checkInDate = String(firstBooking.arrival || '')
-    const checkOutDate = String(firstBooking.departure || '')
-    const numAdult = Number(firstBooking.numAdult) || 1
-    
-    console.log(`👤 Guest: ${guestName}, Phone: ${guestPhoneRaw} → ${guestPhone}`)
-    if (guestEmail) {
-      console.log(`📧 Email: ${guestEmail}`)
-    }
-    
-    const bookingId = extractBookingId(data)
-    
-    console.log(`🔖 Booking ID: ${bookingId}`)
-    
-    // ⭐ NEW: Create check-in record
-    console.log('🔐 Creating check-in record...')
-    let checkInLink = ''
-    
-    if (session?.user?.id) {
-      try {
-        // Get base URL from request
-        const requestUrl = new URL(request.url)
-        const baseUrl = process.env.NEXTAUTH_URL || `${requestUrl.protocol}//${requestUrl.host}`
-        
-        const checkInRes = await fetch(`${baseUrl}/api/check-in/create`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            bookingId,
-            guestName,
-            guestPhone,
-            guestEmail: guestEmail || null,
-            checkInDate,
-            checkOutDate,
-            numAdult,
-            numChild: Number(firstBooking.numChild) || 0,
-            userId: session.user.id,
-          }),
-        })
 
-        if (checkInRes.ok) {
-          const checkInData = await checkInRes.json()
-          checkInLink = checkInData.link
-          console.log('✅ Check-in created:', checkInLink)
-        } else {
-          console.error('❌ Failed to create check-in record')
-        }
-      } catch (checkInError) {
-        console.error('❌ Error creating check-in:', checkInError)
-      }
-    } else {
-      console.warn('⚠️ No session user ID - skipping check-in creation')
-    }
-    
+  try {
+    console.log('📝 Starting WhatsApp/notifications process...')
+
     // Save to Supabase notifications_log
     console.log('💾 Attempting to save to Supabase...')
     const supabase = createServerClient()
@@ -253,6 +265,7 @@ export async function POST(request: Request) {
         phone: guestPhone,
         guest_email: guestEmail || null,
         check_in_date: checkInDate,
+        booking_id: bookingId !== 'N/A' ? String(bookingId) : null,
         raw_payload: {
           source: 'dashboard',
           booking: firstBooking,
@@ -262,40 +275,21 @@ export async function POST(request: Request) {
         created_at: new Date().toISOString(),
       })
       .select()
-    
+
     if (logError) {
       console.log('❌ SUPABASE ERROR:', JSON.stringify(logError, null, 2))
       console.error('❌ Failed to save to notifications_log:', logError)
     } else {
       console.log('✅ Saved to Supabase! Record ID:', logData?.[0]?.id)
     }
-    
+
     const recordId = logData?.[0]?.id
-    
-    // Save/update customer in customers table
-    if (session?.user?.id && guestName) {
-      console.log('👥 Saving customer to database...')
-      const customerResult = await addOrUpdateCustomer({
-        userId: session.user.id,
-        fullName: guestName,
-        phone: guestPhone || null,
-        email: guestEmail || null,
-        bookingDate: checkInDate || new Date().toISOString(),
-        bookingSource: 'direct', // Direct bookings are always 'direct'
-      })
-      
-      if (customerResult.success) {
-        console.log('✅ Customer saved/updated:', customerResult.customerId)
-      } else {
-        console.error('❌ Failed to save customer:', customerResult.error)
-      }
-    }
-    
+
     // Get owner info for room name and phone
     const ownerEmail = session?.user?.email
     console.log(`👤 Owner email: ${ownerEmail}`)
     let ownerInfo = { phoneNumber: null as string | null, roomName: null as string | null }
-    
+
     if (ownerEmail) {
       try {
         const user = await getUserByEmail(ownerEmail)
@@ -315,27 +309,21 @@ export async function POST(request: Request) {
     } else {
       console.log('⚠️  No owner email in session')
     }
-    
+
     // Send WhatsApp to guest
     let whatsappResult: { success: boolean; provider: string; error?: string } = {
       success: false,
       provider: 'none',
       error: 'No phone number',
     }
-    
+
     if (guestPhone) {
       const propertyName = ownerInfo.roomName || 'Mountain View'
-      
-      // ⭐ NEW: Include check-in link in message
+
       let message = `שלום ${guestName}! 🏔️\n\nקיבלנו את הזמנתך ב-${propertyName}.\n📅 תאריך כניסה: ${checkInDate}\n📅 תאריך יציאה: ${checkOutDate}\n\n`
-      
-      // ⚠️ Temporarily disabled - check-in link will be sent separately
-      // if (checkInLink) {
-      //   message += `🔗 אנא השלם/י צ'ק-אין דיגיטלי (לוקח 3 דקות):\n${checkInLink}\n\n`
-      // }
-      
+
       message += `נשמח לארח אותך! 🎉`
-      
+
       whatsappResult = await sendWhatsAppMessage(
         {
           to: guestPhone,
@@ -343,22 +331,21 @@ export async function POST(request: Request) {
         },
         {
           userId: session?.user?.id,
-          bookingId: firstBooking?.id ?? recordId,
+          bookingId: firstBooking?.id ?? bookingId ?? recordId,
           messageType: 'manual_booking_guest',
           recipientRole: 'guest',
           recipientName: guestName,
         },
       )
-      
+
       console.log(`📱 Guest WhatsApp (${guestPhone}):`, whatsappResult.success ? '✅ Sent' : `❌ Failed - ${whatsappResult.error}`)
     } else {
       console.warn('⚠️  Skipping guest WhatsApp - no phone number')
     }
-    
+
     // Skip owner notification for manual bookings (owner already knows - they created it!)
     console.log('⏭️  Skipping owner WhatsApp for manual booking - owner created this booking themselves')
-    let ownerNotificationResult = null
-    
+
     // Update database with WhatsApp status
     if (recordId) {
       const status = whatsappResult.success ? 'sent' : 'failed'
@@ -371,15 +358,15 @@ export async function POST(request: Request) {
         })
         .eq('id', recordId)
     }
-    
+
   } catch (whatsappError) {
     // Don't fail the booking creation if WhatsApp fails
     console.log('❌ CAUGHT ERROR in WhatsApp/Supabase block:', whatsappError)
     console.error('❌ Error sending WhatsApp:', whatsappError)
   }
-  
+
   console.log('🏁 Finished booking creation process')
-  
+
   if (process.env.NODE_ENV !== 'production') {
     return NextResponse.json({ data, debugPayload: normalizedPayload })
   }

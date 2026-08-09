@@ -108,6 +108,9 @@ export default function CustomersClient() {
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [importing, setImporting] = useState(false)
+  const [missingCount, setMissingCount] = useState(0)
+  const [missingPreview, setMissingPreview] = useState<string[]>([])
+  const [auditing, setAuditing] = useState(false)
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -116,17 +119,39 @@ export default function CustomersClient() {
     }
   }, [status, router])
 
-  // Fetch customers
+  const fetchCustomers = async () => {
+    const response = await fetch('/api/dashboard/customers')
+    if (!response.ok) {
+      throw new Error('Failed to fetch customers')
+    }
+    const data = await response.json()
+    setCustomers(data.customers || [])
+    setFilteredCustomers(data.customers || [])
+  }
+
+  const fetchAudit = async () => {
+    setAuditing(true)
+    try {
+      const response = await fetch('/api/dashboard/customers/import')
+      if (!response.ok) return
+      const data = await response.json()
+      setMissingCount(data.missingCount || 0)
+      setMissingPreview(
+        (data.missing || []).slice(0, 8).map((g: { fullName: string }) => g.fullName),
+      )
+    } catch (error) {
+      console.error('Audit failed:', error)
+    } finally {
+      setAuditing(false)
+    }
+  }
+
+  // Fetch customers + audit gaps against Beds24
   useEffect(() => {
-    const fetchCustomers = async () => {
+    const load = async () => {
       try {
-        const response = await fetch('/api/dashboard/customers')
-        if (!response.ok) {
-          throw new Error('Failed to fetch customers')
-        }
-        const data = await response.json()
-        setCustomers(data.customers || [])
-        setFilteredCustomers(data.customers || [])
+        await fetchCustomers()
+        await fetchAudit()
       } catch (error) {
         console.error('Error fetching customers:', error)
         toast.error('שגיאה בטעינת לקוחות')
@@ -136,7 +161,7 @@ export default function CustomersClient() {
     }
 
     if (status === 'authenticated') {
-      fetchCustomers()
+      load()
     }
   }, [status])
 
@@ -160,12 +185,12 @@ export default function CustomersClient() {
     if (importing) return
 
     toast.warning(
-      'ייבא לקוחות מ-Beds24?',
+      'לסנכרן לקוחות מהזמנות?',
       {
-        description: 'כל ההזמנות הקיימות יומרו ללקוחות. תהליך זה עשוי לקחת מספר דקות.',
+        description: 'נשווה את כל ההזמנות ב-Beds24 למאגר ונוסיף רק לקוחות חסרים.',
         duration: 10000,
         action: {
-          label: '✓ ייבא',
+          label: '✓ סנכרן',
           onClick: async () => {
             setImporting(true)
             await performImport()
@@ -180,8 +205,7 @@ export default function CustomersClient() {
   }
 
   const performImport = async () => {
-    // Show loading toast and save its ID
-    const loadingToastId = toast.loading('מייבא לקוחות מ-Beds24...', {
+    const loadingToastId = toast.loading('מסנכרן לקוחות מהזמנות Beds24...', {
       duration: Infinity,
     })
 
@@ -195,28 +219,30 @@ export default function CustomersClient() {
       }
 
       const result = await response.json()
-      
-      // Dismiss the loading toast
       toast.dismiss(loadingToastId)
-      
-      // Show success toast
-      toast.success('ייבוא הושלם בהצלחה!', {
-        description: `${result.stats.customersImported} לקוחות נוספו/עודכנו מתוך ${result.stats.totalBookings} הזמנות`,
-        duration: 3000,
+
+      const created = result.stats?.customersCreated ?? 0
+      const updated = result.stats?.customersUpdated ?? 0
+      const names: string[] = result.stats?.createdNames || []
+
+      toast.success('סנכרון הושלם', {
+        description:
+          created > 0
+            ? `נוספו ${created} לקוחות חדשים` +
+              (names.length ? ` (למשל: ${names.slice(0, 3).join(', ')})` : '') +
+              (updated ? ` · עודכנו ${updated}` : '')
+            : updated > 0
+              ? `לא נמצאו חסרים · עודכנו ${updated} קיימים`
+              : 'המאגר כבר מעודכן',
+        duration: 5000,
       })
 
-      // Wait a moment for user to see the success message, then reload
-      setTimeout(() => {
-        window.location.reload()
-      }, 2000)
+      await fetchCustomers()
+      await fetchAudit()
     } catch (error) {
       console.error('Error importing customers:', error)
-      
-      // Dismiss the loading toast
       toast.dismiss(loadingToastId)
-      
-      // Show error toast
-      toast.error('ייבוא נכשל', {
+      toast.error('סנכרון נכשל', {
         description: 'אנא נסה שוב מאוחר יותר',
         duration: 4000,
       })
@@ -288,22 +314,78 @@ export default function CustomersClient() {
       {/* Main Content */}
       <div className="container pb-5">
         {/* Title and Stats */}
-        <div className="mb-4">
-          <h2 
-            className="h5 fw-bold mb-2"
+        <div className="mb-4 d-flex flex-wrap align-items-end justify-content-between gap-3">
+          <div>
+            <h2
+              className="h5 fw-bold mb-2"
+              style={{
+                color: 'rgba(249, 147, 251, 0.9)',
+              }}
+            >
+              רשימת לקוחות
+            </h2>
+            <div style={{ color: 'rgba(255, 255, 255, 0.85)', fontSize: '1rem', fontWeight: 600 }}>
+              {searchQuery
+                ? `מציג ${filteredCustomers.length} מתוך ${customers.length} לקוחות`
+                : `סה״כ ${customers.length} לקוחות`}
+            </div>
+          </div>
+          <div
+            className="px-3 py-2 rounded-3"
             style={{
-              color: 'rgba(249, 147, 251, 0.9)',
+              background: 'rgba(255,255,255,0.15)',
+              color: 'white',
+              fontWeight: 700,
+              fontSize: '1.25rem',
+              minWidth: 72,
+              textAlign: 'center',
             }}
+            title="מספר לקוחות במאגר"
           >
-            רשימת לקוחות
-          </h2>
-          <div style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.875rem' }}>
-            {searchQuery 
-              ? `מציג ${filteredCustomers.length} מתוך ${customers.length} לקוחות`
-              : `סה"כ ${customers.length} לקוחות`
-            }
+            {customers.length}
           </div>
         </div>
+
+        {missingCount > 0 && (
+          <div
+            className="alert mb-4 d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3"
+            style={{
+              background: 'rgba(255, 251, 235, 0.97)',
+              border: '1px solid #f59e0b',
+              borderRadius: 12,
+            }}
+            role="status"
+          >
+            <div>
+              <div className="fw-semibold" style={{ color: '#92400e' }}>
+                נמצאו {missingCount} אורחים מהזמנות שלא במאגר
+              </div>
+              {missingPreview.length > 0 && (
+                <div className="small mt-1" style={{ color: '#78350f' }}>
+                  לדוגמה: {missingPreview.join(' · ')}
+                  {missingCount > missingPreview.length ? '…' : ''}
+                </div>
+              )}
+            </div>
+            <button
+              type="button"
+              className="btn btn-sm text-white"
+              disabled={importing || auditing}
+              onClick={() => {
+                setImporting(true)
+                void performImport()
+              }}
+              style={{
+                background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                border: 'none',
+                borderRadius: 8,
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {importing ? 'מסנכרן…' : `הוסף ${missingCount} חסרים`}
+            </button>
+          </div>
+        )}
 
         {/* Search and Actions Card */}
         <div className="card border-0 shadow-sm mb-4" style={{ borderRadius: '12px' }}>
@@ -353,7 +435,7 @@ export default function CustomersClient() {
                       מייבא...
                     </>
                   ) : (
-                    '📥 ייבוא לקוחות'
+                    '🔄 סנכרון מהזמנות'
                   )}
                 </button>
                 
@@ -410,6 +492,9 @@ export default function CustomersClient() {
                 <table className="table table-hover mb-0">
                   <thead style={{ background: 'rgba(102, 126, 234, 0.05)' }}>
                     <tr>
+                      <th style={{ padding: '1rem', fontWeight: '600', fontSize: '0.875rem', color: '#667eea', width: 56 }}>
+                        #
+                      </th>
                       <th style={{ padding: '1rem', fontWeight: '600', fontSize: '0.875rem', color: '#667eea' }}>
                         שם מלא
                       </th>
@@ -431,18 +516,29 @@ export default function CustomersClient() {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredCustomers.map((customer) => (
-                      <tr 
+                    {filteredCustomers.map((customer, index) => (
+                      <tr
                         key={customer.id}
                         style={{ transition: 'background-color 0.2s' }}
                       >
+                        <td
+                          style={{
+                            padding: '1rem',
+                            verticalAlign: 'middle',
+                            color: '#94a3b8',
+                            fontVariantNumeric: 'tabular-nums',
+                            fontWeight: 600,
+                          }}
+                        >
+                          {index + 1}
+                        </td>
                         <td style={{ padding: '1rem', verticalAlign: 'middle' }}>
                           <strong style={{ color: '#333' }}>{customer.fullName}</strong>
                         </td>
                         <td style={{ padding: '1rem', verticalAlign: 'middle' }}>
                           {customer.phone ? (
-                            <a 
-                              href={`tel:${normalizePhoneNumber(customer.phone)}`} 
+                            <a
+                              href={`tel:${normalizePhoneNumber(customer.phone)}`}
                               className="text-decoration-none"
                               style={{ color: '#667eea' }}
                             >
@@ -454,8 +550,8 @@ export default function CustomersClient() {
                         </td>
                         <td style={{ padding: '1rem', verticalAlign: 'middle' }}>
                           {customer.email ? (
-                            <a 
-                              href={`mailto:${customer.email}`} 
+                            <a
+                              href={`mailto:${customer.email}`}
                               className="text-decoration-none"
                               style={{ color: '#667eea' }}
                             >
@@ -466,9 +562,9 @@ export default function CustomersClient() {
                           )}
                         </td>
                         <td style={{ padding: '1rem', verticalAlign: 'middle', fontSize: '0.875rem' }}>
-                          <div style={{ 
-                            display: 'flex', 
-                            alignItems: 'center', 
+                          <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
                             gap: '10px',
                             minHeight: '24px'
                           }}>

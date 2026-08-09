@@ -1,190 +1,245 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth/authOptions'
-import { addOrUpdateCustomer } from '@/lib/customers/addOrUpdateCustomer'
+import { addOrUpdateCustomer, customerMatchesGuest } from '@/lib/customers/addOrUpdateCustomer'
 import { createServerClient } from '@/lib/supabase/server'
+import { fetchWithTokenRefresh } from '@/lib/beds24/tokenManager'
+import { extractBookingSource } from '@/lib/bookings/normalizer'
 
 export const dynamic = 'force-dynamic'
-export const maxDuration = 300 // 5 minutes timeout for large imports
+export const maxDuration = 300
 
-/**
- * Find user ID based on property/room from booking
- * This is needed because bookings from different properties should go to different users
- */
-async function getUserIdFromBooking(booking: any): Promise<string | null> {
-  try {
-    const propertyId = String(booking.propertyId || '')
-    const roomId = String(booking.roomId || '')
-    
-    if (!propertyId || !roomId) {
-      console.warn('⚠️  Missing propertyId or roomId in booking')
-      return null
-    }
-    
-    const supabase = createServerClient()
-    const { data, error } = await supabase
-      .from('users')
-      .select('id')
-      .eq('property_id', propertyId)
-      .eq('room_id', roomId)
-      .single()
-    
-    if (error || !data) {
-      console.warn(`⚠️  No user found for property ${propertyId}, room ${roomId}`)
-      return null
-    }
-    
-    return data.id
-  } catch (error) {
-    console.error('Error finding user from booking:', error)
+const DEFAULT_BASE_URL = 'https://api.beds24.com/v2'
+
+type GuestFromBooking = {
+  fullName: string
+  phone: string | null
+  email: string | null
+  bookingDate: string
+  bookingSource: string
+  bookingId: string
+}
+
+function parseRoomIds(sessionRoomId: string | null | undefined): string[] {
+  if (!sessionRoomId) return []
+  return sessionRoomId
+    .split(',')
+    .map((part) => part.split(':')[0].trim())
+    .filter(Boolean)
+}
+
+function bookingToGuest(booking: Record<string, unknown>): GuestFromBooking | null {
+  const firstName = String(booking.firstName || '').trim()
+  const lastName = String(booking.lastName || '').trim()
+  const fullName = `${firstName} ${lastName}`.trim()
+  if (!fullName || fullName.length < 2) return null
+
+  const status = String(booking.status ?? '').toLowerCase()
+  // Skip cancelled / blocked only — keep Airbnb confirmed/new/request guests
+  if (status === '0' || status === 'cancelled' || status === '4' || status === 'black') {
     return null
+  }
+
+  // Prefer real contact fields; Airbnb often leaves phone empty or uses a proxy
+  const rawPhone = String(booking.mobile || booking.phone || '').trim() || null
+  const phone =
+    rawPhone && !/airbnb/i.test(rawPhone) && rawPhone.replace(/\D/g, '').length >= 8
+      ? rawPhone
+      : null
+
+  return {
+    fullName,
+    phone,
+    email: String(booking.email || '').trim() || null,
+    bookingDate: String(booking.arrival || booking.bookingTime || new Date().toISOString()),
+    bookingSource: extractBookingSource(booking),
+    bookingId: String(booking.id ?? booking.bookId ?? ''),
   }
 }
 
+async function fetchAllBookingsForSession(session: {
+  user?: {
+    id?: string
+    propertyId?: string | null
+    roomId?: string | null
+    beds24Token?: string
+    beds24RefreshToken?: string
+  }
+}): Promise<Record<string, unknown>[]> {
+  const propertyId = session.user?.propertyId ?? process.env.BEDS24_PROPERTY_ID
+  if (!propertyId) return []
+
+  const roomIds = parseRoomIds(session.user?.roomId)
+  // If no room list, one fetch without room filter
+  const targets = roomIds.length > 0 ? roomIds : [null]
+
+  const userTokens =
+    session.user?.beds24Token && session.user?.beds24RefreshToken
+      ? {
+          accessToken: session.user.beds24Token,
+          refreshToken: session.user.beds24RefreshToken,
+        }
+      : undefined
+
+  const all: Record<string, unknown>[] = []
+  const seenIds = new Set<string>()
+
+  for (const roomId of targets) {
+    const url = new URL(`${process.env.BEDS24_API_BASE_URL ?? DEFAULT_BASE_URL}/bookings`)
+    url.searchParams.set('arrivalFrom', '2024-01-01')
+    url.searchParams.set('includeInvoice', 'true')
+    url.searchParams.set('propertyId', String(propertyId))
+    if (roomId) url.searchParams.set('roomId', roomId)
+
+    const response = await fetchWithTokenRefresh(
+      url.toString(),
+      {},
+      userTokens,
+      session.user?.id,
+    )
+    if (!response.ok) {
+      console.error('❌ Beds24 bookings fetch failed:', response.status, roomId)
+      continue
+    }
+
+    const data = await response.json()
+    const list = Array.isArray(data) ? data : Array.isArray(data?.data) ? data.data : []
+    for (const item of list) {
+      if (!item || typeof item !== 'object') continue
+      const booking = item as Record<string, unknown>
+      const id = String(booking.id ?? `${booking.firstName}-${booking.arrival}`)
+      if (seenIds.has(id)) continue
+      seenIds.add(id)
+      all.push(booking)
+    }
+  }
+
+  return all
+}
+
+function collectUniqueGuests(bookings: Record<string, unknown>[]): GuestFromBooking[] {
+  const guests: GuestFromBooking[] = []
+  const seen = new Set<string>()
+
+  for (const booking of bookings) {
+    const guest = bookingToGuest(booking)
+    if (!guest) continue
+    const key = [
+      guest.email?.toLowerCase() || '',
+      guest.phone || '',
+      guest.fullName.trim().toLowerCase(),
+    ].join('|')
+    if (seen.has(key)) continue
+    seen.add(key)
+    guests.push(guest)
+  }
+
+  return guests
+}
+
 /**
- * POST /api/dashboard/customers/import
- * Import all existing customers from Beds24 bookings
+ * GET — audit: compare Beds24 guests vs CRM customers (no writes).
+ * POST — import/sync missing customers from Beds24 bookings.
  */
+export async function GET(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const bookings = await fetchAllBookingsForSession(session)
+    const guests = collectUniqueGuests(bookings)
+
+    const supabase = createServerClient()
+    const { data: customers, error } = await supabase
+      .from('customers')
+      .select('id, full_name, phone, email')
+      .eq('user_id', session.user.id)
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    const crm = (customers || []).map((row) => ({
+      id: row.id as string,
+      fullName: String(row.full_name || ''),
+      phone: (row.phone as string | null) || null,
+      email: (row.email as string | null) || null,
+    }))
+
+    const missing = guests.filter(
+      (guest) => !crm.some((customer) => customerMatchesGuest(customer, guest)),
+    )
+
+    return NextResponse.json({
+      customersInDb: crm.length,
+      uniqueGuestsFromBookings: guests.length,
+      totalBookings: bookings.length,
+      missingCount: missing.length,
+      missing: missing.slice(0, 50).map((g) => ({
+        fullName: g.fullName,
+        phone: g.phone,
+        email: g.email,
+        bookingSource: g.bookingSource,
+        bookingDate: g.bookingDate,
+      })),
+    })
+  } catch (error) {
+    console.error('Error in GET /api/dashboard/customers/import:', error)
+    return NextResponse.json(
+      { error: 'Internal server error', details: error instanceof Error ? error.message : String(error) },
+      { status: 500 },
+    )
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
-    
     if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    console.log('🔄 Starting customer import from Beds24...')
-    console.log('👤 Current user:', {
-      id: session.user.id,
-      email: session.user.email,
-      propertyId: session.user.propertyId,
-      roomId: session.user.roomId,
-    })
+    console.log('🔄 Starting customer import/sync from Beds24...')
 
-    // Fetch all bookings from our existing bookings endpoint
-    const bookingsUrl = new URL('/api/dashboard/bookings', request.url)
-    bookingsUrl.protocol = request.url.startsWith('https') ? 'https' : 'http'
-    bookingsUrl.host = request.headers.get('host') || 'localhost:3000'
-
-    const bookingsResponse = await fetch(bookingsUrl.toString(), {
-      headers: {
-        cookie: request.headers.get('cookie') || '',
-      },
-    })
-
-    if (!bookingsResponse.ok) {
-      console.error('❌ Failed to fetch bookings:', bookingsResponse.status)
-      return NextResponse.json(
-        { error: 'Failed to fetch bookings from Beds24' },
-        { status: 500 }
-      )
-    }
-
-    const bookingsData = await bookingsResponse.json()
-    console.log('📦 Received bookings data:', typeof bookingsData, Array.isArray(bookingsData))
-
-    // Extract bookings array - handle both array and {data: [...]} formats
-    let bookings: any[] = []
-    if (Array.isArray(bookingsData)) {
-      bookings = bookingsData
-    } else if (bookingsData.data && Array.isArray(bookingsData.data)) {
-      bookings = bookingsData.data
-    } else {
-      console.error('❌ Unexpected bookings data format:', bookingsData)
-      return NextResponse.json(
-        { error: 'Unexpected bookings data format' },
-        { status: 500 }
-      )
-    }
-
-    console.log(`📊 Found ${bookings.length} bookings to process`)
-    
-    // Debug: Show first booking structure
-    if (bookings.length > 0) {
-      console.log('🔍 First booking sample:', JSON.stringify({
-        id: bookings[0].id,
-        propertyId: bookings[0].propertyId,
-        roomId: bookings[0].roomId,
-        firstName: bookings[0].firstName,
-        lastName: bookings[0].lastName,
-      }, null, 2))
-    }
-
-    let importedCount = 0
-    let updatedCount = 0
-    let skippedCount = 0
-    let errorCount = 0
-
-    // Since bookings are already filtered by session.user (propertyId + roomId),
-    // all bookings belong to the current user. So we use session.user.id directly.
+    const bookings = await fetchAllBookingsForSession(session)
+    const guests = collectUniqueGuests(bookings)
     const currentUserId = session.user.id
-    console.log(`📝 All bookings will be assigned to user: ${currentUserId}`)
 
-    // Process each booking
-    for (const booking of bookings) {
-      try {
-        
-        // Extract guest information
-        const firstName = String(booking.firstName || '').trim()
-        const lastName = String(booking.lastName || '').trim()
-        const fullName = `${firstName} ${lastName}`.trim()
-        
-        // Skip if no name
-        if (!fullName || fullName.length < 2) {
-          skippedCount++
-          continue
-        }
+    let createdCount = 0
+    let updatedCount = 0
+    let errorCount = 0
+    const createdNames: string[] = []
 
-        const phone = String(booking.mobile || booking.phone || '').trim() || null
-        const email = String(booking.email || '').trim() || null
-        const bookingDate = booking.arrival || booking.bookingTime || new Date().toISOString()
-        
-        // Extract booking source (channel)
-        const apiSource = String(booking.apiSource || booking.channel || '').toLowerCase()
-        let bookingSource = 'direct'
-        
-        if (apiSource.includes('airbnb')) {
-          bookingSource = 'airbnb'
-        } else if (apiSource.includes('booking')) {
-          bookingSource = 'booking.com'
-        } else if (apiSource.includes('direct')) {
-          bookingSource = 'direct'
-        } else if (apiSource && apiSource !== 'direct') {
-          bookingSource = apiSource
-        }
+    for (const guest of guests) {
+      const result = await addOrUpdateCustomer({
+        userId: currentUserId,
+        fullName: guest.fullName,
+        phone: guest.phone,
+        email: guest.email,
+        bookingDate: guest.bookingDate,
+        bookingSource: guest.bookingSource,
+        incrementBookings: false,
+      })
 
-        // Import customer with current user_id
-        // (All bookings are already filtered by this user's propertyId + roomId)
-        const result = await addOrUpdateCustomer({
-          userId: currentUserId,
-          fullName,
-          phone,
-          email,
-          bookingDate,
-          bookingSource,
-        })
-
-        if (result.success) {
-          // Check if it was a new customer or update
-          // We can't tell from the current function, so we'll count all as imported
-          importedCount++
-        } else {
-          console.error(`❌ Failed to import customer ${fullName}:`, result.error)
-          errorCount++
-        }
-      } catch (error) {
-        console.error('❌ Error processing booking:', error)
+      if (!result.success) {
         errorCount++
+        continue
+      }
+      if (result.created) {
+        createdCount++
+        if (createdNames.length < 20) createdNames.push(guest.fullName)
+      } else if (result.updated) {
+        updatedCount++
       }
     }
 
     console.log('✅ Import complete:', {
-      total: bookings.length,
-      imported: importedCount,
-      skipped: skippedCount,
+      bookings: bookings.length,
+      guests: guests.length,
+      created: createdCount,
+      updated: updatedCount,
       errors: errorCount,
     })
 
@@ -193,19 +248,22 @@ export async function POST(request: NextRequest) {
       message: 'Import completed successfully',
       stats: {
         totalBookings: bookings.length,
-        customersImported: importedCount,
-        skipped: skippedCount,
+        uniqueGuests: guests.length,
+        customersCreated: createdCount,
+        customersUpdated: updatedCount,
+        customersImported: createdCount + updatedCount,
         errors: errorCount,
+        createdNames,
       },
     })
   } catch (error) {
     console.error('Error in POST /api/dashboard/customers/import:', error)
     return NextResponse.json(
-      { 
+      {
         error: 'Internal server error',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }

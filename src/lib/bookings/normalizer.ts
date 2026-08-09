@@ -21,13 +21,35 @@ export function extractInvoiceTotal(items: unknown[]): number {
 /** Canonical booking source/channel label, shared across the codebase. */
 export type BookingSource = 'airbnb' | 'booking.com' | 'direct' | 'other'
 
-/** Map Beds24 apiSource field to a canonical booking source label. */
-export function parseBookingSource(apiSource: unknown): BookingSource {
-  const src = String(apiSource ?? '').toLowerCase()
+/**
+ * Map Beds24 channel fields to a canonical booking source.
+ * Airbnb often lands in `channel` / `referer` rather than `apiSource`.
+ */
+export function parseBookingSource(...sources: unknown[]): BookingSource {
+  const src = sources
+    .map((value) => String(value ?? '').toLowerCase())
+    .filter(Boolean)
+    .join(' ')
+
+  if (!src) return 'other'
   if (src.includes('airbnb')) return 'airbnb'
   if (src.includes('booking')) return 'booking.com'
+  if (src.includes('direct') || src.includes('website') || src.includes('hostly')) return 'direct'
   return 'other'
 }
+
+/** Prefer whatever channel field Beds24 populated on the booking payload. */
+export function extractBookingSource(booking: Record<string, unknown>): BookingSource {
+  return parseBookingSource(
+    booking.apiSource,
+    booking.channel,
+    booking.referer,
+    booking.referrer,
+    booking.bookingSource,
+    booking.source,
+  )
+}
+
 
 /** Extract the booking ID from a Beds24 POST /bookings response. */
 export function extractBookingId(beds24Response: unknown): string {

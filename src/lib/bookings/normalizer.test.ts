@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   extractInvoiceTotal,
   parseBookingSource,
+  extractBookingSource,
   extractBookingId,
   normalizeBookingItem,
   isConfirmedBookingStatus,
@@ -49,12 +50,22 @@ describe('parseBookingSource', () => {
     ['airbnb.com',    'airbnb'],
     ['Booking',       'booking.com'],
     ['booking.com',   'booking.com'],
-    ['Direct',        'other'],
+    ['Direct',        'direct'],
     ['',              'other'],
     [undefined,       'other'],
     [null,            'other'],
   ] as const)('"%s" → "%s"', (input, expected) => {
     expect(parseBookingSource(input)).toBe(expected)
+  })
+})
+
+describe('extractBookingSource', () => {
+  it('detects Airbnb from channel when apiSource is empty', () => {
+    expect(extractBookingSource({ channel: 'Airbnb', apiSource: '' })).toBe('airbnb')
+  })
+
+  it('detects Airbnb from referer', () => {
+    expect(extractBookingSource({ referer: 'airbnb.com' })).toBe('airbnb')
   })
 })
 

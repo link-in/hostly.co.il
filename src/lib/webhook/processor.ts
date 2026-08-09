@@ -19,12 +19,11 @@ import {
 } from '@/lib/notifications/bookingAlerts'
 import { normalizePhoneNumber } from '@/lib/utils/phoneFormatter'
 import {
-  parseBookingSource,
+  extractBookingSource,
   isConfirmedBookingStatus,
   isCancelledBookingStatus,
   isBookingRequestStatus,
   isInquiryBookingStatus,
-  isBookingModificationWebhook,
 } from '@/lib/bookings/normalizer'
 import type { Beds24Booking, Beds24WebhookWrapper } from './types'
 
@@ -55,25 +54,23 @@ export async function processWebhook(webhookData: Beds24WebhookWrapper): Promise
 
   if (await isDuplicateNotification(booking.id)) {
     console.log(`⚠️ Duplicate webhook for booking ${booking.id}`)
+    // Still upsert the customer — covers cases where WhatsApp already ran but
+    // customer save failed, or the guest was missing from the CRM.
+    const userId = await getUserIdByPropertyRoom(booking.propertyId, booking.roomId)
+    const guestName = `${booking.firstName} ${booking.lastName}`.trim()
+    const guestPhoneRaw = booking.mobile || booking.phone || ''
+    const guestPhone = guestPhoneRaw ? normalizePhoneNumber(guestPhoneRaw) : ''
+    const guestEmail = booking.email || ''
+    if (guestName) {
+      await maybeSaveCustomer(userId, guestName, guestPhone, guestEmail, booking)
+    }
+    maybeRefreshCache(userId, booking).catch((e) => console.error('[Cache] refresh failed:', e))
     return { success: true, message: `Booking ${booking.id} already processed`, duplicate: true }
   }
 
   if (!isConfirmedBookingStatus(booking.status)) {
     console.log(`⚠️ Skipping booking with status: ${booking.status}`)
     return { success: true, message: `Booking status '${booking.status}' skipped`, skipped: true }
-  }
-
-  // Chat / note / channel updates re-fire the same confirmed booking with a later
-  // modifiedTime — refresh cache only, do not send another "new booking" WhatsApp.
-  if (isBookingModificationWebhook(booking)) {
-    console.log(`ℹ️ Skipping new-booking WhatsApp for booking ${booking.id} (modification / chat update)`)
-    const userId = await getUserIdByPropertyRoom(booking.propertyId, booking.roomId)
-    maybeRefreshCache(userId, booking).catch((e) => console.error('[Cache] refresh failed:', e))
-    return {
-      success: true,
-      message: `Booking ${booking.id} modification skipped (no WhatsApp)`,
-      skipped: true,
-    }
   }
 
   const guestName = `${booking.firstName} ${booking.lastName}`.trim()
@@ -188,7 +185,7 @@ async function maybeSaveCustomer(
     phone: guestPhone || null,
     email: guestEmail || null,
     bookingDate: booking.arrival || new Date().toISOString(),
-    bookingSource: parseBookingSource(booking.apiSource),
+    bookingSource: extractBookingSource(booking as unknown as Record<string, unknown>),
   })
   if (result.success) {
     console.log('✅ Customer saved from webhook:', result.customerId)

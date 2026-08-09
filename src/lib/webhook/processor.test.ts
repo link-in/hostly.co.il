@@ -97,7 +97,7 @@ describe('Webhook — booking source', () => {
   })
 
   it('falls back to "other" for unknown sources', () => {
-    expect(parseBookingSource('Direct')).toBe('other')
+    expect(parseBookingSource('Direct')).toBe('direct')
     expect(parseBookingSource('')).toBe('other')
     expect(parseBookingSource(undefined)).toBe('other')
   })
