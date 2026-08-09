@@ -324,6 +324,13 @@ export async function POST(request: Request) {
 
       message += `נשמח לארח אותך! 🎉`
 
+      const metaBookingId =
+        typeof firstBooking.id === 'string' || typeof firstBooking.id === 'number'
+          ? firstBooking.id
+          : bookingId !== 'N/A'
+            ? bookingId
+            : (recordId ?? null)
+
       whatsappResult = await sendWhatsAppMessage(
         {
           to: guestPhone,
@@ -331,7 +338,7 @@ export async function POST(request: Request) {
         },
         {
           userId: session?.user?.id,
-          bookingId: firstBooking?.id ?? bookingId ?? recordId,
+          bookingId: metaBookingId,
           messageType: 'manual_booking_guest',
           recipientRole: 'guest',
           recipientName: guestName,
