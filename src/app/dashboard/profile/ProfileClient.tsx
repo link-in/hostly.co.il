@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { useSession, signOut } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ExternalLink, Loader2, Pencil, RefreshCw, MessageSquare } from 'lucide-react'
+import { ExternalLink, Loader2, Pencil, RefreshCw, MessageSquare, FileText, CheckCircle2 } from 'lucide-react'
 import DashboardHeader from '@/components/DashboardHeader'
 import DashboardLoader from '@/components/DashboardLoader'
 
@@ -60,6 +60,19 @@ const ProfileClient = () => {
   const [liveResult, setLiveResult] = useState<string | null>(null)
   const [liveError, setLiveError] = useState<string | null>(null)
 
+  // Receipt provider (iCount)
+  const [receiptProvider, setReceiptProvider] = useState<'icount' | 'mock'>('icount')
+  const [receiptApiToken, setReceiptApiToken] = useState('')
+  const [receiptHasToken, setReceiptHasToken] = useState(false)
+  const [receiptTokenPreview, setReceiptTokenPreview] = useState<string | null>(null)
+  const [receiptDefaultVatId, setReceiptDefaultVatId] = useState('')
+  const [receiptIsActive, setReceiptIsActive] = useState(true)
+  const [receiptLoading, setReceiptLoading] = useState(true)
+  const [receiptSaving, setReceiptSaving] = useState(false)
+  const [receiptTesting, setReceiptTesting] = useState(false)
+  const [receiptMsg, setReceiptMsg] = useState<string | null>(null)
+  const [receiptErr, setReceiptErr] = useState<string | null>(null)
+
   // Custom styles for inputs
   const inputStyle = {
     borderRadius: '8px',
@@ -78,9 +91,75 @@ const ProfileClient = () => {
     fetch('/api/dashboard/subscription')
       .then((r) => r.json())
       .then((data) => setSub(data))
-      .catch(() => null)
+      .catch(() => setSub(null))
       .finally(() => setSubLoading(false))
-  }, [session])
+  }, [session?.user])
+
+  // Load receipt provider settings
+  useEffect(() => {
+    if (!session?.user) return
+    setReceiptLoading(true)
+    fetch('/api/dashboard/receipts/settings')
+      .then(async (r) => {
+        const data = await r.json()
+        if (!r.ok) throw new Error(data.error || 'שגיאה בטעינת הגדרות קבלות')
+        setReceiptProvider(data.provider === 'mock' ? 'mock' : 'icount')
+        setReceiptHasToken(Boolean(data.hasApiToken))
+        setReceiptTokenPreview(data.apiTokenPreview ?? null)
+        setReceiptDefaultVatId(data.defaultVatId || '')
+        setReceiptIsActive(data.isActive !== false)
+      })
+      .catch((err) => {
+        setReceiptErr(err instanceof Error ? err.message : String(err))
+      })
+      .finally(() => setReceiptLoading(false))
+  }, [session?.user])
+
+  const saveReceiptSettings = async (test: boolean) => {
+    setReceiptMsg(null)
+    setReceiptErr(null)
+    if (test) setReceiptTesting(true)
+    else setReceiptSaving(true)
+
+    try {
+      const res = await fetch('/api/dashboard/receipts/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          provider: receiptProvider,
+          apiToken: receiptApiToken.trim() || undefined,
+          keepExistingToken: true,
+          defaultVatId: receiptDefaultVatId.trim() || null,
+          isActive: receiptIsActive,
+          test,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'שמירה נכשלה')
+
+      setReceiptHasToken(Boolean(data.hasApiToken))
+      setReceiptTokenPreview(data.apiTokenPreview ?? null)
+      setReceiptApiToken('')
+      setReceiptProvider(data.provider === 'mock' ? 'mock' : 'icount')
+      setReceiptDefaultVatId(data.defaultVatId || '')
+      setReceiptIsActive(data.isActive !== false)
+
+      if (test) {
+        if (data.testResult?.ok) {
+          setReceiptMsg('החיבור ל-iCount תקין')
+        } else {
+          throw new Error(data.testResult?.error || 'בדיקת חיבור נכשלה')
+        }
+      } else {
+        setReceiptMsg('הגדרות הקבלות נשמרו')
+      }
+    } catch (err) {
+      setReceiptErr(err instanceof Error ? err.message : String(err))
+    } finally {
+      setReceiptSaving(false)
+      setReceiptTesting(false)
+    }
+  }
 
   const handleConnectAirbnb = async () => {
     setAirbnbLinkError(null)
@@ -537,6 +616,167 @@ const ProfileClient = () => {
                       </div>
                     </div>
                   )}
+
+                  {/* Receipt provider (iCount) */}
+                  <div className="col-12">
+                    <hr
+                      className="my-4"
+                      style={{
+                        background: 'linear-gradient(90deg, transparent, #667eea, transparent)',
+                        height: '2px',
+                        border: 'none',
+                      }}
+                    />
+                    <h3
+                      className="h5 fw-bold mb-3 d-flex align-items-center gap-2"
+                      style={{
+                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        backgroundClip: 'text',
+                      }}
+                    >
+                      <FileText size={20} style={{ color: '#667eea', WebkitTextFillColor: '#667eea' }} />
+                      הנפקת קבלות / חשבוניות
+                    </h3>
+                    <p className="text-muted small mb-3">
+                      חיבור לספק מסמכי מס (כרגע iCount). ניתן להחליף ספק בעתיד בלי לשנות את מסך ההנפקה מהזמנה.
+                      צור API Token ב-iCount תחת הגדרות ← API.
+                    </p>
+
+                    {receiptLoading ? (
+                      <div className="text-muted small">טוען הגדרות…</div>
+                    ) : (
+                      <div className="row g-3">
+                        <div className="col-md-6">
+                          <label className="form-label fw-semibold" style={{ color: '#667eea' }}>
+                            ספק
+                          </label>
+                          <select
+                            className="form-select shadow-sm"
+                            style={inputStyle}
+                            value={receiptProvider}
+                            onChange={(e) =>
+                              setReceiptProvider(e.target.value === 'mock' ? 'mock' : 'icount')
+                            }
+                          >
+                            <option value="icount">iCount</option>
+                            <option value="mock">Mock (בדיקות)</option>
+                          </select>
+                        </div>
+                        <div className="col-md-6">
+                          <label className="form-label fw-semibold" style={{ color: '#667eea' }}>
+                            פעיל
+                          </label>
+                          <div className="form-check form-switch mt-2">
+                            <input
+                              className="form-check-input"
+                              type="checkbox"
+                              id="receiptIsActive"
+                              checked={receiptIsActive}
+                              onChange={(e) => setReceiptIsActive(e.target.checked)}
+                            />
+                            <label className="form-check-label" htmlFor="receiptIsActive">
+                              אפשר הנפקת מסמכים
+                            </label>
+                          </div>
+                        </div>
+                        {receiptProvider === 'icount' && (
+                          <>
+                            <div className="col-12">
+                              <label className="form-label fw-semibold" style={{ color: '#667eea' }}>
+                                API Token (iCount)
+                              </label>
+                              <input
+                                type="password"
+                                className="form-control shadow-sm"
+                                style={inputStyle}
+                                value={receiptApiToken}
+                                onChange={(e) => setReceiptApiToken(e.target.value)}
+                                placeholder={
+                                  receiptHasToken
+                                    ? `שמור · ${receiptTokenPreview || '••••'}`
+                                    : 'הדבק API Token'
+                                }
+                                dir="ltr"
+                                autoComplete="off"
+                              />
+                              <small className="text-muted">
+                                השאר ריק כדי לשמור את הטוקן הקיים
+                                {receiptHasToken && receiptTokenPreview
+                                  ? ` (${receiptTokenPreview})`
+                                  : ''}
+                              </small>
+                            </div>
+                            <div className="col-md-6">
+                              <label className="form-label fw-semibold" style={{ color: '#667eea' }}>
+                                ח.פ / ע.מ ברירת מחדל (אופציונלי)
+                              </label>
+                              <input
+                                type="text"
+                                className="form-control shadow-sm"
+                                style={inputStyle}
+                                value={receiptDefaultVatId}
+                                onChange={(e) => setReceiptDefaultVatId(e.target.value)}
+                                placeholder="לחשבוניות כשאין מספר ללקוח"
+                                dir="ltr"
+                              />
+                            </div>
+                          </>
+                        )}
+                        <div className="col-12 d-flex flex-wrap gap-2">
+                          <button
+                            type="button"
+                            className="hostly-btn hostly-btn-sm hostly-btn-primary"
+                            onClick={() => saveReceiptSettings(false)}
+                            disabled={receiptSaving || receiptTesting}
+                          >
+                            {receiptSaving ? (
+                              <>
+                                <Loader2 size={14} className="spin" />
+                                שומר…
+                              </>
+                            ) : (
+                              <>
+                                <CheckCircle2 size={14} />
+                                שמור הגדרות
+                              </>
+                            )}
+                          </button>
+                          {receiptProvider === 'icount' && (
+                            <button
+                              type="button"
+                              className="hostly-btn hostly-btn-sm hostly-btn-ghost"
+                              onClick={() => saveReceiptSettings(true)}
+                              disabled={receiptSaving || receiptTesting}
+                            >
+                              {receiptTesting ? (
+                                <>
+                                  <Loader2 size={14} className="spin" />
+                                  בודק…
+                                </>
+                              ) : (
+                                <>
+                                  <RefreshCw size={14} />
+                                  בדוק חיבור
+                                </>
+                              )}
+                            </button>
+                          )}
+                        </div>
+                        {receiptMsg && (
+                          <div className="col-12">
+                            <div className="alert alert-success mb-0 py-2 small">{receiptMsg}</div>
+                          </div>
+                        )}
+                        {receiptErr && (
+                          <div className="col-12">
+                            <div className="alert alert-danger mb-0 py-2 small">{receiptErr}</div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
 
                   {/* Post-Checkout Review Reminder Section */}
                   <div className="col-12">

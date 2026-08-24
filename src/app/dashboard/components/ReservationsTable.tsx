@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import { Phone, Pencil, X, Sparkles, Map, Plane, Home, Hotel, Globe, Bird } from 'lucide-react'
+import { Phone, Pencil, X, Sparkles, Map, Plane, Home, Hotel, Globe, Bird, FileText } from 'lucide-react'
 import { Icon } from '@iconify/react'
 import type { Reservation } from '@/lib/dashboard/types'
 import { formatCurrency, formatDate, formatStatus } from '@/lib/dashboard/utils'
@@ -176,9 +176,19 @@ type ReservationsTableProps = {
   onReservationViewed?: (reservationId: string) => void
   onEditReservation?: (reservation: Reservation) => void
   onDeleteReservation?: (reservation: Reservation) => void
+  onIssueReceipt?: (reservation: Reservation) => void
+  /** Booking IDs that already have a successfully issued receipt */
+  receiptIssuedBookingIds?: Set<string>
 }
 
-const ReservationsTable = ({ reservations, onReservationViewed, onEditReservation, onDeleteReservation }: ReservationsTableProps) => {
+const ReservationsTable = ({
+  reservations,
+  onReservationViewed,
+  onEditReservation,
+  onDeleteReservation,
+  onIssueReceipt,
+  receiptIssuedBookingIds,
+}: ReservationsTableProps) => {
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [mobileVisibleCount, setMobileVisibleCount] = useState(6)
   const [viewedReservations, setViewedReservations] = useState<Set<string>>(new Set())
@@ -408,6 +418,36 @@ const ReservationsTable = ({ reservations, onReservationViewed, onEditReservatio
                     </span>
                   </span>
                 </div>
+
+                {onIssueReceipt &&
+                  reservation.status !== 'cancelled' &&
+                  !receiptIssuedBookingIds?.has(reservation.id) && (
+                  <div className="mt-2 mb-2">
+                    <button
+                      type="button"
+                      className="hostly-btn hostly-btn-primary w-100"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onIssueReceipt(reservation)
+                      }}
+                    >
+                      <FileText size={16} />
+                      הוצא קבלה / חשבונית
+                    </button>
+                  </div>
+                )}
+                {receiptIssuedBookingIds?.has(reservation.id) && (
+                  <div
+                    className="mt-2 mb-2 small text-center py-2 rounded"
+                    style={{
+                      background: 'rgba(34,197,94,0.15)',
+                      border: '1px solid rgba(74,222,128,0.35)',
+                      color: 'rgba(187,247,208,0.95)',
+                    }}
+                  >
+                    הופקה קבלה להזמנה זו
+                  </div>
+                )}
                 
                 <div className="reservation-detail-row">
                   <span className="reservation-detail-label">מספר אורחים</span>
@@ -480,7 +520,9 @@ const ReservationsTable = ({ reservations, onReservationViewed, onEditReservatio
                 )}
                 
                 {/* Action Buttons for Direct bookings */}
-                {(onEditReservation || onDeleteReservation) && reservation.source && reservation.source.toLowerCase().includes('direct') && (
+                {(onEditReservation || onDeleteReservation) &&
+                  reservation.source &&
+                  reservation.source.toLowerCase().includes('direct') && (
                   <div className="mt-3 pt-3 d-flex gap-2 flex-wrap" style={{ borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
                     {onEditReservation && (
                       <button
@@ -652,116 +694,171 @@ const ReservationsTable = ({ reservations, onReservationViewed, onEditReservatio
                   }}>
                     <div className="p-3">
                       <div className="row g-3">
-                        <div className="col-md-6">
-                          <div className="small mb-1" style={{ color: 'rgba(249, 147, 251, 0.8)' }}>מזהה הזמנה</div>
-                          <div className="fw-semibold" style={{ color: 'white' }}>{reservation.id}</div>
+                        {/* Info — two columns */}
+                        <div className="col-md-8">
+                          <div className="row g-3">
+                            <div className="col-md-6">
+                              <div className="small mb-1" style={{ color: 'rgba(249, 147, 251, 0.8)' }}>מזהה הזמנה</div>
+                              <div className="fw-semibold" style={{ color: 'white' }}>{reservation.id}</div>
+                            </div>
+                            <div className="col-md-6">
+                              <div className="small mb-1" style={{ color: 'rgba(249, 147, 251, 0.8)' }}>שם אורח מלא</div>
+                              <div className="fw-semibold" style={{ color: 'white' }}>{reservation.guestName}</div>
+                            </div>
+                            <div className="col-md-6">
+                              <div className="small mb-1" style={{ color: 'rgba(249, 147, 251, 0.8)' }}>תאריך כניסה</div>
+                              <div style={{ color: 'rgba(255, 255, 255, 0.9)' }}>{formatDate(reservation.checkIn)}</div>
+                            </div>
+                            <div className="col-md-6">
+                              <div className="small mb-1" style={{ color: 'rgba(249, 147, 251, 0.8)' }}>תאריך יציאה</div>
+                              <div style={{ color: 'rgba(255, 255, 255, 0.9)' }}>{formatDate(reservation.checkOut)}</div>
+                            </div>
+                            <div className="col-md-6">
+                              <div className="small mb-1" style={{ color: 'rgba(249, 147, 251, 0.8)' }}>מספר לילות</div>
+                              <div style={{ color: 'rgba(255, 255, 255, 0.9)' }}>{reservation.nights}</div>
+                            </div>
+                            <div className="col-md-6">
+                              <div className="small mb-1" style={{ color: 'rgba(249, 147, 251, 0.8)' }}>מספר אורחים</div>
+                              <div style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
+                                {reservation.adults || reservation.children ? (
+                                  <>
+                                    {reservation.adults ? `${reservation.adults} מבוגרים` : ''}
+                                    {reservation.adults && reservation.children ? ' + ' : ''}
+                                    {reservation.children ? `${reservation.children} ילדים` : ''}
+                                  </>
+                                ) : reservation.guests ? (
+                                  reservation.guests
+                                ) : (
+                                  '—'
+                                )}
+                              </div>
+                            </div>
+                            {reservation.phone ? (
+                              <div className="col-md-6">
+                                <div className="small mb-1" style={{ color: 'rgba(249, 147, 251, 0.8)' }}>טלפון</div>
+                                <div>
+                                  <PhoneActions phone={reservation.phone} />
+                                </div>
+                              </div>
+                            ) : null}
+                            {reservation.email ? (
+                              <div className="col-md-6">
+                                <div className="small mb-1" style={{ color: 'rgba(249, 147, 251, 0.8)' }}>אימייל</div>
+                                <div>
+                                  <a href={`mailto:${reservation.email}`} className="text-decoration-none" style={{ color: '#f093fb' }}>
+                                    {reservation.email}
+                                  </a>
+                                </div>
+                              </div>
+                            ) : null}
+                            <div className="col-md-6">
+                              <div className="small mb-1" style={{ color: 'rgba(249, 147, 251, 0.8)' }}>מקור הזמנה</div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'rgba(255, 255, 255, 0.9)' }}>
+                                {getPlatformIcon(reservation.source, 20)}
+                                <span>{reservation.source ?? '—'}</span>
+                              </div>
+                            </div>
+                            <div className="col-md-6">
+                              <div className="small mb-1" style={{ color: 'rgba(249, 147, 251, 0.8)' }}>סכום כולל</div>
+                              <div className="fw-bold" style={{ color: '#f093fb' }}>{formatCurrency(reservation.total)}</div>
+                            </div>
+                            {reservation.notes ? (
+                              <div className="col-12">
+                                <div className="small mb-1" style={{ color: 'rgba(249, 147, 251, 0.8)' }}>הערות</div>
+                                <div className="border rounded p-2" style={{
+                                  background: 'rgba(0, 0, 0, 0.2)',
+                                  borderColor: 'rgba(249, 147, 251, 0.2)',
+                                  color: 'rgba(255, 255, 255, 0.9)',
+                                }}>{reservation.notes}</div>
+                              </div>
+                            ) : null}
+                          </div>
                         </div>
-                        <div className="col-md-6">
-                          <div className="small mb-1" style={{ color: 'rgba(249, 147, 251, 0.8)' }}>שם אורח מלא</div>
-                          <div className="fw-semibold" style={{ color: 'white' }}>{reservation.guestName}</div>
-                        </div>
-                        <div className="col-md-6">
-                          <div className="small mb-1" style={{ color: 'rgba(249, 147, 251, 0.8)' }}>תאריך כניסה</div>
-                          <div style={{ color: 'rgba(255, 255, 255, 0.9)' }}>{formatDate(reservation.checkIn)}</div>
-                        </div>
-                        <div className="col-md-6">
-                          <div className="small mb-1" style={{ color: 'rgba(249, 147, 251, 0.8)' }}>תאריך יציאה</div>
-                          <div style={{ color: 'rgba(255, 255, 255, 0.9)' }}>{formatDate(reservation.checkOut)}</div>
-                        </div>
-                        <div className="col-md-6">
-                          <div className="small mb-1" style={{ color: 'rgba(249, 147, 251, 0.8)' }}>מספר לילות</div>
-                          <div style={{ color: 'rgba(255, 255, 255, 0.9)' }}>{reservation.nights}</div>
-                        </div>
-                        <div className="col-md-6">
-                          <div className="small mb-1" style={{ color: 'rgba(249, 147, 251, 0.8)' }}>מספר אורחים</div>
-                          <div style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
-                            {reservation.adults || reservation.children ? (
-                              <>
-                                {reservation.adults ? `${reservation.adults} מבוגרים` : ''}
-                                {reservation.adults && reservation.children ? ' + ' : ''}
-                                {reservation.children ? `${reservation.children} ילדים` : ''}
-                              </>
-                            ) : reservation.guests ? (
-                              reservation.guests
-                            ) : (
-                              '—'
+
+                        {/* Actions — third column */}
+                        <div className="col-md-4">
+                          <div
+                            className="d-flex flex-column gap-2 h-100"
+                            style={{
+                              padding: '0.85rem',
+                              borderRadius: 12,
+                              background: 'rgba(255,255,255,0.04)',
+                              border: '1px solid rgba(249, 147, 251, 0.18)',
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <div
+                              className="small fw-semibold mb-1"
+                              style={{ color: 'rgba(249, 147, 251, 0.85)' }}
+                            >
+                              פעולות
+                            </div>
+                            {onIssueReceipt &&
+                              reservation.status !== 'cancelled' &&
+                              !receiptIssuedBookingIds?.has(reservation.id) && (
+                              <button
+                                type="button"
+                                className="hostly-btn hostly-btn-primary w-100"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  onIssueReceipt(reservation)
+                                }}
+                              >
+                                <FileText size={16} />
+                                הוצא קבלה / חשבונית
+                              </button>
+                            )}
+                            {receiptIssuedBookingIds?.has(reservation.id) && (
+                              <div
+                                className="small text-center py-2 rounded"
+                                style={{
+                                  background: 'rgba(34,197,94,0.15)',
+                                  border: '1px solid rgba(74,222,128,0.35)',
+                                  color: 'rgba(187,247,208,0.95)',
+                                }}
+                              >
+                                הופקה קבלה להזמנה זו
+                              </div>
+                            )}
+                            {onEditReservation &&
+                              reservation.source &&
+                              reservation.source.toLowerCase().includes('direct') && (
+                              <button
+                                type="button"
+                                className="hostly-btn hostly-btn-sm hostly-btn-ghost w-100"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  onEditReservation(reservation)
+                                }}
+                              >
+                                <Pencil size={14} />
+                                ערוך הזמנה
+                              </button>
+                            )}
+                            {onDeleteReservation &&
+                              reservation.source &&
+                              reservation.source.toLowerCase().includes('direct') && (
+                              <button
+                                type="button"
+                                className="hostly-btn hostly-btn-sm hostly-btn-danger w-100"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  onDeleteReservation(reservation)
+                                }}
+                              >
+                                <X size={14} />
+                                בטל הזמנה
+                              </button>
+                            )}
+                            {reservation.source &&
+                              reservation.source.toLowerCase().includes('direct') &&
+                              (onEditReservation || onDeleteReservation) && (
+                              <p className="small mb-0 mt-1" style={{ color: 'rgba(255,255,255,0.45)' }}>
+                                עריכה/ביטול להזמנות ישירות בלבד
+                              </p>
                             )}
                           </div>
                         </div>
-                        {reservation.phone ? (
-                          <div className="col-md-6">
-                            <div className="small mb-1" style={{ color: 'rgba(249, 147, 251, 0.8)' }}>טלפון</div>
-                            <div>
-                              <PhoneActions phone={reservation.phone} />
-                            </div>
-                          </div>
-                        ) : null}
-                        {reservation.email ? (
-                          <div className="col-md-6">
-                            <div className="small mb-1" style={{ color: 'rgba(249, 147, 251, 0.8)' }}>אימייל</div>
-                            <div>
-                              <a href={`mailto:${reservation.email}`} className="text-decoration-none" style={{ color: '#f093fb' }}>
-                                {reservation.email}
-                              </a>
-                            </div>
-                          </div>
-                        ) : null}
-                        <div className="col-md-6">
-                          <div className="small mb-1" style={{ color: 'rgba(249, 147, 251, 0.8)' }}>מקור הזמנה</div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'rgba(255, 255, 255, 0.9)' }}>
-                            {getPlatformIcon(reservation.source, 20)}
-                            <span>{reservation.source ?? '—'}</span>
-                          </div>
-                        </div>
-                        <div className="col-md-6">
-                          <div className="small mb-1" style={{ color: 'rgba(249, 147, 251, 0.8)' }}>סכום כולל</div>
-                          <div className="fw-bold" style={{ color: '#f093fb' }}>{formatCurrency(reservation.total)}</div>
-                        </div>
-                        {reservation.notes ? (
-                          <div className="col-12">
-                            <div className="small mb-1" style={{ color: 'rgba(249, 147, 251, 0.8)' }}>הערות</div>
-                            <div className="border rounded p-2" style={{ 
-                              background: 'rgba(0, 0, 0, 0.2)', 
-                              borderColor: 'rgba(249, 147, 251, 0.2)',
-                              color: 'rgba(255, 255, 255, 0.9)'
-                            }}>{reservation.notes}</div>
-                          </div>
-                        ) : null}
-                        {(onEditReservation || onDeleteReservation) && reservation.source && reservation.source.toLowerCase().includes('direct') && (
-                          <div className="col-12 mt-3 pt-3" style={{ borderTop: '1px solid rgba(249, 147, 251, 0.2)' }}>
-                            <div className="d-flex gap-2 flex-wrap">
-                              {onEditReservation && (
-                                <button
-                                  type="button"
-                                  className="hostly-btn hostly-btn-sm hostly-btn-primary"
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    onEditReservation(reservation)
-                                  }}
-                                >
-                                  <Pencil size={14} />
-                                  ערוך הזמנה
-                                </button>
-                              )}
-                              {onDeleteReservation && (
-                                <button
-                                  type="button"
-                                  className="hostly-btn hostly-btn-sm hostly-btn-danger"
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    onDeleteReservation(reservation)
-                                  }}
-                                >
-                                  <X size={14} />
-                                  בטל הזמנה
-                                </button>
-                              )}
-                            </div>
-                            <p className="small text-muted mt-2 mb-0">
-                              ניתן לערוך/לבטל רק הזמנות שנוצרו ישירות במערכת
-                            </p>
-                          </div>
-                        )}
                       </div>
                     </div>
                   </td>

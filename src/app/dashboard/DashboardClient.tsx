@@ -9,6 +9,7 @@ import type { Reservation, RoomPrice } from '@/lib/dashboard/types'
 import { formatCurrency } from '@/lib/dashboard/utils'
 import { getDashboardProvider } from '@/lib/dashboard/getDashboardProvider'
 import ReservationsTable from './components/ReservationsTable'
+import IssueReceiptModal from './components/IssueReceiptModal'
 import StatCard from './components/StatCard'
 import CalendarPricing from './components/CalendarPricing'
 import RoomTabs from './components/RoomTabs'
@@ -209,6 +210,10 @@ const DashboardClient = () => {
   const [saveReservationSuccess, setSaveReservationSuccess] = useState<string | null>(null)
   const [editingReservation, setEditingReservation] = useState<Reservation | null>(null)
   const [isEditing, setIsEditing] = useState(false)
+  const [receiptReservation, setReceiptReservation] = useState<Reservation | null>(null)
+  const [receiptIssuedBookingIds, setReceiptIssuedBookingIds] = useState<Set<string>>(
+    () => new Set()
+  )
   const [newReservation, setNewReservation] = useState({
     firstName: '',
     lastName: '',
@@ -808,6 +813,30 @@ const DashboardClient = () => {
       return () => clearTimeout(timer)
     }
   }, [status, session, router])
+
+  useEffect(() => {
+    if (status !== 'authenticated') return
+
+    let cancelled = false
+    fetch('/api/dashboard/receipts?status=issued&limit=500')
+      .then(async (res) => {
+        if (!res.ok) return
+        const data = await res.json()
+        if (cancelled) return
+        const ids = new Set<string>(
+          (data.issuedBookingIds || data.receipts?.map((r: { bookingId: string }) => r.bookingId) || [])
+            .filter(Boolean)
+        )
+        setReceiptIssuedBookingIds(ids)
+      })
+      .catch(() => {
+        /* non-blocking */
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [status])
 
   // Reset loading state whenever the selected room changes so stale data is hidden
   useEffect(() => {
@@ -1827,6 +1856,8 @@ const DashboardClient = () => {
                   onReservationViewed={markReservationAsViewed}
                   onEditReservation={startEditReservation}
                   onDeleteReservation={handleDeleteReservation}
+                  onIssueReceipt={setReceiptReservation}
+                  receiptIssuedBookingIds={receiptIssuedBookingIds}
                 />
             ) : (
               <div className="text-center py-4" style={{ color: 'rgba(255, 255, 255, 0.7)' }}>
@@ -1914,6 +1945,19 @@ const DashboardClient = () => {
         </div>
 
       </div>
+      {receiptReservation && (
+        <IssueReceiptModal
+          reservation={receiptReservation}
+          onClose={() => setReceiptReservation(null)}
+          onIssued={(bookingId) => {
+            setReceiptIssuedBookingIds((prev) => {
+              const next = new Set(prev)
+              next.add(bookingId)
+              return next
+            })
+          }}
+        />
+      )}
       <Toaster 
         position="top-center" 
         richColors 
