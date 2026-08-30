@@ -9,6 +9,7 @@ import { normalizePhoneNumber } from '@/lib/utils/phoneFormatter'
 import { addOrUpdateCustomer } from '@/lib/customers/addOrUpdateCustomer'
 import { normalizeBookingItem, extractBookingId, extractUserTokens } from '@/lib/bookings/normalizer'
 import { notifyOwnersOfBookingCancellation } from '@/lib/notifications/bookingAlerts'
+import { refreshRoomCache } from '@/lib/availability/cache'
 
 export const dynamic = 'force-dynamic'  // Allow POST requests for creating bookings
 export const revalidate = 0
@@ -736,6 +737,18 @@ export async function DELETE(request: Request) {
         departure: typeof departure === 'string' ? departure : undefined,
         rawPayload: { event: 'cancelled', source: 'dashboard', bookingId, beds24Response: data },
       }).catch((e) => console.error('❌ Cancel WhatsApp failed:', e))
+
+    // Refresh availability cache so the freed dates are immediately visible
+    // on the public calendar. The Beds24 webhook may not arrive for direct API calls.
+    if ( session?.user?.id && userTokens ) {
+      refreshRoomCache(
+        session.user.id,
+        String( propertyId ),
+        String( roomId ),
+        userTokens.accessToken,
+        userTokens.refreshToken,
+      ).catch( ( e ) => console.error( '[Cache] post-cancel refresh failed:', e ) )
+    }
     
     // POST returns array of results
     if (Array.isArray(data) && data.length > 0) {

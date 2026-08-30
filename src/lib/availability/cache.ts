@@ -10,6 +10,7 @@
 
 import { createServiceRoleClient } from '@/lib/supabase/server'
 import { fetchWithTokenRefresh } from '@/lib/beds24/tokenManager'
+import { isCancelledBookingStatus } from '@/lib/bookings/normalizer'
 import crypto from 'crypto'
 
 const BEDS24_BASE_URL = process.env.BEDS24_API_BASE_URL ?? 'https://api.beds24.com/v2'
@@ -193,6 +194,11 @@ async function fetchBlockedDates(
     for ( const booking of bookings ) {
       const b = booking as Record<string, unknown>
 
+      // Skip cancelled bookings — their dates must be freed for new reservations.
+      // Beds24 returns cancelled bookings in the /bookings response by default.
+      const bookingStatus = getString( b, [ 'status' ] ) ?? ''
+      if ( isCancelledBookingStatus( bookingStatus ) ) continue
+
       // Beds24 v2 uses firstNight / lastNight; fall back to arrival/departure
       const firstNight = getString( b, [ 'firstNight', 'arrival', 'checkIn', 'startDate' ] )
       const lastNight  = getString( b, [ 'lastNight',  'departure', 'checkOut', 'endDate' ] )
@@ -360,20 +366,41 @@ export async function refreshRoomCache(
     // ── Preserve manually-blocked dates ──────────────────────────────────────
     // Beds24 calendar GET never returns numAvail, so manually blocked dates
     // (written by writeCacheAvailability in the POST handler) would be reset
-    // to 1 on every cache refresh.  We preserve them by reading existing rows
-    // that are blocked for reasons other than an active booking.
-    const { data: existingCacheRows } = await supabase
+    // to 1 on every cache refresh.  We preserve them using the is_manual_block
+    // flag which is set to true only when the owner explicitly blocks a date
+    // from the dashboard UI.  This prevents cancelled bookings from being
+    // misidentified as manual blocks and staying blocked indefinitely.
+    const { data: existingCacheRows, error: manualBlockQueryError } = await supabase
       .from('availability_cache')
-      .select('date, num_avail')
+      .select('date, num_avail, is_manual_block')
       .eq('user_id', userId)
       .eq('room_id', roomId)
       .eq('num_avail', 0)
 
-    const manuallyBlockedDates = new Set(
-      (existingCacheRows ?? [])
-        .filter((r) => !blockedDates.has(r.date)) // not a booking block — must be manual
-        .map((r) => r.date),
-    )
+    let manuallyBlockedDates: Set<string>
+
+    if ( manualBlockQueryError ) {
+      // is_manual_block column not yet migrated — fall back to old heuristic
+      // (any num_avail=0 row that is not a current booking block is treated as manual).
+      // Run migration 006 to fix cancelled-booking ghost blocks permanently.
+      console.warn( '[AvailabilityCache] is_manual_block column missing — using legacy manual-block heuristic. Run migration 006.' )
+      const { data: fallbackRows } = await supabase
+        .from( 'availability_cache' )
+        .select( 'date' )
+        .eq( 'user_id', userId )
+        .eq( 'room_id', roomId )
+        .eq( 'num_avail', 0 )
+      manuallyBlockedDates = new Set(
+        ( fallbackRows ?? [] ).filter( ( r ) => ! blockedDates.has( r.date ) ).map( ( r ) => r.date ),
+      )
+    } else {
+      // New behaviour: only preserve dates the owner explicitly blocked via UI.
+      manuallyBlockedDates = new Set(
+        ( existingCacheRows ?? [] )
+          .filter( ( r ) => ( r as { date: string; num_avail: number; is_manual_block?: boolean } ).is_manual_block === true )
+          .map( ( r ) => r.date ),
+      )
+    }
 
     const upsertRowsBase = rows.map((row) => ({
       user_id: userId,
@@ -386,6 +413,7 @@ export async function refreshRoomCache(
         : row.numAvail,
       min_stay: row.minStay,
       cached_at: now,
+      is_manual_block: false,
     }))
 
     const upsertRowsWithPrices = rows.map((row, i) => ({

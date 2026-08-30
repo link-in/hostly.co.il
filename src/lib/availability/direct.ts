@@ -8,6 +8,7 @@
  */
 
 import { fetchWithTokenRefresh } from '@/lib/beds24/tokenManager'
+import { isCancelledBookingStatus } from '@/lib/bookings/normalizer'
 import type { AvailabilityRow, CachedAvailability } from './cache'
 
 const BEDS24_BASE_URL = process.env.BEDS24_API_BASE_URL ?? 'https://api.beds24.com/v2'
@@ -195,6 +196,11 @@ async function fetchBlockedDates(
 
 		for ( const booking of bookings ) {
 			const b         = booking as Record<string, unknown>
+
+			// Skip cancelled bookings — their dates must be freed for new reservations.
+			const bookingStatus = getString( b, [ 'status' ] ) ?? ''
+			if ( isCancelledBookingStatus( bookingStatus ) ) continue
+
 			const firstNight = getString( b, [ 'firstNight', 'arrival', 'checkIn', 'startDate' ] )
 			const lastNight  = getString( b, [ 'lastNight', 'departure', 'checkOut', 'endDate' ] )
 

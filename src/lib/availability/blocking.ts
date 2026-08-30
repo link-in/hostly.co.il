@@ -38,6 +38,7 @@ interface AvailabilityCacheRow {
   price: number
   min_stay: number
   cached_at: string
+  is_manual_block: boolean
 }
 
 /** Overlay numAvail from Supabase availability_cache onto a prices array. */
@@ -142,6 +143,7 @@ export function buildCacheRowsFromPayload(
           price: e.price1 ?? 0,
           min_stay: 1,
           cached_at: now,
+          is_manual_block: e.numAvail === 0,
         })
       }
     }
