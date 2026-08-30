@@ -1,6 +1,5 @@
-const CACHE_NAME = 'hostly-v1';
+const CACHE_NAME = 'hostly-v2';
 const STATIC_ASSETS = [
-  '/dashboard',
   '/manifest.json',
   '/photos/hostly-logo.png',
 ];
@@ -28,20 +27,42 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Skip non-GET requests and chrome-extension requests
   if (event.request.method !== 'GET' || event.request.url.startsWith('chrome-extension')) {
     return;
   }
 
-  // Skip API requests - always fetch fresh
+  // API calls — always network, never cache
   if (event.request.url.includes('/api/')) {
     return;
   }
 
+  const url = new URL(event.request.url);
+
+  // HTML pages (dashboard routes) — Network-first so new deploys are visible immediately.
+  // Falls back to cache only when offline.
+  const isNavigationRequest =
+    event.request.mode === 'navigate' ||
+    event.request.headers.get('accept')?.includes('text/html');
+
+  if (isNavigationRequest) {
+    event.respondWith(
+      fetch(event.request)
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            const clone = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+          }
+          return networkResponse;
+        })
+        .catch(() => caches.match(event.request))
+    );
+    return;
+  }
+
+  // Static assets (images, fonts, icons) — Cache-first, update in background
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) {
-        // Return cached version and update in background
         fetch(event.request)
           .then((networkResponse) => {
             if (networkResponse && networkResponse.status === 200) {
