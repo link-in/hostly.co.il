@@ -20,18 +20,19 @@ type CalendarPricingProps = {
 const DEFAULT_PRICE = undefined
 
 function getSegmentBarStyle(status: ReservationStatus): React.CSSProperties {
-  // Only channel requests get amber; confirmed/new/pending bookings stay red.
+  // Requests (pending channel) = amber — awaiting approval
   if (status === 'request') {
     return {
-      background: 'rgba(245, 158, 11, 0.3)',
-      border: '1.5px dashed rgba(251, 191, 36, 0.9)',
-      color: 'rgba(254, 243, 199, 0.98)',
+      background: 'rgba(245, 158, 11, 0.15)',
+      border: '1.5px dashed rgba(217, 119, 6, 0.7)',
+      color: '#92400E',
     }
   }
+  // Confirmed/new/pending bookings = teal-green — positive, occupied
   return {
-    background: 'rgba(239, 68, 68, 0.3)',
-    border: '1px solid rgba(239, 68, 68, 0.5)',
-    color: 'rgba(255, 200, 200, 0.95)',
+    background: 'rgba(16, 185, 129, 0.15)',
+    border: '1px solid rgba(16, 185, 129, 0.5)',
+    color: '#065F46',
   }
 }
 
@@ -484,10 +485,10 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated }: CalendarPric
               }}
               style={{
                 background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px',
-                borderRadius: 8, display: 'flex', alignItems: 'center', gap: 6,
-                color: 'rgba(249, 147, 251, 0.9)', fontSize: '1.1rem', fontWeight: 600,
+                borderRadius: 6, display: 'flex', alignItems: 'center', gap: 6,
+                color: '#2F3133', fontSize: '1.05rem', fontWeight: 600,
               }}
-              onMouseEnter={e => (e.currentTarget.style.background = 'rgba(102,126,234,0.1)')}
+              onMouseEnter={e => (e.currentTarget.style.background = 'rgba(113,51,217,0.07)')}
               onMouseLeave={e => (e.currentTarget.style.background = 'none')}
             >
               {monthLabel}
@@ -509,23 +510,21 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated }: CalendarPric
                   top: pickerPos.top,
                   left: pickerPos.left,
                   zIndex: 9999,
-                  background: 'linear-gradient(135deg, #1e293b 0%, #2d3748 100%)',
-                  borderRadius: 12,
+                  background: '#fff',
+                  borderRadius: 8,
                   padding: 14,
                   width: 248,
-                  boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
-                  border: '1px solid rgba(102,126,234,0.3)',
+                  boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+                  border: '1px solid #CED7E0',
                 }}>
-                  {/* Year row */}
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                    <span style={{ fontWeight: 700, fontSize: 14, color: 'rgba(249,147,251,0.9)', paddingRight: 4 }}>{pickerYear}</span>
+                    <span style={{ fontWeight: 700, fontSize: 14, color: '#2F3133', paddingRight: 4 }}>{pickerYear}</span>
                     <button type="button" onClick={() => setPickerYear(y => y + 1)}
-                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.6)', padding: '2px 8px', borderRadius: 6, fontSize: 16, lineHeight: 1 }}
-                      onMouseEnter={e => (e.currentTarget.style.color = 'white')}
-                      onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.6)')}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6C7884', padding: '2px 8px', borderRadius: 6, fontSize: 16, lineHeight: 1 }}
+                      onMouseEnter={e => (e.currentTarget.style.color = '#7133D9')}
+                      onMouseLeave={e => (e.currentTarget.style.color = '#6C7884')}
                     >›</button>
                   </div>
-                  {/* Month grid */}
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 5 }}>
                     {HEBREW_MONTHS.map((name, idx) => {
                       const isActive = currentMonth.getMonth() === idx && currentMonth.getFullYear() === pickerYear
@@ -539,14 +538,14 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated }: CalendarPric
                             setPickerPos(null)
                           }}
                           style={{
-                            padding: '7px 4px', border: 'none', borderRadius: 8, fontSize: 12, cursor: 'pointer',
+                            padding: '7px 4px', border: 'none', borderRadius: 6, fontSize: 12, cursor: 'pointer',
                             fontWeight: isActive ? 700 : 400,
-                            background: isActive ? 'linear-gradient(135deg,#667eea,#764ba2)' : 'rgba(255,255,255,0.06)',
-                            color: isActive ? 'white' : 'rgba(255,255,255,0.75)',
+                            background: isActive ? '#7133D9' : '#F2F6FA',
+                            color: isActive ? 'white' : '#2F3133',
                             transition: 'background 0.15s',
                           }}
-                          onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = 'rgba(102,126,234,0.25)' }}
-                          onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = 'rgba(255,255,255,0.06)' }}
+                          onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = '#E7E1FF' }}
+                          onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = '#F2F6FA' }}
                         >
                           {name}
                         </button>
@@ -631,24 +630,24 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated }: CalendarPric
             </button>
           </div>
         </div>
-        <div className="mb-2" style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', textAlign: 'right', direction: 'rtl' }}>
-          לחץ על תאריך לבחירה · <kbd style={{ background: 'rgba(102,126,234,0.2)', border: '1px solid rgba(102,126,234,0.4)', borderRadius: '3px', padding: '0 4px', color: 'rgba(255,255,255,0.6)', fontSize: '10px' }}>Shift</kbd> + לחיצה לבחירת טווח
+        <div className="mb-2" style={{ fontSize: '11px', color: '#6C7884', textAlign: 'right', direction: 'rtl' }}>
+          לחץ על תאריך לבחירה · <kbd style={{ background: '#F2F6FA', border: '1px solid #CED7E0', borderRadius: '3px', padding: '0 4px', color: '#5B6670', fontSize: '10px' }}>Shift</kbd> + לחיצה לבחירת טווח
         </div>
         <div
-          className="rounded-4"
+          className="rounded-3"
           style={{
             overflowX: 'auto',
             overflowY: 'hidden',
             WebkitOverflowScrolling: 'touch',
             touchAction: 'pan-x',
-            background: 'linear-gradient(135deg, #1e293b 0%, #334155 50%, #475569 100%)',
-            border: '1px solid rgba(102, 126, 234, 0.2)',
+            background: '#fff',
+            border: '1px solid #CED7E0',
           }}
         >
           <div style={{ minWidth: '520px', paddingBottom: '6px' }}>
             <div className="d-grid" style={{ gridTemplateColumns: 'repeat(7, 1fr)', direction: 'rtl' }}>
               {['א׳', 'ב׳', 'ג׳', 'ד׳', 'ה׳', 'ו׳', 'ש׳'].map((day) => (
-                <div key={day} className="text-center py-2 small fw-semibold" style={{ borderBottom: '1px solid rgba(102, 126, 234, 0.2)', color: 'rgba(249, 147, 251, 0.8)' }}>
+                <div key={day} className="text-center py-2 small fw-semibold" style={{ borderBottom: '1px solid #E4EAF0', color: '#6C7884', background: '#F8FAFB' }}>
                   {day}
                 </div>
               ))}
@@ -688,41 +687,33 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated }: CalendarPric
                       position: 'relative',
                       minHeight: '90px',
                       background: isBlockedSelected
-                        ? 'repeating-linear-gradient(45deg, rgba(239, 68, 68, 0.2), rgba(239, 68, 68, 0.2) 10px, rgba(239, 68, 68, 0.3) 10px, rgba(239, 68, 68, 0.3) 20px)'
+                        ? 'repeating-linear-gradient(45deg, rgba(239,68,68,0.1), rgba(239,68,68,0.1) 10px, rgba(239,68,68,0.18) 10px, rgba(239,68,68,0.18) 20px)'
                         : isBlocked
-                        ? 'repeating-linear-gradient(45deg, rgba(255, 152, 0, 0.1), rgba(255, 152, 0, 0.1) 10px, rgba(255, 152, 0, 0.15) 10px, rgba(255, 152, 0, 0.15) 20px)'
-                        : isSelected 
-                        ? 'rgba(102, 126, 234, 0.3)' 
-                        : showTodayHighlight 
-                        ? 'rgba(102, 126, 234, 0.15)' 
-                        : 'transparent',
-                      color: 'rgba(255, 255, 255, 0.9)',
-                      opacity: isCurrentMonth ? (isBlocked && !isBlockedSelected ? 0.6 : 1) : 0.4,
+                        ? 'repeating-linear-gradient(45deg, rgba(245,158,11,0.07), rgba(245,158,11,0.07) 10px, rgba(245,158,11,0.12) 10px, rgba(245,158,11,0.12) 20px)'
+                        : isSelected
+                        ? 'rgba(113, 51, 217, 0.1)'
+                        : showTodayHighlight
+                        ? 'rgba(113, 51, 217, 0.05)'
+                        : '#fff',
+                      color: '#2F3133',
+                      opacity: isCurrentMonth ? 1 : 0.4,
                       cursor: isBooked ? 'not-allowed' : 'pointer',
-                      border: isToday ? '2px solid rgba(102, 126, 234, 0.6)' : isBlockedSelected ? '1px solid rgba(239, 68, 68, 0.6)' : isBlocked ? '1px solid rgba(255, 152, 0, 0.3)' : '1px solid rgba(102, 126, 234, 0.25)',
+                      border: isToday ? '2px solid #7133D9' : isBlockedSelected ? '1px solid rgba(239,68,68,0.5)' : isBlocked ? '1px solid rgba(245,158,11,0.25)' : '1px solid #E4EAF0',
                       borderRadius: '0',
-                      transition: 'all 0.2s ease',
+                      transition: 'background 0.15s',
                     }}
                     onMouseEnter={(e) => {
-                      if (!isBooked) {
-                        if (isBlocked) {
-                          e.currentTarget.style.opacity = '1'
-                        } else {
-                          e.currentTarget.style.background = 'rgba(102, 126, 234, 0.2)'
-                        }
+                      if (!isBooked && !isBlocked) {
+                        e.currentTarget.style.background = 'rgba(113, 51, 217, 0.06)'
                       }
                     }}
                     onMouseLeave={(e) => {
                       if (!isBooked) {
-                        if (isBlocked) {
-                          e.currentTarget.style.opacity = isCurrentMonth ? '1' : '0.4'
-                        } else {
-                          e.currentTarget.style.background = isSelected 
-                            ? 'rgba(102, 126, 234, 0.3)' 
-                            : showTodayHighlight 
-                            ? 'rgba(102, 126, 234, 0.15)' 
-                            : 'transparent'
-                        }
+                        e.currentTarget.style.background = isBlockedSelected
+                          ? 'repeating-linear-gradient(45deg, rgba(239,68,68,0.1), rgba(239,68,68,0.1) 10px, rgba(239,68,68,0.18) 10px, rgba(239,68,68,0.18) 20px)'
+                          : isBlocked
+                          ? 'repeating-linear-gradient(45deg, rgba(245,158,11,0.07), rgba(245,158,11,0.07) 10px, rgba(245,158,11,0.12) 10px, rgba(245,158,11,0.12) 20px)'
+                          : isSelected ? 'rgba(113, 51, 217, 0.1)' : showTodayHighlight ? 'rgba(113, 51, 217, 0.05)' : '#fff'
                       }
                     }}
                     onClick={(e) => handleDateToggle(date, e.shiftKey)}
@@ -730,14 +721,14 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated }: CalendarPric
                     {holiday && <HolidayIndicator holiday={holiday} isMobile={isMobile} />}
                     <span
                       className="fw-semibold"
-                      style={{ position: 'absolute', top: '8px', left: '8px', fontSize: '14px', color: isBlocked ? 'rgba(255, 152, 0, 0.9)' : 'rgba(255, 255, 255, 0.9)' }}
+                      style={{ position: 'absolute', top: '8px', left: '8px', fontSize: '14px', color: isBlocked ? '#F59E0B' : '#2F3133' }}
                     >
                       {date.getDate()}
                     </span>
                     {isToday ? (
                       <span
                         className="badge"
-                        style={{ position: 'absolute', top: '8px', right: '8px', background: 'rgba(102, 126, 234, 0.8)', color: 'white' }}
+                        style={{ position: 'absolute', top: '8px', right: '8px', background: '#7133D9', color: 'white' }}
                       >
                         היום
                       </span>
@@ -745,12 +736,12 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated }: CalendarPric
                     {isBlocked ? (
                       <span
                         className="badge"
-                        style={{ position: 'absolute', top: '8px', right: '8px', background: isBlockedSelected ? 'rgba(239, 68, 68, 0.9)' : 'rgba(255, 152, 0, 0.8)', color: 'white', fontSize: '10px' }}
+                        style={{ position: 'absolute', top: '8px', right: '8px', background: isBlockedSelected ? '#EF4444' : '#F59E0B', color: 'white', fontSize: '10px' }}
                       >
                         {isBlockedSelected ? 'לפתיחה' : 'חסום'}
                       </span>
                     ) : null}
-                    <div className="small mt-1" style={{ color: isBlockedSelected ? 'rgba(239, 68, 68, 0.9)' : isBlocked ? 'rgba(255, 152, 0, 0.7)' : hasPrice ? 'rgba(249, 147, 251, 0.8)' : 'rgba(255,255,255,0.25)' }}>
+                    <div className="small mt-1" style={{ color: isBlockedSelected ? '#EF4444' : isBlocked ? '#F59E0B' : hasPrice ? '#7133D9' : '#CED7E0' }}>
                       {isBlocked ? 'חסום' : hasPrice ? formatCurrency(price) : '—'}
                     </div>
                   </button>
@@ -804,7 +795,7 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated }: CalendarPric
                       pointerEvents: 'auto',
                       textAlign: 'start' as const,
                       appearance: 'none' as const,
-                      boxShadow: isSelected ? '0 0 0 2px rgba(255,255,255,0.55)' : undefined,
+                      boxShadow: isSelected ? '0 0 0 2px #7133D9' : undefined,
                       ...getSegmentBarStyle(segment.status),
                     }}
                     title={segment.status === 'request' ? `בקשת הזמנה: ${segment.label}` : segment.label}
@@ -819,42 +810,34 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated }: CalendarPric
         </div>
       </div>
       <div className="col-lg-4">
-        <div className="card border-0 h-100" style={{ background: 'linear-gradient(135deg, #1e293b 0%, #334155 50%, #475569 100%)', border: '1px solid rgba(102, 126, 234, 0.2)' }}>
+        <div className="card h-100" style={{ background: '#fff', border: '1px solid #CED7E0', borderRadius: '8px', boxShadow: 'none' }}>
           <div className="card-body">
-            <h3 className="h6 fw-bold mb-3" style={{ color: 'rgba(249, 147, 251, 0.9)' }}>שינוי מחיר לפי תאריך</h3>
-            <div className="small mb-3" style={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+            <h3 className="h6 fw-semibold mb-3" style={{ color: '#2F3133' }}>שינוי מחיר לפי תאריך</h3>
+            <div className="small mb-3" style={{ color: '#6C7884' }}>
               בחר תאריכים בלוח משמאל — עדכן מחיר או סגור להזמנות. לחץ על תאריך חסום כדי לסמן אותו לפתיחה.
             </div>
             <div className="row g-2 mb-3">
               <div className="col-6">
-                <label className="form-label small fw-semibold" style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
+                <label className="form-label small fw-semibold" style={{ color: '#5B6670' }}>
                   מחיר ללילה (₪) <span className="text-danger">*</span>
                 </label>
                 <input
                   type="number"
                   min={0}
                   className="form-control"
-                  style={{
-                    background: 'rgba(0, 0, 0, 0.3)',
-                    border: '1px solid rgba(102, 126, 234, 0.3)',
-                    color: 'white',
-                  }}
+                  style={{ background: '#fff', border: '1px solid #CED7E0', color: '#2F3133' }}
                   value={priceInput}
                   onChange={(event) => setPriceInput(event.target.value)}
                   required
                 />
               </div>
               <div className="col-6">
-                <label className="form-label small fw-semibold" style={{ color: 'rgba(255, 255, 255, 0.9)' }}>מינימום לילות</label>
+                <label className="form-label small fw-semibold" style={{ color: '#5B6670' }}>מינימום לילות</label>
                 <input
                   type="number"
                   min={1}
                   className="form-control"
-                  style={{
-                    background: 'rgba(0, 0, 0, 0.3)',
-                    border: '1px solid rgba(102, 126, 234, 0.3)',
-                    color: 'white',
-                  }}
+                  style={{ background: '#fff', border: '1px solid #CED7E0', color: '#2F3133' }}
                   value={minStayInput}
                   onChange={(event) => setMinStayInput(Math.max(1, Number(event.target.value)))}
                 />
@@ -875,12 +858,10 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated }: CalendarPric
                 type="button"
                 className="btn flex-fill d-flex flex-column align-items-center justify-content-center gap-1"
                 style={{
-                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  background: !selectedDates.length || !priceInput.trim() ? '#F2F6FA' : '#7133D9',
                   border: 'none',
-                  color: 'white',
-                  padding: '8px 4px',
-                  fontSize: '11px',
-                  lineHeight: 1.2,
+                  color: !selectedDates.length || !priceInput.trim() ? '#6C7884' : 'white',
+                  padding: '8px 4px', fontSize: '11px', lineHeight: 1.2, borderRadius: '6px',
                 }}
                 onClick={applyPrice}
                 disabled={!selectedDates.length || !priceInput.trim() || saving}
@@ -894,14 +875,10 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated }: CalendarPric
                 type="button"
                 className="btn flex-fill d-flex flex-column align-items-center justify-content-center gap-1"
                 style={{
-                  background: selectedDates.length && !selectedHasBooked && selectedFreeDates.length > 0
-                    ? 'linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)'
-                    : 'rgba(239, 68, 68, 0.2)',
-                  border: '1px solid rgba(239, 68, 68, 0.4)',
-                  color: 'white',
-                  padding: '8px 4px',
-                  fontSize: '11px',
-                  lineHeight: 1.2,
+                  background: selectedDates.length && !selectedHasBooked && selectedFreeDates.length > 0 ? '#EF4444' : '#FEF2F2',
+                  border: '1px solid rgba(239,68,68,0.3)',
+                  color: selectedDates.length && !selectedHasBooked && selectedFreeDates.length > 0 ? 'white' : '#EF4444',
+                  padding: '8px 4px', fontSize: '11px', lineHeight: 1.2, borderRadius: '6px',
                 }}
                 onClick={blockDates}
                 disabled={!selectedFreeDates.length || selectedHasBooked || saving}
@@ -915,14 +892,10 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated }: CalendarPric
                 type="button"
                 className="btn flex-fill d-flex flex-column align-items-center justify-content-center gap-1"
                 style={{
-                  background: selectedBlockedDates.length > 0
-                    ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
-                    : 'rgba(16, 185, 129, 0.2)',
-                  border: '1px solid rgba(16, 185, 129, 0.4)',
-                  color: 'white',
-                  padding: '8px 4px',
-                  fontSize: '11px',
-                  lineHeight: 1.2,
+                  background: selectedBlockedDates.length > 0 ? '#10B981' : '#F0FDF4',
+                  border: '1px solid rgba(16,185,129,0.3)',
+                  color: selectedBlockedDates.length > 0 ? 'white' : '#10B981',
+                  padding: '8px 4px', fontSize: '11px', lineHeight: 1.2, borderRadius: '6px',
                 }}
                 onClick={unblockDates}
                 disabled={!selectedBlockedDates.length || saving}
@@ -933,20 +906,15 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated }: CalendarPric
                 <span>{saving ? 'שומר...' : 'שחרר'}</span>
               </button>
             </div>
-            <div className="mt-4">
+            {/* ── Selected dates ── */}
+            <div className="mt-3" style={{ background: '#F7F5FF', border: '1px solid #E7E1FF', borderRadius: 10, padding: '12px 14px' }}>
               <div className="d-flex align-items-center justify-content-between mb-2">
-                <div className="small fw-semibold" style={{ color: 'rgba(249, 147, 251, 0.9)' }}>תאריכים שנבחרו</div>
+                <div className="small fw-semibold" style={{ color: '#7133D9' }}>תאריכים שנבחרו</div>
                 {selectedDates.length ? (
                   <button
                     type="button"
                     className="btn btn-sm"
-                    style={{
-                      border: '1px solid rgba(102, 126, 234, 0.5)',
-                      color: 'rgba(255, 255, 255, 0.8)',
-                      backgroundColor: 'rgba(102, 126, 234, 0.2)',
-                      fontSize: '0.7rem',
-                      padding: '0.15rem 0.4rem',
-                    }}
+                    style={{ border: '1px solid #CED7E0', color: '#5B6670', backgroundColor: '#F2F6FA', fontSize: '0.7rem', padding: '0.15rem 0.4rem', borderRadius: '4px' }}
                     onClick={clearSelection}
                     title="איפוס בחירה"
                   >
@@ -957,119 +925,76 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated }: CalendarPric
               {selectedDates.length ? (
                 <div className="d-flex flex-wrap gap-2">
                   {selectedDates.map((date) => (
-                    <span key={toKey(date)} className="badge" style={{ background: 'rgba(102, 126, 234, 0.6)', color: 'white' }}>
+                    <span key={toKey(date)} className="badge" style={{ background: '#EFEBFF', color: '#7133D9', fontWeight: 500 }}>
                       {new Intl.DateTimeFormat('he-IL', { day: '2-digit', month: 'short' }).format(date)}
                     </span>
                   ))}
                 </div>
               ) : (
-                <div className="small" style={{ color: 'rgba(255, 255, 255, 0.6)' }}>לא נבחרו תאריכים.</div>
+                <div className="small" style={{ color: '#6C7884' }}>לא נבחרו תאריכים.</div>
               )}
             </div>
-            <div className="mt-4">
-              <div className="small fw-semibold mb-2" style={{ color: 'rgba(249, 147, 251, 0.9)' }}>מקרא</div>
-              <div className="d-flex flex-column gap-2 small" style={{ color: 'rgba(255, 255, 255, 0.8)' }}>
-                <div>
-                  <span className="badge me-2" style={{ background: 'rgba(239, 68, 68, 0.6)' }}>תפוס</span>
-                  תאריך עם הזמנה קיימת
-                </div>
-                <div>
-                  <span className="badge me-2" style={{ background: 'rgba(255, 152, 0, 0.6)' }}>חסום</span>
-                  תאריך חסום ב-Beds24
-                </div>
-                <div>
-                  <span className="badge me-2" style={{ background: 'rgba(239, 68, 68, 0.9)' }}>לפתיחה</span>
-                  תאריך חסום שנבחר לפתיחה
-                </div>
-                <div>
-                  <span className="badge me-2" style={{ background: 'rgba(102, 126, 234, 0.6)' }}>נבחר</span>
-                  תאריך פנוי שנבחר לעדכון / סגירה
-                </div>
-                <div>
-                  <span 
-                    style={{ 
-                      display: 'inline-block',
-                      fontSize: '14px',
-                      marginLeft: '8px',
-                      marginRight: '8px'
-                    }}
-                  >
-                    🚩
-                  </span>
-                  חג יהודי
-                </div>
-                <div className="mt-2 pt-2" style={{ borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
-                  <small className="text-muted">
-                    💡 ניתן להזמין checkout/checkin באותו יום
-                  </small>
+
+            {/* ── Legend ── */}
+            <div className="mt-3" style={{ background: '#F8FAFB', border: '1px solid #E4EAF0', borderRadius: 10, padding: '12px 14px' }}>
+              <div className="small fw-semibold mb-2" style={{ color: '#5B6670' }}>מקרא</div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px 4px' }}>
+                {[
+                  { badge: 'תפוס',    bg: 'rgba(16,185,129,0.15)', color: '#065F46', label: 'הזמנה קיימת' },
+                  { badge: 'חסום',    bg: '#FEF3C7',                color: '#D97706', label: 'חסום ב-Beds24' },
+                  { badge: 'לפתיחה', bg: '#EF4444',                color: '#fff',    label: 'נבחר לפתיחה' },
+                  { badge: 'נבחר',    bg: '#EFEBFF',               color: '#7133D9', label: 'לעדכון / סגירה' },
+                ].map(({ badge, bg, color, label }) => (
+                  <div key={badge} style={{ display: 'flex', alignItems: 'center', gap: 5, minWidth: 0 }}>
+                    <span style={{
+                      background: bg, color, fontSize: 10, fontWeight: 600,
+                      padding: '2px 6px', borderRadius: 4, whiteSpace: 'nowrap', flexShrink: 0,
+                    }}>{badge}</span>
+                    <span style={{ fontSize: 11, color: '#6C7884', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{label}</span>
+                  </div>
+                ))}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <span style={{ fontSize: 13, flexShrink: 0 }}>🚩</span>
+                  <span style={{ fontSize: 11, color: '#6C7884' }}>חג יהודי</span>
                 </div>
               </div>
             </div>
-            <div className="mt-4" ref={reservationDetailsRef}>
-              <div className="small fw-semibold mb-2" style={{ color: 'rgba(249, 147, 251, 0.9)' }}>
+
+            {/* ── Reservation details ── */}
+            <div className="mt-3" ref={reservationDetailsRef} style={{ background: '#FFFDF7', border: '1px solid #FDE68A', borderRadius: 10, padding: '12px 14px' }}>
+              <div className="small fw-semibold mb-2" style={{ color: '#92400E' }}>
                 {selectedReservation?.status === 'request' ? 'פרטי בקשת הזמנה' : 'פרטי הזמנה'}
               </div>
               {selectedReservation ? (
                 <div
-                  className="rounded-3 p-3"
+                  className="rounded-3"
                   style={{
-                    background:
-                      selectedReservation.status === 'request'
-                        ? 'rgba(245, 158, 11, 0.12)'
-                        : 'rgba(0, 0, 0, 0.3)',
-                    border:
-                      selectedReservation.status === 'request'
-                        ? '1px dashed rgba(251, 191, 36, 0.65)'
-                        : '1px solid rgba(102, 126, 234, 0.3)',
+                    background: 'transparent',
+                    border: 'none',
                   }}
                 >
-                  <div className="fw-semibold" style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
-                    {selectedReservation.guestName}
-                  </div>
-                  <div className="small" style={{ color: 'rgba(255, 255, 255, 0.7)' }}>
-                    {selectedReservation.checkIn} - {selectedReservation.checkOut}
-                  </div>
-                  <div className="small mt-2" style={{ color: 'rgba(255, 255, 255, 0.8)' }}>
-                    <span className="fw-semibold">סטטוס:</span> {formatStatus(selectedReservation.status)}
-                  </div>
+                  <div className="fw-semibold" style={{ color: '#2F3133' }}>{selectedReservation.guestName}</div>
+                  <div className="small" style={{ color: '#6C7884' }}>{selectedReservation.checkIn} - {selectedReservation.checkOut}</div>
+                  <div className="small mt-2" style={{ color: '#5B6670' }}><span className="fw-semibold">סטטוס:</span> {formatStatus(selectedReservation.status)}</div>
                   {selectedReservation.status === 'request' ? (
-                    <div className="small mt-1" style={{ color: 'rgba(254, 243, 199, 0.9)' }}>
-                      ממתין לאישורך בערוץ ההזמנות (Beds24 / Airbnb)
-                    </div>
+                    <div className="small mt-1" style={{ color: '#D97706' }}>ממתין לאישורך בערוץ ההזמנות (Beds24 / Airbnb)</div>
                   ) : null}
-                  <div className="small" style={{ color: 'rgba(255, 255, 255, 0.8)' }}>
-                    <span className="fw-semibold">לילות:</span> {selectedReservation.nights}
-                  </div>
-                  <div className="small" style={{ color: 'rgba(255, 255, 255, 0.8)' }}>
-                    <span className="fw-semibold">סה״כ:</span> {formatCurrency(selectedReservation.total)}
-                  </div>
+                  <div className="small" style={{ color: '#5B6670' }}><span className="fw-semibold">לילות:</span> {selectedReservation.nights}</div>
+                  <div className="small" style={{ color: '#5B6670' }}><span className="fw-semibold">סה״כ:</span> {formatCurrency(selectedReservation.total)}</div>
                   {selectedReservation.source ? (
-                    <div className="small" style={{ color: 'rgba(255, 255, 255, 0.8)' }}>
-                      <span className="fw-semibold">מקור:</span> {selectedReservation.source}
-                    </div>
+                    <div className="small" style={{ color: '#5B6670' }}><span className="fw-semibold">מקור:</span> {selectedReservation.source}</div>
                   ) : null}
                   {selectedReservation.unitName ? (
-                    <div className="small" style={{ color: 'rgba(255, 255, 255, 0.8)' }}>
-                      <span className="fw-semibold">יחידה:</span> {selectedReservation.unitName}
-                    </div>
+                    <div className="small" style={{ color: '#5B6670' }}><span className="fw-semibold">יחידה:</span> {selectedReservation.unitName}</div>
                   ) : null}
                   {selectedReservation.phone ? (
-                    <div className="small" style={{ color: 'rgba(255, 255, 255, 0.8)' }}>
-                      <span className="fw-semibold">טלפון:</span>{' '}
-                      <span dir="ltr">{selectedReservation.phone}</span>
-                    </div>
+                    <div className="small" style={{ color: '#5B6670' }}><span className="fw-semibold">טלפון:</span> <span dir="ltr">{selectedReservation.phone}</span></div>
                   ) : null}
                   {selectedReservation.guests || selectedReservation.adults ? (
-                    <div className="small" style={{ color: 'rgba(255, 255, 255, 0.8)' }}>
-                      <span className="fw-semibold">אורחים:</span>{' '}
-                      {selectedReservation.guests || selectedReservation.adults}
-                    </div>
+                    <div className="small" style={{ color: '#5B6670' }}><span className="fw-semibold">אורחים:</span> {selectedReservation.guests || selectedReservation.adults}</div>
                   ) : null}
                   {selectedReservation.apiReference ? (
-                    <div className="small" style={{ color: 'rgba(255, 255, 255, 0.8)' }}>
-                      <span className="fw-semibold">מזהה ערוץ:</span>{' '}
-                      <span dir="ltr">{selectedReservation.apiReference}</span>
-                    </div>
+                    <div className="small" style={{ color: '#5B6670' }}><span className="fw-semibold">מזהה ערוץ:</span> <span dir="ltr">{selectedReservation.apiReference}</span></div>
                   ) : null}
                   {selectedReservation.channelUrl ? (
                     <a
@@ -1078,16 +1003,10 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated }: CalendarPric
                       rel="noopener noreferrer"
                       className="btn btn-sm d-inline-flex align-items-center gap-2 mt-3"
                       style={{
-                        background:
-                          selectedReservation.status === 'request'
-                            ? 'rgba(245, 158, 11, 0.25)'
-                            : 'rgba(102, 126, 234, 0.35)',
-                        border:
-                          selectedReservation.status === 'request'
-                            ? '1px solid rgba(251, 191, 36, 0.7)'
-                            : '1px solid rgba(165, 180, 252, 0.5)',
-                        color: '#fff',
-                        borderRadius: '8px',
+                        background: selectedReservation.status === 'request' ? '#FEF3C7' : '#EFEBFF',
+                        border: selectedReservation.status === 'request' ? '1px solid #F59E0B' : '1px solid #7133D9',
+                        color: selectedReservation.status === 'request' ? '#D97706' : '#7133D9',
+                        borderRadius: '6px',
                         textDecoration: 'none',
                       }}
                     >
@@ -1097,7 +1016,7 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated }: CalendarPric
                   ) : null}
                 </div>
               ) : (
-                <div className="small" style={{ color: 'rgba(255, 255, 255, 0.6)' }}>
+                <div className="small" style={{ color: '#6C7884' }}>
                   לחץ על הזמנה או בקשה בלוח כדי לראות פרטים.
                 </div>
               )}

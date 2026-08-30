@@ -59,7 +59,7 @@ const ICON_SIZE: Record<LoaderVariant, number> = {
  */
 export default function DashboardLoader({
   variant = 'section',
-  tone = variant === 'fullscreen' ? 'onGradient' : 'onDark',
+  tone = 'onLight',
   label = 'טוען נתונים…',
   minHeight,
   className,
@@ -113,7 +113,7 @@ export default function DashboardLoader({
         className={className}
         style={{
           minHeight: '100vh',
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
+          background: '#F8FAFB',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',

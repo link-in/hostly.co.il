@@ -567,20 +567,21 @@ const ReservationsTable = ({
             className="btn btn-sm"
             style={{
               background: 'transparent',
-              border: '1px solid rgba(102, 126, 234, 0.3)',
-              color: 'white',
-              padding: '8px 16px',
-              fontSize: '0.85rem',
+              border: '1px solid #CED7E0',
+              color: '#7133D9',
+              padding: '8px 20px',
+              fontSize: '0.875rem',
+              fontWeight: 500,
               borderRadius: '8px',
-              transition: 'all 0.2s ease',
+              transition: 'all 0.15s ease',
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'rgba(102, 126, 234, 0.1)'
-              e.currentTarget.style.borderColor = 'rgba(102, 126, 234, 0.5)'
+              e.currentTarget.style.background = '#EFEBFF'
+              e.currentTarget.style.borderColor = '#7133D9'
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.background = 'transparent'
-              e.currentTarget.style.borderColor = 'rgba(102, 126, 234, 0.3)'
+              e.currentTarget.style.borderColor = '#CED7E0'
             }}
           >
             הצג עוד

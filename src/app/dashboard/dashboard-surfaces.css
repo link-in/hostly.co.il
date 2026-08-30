@@ -1,6 +1,69 @@
-/* Shared dark surfaces — match main dashboard reservations table */
+/* =====================================================
+   Hostly Dashboard — Design System
+   Inspired by iCount UI (light, clean, RTL-first)
+   ===================================================== */
 
+/* ─── Typography — Rubik (Hebrew-first, modern, slightly rounded) ─── */
+@import url('https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700&display=swap');
+
+/* ─── Global scrollbar — track matches sidebar bg so no visible gap on the right ─── */
+html {
+  scrollbar-color: var(--hn-300) var(--hsurf-2);
+  scrollbar-width: thin;
+}
+
+html::-webkit-scrollbar {
+  width: 8px;
+}
+
+html::-webkit-scrollbar-track {
+  background: var(--hsurf-2); /* #F8FAFB — same as sidebar */
+}
+
+html::-webkit-scrollbar-thumb {
+  background: var(--hn-300); /* #CED7E0 */
+  border-radius: 4px;
+}
+
+html::-webkit-scrollbar-thumb:hover {
+  background: var(--hn-600); /* #6C7884 */
+}
+
+/* ─── Tokens ─── */
 :root {
+  /* Brand */
+  --hb: #7133D9;          /* brand purple 700 */
+  --hb-50: #F7F5FF;
+  --hb-100: #EFEBFF;
+  --hb-200: #E7E1FF;
+  --hb-hover: #5D22BD;
+
+  /* Neutral */
+  --hn-50:  #F8FAFB;
+  --hn-100: #F2F6FA;
+  --hn-200: #E4EAF0;
+  --hn-300: #CED7E0;
+  --hn-600: #6C7884;
+  --hn-700: #5B6670;
+  --hn-900: #2F3133;
+
+  /* Info blue (hover text) */
+  --hinfo: #457AE5;
+
+  /* Surfaces */
+  --hsurf: #FFFFFF;
+  --hsurf-2: #F8FAFB;
+
+  /* Border */
+  --hborder:       #CED7E0;
+  --hborder-light: #F2F6FA;
+
+  /* Text */
+  --htxt-1: #2F3133;
+  --htxt-2: #5B6670;
+  --htxt-3: #6C7884;
+
+  /* ── Backward-compat dark tokens (used by older page components) ── */
   --hostly-dark-1: #1e293b;
   --hostly-dark-2: #334155;
   --hostly-dark-3: #475569;
@@ -15,26 +78,743 @@
   --hostly-gradient-hover: linear-gradient(135deg, #2d1b3d 0%, #3d2952 100%);
 }
 
-.hostly-dark-card {
-  background: var(--hostly-gradient) !important;
-  color: var(--hostly-text) !important;
+/* ─── Keyframes ─── */
+@keyframes hostlyFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes hostlySlideIn {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}
+
+@keyframes hostlyItemIn {
+  from { opacity: 0; transform: translateX(6px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* =====================================================
+   Layout Shell
+   ===================================================== */
+.hostly-layout-root {
+  min-height: 100vh;
+  background: var(--hn-50);
+  font-family: 'Rubik', system-ui, sans-serif;
+}
+
+.hostly-main-panel {
+  min-height: 100vh;
+}
+
+@media (min-width: 992px) {
+  .hostly-main-panel {
+    margin-right: 224px;
+  }
+
+  /* Bootstrap .container max-width creates centering gaps inside the panel.
+     Override so content always fills the full panel width. */
+  .hostly-main-panel .container {
+    max-width: 100%;
+  }
+}
+
+/* =====================================================
+   Desktop Sidebar
+   ===================================================== */
+
+.hostly-sidebar {
+  display: none;
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 224px;
+  background: var(--hsurf-2);
+  border-left: 1px solid var(--hborder);
+  flex-direction: column;
+  z-index: 100;
+  overflow: hidden;
+}
+
+@media (min-width: 992px) {
+  .hostly-sidebar {
+    display: flex;
+  }
+}
+
+/* Logo area */
+.hostly-sidebar-logo-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 80px;
+  padding: 16px;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--hborder-light);
+}
+
+.hostly-sidebar-logo-area img {
+  height: 32px;
+  width: auto;
+  object-fit: contain;
+  display: block;
+}
+
+.hostly-sidebar-logo-text {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--hb);
+  letter-spacing: -0.01em;
+}
+
+.hostly-sidebar-property {
+  font-family: 'Rubik', system-ui, sans-serif;
+  font-size: 11.5px;
+  font-weight: 400;
+  color: var(--htxt-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  text-align: center;
+  letter-spacing: 0.01em;
+}
+
+/* Nav scroll area */
+.hostly-sidebar-nav {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 12px 0 12px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--hn-200) transparent;
+}
+
+.hostly-sidebar-nav::-webkit-scrollbar { width: 4px; }
+.hostly-sidebar-nav::-webkit-scrollbar-track { background: transparent; }
+.hostly-sidebar-nav::-webkit-scrollbar-thumb {
+  background: var(--hn-200);
+  border-radius: 4px;
+}
+
+/* Section label */
+.hostly-sb-section {
+  padding: 10px 16px 4px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--htxt-3);
+}
+
+/* Nav item */
+.hostly-sb-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 12px 2px;
+  padding: 9px 10px;
+  border-radius: 6px;
+  text-decoration: none !important;
+  color: var(--htxt-1);
+  font-size: 14px;
+  font-weight: 400;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  width: calc(100% - 24px);
+  text-align: start;
+  transition: background 0.15s, color 0.15s;
+  line-height: 1.4;
+}
+
+.hostly-sb-item:hover {
+  background: var(--hn-100);
+  color: var(--hinfo);
+  text-decoration: none !important;
+}
+
+.hostly-sb-item:hover .hostly-sb-icon {
+  color: var(--hb);
+}
+
+.hostly-sb-item--active {
+  background: var(--hb-100) !important;
+  color: var(--hb) !important;
+  font-weight: 500;
+}
+
+.hostly-sb-item--active .hostly-sb-icon {
+  color: var(--hb) !important;
+}
+
+/* Icon */
+.hostly-sb-icon {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--htxt-3);
+  transition: color 0.15s;
+}
+
+/* Label */
+.hostly-sb-label {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Divider */
+.hostly-sb-divider {
+  height: 1px;
+  margin: 8px 16px 10px;
+  background: var(--hborder-light);
+}
+
+/* Footer / profile */
+.hostly-sidebar-footer {
+  flex-shrink: 0;
+  border-top: 1px solid var(--hborder-light);
+  padding: 10px 12px 14px;
+}
+
+.hostly-sidebar-profile {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 10px;
+  border-radius: 6px;
+  margin-bottom: 4px;
+}
+
+.hostly-sidebar-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--hb-100);
+  color: var(--hb);
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 1.5px solid var(--hb-200);
+  letter-spacing: 0.02em;
+}
+
+.hostly-sidebar-user-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--htxt-1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.35;
+}
+
+.hostly-sidebar-user-email {
+  font-size: 11px;
+  color: var(--htxt-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.3;
+}
+
+/* Logout in sidebar footer */
+.hostly-sb-item--logout:hover {
+  background: rgba(176, 0, 47, 0.07) !important;
+  color: #B0002F !important;
+}
+
+.hostly-sb-item--logout:hover .hostly-sb-icon {
+  color: #B0002F !important;
+}
+
+/* =====================================================
+   Top Header / Topbar
+   ===================================================== */
+.hostly-topbar {
+  background: var(--hsurf);
+  border-bottom: 1px solid var(--hborder-light);
+  height: 60px;
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  position: sticky;
+  top: 0;
+  z-index: 90;
+  gap: 12px;
+}
+
+@media (max-width: 991px) {
+  .hostly-topbar {
+    padding: 0 14px;
+  }
+}
+
+.hostly-topbar-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-decoration: none !important;
+}
+
+.hostly-topbar-logo img {
+  height: 30px;
+  width: auto;
+  object-fit: contain;
+}
+
+.hostly-topbar-logo-text {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--hb);
+  letter-spacing: -0.01em;
+}
+
+.hostly-topbar-property {
+  flex: 1;
+  font-family: 'Rubik', system-ui, sans-serif;
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--htxt-1);
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
+}
+
+.hostly-topbar-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  border: 1px solid var(--hborder);
+  background: transparent;
+  color: var(--htxt-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  flex-shrink: 0;
+  text-decoration: none !important;
+  padding: 0;
+}
+
+.hostly-topbar-btn:hover {
+  background: var(--hn-100);
+  color: var(--hb);
+  border-color: var(--hn-200);
+  text-decoration: none !important;
+}
+
+/* Hamburger — modern borderless style on mobile */
+.hostly-topbar-hamburger {
   border: none !important;
-  border-radius: 12px !important;
+  background: transparent !important;
+  color: var(--htxt-1) !important;
+  width: 40px !important;
+  height: 40px !important;
+  border-radius: 10px !important;
+}
+
+.hostly-topbar-hamburger:hover {
+  background: var(--hb-100) !important;
+  color: var(--hb) !important;
+  border-color: transparent !important;
+}
+
+/* Action buttons (Home / ExternalLink / Logout) — hidden on mobile, available in drawer */
+.hostly-topbar-actions {
+  display: none !important;
+}
+
+@media (min-width: 992px) {
+  .hostly-topbar-actions {
+    display: flex !important;
+  }
+}
+
+/* Topbar — hidden entirely on desktop (sidebar handles navigation) */
+@media (min-width: 992px) {
+  .hostly-topbar {
+    display: none !important;
+  }
+}
+
+/* =====================================================
+   Mobile Drawer (light iCount style)
+   ===================================================== */
+.hostly-drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 1040;
+  animation: hostlyFadeIn 0.2s ease-out;
+}
+
+.hostly-drawer-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(88vw, 300px);
+  background: var(--hsurf-2);
+  z-index: 1050;
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid var(--hborder);
+  overflow: hidden;
+  animation: hostlySlideIn 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.hostly-drawer-inner {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow-y: auto;
+  padding: 0 0 16px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--hn-200) transparent;
+}
+
+/* Drawer header: logo + close button in one row */
+.hostly-drawer-logo-area {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--hborder-light);
+  flex-shrink: 0;
+}
+
+.hostly-drawer-logo-content {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.hostly-drawer-logo-area img {
+  height: 28px;
+  width: auto;
+  object-fit: contain;
+}
+
+.hostly-drawer-logo-text {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--hb);
+}
+
+.hostly-drawer-property {
+  font-size: 11px;
+  color: var(--htxt-3);
+  font-weight: 500;
+}
+
+/* Clean X close button inside the header */
+.hostly-drawer-close-btn {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  color: var(--htxt-2);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s;
+  padding: 0;
+}
+
+.hostly-drawer-close-btn:hover {
+  background: var(--hn-100);
+  color: var(--htxt-1);
+}
+
+/* Profile block */
+.hostly-drawer-profile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 12px 12px 4px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--hsurf);
+  border: 1px solid var(--hborder-light);
+}
+
+.hostly-drawer-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--hb-100);
+  color: var(--hb);
+  font-size: 14px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 1.5px solid var(--hb-200);
+}
+
+.hostly-drawer-user-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--htxt-1);
+  line-height: 1.35;
+}
+
+.hostly-drawer-user-email {
+  font-size: 11.5px;
+  color: var(--htxt-3);
+  word-break: break-all;
+}
+
+/* Drawer divider */
+.hostly-drawer-divider {
+  height: 1px;
+  margin: 10px 16px 8px;
+  background: var(--hborder-light);
+}
+
+/* Drawer nav */
+.hostly-drawer-nav {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  padding: 0 0 8px;
+}
+
+/* Drawer item (reuse sidebar classes, same look) */
+.hostly-drawer-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 12px 2px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  text-decoration: none !important;
+  color: var(--htxt-1);
+  font-size: 14px;
+  font-weight: 400;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  width: calc(100% - 24px);
+  text-align: start;
+  transition: background 0.15s, color 0.15s;
+  opacity: 0;
+  animation: hostlyItemIn 0.3s ease-out forwards;
+}
+
+.hostly-drawer-item:hover {
+  background: var(--hn-100);
+  color: var(--hinfo);
+  text-decoration: none !important;
+}
+
+.hostly-drawer-item:hover .hostly-drawer-icon {
+  color: var(--hb);
+}
+
+.hostly-drawer-item--active {
+  background: var(--hb-100) !important;
+  color: var(--hb) !important;
+  font-weight: 500;
+}
+
+.hostly-drawer-item--active .hostly-drawer-icon {
+  color: var(--hb) !important;
+}
+
+.hostly-drawer-icon {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--htxt-3);
+  transition: color 0.15s;
+}
+
+.hostly-drawer-label {
+  flex: 1;
+  min-width: 0;
+}
+
+.hostly-drawer-section {
+  padding: 10px 16px 4px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--htxt-3);
+}
+
+.hostly-drawer-footer {
+  margin-top: auto;
+  padding-top: 8px;
+  border-top: 1px solid var(--hborder-light);
+}
+
+.hostly-drawer-item--logout:hover {
+  background: rgba(176, 0, 47, 0.07) !important;
+  color: #B0002F !important;
+}
+
+.hostly-drawer-item--logout:hover .hostly-drawer-icon {
+  color: #B0002F !important;
+}
+
+/* =====================================================
+   Mobile Bottom Nav
+   ===================================================== */
+.hostly-bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: var(--hsurf);
+  border-top: 3px solid var(--hborder-light);
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  z-index: 95;
+  padding: 0 8px;
+}
+
+@media (min-width: 992px) {
+  .hostly-bottom-nav {
+    display: none;
+  }
+}
+
+.hostly-bottom-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 16px;
+  text-decoration: none !important;
+  color: var(--htxt-3);
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  transition: color 0.15s;
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.hostly-bottom-nav-item:hover,
+.hostly-bottom-nav-item--active {
+  color: var(--hb) !important;
+}
+
+/* Extra bottom padding on mobile (so content isn't hidden by bottom nav) */
+@media (max-width: 991px) {
+  .hostly-main-panel {
+    padding-bottom: 60px;
+  }
+}
+
+/* =====================================================
+   Light Card / Table Utilities
+   ===================================================== */
+.hostly-card {
+  background: var(--hsurf);
+  border: 1px solid var(--hborder);
+  border-radius: 8px;
+  color: var(--htxt-1);
+}
+
+.hostly-card .card-header {
+  background: transparent;
+  border-bottom: 1px solid var(--hborder-light);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--htxt-1);
+  padding: 14px 16px;
+}
+
+.hostly-card .card-body {
+  padding: 16px;
+}
+
+.hostly-table thead th {
+  background: var(--hn-50) !important;
+  color: var(--htxt-3) !important;
+  font-weight: 300;
+  font-size: 13px;
+  border-bottom: 1px solid var(--hborder) !important;
+  padding: 8px 16px;
+}
+
+.hostly-table tbody tr {
+  border-bottom: 1px solid var(--hborder-light) !important;
+  transition: background 0.1s;
+}
+
+.hostly-table tbody tr:hover {
+  background: var(--hn-50) !important;
+}
+
+.hostly-table tbody td {
+  color: var(--htxt-1) !important;
+  padding: 10px 16px;
+  vertical-align: middle;
+}
+
+/* =====================================================
+   Light Card / Dark-compat Classes
+   (all hostly-dark-* classes now render in the clean
+    light iCount style — no more dark gradients)
+   ===================================================== */
+
+/* ── Cards ── */
+.hostly-dark-card {
+  background: var(--hsurf) !important;
+  color: var(--htxt-1) !important;
+  border: 1px solid var(--hborder) !important;
+  border-radius: 8px !important;
 }
 
 .hostly-dark-card .card-body,
 .hostly-dark-card .card-header {
   background: transparent !important;
-  color: var(--hostly-text) !important;
+  color: var(--htxt-1) !important;
 }
 
 .hostly-dark-card .card-header {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-bottom: 1px solid var(--hborder-light) !important;
+  font-weight: 500;
 }
 
 .hostly-dark-card .text-muted,
 .hostly-dark-card .form-text {
-  color: var(--hostly-muted) !important;
+  color: var(--htxt-3) !important;
 }
 
 .hostly-dark-card .form-control,
@@ -44,48 +824,44 @@
 .hostly-dark-card input[type='search'],
 .hostly-dark-card input[type='email'],
 .hostly-dark-card input[type='tel'] {
-  background: rgba(0, 0, 0, 0.28) !important;
-  border: 1px solid rgba(255, 255, 255, 0.16) !important;
-  color: var(--hostly-text) !important;
+  background: #fff !important;
+  border: 1px solid var(--hborder) !important;
+  color: var(--htxt-1) !important;
 }
 
 .hostly-dark-card .form-label,
 .hostly-dark-card label {
-  color: var(--hostly-accent) !important;
+  color: var(--htxt-2) !important;
 }
 
 .hostly-dark-card .form-control::placeholder {
-  color: rgba(255, 255, 255, 0.45) !important;
+  color: var(--htxt-3) !important;
 }
 
 .hostly-dark-card .form-control:focus,
 .hostly-dark-card .form-select:focus {
-  border-color: rgba(102, 126, 234, 0.55) !important;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2) !important;
+  border-color: var(--hb) !important;
+  box-shadow: 0 0 0 3px rgba(113, 51, 217, 0.12) !important;
 }
 
-.hostly-dark-card .form-select option {
-  background: #1e293b;
-  color: #fff;
-}
-
+/* ── Stat tiles ── */
 .hostly-dark-stat {
-  background: var(--hostly-gradient) !important;
-  color: var(--hostly-text) !important;
-  border: none !important;
-  border-radius: 12px !important;
+  background: var(--hsurf) !important;
+  color: var(--htxt-1) !important;
+  border: 1px solid var(--hborder) !important;
+  border-radius: 8px !important;
 }
 
 .hostly-dark-stat .stat-label,
 .hostly-dark-stat .text-muted {
-  color: var(--hostly-accent) !important;
+  color: var(--htxt-3) !important;
 }
 
 .hostly-dark-stat .stat-value {
-  color: #fff !important;
+  color: var(--htxt-1) !important;
 }
 
-/* Scrollable dark table shell (same as main dashboard) */
+/* ── Scrollable table shell ── */
 .dashboard-table-scroll-container {
   max-height: 60vh;
   overflow-y: auto;
@@ -100,137 +876,160 @@
 
 .dashboard-table-scroll-container::-webkit-scrollbar,
 .hostly-dark-card::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 .dashboard-table-scroll-container::-webkit-scrollbar-track,
 .hostly-dark-card::-webkit-scrollbar-track {
-  background: rgba(30, 41, 59, 0.5);
+  background: var(--hn-100);
   border-radius: 4px;
 }
 
 .dashboard-table-scroll-container::-webkit-scrollbar-thumb,
 .hostly-dark-card::-webkit-scrollbar-thumb {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--hn-300);
   border-radius: 4px;
 }
 
 .dashboard-table-scroll-container::-webkit-scrollbar-thumb:hover,
 .hostly-dark-card::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+  background: var(--hb);
 }
 
-/* Shared dark modal / panel scrollbar (matches table chrome) */
+/* ── Shared modal scrollbar ── */
 .hostly-modal-scroll {
   scrollbar-width: thin;
-  scrollbar-color: #764ba2 rgba(30, 41, 59, 0.55);
+  scrollbar-color: var(--hb-200) var(--hn-100);
 }
 
 .hostly-modal-scroll::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 .hostly-modal-scroll::-webkit-scrollbar-track {
-  background: rgba(15, 23, 42, 0.65);
+  background: var(--hn-100);
   border-radius: 8px;
   margin: 6px 0;
 }
 
 .hostly-modal-scroll::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #f093fb 0%, #667eea 55%, #764ba2 100%);
+  background: var(--hb-200);
   border-radius: 8px;
   border: 2px solid transparent;
   background-clip: padding-box;
 }
 
 .hostly-modal-scroll::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, #f9a8ff 0%, #7c8ff0 55%, #8b5cf6 100%);
+  background: var(--hb);
   background-clip: padding-box;
 }
 
+/* ── Table head ── */
 .dashboard-table-scroll-container thead,
 .hostly-dark-table thead {
   position: sticky;
   top: 0;
   z-index: 5;
-  background: var(--hostly-gradient-header) !important;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  background: var(--hn-50) !important;
+  box-shadow: 0 1px 0 var(--hborder);
 }
 
 .dashboard-table-scroll-container thead tr,
 .hostly-dark-table thead tr {
-  background: var(--hostly-gradient-header) !important;
+  background: var(--hn-50) !important;
 }
 
 .dashboard-table-scroll-container thead th,
 .hostly-dark-table thead th {
-  color: var(--hostly-accent) !important;
+  color: var(--htxt-3) !important;
   background: transparent !important;
-  border-bottom: 2px solid var(--hostly-accent-soft) !important;
+  border-bottom: 1px solid var(--hborder) !important;
   border-top: none !important;
+  font-weight: 500;
+  font-size: 13px;
   white-space: nowrap;
 }
 
+/* ── Table body ── */
 .dashboard-table-scroll-container .table,
 .hostly-dark-table.table,
 .hostly-dark-table {
   background: transparent !important;
   --bs-table-bg: transparent;
-  --bs-table-color: var(--hostly-text);
-  --bs-table-hover-bg: transparent;
+  --bs-table-color: var(--htxt-1);
+  --bs-table-hover-bg: var(--hn-50);
   --bs-table-striped-bg: transparent;
   margin-bottom: 0;
-  color: var(--hostly-text) !important;
+  color: var(--htxt-1) !important;
 }
 
 .dashboard-table-scroll-container tbody tr,
 .hostly-dark-table tbody tr {
-  background: var(--hostly-gradient) !important;
-  color: white !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  background: var(--hsurf) !important;
+  color: var(--htxt-1) !important;
+  border-bottom: 1px solid var(--hborder-light) !important;
 }
 
 .dashboard-table-scroll-container tbody tr:hover,
 .hostly-dark-table tbody tr:hover {
-  background: var(--hostly-gradient-hover) !important;
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3) !important;
+  background: var(--hn-50) !important;
+  box-shadow: none !important;
 }
 
 .dashboard-table-scroll-container tbody tr.table-active,
 .hostly-dark-table tbody tr.table-active {
-  background: var(--hostly-gradient-hover) !important;
+  background: var(--hb-50) !important;
 }
 
 .dashboard-table-scroll-container tbody td,
 .hostly-dark-table tbody td {
-  color: var(--hostly-text) !important;
+  color: var(--htxt-1) !important;
   border: none !important;
   background: transparent !important;
   vertical-align: middle;
 }
 
 .hostly-dark-table.table-borderless tbody td {
-  color: var(--hostly-text) !important;
+  color: var(--htxt-1) !important;
 }
 
+/* ── List rows ── */
 .hostly-dark-list-row {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
-  color: var(--hostly-text) !important;
+  border-bottom: 1px solid var(--hborder-light) !important;
+  color: var(--htxt-1) !important;
 }
 
 .hostly-dark-list-row:hover {
-  background: rgba(45, 27, 61, 0.45) !important;
+  background: var(--hn-50) !important;
 }
 
+/* ── Panel ── */
 .hostly-dark-panel {
-  background: rgba(0, 0, 0, 0.22) !important;
-  border: 1px solid rgba(249, 147, 251, 0.12) !important;
-  border-radius: 12px !important;
-  color: var(--hostly-text) !important;
+  background: var(--hn-50) !important;
+  border: 1px solid var(--hborder-light) !important;
+  border-radius: 8px !important;
+  color: var(--htxt-1) !important;
 }
 
+/* ── Title ── */
 .hostly-dark-title {
-  color: var(--hostly-accent) !important;
+  color: var(--htxt-1) !important;
+  font-weight: 600;
+}
+
+/* ── Page shell — strip purple/dark gradient backgrounds from all page wrappers ── */
+.hostly-main-panel main,
+.hostly-main-panel > div > main,
+.hostly-main-panel > div > div[dir="rtl"] {
+  background: transparent !important;
+}
+
+/* Strip any inline gradient that slipped through */
+.hostly-main-panel [style*="667eea"],
+.hostly-main-panel [style*="764ba2"],
+.hostly-main-panel [style*="1e293b"],
+.hostly-main-panel [style*="334155"] {
+  background: transparent !important;
 }

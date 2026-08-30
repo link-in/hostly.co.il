@@ -2,6 +2,7 @@ import { Suspense } from 'react'
 import { SessionProvider } from './SessionProvider'
 import { RoomProvider } from '@/lib/rooms/RoomContext'
 import SubscriptionBanner from '@/components/SubscriptionBanner'
+import DashboardSidebar from '@/components/DashboardSidebar'
 import type { ReactNode } from 'react'
 import './dashboard-surfaces.css'
 
@@ -10,9 +11,15 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     <SessionProvider>
       <Suspense>
         <RoomProvider>
-          <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)' }}>
-            <SubscriptionBanner />
-            {children}
+          <div className="hostly-layout-root" dir="rtl">
+            {/* Persistent sidebar — desktop only (hidden on mobile via CSS) */}
+            <DashboardSidebar />
+
+            {/* Main content area — offset right on desktop */}
+            <div className="hostly-main-panel">
+              <SubscriptionBanner />
+              {children}
+            </div>
           </div>
         </RoomProvider>
       </Suspense>
