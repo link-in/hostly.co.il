@@ -56,24 +56,24 @@ const PhoneActions = ({ phone }: { phone: string }) => {
 // Reservation-specific accents (shared table shell lives in dashboard-surfaces.css)
 const styles = `
   .dashboard-table-scroll-container tbody tr.current-stay-reservation {
-    background: linear-gradient(135deg, rgba(34, 197, 94, 0.28) 0%, rgba(102, 126, 234, 0.22) 55%, rgba(118, 75, 162, 0.2) 100%) !important;
+    background: rgba(16, 185, 129, 0.07) !important;
     box-shadow: none !important;
   }
   .dashboard-table-scroll-container tbody tr.current-stay-reservation:hover {
-    background: linear-gradient(135deg, rgba(34, 197, 94, 0.36) 0%, rgba(102, 126, 234, 0.28) 55%, rgba(118, 75, 162, 0.26) 100%) !important;
+    background: rgba(16, 185, 129, 0.12) !important;
     box-shadow: none !important;
   }
   .dashboard-table-scroll-container tbody tr.current-stay-reservation td {
     background: transparent !important;
-    color: white !important;
+    color: #065F46 !important;
   }
   .current-stay-badge {
     display: inline-flex;
     align-items: center;
     gap: 0.3rem;
-    background: rgba(34, 197, 94, 0.22);
-    border: 1px solid rgba(74, 222, 128, 0.45);
-    color: rgba(187, 247, 208, 0.98);
+    background: rgba(16, 185, 129, 0.15);
+    border: 1px solid rgba(16, 185, 129, 0.4);
+    color: #065F46;
     font-size: 0.68rem;
     font-weight: 600;
     letter-spacing: 0.01em;
@@ -87,70 +87,73 @@ const styles = `
     width: 6px;
     height: 6px;
     border-radius: 50%;
-    background: #4ade80;
-    box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.2);
+    background: #10b981;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
     flex-shrink: 0;
   }
-  
-  /* Mobile stacked list styles - Dark gradient theme */
+
+  /* Mobile stacked list styles - Light theme */
   .reservation-list-item {
-    background: linear-gradient(135deg, #1e293b 0%, #334155 50%, #475569 100%);
+    background: #ffffff;
+    border: 1px solid #E4EAF0;
     border-radius: 12px;
-    margin-bottom: 12px;
-    padding: 16px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-    transition: all 0.2s;
+    margin-bottom: 10px;
+    padding: 14px 16px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    transition: all 0.15s;
     cursor: pointer;
   }
   .reservation-list-item:hover {
-    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
-    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(113, 51, 217, 0.1);
+    border-color: #C4B5FD;
+    transform: translateY(-1px);
   }
   .reservation-list-item.expanded {
-    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.5);
+    border-color: #7133D9;
+    box-shadow: 0 4px 16px rgba(113, 51, 217, 0.12);
   }
   .reservation-list-item.current-stay {
-    box-shadow: none;
-    background: linear-gradient(135deg, rgba(34, 197, 94, 0.28) 0%, rgba(71, 85, 105, 0.95) 100%);
+    background: #F0FDF4;
+    border-color: rgba(16, 185, 129, 0.4);
   }
   .reservation-avatar {
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    background: #EFEBFF;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: white;
+    color: #7133D9;
     font-weight: 600;
     font-size: 18px;
     flex-shrink: 0;
-    box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+    border: 1px solid #E7E1FF;
   }
   .reservation-details-card {
-    background: rgba(0, 0, 0, 0.2);
-    border-radius: 12px;
-    padding: 16px;
-    margin-top: 16px;
-    border: 1px solid rgba(249, 147, 251, 0.1);
+    background: #F8FAFB;
+    border-radius: 10px;
+    padding: 14px;
+    margin-top: 14px;
+    border: 1px solid #E4EAF0;
   }
   .reservation-detail-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 12px 0;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 10px 0;
+    border-bottom: 1px solid #F2F6FA;
   }
   .reservation-detail-row:last-child {
     border-bottom: none;
   }
   .reservation-detail-label {
-    color: rgba(249, 147, 251, 0.8);
-    font-size: 0.875rem;
+    color: #6C7884;
+    font-size: 0.85rem;
     font-weight: 500;
   }
   .reservation-detail-value {
-    color: rgba(255, 255, 255, 0.9);
+    color: #2F3133;
     font-size: 0.875rem;
     text-align: left;
   }
@@ -282,22 +285,22 @@ const ReservationsTable = ({
       )
     }
     if (sourceLower.includes('agoda')) {
-      return <span style={{ ...containerStyle, color: 'rgba(226,232,255,0.9)' }}><Map size={Math.round(size * 0.85)} strokeWidth={1.75} /></span>
+      return <span style={{ ...containerStyle, color: '#5B6670' }}><Map size={Math.round(size * 0.85)} strokeWidth={1.75} /></span>
     }
     if (sourceLower.includes('expedia')) {
-      return <span style={{ ...containerStyle, color: 'rgba(226,232,255,0.9)' }}><Plane size={Math.round(size * 0.85)} strokeWidth={1.75} /></span>
+      return <span style={{ ...containerStyle, color: '#5B6670' }}><Plane size={Math.round(size * 0.85)} strokeWidth={1.75} /></span>
     }
     if (sourceLower.includes('vrbo') || sourceLower.includes('homeaway')) {
-      return <span style={{ ...containerStyle, color: 'rgba(226,232,255,0.9)' }}><Home size={Math.round(size * 0.85)} strokeWidth={1.75} /></span>
+      return <span style={{ ...containerStyle, color: '#5B6670' }}><Home size={Math.round(size * 0.85)} strokeWidth={1.75} /></span>
     }
     if (sourceLower.includes('tripadvisor')) {
-      return <span style={{ ...containerStyle, color: 'rgba(226,232,255,0.9)' }}><Bird size={Math.round(size * 0.85)} strokeWidth={1.75} /></span>
+      return <span style={{ ...containerStyle, color: '#5B6670' }}><Bird size={Math.round(size * 0.85)} strokeWidth={1.75} /></span>
     }
     if (sourceLower.includes('hotels.com')) {
-      return <span style={{ ...containerStyle, color: 'rgba(226,232,255,0.9)' }}><Hotel size={Math.round(size * 0.85)} strokeWidth={1.75} /></span>
+      return <span style={{ ...containerStyle, color: '#5B6670' }}><Hotel size={Math.round(size * 0.85)} strokeWidth={1.75} /></span>
     }
     // הזמנה ישירה או לא מוכר
-    return <span style={{ ...containerStyle, color: 'rgba(226,232,255,0.9)' }}><Globe size={Math.round(size * 0.85)} strokeWidth={1.75} /></span>
+    return <span style={{ ...containerStyle, color: '#7133D9' }}><Globe size={Math.round(size * 0.85)} strokeWidth={1.75} /></span>
   }
 
   // Mobile List View Component
@@ -326,20 +329,20 @@ const ReservationsTable = ({
               {/* Main Content */}
               <div className="flex-grow-1" style={{ minWidth: 0 }}>
                 <div className="d-flex align-items-center gap-2 mb-1 flex-wrap">
-                  <h6 className="mb-0 fw-bold" style={{ fontSize: '1rem', color: 'white' }}>
+                  <h6 className="mb-0 fw-bold" style={{ fontSize: '1rem', color: '#2F3133' }}>
                     {reservation.guestName}
                   </h6>
                   {isCurrent && <span className="current-stay-badge">בנכס</span>}
                 </div>
-                <div className="small mb-2" style={{ color: 'rgba(249, 147, 251, 0.8)' }}>
+                <div className="small mb-2" style={{ color: '#6C7884' }}>
                   {formatDate(reservation.checkIn)} - {formatDate(reservation.checkOut)}
                 </div>
                 <div className="d-flex align-items-center gap-3 flex-wrap">
-                  <span className="small" style={{ color: 'rgba(255, 255, 255, 0.8)' }}>
-                    <strong style={{ color: 'white' }}>{reservation.nights}</strong> לילות
+                  <span className="small" style={{ color: '#5B6670' }}>
+                    <strong style={{ color: '#2F3133' }}>{reservation.nights}</strong> לילות
                   </span>
-                  <span className="small" style={{ color: 'rgba(255, 255, 255, 0.8)' }}>
-                    <strong style={{ color: 'white' }}>
+                  <span className="small" style={{ color: '#5B6670' }}>
+                    <strong style={{ color: '#2F3133' }}>
                       {reservation.adults && reservation.children ? (
                         <>
                           {reservation.adults + reservation.children}
@@ -351,7 +354,7 @@ const ReservationsTable = ({
                       )}
                     </strong> אורחים
                   </span>
-                  <span className="fw-bold" style={{ color: '#f093fb' }}>
+                  <span className="fw-bold" style={{ color: '#7133D9' }}>
                     {formatCurrency(reservation.total)}
                   </span>
                 </div>
@@ -387,7 +390,7 @@ const ReservationsTable = ({
                     strokeWidth="2" 
                     strokeLinecap="round" 
                     strokeLinejoin="round"
-                    style={{ color: '#f093fb' }}
+                    style={{ color: '#7133D9' }}
                   >
                     <polyline points="9 18 15 12 9 6" />
                   </svg>
@@ -440,9 +443,9 @@ const ReservationsTable = ({
                   <div
                     className="mt-2 mb-2 small text-center py-2 rounded"
                     style={{
-                      background: 'rgba(34,197,94,0.15)',
-                      border: '1px solid rgba(74,222,128,0.35)',
-                      color: 'rgba(187,247,208,0.95)',
+                      background: 'rgba(16,185,129,0.1)',
+                      border: '1px solid rgba(16,185,129,0.3)',
+                      color: '#065F46',
                     }}
                   >
                     הופקה קבלה להזמנה זו
@@ -481,7 +484,7 @@ const ReservationsTable = ({
                     <a 
                       href={`mailto:${reservation.email}`} 
                       className="reservation-detail-value text-decoration-none" 
-                      style={{ fontSize: '0.8rem', color: '#f093fb' }}
+                      style={{ fontSize: '0.8rem', color: '#7133D9' }}
                     >
                       {reservation.email}
                     </a>
@@ -498,21 +501,21 @@ const ReservationsTable = ({
                 
                 <div className="reservation-detail-row">
                   <span className="reservation-detail-label">סכום כולל</span>
-                  <span className="reservation-detail-value fw-bold" style={{ color: '#667eea' }}>
+                  <span className="reservation-detail-value fw-bold" style={{ color: '#7133D9' }}>
                     {formatCurrency(reservation.total)}
                   </span>
                 </div>
                 
                 {reservation.notes && (
-                  <div className="mt-3 pt-3" style={{ borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                  <div className="mt-3 pt-3" style={{ borderTop: '1px solid #F2F6FA' }}>
                     <div className="reservation-detail-label mb-2">הערות</div>
                     <div className="small" style={{ 
-                      background: 'rgba(255, 255, 255, 0.05)', 
-                      padding: '12px', 
+                      background: '#ffffff', 
+                      padding: '10px 12px', 
                       borderRadius: '8px',
                       lineHeight: '1.6',
-                      color: 'rgba(255, 255, 255, 0.9)',
-                      border: '1px solid rgba(249, 147, 251, 0.1)'
+                      color: '#2F3133',
+                      border: '1px solid #E4EAF0'
                     }}>
                       {reservation.notes}
                     </div>
@@ -523,7 +526,7 @@ const ReservationsTable = ({
                 {(onEditReservation || onDeleteReservation) &&
                   reservation.source &&
                   reservation.source.toLowerCase().includes('direct') && (
-                  <div className="mt-3 pt-3 d-flex gap-2 flex-wrap" style={{ borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                  <div className="mt-3 pt-3 d-flex gap-2 flex-wrap" style={{ borderTop: '1px solid #F2F6FA' }}>
                     {onEditReservation && (
                       <button
                         type="button"
@@ -690,8 +693,8 @@ const ReservationsTable = ({
               {expandedId === reservation.id ? (
                 <tr>
                   <td colSpan={7} style={{ 
-                    background: 'rgba(0, 0, 0, 0.3)',
-                    borderTop: '1px solid rgba(249, 147, 251, 0.2)',
+                    background: '#F8FAFB',
+                    borderTop: '1px solid #E4EAF0',
                   }}>
                     <div className="p-3">
                       <div className="row g-3">
@@ -699,28 +702,28 @@ const ReservationsTable = ({
                         <div className="col-md-8">
                           <div className="row g-3">
                             <div className="col-md-6">
-                              <div className="small mb-1" style={{ color: 'rgba(249, 147, 251, 0.8)' }}>מזהה הזמנה</div>
-                              <div className="fw-semibold" style={{ color: 'white' }}>{reservation.id}</div>
+                              <div className="small mb-1" style={{ color: '#6C7884' }}>מזהה הזמנה</div>
+                              <div className="fw-semibold" style={{ color: '#2F3133' }}>{reservation.id}</div>
                             </div>
                             <div className="col-md-6">
-                              <div className="small mb-1" style={{ color: 'rgba(249, 147, 251, 0.8)' }}>שם אורח מלא</div>
-                              <div className="fw-semibold" style={{ color: 'white' }}>{reservation.guestName}</div>
+                              <div className="small mb-1" style={{ color: '#6C7884' }}>שם אורח מלא</div>
+                              <div className="fw-semibold" style={{ color: '#2F3133' }}>{reservation.guestName}</div>
                             </div>
                             <div className="col-md-6">
-                              <div className="small mb-1" style={{ color: 'rgba(249, 147, 251, 0.8)' }}>תאריך כניסה</div>
-                              <div style={{ color: 'rgba(255, 255, 255, 0.9)' }}>{formatDate(reservation.checkIn)}</div>
+                              <div className="small mb-1" style={{ color: '#6C7884' }}>תאריך כניסה</div>
+                              <div style={{ color: '#2F3133' }}>{formatDate(reservation.checkIn)}</div>
                             </div>
                             <div className="col-md-6">
-                              <div className="small mb-1" style={{ color: 'rgba(249, 147, 251, 0.8)' }}>תאריך יציאה</div>
-                              <div style={{ color: 'rgba(255, 255, 255, 0.9)' }}>{formatDate(reservation.checkOut)}</div>
+                              <div className="small mb-1" style={{ color: '#6C7884' }}>תאריך יציאה</div>
+                              <div style={{ color: '#2F3133' }}>{formatDate(reservation.checkOut)}</div>
                             </div>
                             <div className="col-md-6">
-                              <div className="small mb-1" style={{ color: 'rgba(249, 147, 251, 0.8)' }}>מספר לילות</div>
-                              <div style={{ color: 'rgba(255, 255, 255, 0.9)' }}>{reservation.nights}</div>
+                              <div className="small mb-1" style={{ color: '#6C7884' }}>מספר לילות</div>
+                              <div style={{ color: '#2F3133' }}>{reservation.nights}</div>
                             </div>
                             <div className="col-md-6">
-                              <div className="small mb-1" style={{ color: 'rgba(249, 147, 251, 0.8)' }}>מספר אורחים</div>
-                              <div style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
+                              <div className="small mb-1" style={{ color: '#6C7884' }}>מספר אורחים</div>
+                              <div style={{ color: '#2F3133' }}>
                                 {reservation.adults || reservation.children ? (
                                   <>
                                     {reservation.adults ? `${reservation.adults} מבוגרים` : ''}
@@ -736,7 +739,7 @@ const ReservationsTable = ({
                             </div>
                             {reservation.phone ? (
                               <div className="col-md-6">
-                                <div className="small mb-1" style={{ color: 'rgba(249, 147, 251, 0.8)' }}>טלפון</div>
+                                <div className="small mb-1" style={{ color: '#6C7884' }}>טלפון</div>
                                 <div>
                                   <PhoneActions phone={reservation.phone} />
                                 </div>
@@ -744,32 +747,32 @@ const ReservationsTable = ({
                             ) : null}
                             {reservation.email ? (
                               <div className="col-md-6">
-                                <div className="small mb-1" style={{ color: 'rgba(249, 147, 251, 0.8)' }}>אימייל</div>
+                                <div className="small mb-1" style={{ color: '#6C7884' }}>אימייל</div>
                                 <div>
-                                  <a href={`mailto:${reservation.email}`} className="text-decoration-none" style={{ color: '#f093fb' }}>
+                                  <a href={`mailto:${reservation.email}`} className="text-decoration-none" style={{ color: '#7133D9' }}>
                                     {reservation.email}
                                   </a>
                                 </div>
                               </div>
                             ) : null}
                             <div className="col-md-6">
-                              <div className="small mb-1" style={{ color: 'rgba(249, 147, 251, 0.8)' }}>מקור הזמנה</div>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'rgba(255, 255, 255, 0.9)' }}>
+                              <div className="small mb-1" style={{ color: '#6C7884' }}>מקור הזמנה</div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#2F3133' }}>
                                 {getPlatformIcon(reservation.source, 20)}
                                 <span>{reservation.source ?? '—'}</span>
                               </div>
                             </div>
                             <div className="col-md-6">
-                              <div className="small mb-1" style={{ color: 'rgba(249, 147, 251, 0.8)' }}>סכום כולל</div>
-                              <div className="fw-bold" style={{ color: '#f093fb' }}>{formatCurrency(reservation.total)}</div>
+                              <div className="small mb-1" style={{ color: '#6C7884' }}>סכום כולל</div>
+                              <div className="fw-bold" style={{ color: '#7133D9' }}>{formatCurrency(reservation.total)}</div>
                             </div>
                             {reservation.notes ? (
                               <div className="col-12">
-                                <div className="small mb-1" style={{ color: 'rgba(249, 147, 251, 0.8)' }}>הערות</div>
+                                <div className="small mb-1" style={{ color: '#6C7884' }}>הערות</div>
                                 <div className="border rounded p-2" style={{
-                                  background: 'rgba(0, 0, 0, 0.2)',
-                                  borderColor: 'rgba(249, 147, 251, 0.2)',
-                                  color: 'rgba(255, 255, 255, 0.9)',
+                                  background: '#ffffff',
+                                  borderColor: '#E4EAF0',
+                                  color: '#2F3133',
                                 }}>{reservation.notes}</div>
                               </div>
                             ) : null}
@@ -783,14 +786,14 @@ const ReservationsTable = ({
                             style={{
                               padding: '0.85rem',
                               borderRadius: 12,
-                              background: 'rgba(255,255,255,0.04)',
-                              border: '1px solid rgba(249, 147, 251, 0.18)',
+                              background: '#ffffff',
+                              border: '1px solid #E4EAF0',
                             }}
                             onClick={(e) => e.stopPropagation()}
                           >
                             <div
                               className="small fw-semibold mb-1"
-                              style={{ color: 'rgba(249, 147, 251, 0.85)' }}
+                              style={{ color: '#5B6670' }}
                             >
                               פעולות
                             </div>
@@ -813,9 +816,9 @@ const ReservationsTable = ({
                               <div
                                 className="small text-center py-2 rounded"
                                 style={{
-                                  background: 'rgba(34,197,94,0.15)',
-                                  border: '1px solid rgba(74,222,128,0.35)',
-                                  color: 'rgba(187,247,208,0.95)',
+                                  background: 'rgba(16,185,129,0.1)',
+                                  border: '1px solid rgba(16,185,129,0.3)',
+                                  color: '#065F46',
                                 }}
                               >
                                 הופקה קבלה להזמנה זו
@@ -854,7 +857,7 @@ const ReservationsTable = ({
                             {reservation.source &&
                               reservation.source.toLowerCase().includes('direct') &&
                               (onEditReservation || onDeleteReservation) && (
-                              <p className="small mb-0 mt-1" style={{ color: 'rgba(255,255,255,0.45)' }}>
+                              <p className="small mb-0 mt-1" style={{ color: '#9CA3AF' }}>
                                 עריכה/ביטול להזמנות ישירות בלבד
                               </p>
                             )}
