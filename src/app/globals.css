@@ -15,12 +15,18 @@ html,
 body {
   max-width: 100vw;
   overflow-x: hidden;
+  /* Force light mode — prevents Android/iOS dark-mode from injecting
+     a black background via Tailwind v4's automatic color-scheme support */
+  color-scheme: light;
+  background-color: #F8FAFB;
 }
 
 body {
   font-family: var(--font-heebo), Heebo, system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background-color: #F8FAFB;
+  color: #2F3133;
 }
 
 a {

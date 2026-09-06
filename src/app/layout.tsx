@@ -12,10 +12,12 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
+  // Always light — both light and dark OS modes get the brand purple topbar
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#667eea' },
-    { media: '(prefers-color-scheme: dark)', color: '#667eea' },
+    { media: '(prefers-color-scheme: light)', color: '#7133D9' },
+    { media: '(prefers-color-scheme: dark)', color: '#7133D9' },
   ],
+  colorScheme: 'light',
 }
 
 export const metadata: Metadata = {
