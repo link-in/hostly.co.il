@@ -3,7 +3,7 @@
 import { signOut } from 'next-auth/react'
 import Link from 'next/link'
 import { useState, useCallback, type ReactNode } from 'react'
-import { ExternalLink, Home, LogOut, Menu } from 'lucide-react'
+import { ExternalLink, Home, LogOut, SquareMenu } from 'lucide-react'
 import DashboardSideDrawer, { type DashboardPage } from './DashboardSideDrawer'
 
 interface DashboardHeaderProps {
@@ -15,7 +15,7 @@ interface DashboardHeaderProps {
 }
 
 const ICON_PROPS = { size: 18, strokeWidth: 1.75 } as const
-const HAMBURGER_ICON_PROPS = { size: 22, strokeWidth: 1.5 } as const
+const HAMBURGER_ICON_PROPS = { size: 24, strokeWidth: 2 } as const
 
 function TopbarBtn({
   onClick,
@@ -75,7 +75,7 @@ export default function DashboardHeader({
           onClick={() => setMenuOpen((prev) => !prev)}
           className="hostly-topbar-hamburger"
         >
-          <Menu {...HAMBURGER_ICON_PROPS} />
+          <SquareMenu {...HAMBURGER_ICON_PROPS} />
         </TopbarBtn>
 
         {/* Property name — center */}

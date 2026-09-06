@@ -15,6 +15,8 @@ type CalendarPricingProps = {
   reservations: Reservation[]
   prices: RoomPrice[]
   onPricesUpdated?: () => Promise<void> | void
+  /** When true (Beds24 credit exhausted), all mutating actions are disabled */
+  disabled?: boolean
 }
 
 const DEFAULT_PRICE = undefined
@@ -48,7 +50,7 @@ const addMonths = (date: Date, months: number) => {
 
 const HEBREW_MONTHS = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר']
 
-const CalendarPricing = ({ reservations, prices, onPricesUpdated }: CalendarPricingProps) => {
+const CalendarPricing = ({ reservations, prices, onPricesUpdated, disabled = false }: CalendarPricingProps) => {
   const { selectedRoomId } = useSelectedRoom()
   const [currentMonth, setCurrentMonth] = useState(() => startOfMonth(new Date()))
   const [showMonthPicker, setShowMonthPicker] = useState(false)
@@ -864,8 +866,8 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated }: CalendarPric
                   padding: '8px 4px', fontSize: '11px', lineHeight: 1.2, borderRadius: '6px',
                 }}
                 onClick={applyPrice}
-                disabled={!selectedDates.length || !priceInput.trim() || saving}
-                title={allSelectedAreBlocked ? 'עדכן מחיר ופתח תאריכים' : 'עדכן מחיר לתאריכים שנבחרו'}
+                disabled={!selectedDates.length || !priceInput.trim() || saving || disabled}
+                title={disabled ? 'לא ניתן לבצע פעולות — הקרדיט ב-Beds24 אזל' : allSelectedAreBlocked ? 'עדכן מחיר ופתח תאריכים' : 'עדכן מחיר לתאריכים שנבחרו'}
                 aria-label={allSelectedAreBlocked ? 'עדכן מחיר ופתח תאריכים' : 'עדכן מחיר לתאריכים שנבחרו'}
               >
                 <Tag size={16} />
@@ -881,8 +883,8 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated }: CalendarPric
                   padding: '8px 4px', fontSize: '11px', lineHeight: 1.2, borderRadius: '6px',
                 }}
                 onClick={blockDates}
-                disabled={!selectedFreeDates.length || selectedHasBooked || saving}
-                title={selectedHasBooked ? 'לא ניתן לסגור תאריכים עם הזמנות קיימות' : 'סגור תאריכים חופשיים נבחרים להזמנות'}
+                disabled={!selectedFreeDates.length || selectedHasBooked || saving || disabled}
+                title={disabled ? 'לא ניתן לבצע פעולות — הקרדיט ב-Beds24 אזל' : selectedHasBooked ? 'לא ניתן לסגור תאריכים עם הזמנות קיימות' : 'סגור תאריכים חופשיים נבחרים להזמנות'}
                 aria-label="סגור להזמנות"
               >
                 <Lock size={16} />
@@ -898,8 +900,8 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated }: CalendarPric
                   padding: '8px 4px', fontSize: '11px', lineHeight: 1.2, borderRadius: '6px',
                 }}
                 onClick={unblockDates}
-                disabled={!selectedBlockedDates.length || saving}
-                title="שחרר חסימה לתאריכים חסומים שנבחרו"
+                disabled={!selectedBlockedDates.length || saving || disabled}
+                title={disabled ? 'לא ניתן לבצע פעולות — הקרדיט ב-Beds24 אזל' : 'שחרר חסימה לתאריכים חסומים שנבחרו'}
                 aria-label="שחרר חסימה"
               >
                 <Unlock size={16} />

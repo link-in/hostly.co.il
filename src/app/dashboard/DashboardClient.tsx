@@ -16,6 +16,7 @@ import RoomTabs from './components/RoomTabs'
 import DashboardHeader from '@/components/DashboardHeader'
 import DashboardLoader from '@/components/DashboardLoader'
 import { useSelectedRoom } from '@/lib/rooms/RoomContext'
+import { useBeds24Status } from '@/lib/beds24/Beds24StatusContext'
 import { Trash2, Plus, X } from 'lucide-react'
 
 const toLocalKey = (value: Date) => {
@@ -183,6 +184,7 @@ const DashboardClient = () => {
   const { data: session, status } = useSession()
   const router = useRouter()
   const { selectedRoomId } = useSelectedRoom()
+  const { isBeds24Suspended } = useBeds24Status()
   
   // Recreate provider when selected room changes so prices/bookings are room-scoped
   const { provider, meta } = useMemo(
@@ -1482,14 +1484,26 @@ const DashboardClient = () => {
                 <button
                   type="button"
                   className="hostly-btn hostly-btn-sm hostly-btn-primary"
-                  style={glassCtaStyle(showNewReservation)}
+                  style={{
+                    ...glassCtaStyle(showNewReservation),
+                    ...(isBeds24Suspended ? { opacity: 0.45, cursor: 'not-allowed' } : {}),
+                  }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.background = showNewReservation ? 'rgba(176,0,47,0.12)' : '#5D22BD'
+                    if (!isBeds24Suspended)
+                      e.currentTarget.style.background = showNewReservation ? 'rgba(176,0,47,0.12)' : '#5D22BD'
                   }}
                   onMouseLeave={(e) => {
-                    Object.assign(e.currentTarget.style, glassCtaStyle(showNewReservation))
+                    if (!isBeds24Suspended)
+                      Object.assign(e.currentTarget.style, glassCtaStyle(showNewReservation))
                   }}
-                  onClick={() => setShowNewReservation((prev) => !prev)}
+                  onClick={() => {
+                    if (isBeds24Suspended) {
+                      toast.error('הקרדיט ב-Beds24 אזל — טען קרדיט כדי ליצור הזמנות')
+                      return
+                    }
+                    setShowNewReservation((prev) => !prev)
+                  }}
+                  title={isBeds24Suspended ? 'לא ניתן לבצע פעולות — הקרדיט ב-Beds24 אזל' : undefined}
                 >
                   {showNewReservation ? (
                     <>
@@ -1810,7 +1824,7 @@ const DashboardClient = () => {
             {loadingRoomPrices && !initialRoomPricesLoaded ? (
               <DashboardLoader variant="section" tone="onLight" label="טוען לוח שנה ומחירים…" minHeight={320} />
             ) : (
-              <CalendarPricing reservations={reservations} prices={roomPrices} onPricesUpdated={refreshRoomPrices} />
+              <CalendarPricing reservations={reservations} prices={roomPrices} onPricesUpdated={refreshRoomPrices} disabled={isBeds24Suspended} />
             )}
           </div>
         </div>

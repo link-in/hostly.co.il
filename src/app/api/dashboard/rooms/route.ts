@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth/authOptions'
 import { fetchWithTokenRefresh } from '@/lib/beds24/tokenManager'
 import { overlayAvailabilityCache, writeCacheAvailability } from '@/lib/availability/blocking'
+import { detectAndMarkCreditError } from '@/lib/beds24/creditGuard'
 
 export const dynamic = 'force-dynamic'
 
@@ -192,10 +193,11 @@ export async function GET(request: Request) {
     ])
 
     if (!response.ok) {
+      await detectAndMarkCreditError(response, session?.user?.id)
       const details = await response.text()
       return NextResponse.json(
         { error: 'Beds24 request failed', status: response.status, details, requestUrl: url.toString() },
-        { status: 502 }
+        { status: response.status === 402 ? 402 : 502 }
       )
     }
 
@@ -422,10 +424,11 @@ export async function POST(request: Request) {
     }, userTokens, session?.user?.id)
 
     if (!response.ok) {
+      await detectAndMarkCreditError(response, session?.user?.id)
       const details = await response.text()
       return NextResponse.json(
         { error: 'Beds24 request failed', status: response.status, details, requestUrl: url.toString() },
-        { status: 502 }
+        { status: response.status === 402 ? 402 : 502 }
       )
     }
 

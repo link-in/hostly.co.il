@@ -360,6 +360,12 @@ html::-webkit-scrollbar-thumb:hover {
 @media (max-width: 991px) {
   .hostly-topbar {
     padding: 0 14px;
+    background: transparent;
+    border-bottom: none;
+  }
+
+  .hostly-topbar-property {
+    display: none;
   }
 }
 

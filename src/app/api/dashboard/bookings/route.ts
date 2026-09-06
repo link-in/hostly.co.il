@@ -10,6 +10,7 @@ import { addOrUpdateCustomer } from '@/lib/customers/addOrUpdateCustomer'
 import { normalizeBookingItem, extractBookingId, extractUserTokens } from '@/lib/bookings/normalizer'
 import { notifyOwnersOfBookingCancellation } from '@/lib/notifications/bookingAlerts'
 import { refreshRoomCache } from '@/lib/availability/cache'
+import { detectAndMarkCreditError } from '@/lib/beds24/creditGuard'
 
 export const dynamic = 'force-dynamic'  // Allow POST requests for creating bookings
 export const revalidate = 0
@@ -165,10 +166,12 @@ export async function POST(request: Request) {
   }, userTokens, session?.user?.id)
 
   if (!response.ok) {
+    // Detect credit exhaustion and persist suspension flag for the dashboard
+    await detectAndMarkCreditError(response, session?.user?.id)
     const details = await response.text()
     return NextResponse.json(
       { error: 'Beds24 request failed', status: response.status, details },
-      { status: 502 }
+      { status: response.status === 402 ? 402 : 502 }
     )
   }
 

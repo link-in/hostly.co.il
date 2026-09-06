@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth/authOptions'
 import { fetchWithTokenRefresh } from '@/lib/beds24/tokenManager'
+import { detectAndMarkCreditError } from '@/lib/beds24/creditGuard'
 
 export const dynamic = 'force-dynamic'
 
@@ -42,10 +43,12 @@ export async function GET() {
     const response = await fetchWithTokenRefresh(url.toString(), {}, userTokens, session?.user?.id)
 
     if (!response.ok) {
+      // Detect credit exhaustion and persist suspension flag
+      await detectAndMarkCreditError(response, session?.user?.id)
       const details = await response.text()
       return NextResponse.json(
         { error: 'Beds24 request failed', status: response.status, details },
-        { status: 502 }
+        { status: response.status === 402 ? 402 : 502 }
       )
     }
 
