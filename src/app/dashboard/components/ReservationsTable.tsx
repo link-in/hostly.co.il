@@ -1,7 +1,7 @@
 'use client'
 
-import React, { useState } from 'react'
-import { Phone, Pencil, X, Sparkles, Map, Plane, Home, Hotel, Globe, Bird, FileText } from 'lucide-react'
+import React, { useState, useCallback } from 'react'
+import { Phone, Pencil, X, Sparkles, Map, Plane, Home, Hotel, Globe, Bird, FileText, BellRing, BellOff } from 'lucide-react'
 import { Icon } from '@iconify/react'
 import type { Reservation } from '@/lib/dashboard/types'
 import { formatCurrency, formatDate, formatStatus } from '@/lib/dashboard/utils'
@@ -195,6 +195,9 @@ const ReservationsTable = ({
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [mobileVisibleCount, setMobileVisibleCount] = useState(6)
   const [viewedReservations, setViewedReservations] = useState<Set<string>>(new Set())
+  // arrival-message skip state: bookingId -> 'skipped_manual' | 'sent' | 'failed' | null
+  const [skipStatuses, setSkipStatuses] = useState<Record<string, string | null>>({})
+  const [skipLoading, setSkipLoading] = useState<Record<string, boolean>>({})
 
   if (!reservations.length) {
     return <div className="text-muted">אין הזמנות להצגה כרגע.</div>
@@ -217,9 +220,14 @@ const ReservationsTable = ({
       .map((r) => r.id)
   )
 
-  const toggleExpanded = (id: string, isNew?: boolean) => {
+  const toggleExpanded = (id: string, isNew?: boolean, checkIn?: string, checkOut?: string) => {
     setExpandedId((prev) => (prev === id ? null : id))
     
+    // Fetch skip status for relevant bookings (current stay or future)
+    if (checkOut && isStillRelevant(checkOut)) {
+      fetchSkipStatus(id)
+    }
+
     // Mark as viewed if it's a new reservation
     if (isNew && !viewedReservations.has(id)) {
       setViewedReservations(prev => new Set([...prev, id]))
@@ -233,6 +241,54 @@ const ReservationsTable = ({
   const isCurrentStay = (id: string) => currentStayIds.has(id)
   
   const isReservationViewed = (id: string) => viewedReservations.has(id)
+
+  /** Returns true if the booking hasn't fully ended yet (checkout is today or future). */
+  const isStillRelevant = (checkOut: string) => {
+    const d = new Date(checkOut)
+    d.setHours(0, 0, 0, 0)
+    return d.getTime() >= today.getTime()
+  }
+
+  /** Fetch skip status for a booking on first expand, if upcoming. */
+  const fetchSkipStatus = useCallback(async (reservationId: string) => {
+    if (skipStatuses[reservationId] !== undefined) return
+    try {
+      const res = await fetch(`/api/dashboard/arrival-message-skip?bookingId=${encodeURIComponent(reservationId)}`)
+      const data = await res.json()
+      setSkipStatuses((prev) => ({ ...prev, [reservationId]: data.status ?? null }))
+    } catch {
+      setSkipStatuses((prev) => ({ ...prev, [reservationId]: null }))
+    }
+  }, [skipStatuses])
+
+  const handleToggleSkip = async (reservation: Reservation, e: React.MouseEvent) => {
+    e.stopPropagation()
+    setSkipLoading((prev) => ({ ...prev, [reservation.id]: true }))
+    const isSkipped = skipStatuses[reservation.id] === 'skipped_manual'
+    try {
+      if (isSkipped) {
+        await fetch(`/api/dashboard/arrival-message-skip?bookingId=${encodeURIComponent(reservation.id)}`, {
+          method: 'DELETE',
+        })
+        setSkipStatuses((prev) => ({ ...prev, [reservation.id]: null }))
+      } else {
+        await fetch('/api/dashboard/arrival-message-skip', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            bookingId: reservation.id,
+            checkInDate: reservation.checkIn,
+            guestName: reservation.guestName,
+          }),
+        })
+        setSkipStatuses((prev) => ({ ...prev, [reservation.id]: 'skipped_manual' }))
+      }
+    } catch {
+      // silently ignore
+    } finally {
+      setSkipLoading((prev) => ({ ...prev, [reservation.id]: false }))
+    }
+  }
 
   // Get platform logo/icon based on reservation source
   const getPlatformIcon = (source: string | null | undefined, size: number = 24) => {
@@ -318,7 +374,7 @@ const ReservationsTable = ({
           <div
             key={reservation.id}
             className={`reservation-list-item ${isExpanded ? 'expanded' : ''} ${isCurrent ? 'current-stay' : ''}`}
-            onClick={() => toggleExpanded(reservation.id, reservation.isNew)}
+            onClick={() => toggleExpanded(reservation.id, reservation.isNew, reservation.checkIn, reservation.checkOut)}
           >
             <div className="d-flex align-items-start gap-3">
               {/* Avatar */}
@@ -428,7 +484,7 @@ const ReservationsTable = ({
                   <div className="mt-2 mb-2">
                     <button
                       type="button"
-                      className="hostly-btn hostly-btn-primary w-100"
+                      className="hostly-btn hostly-btn-on-light hostly-btn-primary w-100"
                       onClick={(e) => {
                         e.stopPropagation()
                         onIssueReceipt(reservation)
@@ -522,6 +578,54 @@ const ReservationsTable = ({
                   </div>
                 )}
                 
+                {/* Arrival-message skip toggle (upcoming bookings only) */}
+                {reservation.status !== 'cancelled' && isStillRelevant(reservation.checkOut) && (
+                  <div className="mt-3 pt-3" style={{ borderTop: '1px solid #F2F6FA' }}>
+                    {skipStatuses[reservation.id] === 'sent' ? (
+                      <div className="d-flex align-items-center gap-2" style={{ color: '#10b981', fontSize: '13px' }}>
+                        <BellRing size={14} />
+                        <span>הודעת הגעה נשלחה ✅</span>
+                      </div>
+                    ) : (
+                      <div
+                        className="d-flex align-items-center justify-content-between"
+                        onClick={(e) => e.stopPropagation()}
+                        style={{ cursor: skipLoading[reservation.id] ? 'wait' : 'default' }}
+                      >
+                        <span style={{ fontSize: '13px', color: '#5B6670' }}>הודעת הגעה</span>
+                        <div
+                          role="switch"
+                          aria-checked={skipStatuses[reservation.id] !== 'skipped_manual'}
+                          onClick={(e) => handleToggleSkip(reservation, e)}
+                          style={{
+                            width: 44,
+                            height: 24,
+                            borderRadius: 12,
+                            background: skipStatuses[reservation.id] === 'skipped_manual' ? '#D1D5DB' : '#7133D9',
+                            position: 'relative',
+                            cursor: skipLoading[reservation.id] ? 'wait' : 'pointer',
+                            transition: 'background 0.2s',
+                            flexShrink: 0,
+                            opacity: skipLoading[reservation.id] ? 0.6 : 1,
+                          }}
+                        >
+                          <div style={{
+                            width: 18,
+                            height: 18,
+                            borderRadius: '50%',
+                            background: '#fff',
+                            position: 'absolute',
+                            top: 3,
+                            left: skipStatuses[reservation.id] === 'skipped_manual' ? 3 : 23,
+                            transition: 'left 0.2s',
+                            boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+                          }} />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {/* Action Buttons for Direct bookings */}
                 {(onEditReservation || onDeleteReservation) &&
                   reservation.source &&
@@ -620,7 +724,7 @@ const ReservationsTable = ({
           {reservations.map((reservation) => (
             <React.Fragment key={reservation.id}>
               <tr 
-                onClick={() => toggleExpanded(reservation.id, reservation.isNew)}
+                onClick={() => toggleExpanded(reservation.id, reservation.isNew, reservation.checkIn, reservation.checkOut)}
                 style={{ cursor: 'pointer' }}
                 className={`${expandedId === reservation.id ? 'table-active' : ''} ${isCurrentStay(reservation.id) ? 'current-stay-reservation' : ''}`}
               >
@@ -802,7 +906,7 @@ const ReservationsTable = ({
                               !receiptIssuedBookingIds?.has(reservation.id) && (
                               <button
                                 type="button"
-                                className="hostly-btn hostly-btn-primary w-100"
+                                className="hostly-btn hostly-btn-on-light hostly-btn-primary w-100"
                                 onClick={(e) => {
                                   e.stopPropagation()
                                   onIssueReceipt(reservation)
@@ -860,6 +964,53 @@ const ReservationsTable = ({
                               <p className="small mb-0 mt-1" style={{ color: '#9CA3AF' }}>
                                 עריכה/ביטול להזמנות ישירות בלבד
                               </p>
+                            )}
+                            {/* Arrival-message skip toggle */}
+                            {reservation.status !== 'cancelled' && isStillRelevant(reservation.checkOut) && (
+                              <div style={{ borderTop: '1px solid #F2F6FA', paddingTop: '10px', marginTop: '4px' }}>
+                                {skipStatuses[reservation.id] === 'sent' ? (
+                                  <div className="d-flex align-items-center gap-2" style={{ color: '#10b981', fontSize: '13px' }}>
+                                    <BellRing size={13} />
+                                    <span>הודעת הגעה נשלחה ✅</span>
+                                  </div>
+                                ) : (
+                                  <div
+                                    className="d-flex align-items-center justify-content-between"
+                                    onClick={(e) => e.stopPropagation()}
+                                    style={{ cursor: skipLoading[reservation.id] ? 'wait' : 'default' }}
+                                  >
+                                    <span style={{ fontSize: '13px', color: '#5B6670' }}>הודעת הגעה</span>
+                                    <div
+                                      role="switch"
+                                      aria-checked={skipStatuses[reservation.id] !== 'skipped_manual'}
+                                      onClick={(e) => handleToggleSkip(reservation, e)}
+                                      style={{
+                                        width: 44,
+                                        height: 24,
+                                        borderRadius: 12,
+                                        background: skipStatuses[reservation.id] === 'skipped_manual' ? '#D1D5DB' : '#7133D9',
+                                        position: 'relative',
+                                        cursor: skipLoading[reservation.id] ? 'wait' : 'pointer',
+                                        transition: 'background 0.2s',
+                                        flexShrink: 0,
+                                        opacity: skipLoading[reservation.id] ? 0.6 : 1,
+                                      }}
+                                    >
+                                      <div style={{
+                                        width: 18,
+                                        height: 18,
+                                        borderRadius: '50%',
+                                        background: '#fff',
+                                        position: 'absolute',
+                                        top: 3,
+                                        left: skipStatuses[reservation.id] === 'skipped_manual' ? 3 : 23,
+                                        transition: 'left 0.2s',
+                                        boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+                                      }} />
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
                             )}
                           </div>
                         </div>

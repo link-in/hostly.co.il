@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useEffect, useState, type ComponentType } from 'react'
 import {
   BadgeCheck,
+  BellRing,
   Calculator,
   CalendarDays,
   CircleHelp,
@@ -36,6 +37,7 @@ export type DashboardPage =
   | 'api-keys'
   | 'messages'
   | 'receipts'
+  | 'arrival-message'
 
 type IconComponent = ComponentType<LucideProps>
 
@@ -54,6 +56,7 @@ export const NAV_ITEMS: NavItem[] = [
   { href: '/dashboard/customers', label: 'מאגר לקוחות', icon: Users, page: 'customers', section: 'main' },
   { href: '/dashboard/check-ins', label: "צ'ק-אין דיגיטלי", icon: BadgeCheck, page: 'check-ins', section: 'main' },
   { href: '/dashboard/messages', label: 'הודעות WhatsApp', icon: MessageSquare, page: 'messages', section: 'main' },
+  { href: '/dashboard/arrival-message', label: 'הודעת יום הגעה', icon: BellRing, page: 'arrival-message', section: 'main' },
   { href: '/dashboard/receipts', label: 'קבלות וחשבוניות', icon: FileText, page: 'receipts', section: 'main' },
   { href: '/dashboard/price-check', label: 'בדיקת מחיר', icon: CircleHelp, page: 'price-check', section: 'main' },
   { href: '/dashboard/pricing-demo', label: 'מחשבון מחירים', icon: Calculator, page: 'pricing-demo', section: 'main' },

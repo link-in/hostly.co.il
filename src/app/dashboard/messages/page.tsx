@@ -32,6 +32,7 @@ const MESSAGE_TYPE_LABELS: Record<string, string> = {
   review_reminder_test: 'בדיקת ביקורת',
   public_booking_owner: 'הזמנה מהאתר — בעלים',
   manual_booking_guest: 'הזמנה ידנית — אורח',
+  arrival_day_guest: 'הודעת הגעה — אורח',
   other: 'אחר',
 }
 

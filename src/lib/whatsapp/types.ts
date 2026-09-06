@@ -41,6 +41,7 @@ export interface WhatsAppSendMeta {
     | 'review_reminder_test'
     | 'public_booking_owner'
     | 'manual_booking_guest'
+    | 'arrival_day_guest'
     | 'other'
   recipientRole?: 'guest' | 'owner' | 'other'
   recipientName?: string | null

@@ -342,123 +342,10 @@ html::-webkit-scrollbar-thumb:hover {
 }
 
 /* =====================================================
-   Top Header / Topbar
+   Top Header / Topbar — retired (mobile uses bottom nav)
    ===================================================== */
 .hostly-topbar {
-  background: var(--hsurf);
-  border-bottom: 1px solid var(--hborder-light);
-  height: 60px;
-  display: flex;
-  align-items: center;
-  padding: 0 20px;
-  position: sticky;
-  top: 0;
-  z-index: 90;
-  gap: 12px;
-}
-
-@media (max-width: 991px) {
-  .hostly-topbar {
-    padding: 0 14px;
-    background: transparent;
-    border-bottom: none;
-  }
-
-  .hostly-topbar-property {
-    display: none;
-  }
-}
-
-.hostly-topbar-logo {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  text-decoration: none !important;
-}
-
-.hostly-topbar-logo img {
-  height: 30px;
-  width: auto;
-  object-fit: contain;
-}
-
-.hostly-topbar-logo-text {
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--hb);
-  letter-spacing: -0.01em;
-}
-
-.hostly-topbar-property {
-  flex: 1;
-  font-family: 'Rubik', system-ui, sans-serif;
-  font-size: 18px;
-  font-weight: 500;
-  color: var(--htxt-1);
-  letter-spacing: -0.01em;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  text-align: center;
-}
-
-.hostly-topbar-btn {
-  width: 36px;
-  height: 36px;
-  border-radius: 6px;
-  border: 1px solid var(--hborder);
-  background: transparent;
-  color: var(--htxt-2);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
-  flex-shrink: 0;
-  text-decoration: none !important;
-  padding: 0;
-}
-
-.hostly-topbar-btn:hover {
-  background: var(--hn-100);
-  color: var(--hb);
-  border-color: var(--hn-200);
-  text-decoration: none !important;
-}
-
-/* Hamburger — modern borderless style on mobile */
-.hostly-topbar-hamburger {
-  border: none !important;
-  background: transparent !important;
-  color: var(--htxt-1) !important;
-  width: 40px !important;
-  height: 40px !important;
-  border-radius: 10px !important;
-}
-
-.hostly-topbar-hamburger:hover {
-  background: var(--hb-100) !important;
-  color: var(--hb) !important;
-  border-color: transparent !important;
-}
-
-/* Action buttons (Home / ExternalLink / Logout) — hidden on mobile, available in drawer */
-.hostly-topbar-actions {
   display: none !important;
-}
-
-@media (min-width: 992px) {
-  .hostly-topbar-actions {
-    display: flex !important;
-  }
-}
-
-/* Topbar — hidden entirely on desktop (sidebar handles navigation) */
-@media (min-width: 992px) {
-  .hostly-topbar {
-    display: none !important;
-  }
 }
 
 /* =====================================================
@@ -702,14 +589,15 @@ html::-webkit-scrollbar-thumb:hover {
   bottom: 0;
   left: 0;
   right: 0;
-  height: 60px;
+  min-height: 60px;
   background: var(--hsurf);
-  border-top: 3px solid var(--hborder-light);
+  border-top: 1px solid var(--hborder-light);
   display: flex;
   align-items: center;
   justify-content: space-around;
   z-index: 95;
-  padding: 0 8px;
+  padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px));
+  box-shadow: 0 -1px 8px rgba(0, 0, 0, 0.04);
 }
 
 @media (min-width: 992px) {
@@ -722,27 +610,44 @@ html::-webkit-scrollbar-thumb:hover {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-  padding: 8px 16px;
+  justify-content: center;
+  gap: 3px;
+  flex: 1;
+  max-width: 96px;
+  padding: 6px 8px;
   text-decoration: none !important;
   color: var(--htxt-3);
   cursor: pointer;
   background: transparent;
   border: none;
   transition: color 0.15s;
-  font-size: 10px;
+  font-family: 'Rubik', system-ui, sans-serif;
+  font-size: 11px;
   font-weight: 500;
+  line-height: 1.2;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .hostly-bottom-nav-item:hover,
 .hostly-bottom-nav-item--active {
   color: var(--hb) !important;
+  text-decoration: none !important;
+}
+
+.hostly-bottom-nav-item--active {
+  font-weight: 600;
 }
 
 /* Extra bottom padding on mobile (so content isn't hidden by bottom nav) */
 @media (max-width: 991px) {
   .hostly-main-panel {
-    padding-bottom: 60px;
+    padding-bottom: calc(68px + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* Header wrappers only hosted the old topbar — collapse leftover margin */
+  .mb-3:has(.hostly-bottom-nav),
+  .mb-md-4:has(.hostly-bottom-nav) {
+    margin-bottom: 0 !important;
   }
 }
 

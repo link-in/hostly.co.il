@@ -1,6 +1,7 @@
 'use client'
 
 import { SessionProvider } from 'next-auth/react'
+import '../dashboard/dashboard-surfaces.css'
 
 export default function AdminLayout({
   children,
