@@ -4,6 +4,7 @@ import { signIn } from 'next-auth/react'
 import { useState } from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
+import PasswordInput from '@/components/PasswordInput'
 
 export default function HomeLanding() {
   const router = useRouter()
@@ -147,8 +148,17 @@ export default function HomeLanding() {
                   <input type="email" placeholder="your@email.com" value={loginEmail} onChange={e=>setLoginEmail(e.target.value)} required disabled={isLoading} style={{ ...inputStyle, direction:'ltr', textAlign:'left' }} />
                 </div>
                 <div style={{ marginBottom:'18px', textAlign:'right' }}>
-                  <label style={{ display:'block', fontSize:'13px', fontWeight:600, color:'#374151', marginBottom:'5px' }}>סיסמה</label>
-                  <input type="password" placeholder="••••••••" value={loginPassword} onChange={e=>setLoginPassword(e.target.value)} required disabled={isLoading} style={inputStyle} />
+                  <label htmlFor="login-password" style={{ display:'block', fontSize:'13px', fontWeight:600, color:'#374151', marginBottom:'5px' }}>סיסמה</label>
+                  <PasswordInput
+                    id="login-password"
+                    placeholder="••••••••"
+                    value={loginPassword}
+                    onChange={setLoginPassword}
+                    required
+                    disabled={isLoading}
+                    autoComplete="current-password"
+                    style={inputStyle}
+                  />
                 </div>
                 <button type="submit" disabled={isLoading} className="hbtn"
                   style={{ width:'100%', padding:'13px', background: isLoading ? '#cbd5e1' : 'linear-gradient(135deg,#667eea,#764ba2)', border:'none', borderRadius:'12px', color:'white', fontSize:'15px', fontWeight:600, cursor: isLoading ? 'not-allowed' : 'pointer', boxShadow:'0 4px 12px rgba(102,126,234,0.3)' }}>
@@ -169,12 +179,31 @@ export default function HomeLanding() {
                   <input type="email" placeholder="your@email.com" value={regEmail} onChange={e=>setRegEmail(e.target.value)} required disabled={isLoading} style={{ ...inputStyle, direction:'ltr', textAlign:'left' }} />
                 </div>
                 <div style={{ marginBottom:'10px', textAlign:'right' }}>
-                  <label style={{ display:'block', fontSize:'13px', fontWeight:600, color:'#374151', marginBottom:'5px' }}>סיסמה <span style={{color:'#dc2626'}}>*</span></label>
-                  <input type="password" placeholder="לפחות 6 תווים" value={regPassword} onChange={e=>setRegPassword(e.target.value)} required minLength={6} disabled={isLoading} style={inputStyle} />
+                  <label htmlFor="register-password" style={{ display:'block', fontSize:'13px', fontWeight:600, color:'#374151', marginBottom:'5px' }}>סיסמה <span style={{color:'#dc2626'}}>*</span></label>
+                  <PasswordInput
+                    id="register-password"
+                    placeholder="לפחות 6 תווים"
+                    value={regPassword}
+                    onChange={setRegPassword}
+                    required
+                    minLength={6}
+                    disabled={isLoading}
+                    autoComplete="new-password"
+                    style={inputStyle}
+                  />
                 </div>
                 <div style={{ marginBottom:'18px', textAlign:'right' }}>
-                  <label style={{ display:'block', fontSize:'13px', fontWeight:600, color:'#374151', marginBottom:'5px' }}>אימות סיסמה <span style={{color:'#dc2626'}}>*</span></label>
-                  <input type="password" placeholder="הזן שוב" value={regConfirm} onChange={e=>setRegConfirm(e.target.value)} required disabled={isLoading} style={inputStyle} />
+                  <label htmlFor="register-password-confirm" style={{ display:'block', fontSize:'13px', fontWeight:600, color:'#374151', marginBottom:'5px' }}>אימות סיסמה <span style={{color:'#dc2626'}}>*</span></label>
+                  <PasswordInput
+                    id="register-password-confirm"
+                    placeholder="הזן שוב"
+                    value={regConfirm}
+                    onChange={setRegConfirm}
+                    required
+                    disabled={isLoading}
+                    autoComplete="new-password"
+                    style={inputStyle}
+                  />
                 </div>
                 <button type="submit" disabled={isLoading} className="hbtn"
                   style={{ width:'100%', padding:'13px', background: isLoading ? '#cbd5e1' : 'linear-gradient(135deg,#667eea,#764ba2)', border:'none', borderRadius:'12px', color:'white', fontSize:'15px', fontWeight:600, cursor: isLoading ? 'not-allowed' : 'pointer', boxShadow:'0 4px 12px rgba(102,126,234,0.3)' }}>

@@ -14,7 +14,7 @@
 
 **הערה על "סדר הרצה":** Vitest מריץ קובצי בדיקה שונים **במקביל** (בין קבצים אין סדר כרונולוגי מובטח), ובתוך קובץ בודד הבדיקות רצות בסדר שהן מוגדרות בו. הטבלאות למטה מסודרות לפי סדר **לוגי** — שכבה 1 (יחידה) ← שכבה 2 (אינטגרציה) ← שכבה 3 (E2E) — לפי הכניסה שלהן ל-CI (`.github/workflows/ci.yml`): קודם ה-job `test` (Vitest + build), ואז ה-job `e2e` (Playwright, רץ במקביל אבל תלוי-build בפני עצמו).
 
-**סה"כ נכון להיום:** 205 בדיקות Vitest (17 קבצים) + 1 תרחיש Playwright = 206 בדיקות.
+**סה"כ נכון להיום:** 205 בדיקות Vitest (17 קבצים) + 2 תרחישי Playwright = 207 בדיקות.
 
 ---
 
@@ -56,6 +56,7 @@
 | # | קובץ | # תרחישים | מה נבדק | הערות |
 |---|---|---|---|---|
 | 18 | `e2e/calendar-blocking.spec.ts` **(חדש)** | 1 | זרימת משתמש מלאה: כניסה כמשתמש דמו → ניווט קדימה בלוח השנה → בחירת תאריך פנוי → "סגור להזמנות" → אימות Toast + badge "חסום" → בחירה מחדש → "שחרר חסימה" → אימות שהתאריך נפתח מחדש | התחברות בהזרקת session cookie חתום (`e2e/helpers/session.ts`) ולא טופס login אמיתי — כדי לא להיות תלויים ב-Supabase. `**/api/dashboard/rooms` (POST) ו-`**/api/dashboard/cache/refresh` מיורטים; `**/api/auth/**` **לא** מיורט (עובד אמיתי, בלי I/O ל-DB בפועל). ריצה: `next build && next start` פנימי דרך `playwright.config.ts` — ריצה ראשונה איטית יותר (build) |
+| 19 | `e2e/login-password-toggle.spec.ts` **(חדש)** | 1 | מסך התחברות: שדה הסיסמה מתחיל מוסתר (`type=password`) → לחיצה על "הצג סיסמה" מחליפה לטקסט גלוי בלי לאבד את הערך → "הסתר סיסמה" מחזירה לנקודות | אין התחברות אמיתית ואין תלות ב-Supabase — רק טופס ה-landing ב-`/` |
 
 ---
 
@@ -67,6 +68,7 @@
 | `src/lib/dashboard/calendarDates.ts` | `src/lib/dashboard/calendarDates.test.ts` |
 | `src/app/api/dashboard/rooms/route.ts` | `src/app/api/dashboard/rooms/route.test.ts` |
 | `src/app/dashboard/components/CalendarPricing.tsx` | `e2e/calendar-blocking.spec.ts` (זרימת המשתמש) + בעקיפין דרך `calendarDates.test.ts` (הלוגיקה שחולצה ממנו) |
+| `src/components/PasswordInput.tsx` / `src/app/HomeLanding.tsx` | `e2e/login-password-toggle.spec.ts` (הצגת/הסתרת סיסמה במסך ההתחברות) |
 | `src/lib/availability/cache.ts` (`refreshRoomCache`) | מכוסה דרך תרחיש ה-round-trip ב-`rooms/route.test.ts`, ודרך `public/calendar/route.test.ts` (קריאה מ-cache-first) ו-`processor.integration.test.ts` (רענון מ-webhook) |
 | `src/app/api/public/calendar/route.ts` | `src/app/api/public/calendar/route.test.ts` |
 | `src/lib/webhook/processor.ts` (`maybeRefreshCache`) | `src/lib/webhook/processor.integration.test.ts` |
