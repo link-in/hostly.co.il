@@ -14,7 +14,7 @@
 
 **הערה על "סדר הרצה":** Vitest מריץ קובצי בדיקה שונים **במקביל** (בין קבצים אין סדר כרונולוגי מובטח), ובתוך קובץ בודד הבדיקות רצות בסדר שהן מוגדרות בו. הטבלאות למטה מסודרות לפי סדר **לוגי** — שכבה 1 (יחידה) ← שכבה 2 (אינטגרציה) ← שכבה 3 (E2E) — לפי הכניסה שלהן ל-CI (`.github/workflows/ci.yml`): קודם ה-job `test` (Vitest + build), ואז ה-job `e2e` (Playwright, רץ במקביל אבל תלוי-build בפני עצמו).
 
-**סה"כ נכון להיום:** 205 בדיקות Vitest (17 קבצים) + 2 תרחישי Playwright = 207 בדיקות.
+**סה"כ נכון להיום:** 205 בדיקות Vitest (17 קבצים) + 4 תרחישי Playwright = 209 בדיקות.
 
 ---
 
@@ -34,6 +34,7 @@
 | 8 | `src/lib/reviewReminders/dateUtils.test.ts` **(חדש)** | 6 | חישוב "אתמול" באזור הזמן של ישראל (`getDateStringInTimeZone`, `getYesterdayInIsrael`): חציית חודש/שנה, וגם רגע לילה שבו UTC ו-Israel חלוקים על היום הקלנדרי | פונקציה טהורה מבוססת `Intl.DateTimeFormat` עם `timeZone` מפורש — לא תלויה ב-TZ של מכונת ההרצה |
 | 9 | `src/lib/db/users.test.ts` **(חדש)** | 8 | `getUsersWithBeds24Access`: מחזיר משתמש עם access token בלבד (בלי refresh token — המקרה האמיתי הנפוץ, טוקן ארוך-חיים), מחזיר משתמש עם שני הטוקנים, מסנן משתמש בלי access token בכלל, מסנן משתמש בלי `property_id`; **(חדש)** `getOwnerInfoByPropertyRoom`: מחזיר גם את המספר הראשי וגם את המספר המשני ב-`phoneNumbers` כששניהם מוגדרים, נופל למספר הראשי בלבד כשאין משני, מחזיר מערך ריק כשאין שום מספר, ונופל ל-`OWNER_PHONE_NUMBER` מה-env כשהמשתמש לא נמצא ב-DB | בדיקת **רגרסיה** לבאג שגילינו בפרודקשן: השאילתה חסמה `.not('beds24_refresh_token','is',null)` וכך הוציאה מהרשימה כל מארח עם טוקן ארוך-חיים בלי refresh token — כולל המשתמש האמיתי הראשון של המערכת, מה שגרם לקרון היומי (`review-reminders`) לא לעבד אף משתמש (`usersProcessed: 0`). בדיקות `getOwnerInfoByPropertyRoom` הן חלק מפיצ'ר "מספר טלפון נוסף להתראות" |
 | 10 | `src/lib/notifications/ownerPhones.test.ts` **(חדש)** | 8 | `buildOwnerPhoneList`: נירמול/דדופליקציה/השמטת ערכים ריקים בין מספר ראשי ומשני; `sendWhatsAppToAll`: שולח את אותה הודעה לכל מספר ברשימה ומחזיר תוצאה פר-נמען, כשל של נמען אחד לא עוצר את השליחה לאחרים, רשימה ריקה לא שולחת כלום | פונקציות עזר משותפות לפיצ'ר "מספר טלפון נוסף להתראות" — משמשות בכל 4 המקומות ששולחים הודעת WhatsApp לבעל הבית: `webhook/processor.ts`, `public/booking/route.ts`, `public/booking/confirm/route.ts`, `check-in/submit/route.ts` |
+| 10b | `src/lib/linear/previewComment.test.ts` **(חדש)** | 10 | חילוץ מזהה משימת Linear מתיאור PR (`Fixes HOS-7`), בניית תגובת Preview בעברית, ומניעת כפילות של אותו קישור | משמש את `.github/workflows/linear-preview-comment.yml` |
 
 ## שכבה 2 — אינטגרציה (Integration, Vitest + מוקים)
 
@@ -57,6 +58,7 @@
 |---|---|---|---|---|
 | 18 | `e2e/calendar-blocking.spec.ts` **(חדש)** | 1 | זרימת משתמש מלאה: כניסה כמשתמש דמו → ניווט קדימה בלוח השנה → בחירת תאריך פנוי → "סגור להזמנות" → אימות Toast + badge "חסום" → בחירה מחדש → "שחרר חסימה" → אימות שהתאריך נפתח מחדש | התחברות בהזרקת session cookie חתום (`e2e/helpers/session.ts`) ולא טופס login אמיתי — כדי לא להיות תלויים ב-Supabase. `**/api/dashboard/rooms` (POST) ו-`**/api/dashboard/cache/refresh` מיורטים; `**/api/auth/**` **לא** מיורט (עובד אמיתי, בלי I/O ל-DB בפועל). ריצה: `next build && next start` פנימי דרך `playwright.config.ts` — ריצה ראשונה איטית יותר (build) |
 | 19 | `e2e/login-password-toggle.spec.ts` **(חדש)** | 1 | מסך התחברות: שדה הסיסמה מתחיל מוסתר (`type=password`) → לחיצה על "הצג סיסמה" מחליפה לטקסט גלוי בלי לאבד את הערך → "הסתר סיסמה" מחזירה לנקודות | אין התחברות אמיתית ואין תלות ב-Supabase — רק טופס ה-landing ב-`/` |
+| 20 | `e2e/mobile-calendar-loader.spec.ts` **(חדש)** | 2 | במובייל בזמן טעינה: לודר ההזמנות מוצג, לודר לוח השנה/הסיכום מוסתר ולוח השנה עצמו נראה; בדסקטופ לודר לוח השנה נשאר | עוצר את `/api/commission-rates` כדי להשאיר את מצב הטעינה על המסך; משתמש ב-cookie דמו כמו שאר בדיקות הדשבורד |
 
 ---
 
@@ -68,6 +70,7 @@
 | `src/lib/dashboard/calendarDates.ts` | `src/lib/dashboard/calendarDates.test.ts` |
 | `src/app/api/dashboard/rooms/route.ts` | `src/app/api/dashboard/rooms/route.test.ts` |
 | `src/app/dashboard/components/CalendarPricing.tsx` | `e2e/calendar-blocking.spec.ts` (זרימת המשתמש) + בעקיפין דרך `calendarDates.test.ts` (הלוגיקה שחולצה ממנו) |
+| `src/app/dashboard/DashboardClient.tsx` | `e2e/mobile-calendar-loader.spec.ts` (לודר כפול במובייל מול דסקטופ) |
 | `src/components/PasswordInput.tsx` / `src/app/HomeLanding.tsx` | `e2e/login-password-toggle.spec.ts` (הצגת/הסתרת סיסמה במסך ההתחברות) |
 | `src/lib/availability/cache.ts` (`refreshRoomCache`) | מכוסה דרך תרחיש ה-round-trip ב-`rooms/route.test.ts`, ודרך `public/calendar/route.test.ts` (קריאה מ-cache-first) ו-`processor.integration.test.ts` (רענון מ-webhook) |
 | `src/app/api/public/calendar/route.ts` | `src/app/api/public/calendar/route.test.ts` |

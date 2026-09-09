@@ -1,0 +1,16 @@
+---
+description: Linear issue completion — Hebrew comments, PR Fixes ISSUE-ID, and a change summary
+alwaysApply: false
+---
+
+# Linear & PR Completion Rules
+
+When you complete a task assigned from Linear:
+1. Provide a comprehensive summary of changes made.
+2. Always put `Fixes <ISSUE-ID>` in the PR title or body (example: `Fixes HOS-7`). The GitHub Action `linear-preview-comment.yml` uses that id to post the Vercel Preview URL onto the Linear issue.
+3. If you are communicating back to Linear or commenting on the issue, write a clear, concise comment in Hebrew detailing:
+   - מה שונה ואיזה קבצים עודכנו.
+   - איך הבעיה נפתרה.
+   - קישור ל-PR שנפתח.
+   - קישור Preview של Vercel לבדיקה במובייל (אם כבר קיים).
+4. Ensure the PR description also includes `Fixes <ISSUE-ID>` and the bullet-point breakdown of changes.

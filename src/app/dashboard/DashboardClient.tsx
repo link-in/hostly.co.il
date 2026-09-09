@@ -1786,7 +1786,9 @@ const DashboardClient = () => {
               </form>
             ) : null}
             {loadingReservations && !reservations.length ? (
-              <DashboardLoader variant="section" tone="onLight" label="טוען הזמנות…" minHeight={220} />
+              <div data-testid="reservations-section-loader">
+                <DashboardLoader variant="section" tone="onLight" label="טוען הזמנות…" minHeight={220} />
+              </div>
             ) : filteredReservations.length > 0 ? (
                 <ReservationsTable 
                   reservations={filteredReservations} 
@@ -1822,10 +1824,17 @@ const DashboardClient = () => {
               </div>
             ) : null}
             {loadingRoomPrices && !initialRoomPricesLoaded ? (
-              <DashboardLoader variant="section" tone="onLight" label="טוען לוח שנה ומחירים…" minHeight={320} />
-            ) : (
+              <div className="d-none d-md-block" data-testid="calendar-section-loader">
+                <DashboardLoader variant="section" tone="onLight" label="טוען לוח שנה ומחירים…" minHeight={320} />
+              </div>
+            ) : null}
+            {/* On mobile, skip the calendar spinner (reservations already has one) and show the grid immediately. */}
+            <div
+              className={loadingRoomPrices && !initialRoomPricesLoaded ? 'd-md-none' : undefined}
+              data-testid="calendar-pricing-panel"
+            >
               <CalendarPricing reservations={reservations} prices={roomPrices} onPricesUpdated={refreshRoomPrices} disabled={isBeds24Suspended} />
-            )}
+            </div>
           </div>
         </div>
 
@@ -1836,7 +1845,9 @@ const DashboardClient = () => {
         }}>
           <div className="card-body" style={{ padding: 0 }}>
             {loadingRoomPrices ? (
-              <DashboardLoader variant="section" tone="onLight" label="טוען סיכום…" minHeight={120} />
+              <div className="d-none d-md-block" data-testid="summary-section-loader">
+                <DashboardLoader variant="section" tone="onLight" label="טוען סיכום…" minHeight={120} />
+              </div>
             ) : priceSummary ? (
               <div className="row g-3">
                 <div className="col-4 col-md-4">
