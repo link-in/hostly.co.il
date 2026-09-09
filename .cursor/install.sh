@@ -7,13 +7,25 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 # ---------------------------------------------------------------------------
-# 1. Local env file with dummy placeholders (only created if absent).
-#    The demo flow mocks Beds24 & Supabase (see src/lib/dashboard/providers/
-#    mock.ts); these values just need to be present and well-formed so
-#    module-level env checks don't crash the app. Mirrors .github/workflows/ci.yml.
+# 1. Environment variables.
+#    Two modes:
+#    (a) Real secrets injected via the Cloud Agent "Secrets" panel are exposed
+#        as process env vars. In that case we must NOT let a placeholder
+#        .env.local shadow them, so any existing placeholder file is removed and
+#        the app reads the real values straight from the environment.
+#    (b) No secrets (e.g. public/demo context): write dummy placeholders so the
+#        module-level env checks don't crash. The demo flow mocks Beds24 &
+#        Supabase (see src/lib/dashboard/providers/mock.ts). Mirrors ci.yml.
+#    Detection key: NEXT_PUBLIC_SUPABASE_URL is required by the Supabase client.
 # ---------------------------------------------------------------------------
-if [ ! -f .env.local ]; then
-  echo "[install] Creating .env.local with dev placeholders"
+if [ -n "${NEXT_PUBLIC_SUPABASE_URL:-}" ]; then
+  echo "[install] Real secrets detected in environment — using injected values"
+  if [ -f .env.local ]; then
+    echo "[install] Removing placeholder .env.local so it does not shadow injected secrets"
+    rm -f .env.local
+  fi
+elif [ ! -f .env.local ]; then
+  echo "[install] No injected secrets — creating .env.local with dev placeholders"
   cat > .env.local <<'EOF'
 NEXT_PUBLIC_SUPABASE_URL=https://ci-placeholder.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=ci-placeholder-anon-key
