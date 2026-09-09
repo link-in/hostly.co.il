@@ -14,7 +14,7 @@
 
 **הערה על "סדר הרצה":** Vitest מריץ קובצי בדיקה שונים **במקביל** (בין קבצים אין סדר כרונולוגי מובטח), ובתוך קובץ בודד הבדיקות רצות בסדר שהן מוגדרות בו. הטבלאות למטה מסודרות לפי סדר **לוגי** — שכבה 1 (יחידה) ← שכבה 2 (אינטגרציה) ← שכבה 3 (E2E) — לפי הכניסה שלהן ל-CI (`.github/workflows/ci.yml`): קודם ה-job `test` (Vitest + build), ואז ה-job `e2e` (Playwright, רץ במקביל אבל תלוי-build בפני עצמו).
 
-**סה"כ נכון להיום:** 205 בדיקות Vitest (17 קבצים) + 4 תרחישי Playwright = 209 בדיקות.
+**סה"כ נכון להיום:** 205 בדיקות Vitest (17 קבצים) + 5 תרחישי Playwright = 210 בדיקות.
 
 ---
 
@@ -59,6 +59,7 @@
 | 18 | `e2e/calendar-blocking.spec.ts` **(חדש)** | 1 | זרימת משתמש מלאה: כניסה כמשתמש דמו → ניווט קדימה בלוח השנה → בחירת תאריך פנוי → "סגור להזמנות" → אימות Toast + badge "חסום" → בחירה מחדש → "שחרר חסימה" → אימות שהתאריך נפתח מחדש | התחברות בהזרקת session cookie חתום (`e2e/helpers/session.ts`) ולא טופס login אמיתי — כדי לא להיות תלויים ב-Supabase. `**/api/dashboard/rooms` (POST) ו-`**/api/dashboard/cache/refresh` מיורטים; `**/api/auth/**` **לא** מיורט (עובד אמיתי, בלי I/O ל-DB בפועל). ריצה: `next build && next start` פנימי דרך `playwright.config.ts` — ריצה ראשונה איטית יותר (build) |
 | 19 | `e2e/login-password-toggle.spec.ts` **(חדש)** | 1 | מסך התחברות: שדה הסיסמה מתחיל מוסתר (`type=password`) → לחיצה על "הצג סיסמה" מחליפה לטקסט גלוי בלי לאבד את הערך → "הסתר סיסמה" מחזירה לנקודות | אין התחברות אמיתית ואין תלות ב-Supabase — רק טופס ה-landing ב-`/` |
 | 20 | `e2e/mobile-calendar-loader.spec.ts` **(חדש)** | 2 | במובייל בזמן טעינה: לודר ההזמנות מוצג, לודר לוח השנה/הסיכום מוסתר ולוח השנה עצמו נראה; בדסקטופ לודר לוח השנה נשאר | עוצר את `/api/commission-rates` כדי להשאיר את מצב הטעינה על המסך; משתמש ב-cookie דמו כמו שאר בדיקות הדשבורד |
+| 21 | `e2e/reservation-call-icon.spec.ts` **(חדש)** | 1 | בהצגת הזמנה מורחבת במובייל, כפתור השיחה העגול הוא סגול מותג (`#7133D9`) ולא ורוד ישן (`#f093fb`), ווואטסאפ נשאר ירוק | HOS-8; משתמש בהזמנת דמו `מור אלמוג` עם מספר טלפון |
 
 ---
 
@@ -71,6 +72,7 @@
 | `src/app/api/dashboard/rooms/route.ts` | `src/app/api/dashboard/rooms/route.test.ts` |
 | `src/app/dashboard/components/CalendarPricing.tsx` | `e2e/calendar-blocking.spec.ts` (זרימת המשתמש) + בעקיפין דרך `calendarDates.test.ts` (הלוגיקה שחולצה ממנו) |
 | `src/app/dashboard/DashboardClient.tsx` | `e2e/mobile-calendar-loader.spec.ts` (לודר כפול במובייל מול דסקטופ) |
+| `src/app/dashboard/components/ReservationsTable.tsx` | `e2e/reservation-call-icon.spec.ts` (צבע אייקון שיחה בהצגת הזמנות) |
 | `src/components/PasswordInput.tsx` / `src/app/HomeLanding.tsx` | `e2e/login-password-toggle.spec.ts` (הצגת/הסתרת סיסמה במסך ההתחברות) |
 | `src/lib/availability/cache.ts` (`refreshRoomCache`) | מכוסה דרך תרחיש ה-round-trip ב-`rooms/route.test.ts`, ודרך `public/calendar/route.test.ts` (קריאה מ-cache-first) ו-`processor.integration.test.ts` (רענון מ-webhook) |
 | `src/app/api/public/calendar/route.ts` | `src/app/api/public/calendar/route.test.ts` |

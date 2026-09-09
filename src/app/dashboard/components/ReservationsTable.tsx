@@ -11,6 +11,9 @@ import { normalizePhoneNumber, formatPhoneForDisplay } from '@/lib/utils/phoneFo
  * Call + WhatsApp icon-only buttons for a guest phone number — shared by the
  * mobile and desktop reservation-detail views. No number is shown, just large
  * (40px) circular tap targets, sized for comfortable use on a phone screen.
+ *
+ * Call uses brand purple (`#7133D9`) to match the light dashboard; WhatsApp
+ * keeps the official green. Do not reuse the old pink accent (`#f093fb`).
  */
 const PhoneActions = ({ phone }: { phone: string }) => {
   const normalized = normalizePhoneNumber(phone)
@@ -30,7 +33,8 @@ const PhoneActions = ({ phone }: { phone: string }) => {
       <a
         href={`tel:${normalized}`}
         className="d-inline-flex align-items-center justify-content-center"
-        style={{ ...buttonStyle, background: '#f093fb' }}
+        data-testid="reservation-call-button"
+        style={{ ...buttonStyle, background: '#7133D9' }}
         onClick={(e) => e.stopPropagation()}
         aria-label={`התקשר ל-${displayPhone}`}
         title={`התקשר ל-${displayPhone}`}
