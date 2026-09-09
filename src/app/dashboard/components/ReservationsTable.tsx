@@ -307,11 +307,12 @@ const ReservationsTable = ({
       height: `${size}px`,
       flexShrink: 0,
     }
+    const iconTestId = `platform-icon-${sourceLower.includes('airbnb') ? 'airbnb' : sourceLower.includes('booking') ? 'booking' : 'fallback'}`
     
     if (sourceLower.includes('airbnb')) {
       // Airbnb logo
       return (
-        <span style={containerStyle}>
+        <span style={containerStyle} data-testid={iconTestId}>
           <img 
             src="/airbnb-logo.png" 
             alt="Airbnb" 
@@ -329,7 +330,7 @@ const ReservationsTable = ({
     if (sourceLower.includes('booking')) {
       // Booking.com logo
       return (
-        <span style={containerStyle}>
+        <span style={containerStyle} data-testid={iconTestId}>
           <img 
             src="/booking-logo.png" 
             alt="Booking.com" 
@@ -347,22 +348,22 @@ const ReservationsTable = ({
     const fallbackColor = getPlatformFallbackIconColor(source)
 
     if (sourceLower.includes('agoda')) {
-      return <span style={{ ...containerStyle, color: fallbackColor }}><Map size={Math.round(size * 0.85)} strokeWidth={1.75} /></span>
+      return <span data-testid={iconTestId} style={{ ...containerStyle, color: fallbackColor }}><Map size={Math.round(size * 0.85)} strokeWidth={1.75} /></span>
     }
     if (sourceLower.includes('expedia')) {
-      return <span style={{ ...containerStyle, color: fallbackColor }}><Plane size={Math.round(size * 0.85)} strokeWidth={1.75} /></span>
+      return <span data-testid={iconTestId} style={{ ...containerStyle, color: fallbackColor }}><Plane size={Math.round(size * 0.85)} strokeWidth={1.75} /></span>
     }
     if (sourceLower.includes('vrbo') || sourceLower.includes('homeaway')) {
-      return <span style={{ ...containerStyle, color: fallbackColor }}><Home size={Math.round(size * 0.85)} strokeWidth={1.75} /></span>
+      return <span data-testid={iconTestId} style={{ ...containerStyle, color: fallbackColor }}><Home size={Math.round(size * 0.85)} strokeWidth={1.75} /></span>
     }
     if (sourceLower.includes('tripadvisor')) {
-      return <span style={{ ...containerStyle, color: fallbackColor }}><Bird size={Math.round(size * 0.85)} strokeWidth={1.75} /></span>
+      return <span data-testid={iconTestId} style={{ ...containerStyle, color: fallbackColor }}><Bird size={Math.round(size * 0.85)} strokeWidth={1.75} /></span>
     }
     if (sourceLower.includes('hotels.com')) {
-      return <span style={{ ...containerStyle, color: fallbackColor }}><Hotel size={Math.round(size * 0.85)} strokeWidth={1.75} /></span>
+      return <span data-testid={iconTestId} style={{ ...containerStyle, color: fallbackColor }}><Hotel size={Math.round(size * 0.85)} strokeWidth={1.75} /></span>
     }
     // הזמנה ישירה או לא מוכר — same muted color as other lucide fallbacks
-    return <span style={{ ...containerStyle, color: fallbackColor }}><Globe size={Math.round(size * 0.85)} strokeWidth={1.75} /></span>
+    return <span data-testid={iconTestId} style={{ ...containerStyle, color: fallbackColor }}><Globe size={Math.round(size * 0.85)} strokeWidth={1.75} /></span>
   }
 
   // Mobile List View Component
