@@ -22,15 +22,16 @@ test.describe('reservation call icon color', () => {
     })
 
     await page.goto('/dashboard?room=DEMO_ROOM_002')
-    await expect(page.getByText('מור אלמוג')).toBeVisible()
 
-    await page.getByText('מור אלמוג').click()
+    const guestHeading = page.getByRole('heading', { name: 'מור אלמוג' })
+    await expect(guestHeading).toBeVisible()
+    await guestHeading.click()
 
-    const callButton = page.getByTestId('reservation-call-button')
+    const callButton = page.getByTestId('reservation-call-button').first()
     await expect(callButton).toBeVisible()
     await expect(callButton).toHaveCSS('background-color', 'rgb(113, 51, 217)')
 
-    const whatsappButton = page.getByRole('link', { name: /וואטסאפ/ })
+    const whatsappButton = page.getByRole('link', { name: /וואטסאפ/ }).first()
     await expect(whatsappButton).toBeVisible()
     await expect(whatsappButton).toHaveCSS('background-color', 'rgb(37, 211, 102)')
   })
