@@ -1,0 +1,32 @@
+# Post the Vercel Preview URL as a Linear issue comment (mobile-friendly).
+#
+# Runs from the default branch workflow file after a successful Preview deploy.
+# Requires repo secret LINEAR_API_KEY (Linear Settings → API → Personal API key).
+# The linked issue is taken from the PR title/body/branch, e.g. `Fixes HOS-7`.
+
+name: Linear Preview Comment
+
+on:
+  deployment_status:
+
+permissions:
+  contents: read
+  deployments: read
+  pull-requests: read
+
+jobs:
+  comment:
+    name: Comment Preview URL on Linear
+    if: >
+      github.event.deployment_status.state == 'success' &&
+      github.event.deployment_status.environment_url != ''
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout scripts
+        uses: actions/checkout@v4
+
+      - name: Post Linear comment
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          LINEAR_API_KEY: ${{ secrets.LINEAR_API_KEY }}
+        run: node .github/scripts/comment-linear-preview.mjs
