@@ -30,7 +30,7 @@ const PhoneActions = ({ phone }: { phone: string }) => {
       <a
         href={`tel:${normalized}`}
         className="d-inline-flex align-items-center justify-content-center"
-        style={{ ...buttonStyle, background: '#f093fb' }}
+        style={{ ...buttonStyle, background: '#7133D9' }}
         onClick={(e) => e.stopPropagation()}
         aria-label={`התקשר ל-${displayPhone}`}
         title={`התקשר ל-${displayPhone}`}

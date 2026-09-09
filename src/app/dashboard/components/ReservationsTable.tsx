@@ -8,13 +8,16 @@ import { formatCurrency, formatDate, formatStatus } from '@/lib/dashboard/utils'
 import { normalizePhoneNumber, formatPhoneForDisplay } from '@/lib/utils/phoneFormatter'
 import {
   RESERVATION_ACTION_ICON_COLOR,
-  getPlatformFallbackIconColor,
+  RESERVATION_CALL_ICON_COLOR,
 } from '@/lib/dashboard/platformIcon'
 
 /**
  * Call + WhatsApp icon-only buttons for a guest phone number — shared by the
  * mobile and desktop reservation-detail views. No number is shown, just large
  * (40px) circular tap targets, sized for comfortable use on a phone screen.
+ *
+ * Call uses brand purple (`#7133D9`) to match the light dashboard; WhatsApp
+ * keeps the official green. Do not reuse the old pink accent (`#f093fb`).
  */
 const PhoneActions = ({ phone }: { phone: string }) => {
   const normalized = normalizePhoneNumber(phone)
@@ -34,7 +37,8 @@ const PhoneActions = ({ phone }: { phone: string }) => {
       <a
         href={`tel:${normalized}`}
         className="d-inline-flex align-items-center justify-content-center"
-        style={{ ...buttonStyle, background: RESERVATION_ACTION_ICON_COLOR }}
+        data-testid="reservation-call-button"
+        style={{ ...buttonStyle, background: RESERVATION_CALL_ICON_COLOR }}
         onClick={(e) => e.stopPropagation()}
         aria-label={`התקשר ל-${displayPhone}`}
         title={`התקשר ל-${displayPhone}`}
@@ -345,25 +349,23 @@ const ReservationsTable = ({
         </span>
       )
     }
-    const fallbackColor = getPlatformFallbackIconColor(source)
-
     if (sourceLower.includes('agoda')) {
-      return <span data-testid={iconTestId} style={{ ...containerStyle, color: fallbackColor }}><Map size={Math.round(size * 0.85)} strokeWidth={1.75} /></span>
+      return <span data-testid={iconTestId} style={{ ...containerStyle, color: '#5B6670' }}><Map size={Math.round(size * 0.85)} strokeWidth={1.75} /></span>
     }
     if (sourceLower.includes('expedia')) {
-      return <span data-testid={iconTestId} style={{ ...containerStyle, color: fallbackColor }}><Plane size={Math.round(size * 0.85)} strokeWidth={1.75} /></span>
+      return <span data-testid={iconTestId} style={{ ...containerStyle, color: '#5B6670' }}><Plane size={Math.round(size * 0.85)} strokeWidth={1.75} /></span>
     }
     if (sourceLower.includes('vrbo') || sourceLower.includes('homeaway')) {
-      return <span data-testid={iconTestId} style={{ ...containerStyle, color: fallbackColor }}><Home size={Math.round(size * 0.85)} strokeWidth={1.75} /></span>
+      return <span data-testid={iconTestId} style={{ ...containerStyle, color: '#5B6670' }}><Home size={Math.round(size * 0.85)} strokeWidth={1.75} /></span>
     }
     if (sourceLower.includes('tripadvisor')) {
-      return <span data-testid={iconTestId} style={{ ...containerStyle, color: fallbackColor }}><Bird size={Math.round(size * 0.85)} strokeWidth={1.75} /></span>
+      return <span data-testid={iconTestId} style={{ ...containerStyle, color: '#5B6670' }}><Bird size={Math.round(size * 0.85)} strokeWidth={1.75} /></span>
     }
     if (sourceLower.includes('hotels.com')) {
-      return <span data-testid={iconTestId} style={{ ...containerStyle, color: fallbackColor }}><Hotel size={Math.round(size * 0.85)} strokeWidth={1.75} /></span>
+      return <span data-testid={iconTestId} style={{ ...containerStyle, color: '#5B6670' }}><Hotel size={Math.round(size * 0.85)} strokeWidth={1.75} /></span>
     }
-    // הזמנה ישירה או לא מוכר — same muted color as other lucide fallbacks
-    return <span data-testid={iconTestId} style={{ ...containerStyle, color: fallbackColor }}><Globe size={Math.round(size * 0.85)} strokeWidth={1.75} /></span>
+    // הזמנה ישירה או לא מוכר
+    return <span data-testid={iconTestId} style={{ ...containerStyle, color: '#7133D9' }}><Globe size={Math.round(size * 0.85)} strokeWidth={1.75} /></span>
   }
 
   // Mobile List View Component
