@@ -51,8 +51,16 @@ describe('sendWhatsAppToAll', () => {
     const results = await sendWhatsAppToAll(['+972500000001', '+972500000002'], 'hello')
 
     expect(sendWhatsAppMessage).toHaveBeenCalledTimes(2)
-    expect(sendWhatsAppMessage).toHaveBeenNthCalledWith(1, { to: '+972500000001', message: 'hello' })
-    expect(sendWhatsAppMessage).toHaveBeenNthCalledWith(2, { to: '+972500000002', message: 'hello' })
+    expect(sendWhatsAppMessage).toHaveBeenNthCalledWith(
+      1,
+      { to: '+972500000001', message: 'hello' },
+      undefined,
+    )
+    expect(sendWhatsAppMessage).toHaveBeenNthCalledWith(
+      2,
+      { to: '+972500000002', message: 'hello' },
+      undefined,
+    )
     expect(results).toEqual([
       { to: '+972500000001', success: true, provider: 'mock' },
       { to: '+972500000002', success: true, provider: 'mock' },
