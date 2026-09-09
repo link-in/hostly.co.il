@@ -1,0 +1,17 @@
+{
+  "name": "Hostly (Property Management System)",
+  "install": "bash .cursor/install.sh",
+  "terminals": [
+    {
+      "name": "next-dev",
+      "command": "npm run dev",
+      "description": "Next.js 16 dev server on http://localhost:3000. Public/landing pages render directly; the owner dashboard renders with a synthetic mock-data provider for demo users."
+    }
+  ],
+  "ports": [
+    {
+      "name": "web",
+      "port": 3000
+    }
+  ]
+}
