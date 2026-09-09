@@ -47,7 +47,7 @@ test.describe('mobile dashboard loaders', () => {
     await expect(page.getByTestId('summary-section-loader')).toBeHidden()
     await expect(page.getByTestId('calendar-day').first()).toBeVisible()
     await expect(page.getByText('טוען הזמנות…')).toBeVisible()
-    await expect(page.getByText('טוען לוח שנה ומחירים…')).toHaveCount(0)
+    await expect(page.getByText('טוען לוח שנה ומחירים…')).toBeHidden()
 
     release()
   })
