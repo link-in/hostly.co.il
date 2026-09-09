@@ -46,8 +46,7 @@ test.describe('mobile dashboard loaders', () => {
     await expect(page.getByTestId('calendar-section-loader')).toBeHidden()
     await expect(page.getByTestId('summary-section-loader')).toBeHidden()
     await expect(page.getByTestId('calendar-day').first()).toBeVisible()
-    await expect(page.getByText('טוען הזמנות…')).toBeVisible()
-    await expect(page.getByText('טוען לוח שנה ומחירים…')).toBeHidden()
+    await expect(page.getByTestId('reservations-section-loader')).toBeVisible()
 
     release()
   })
@@ -61,7 +60,6 @@ test.describe('desktop dashboard loaders', () => {
 
     await expect(page.getByTestId('calendar-section-loader')).toBeVisible()
     await expect(page.getByTestId('summary-section-loader')).toBeVisible()
-    await expect(page.getByText('טוען לוח שנה ומחירים…')).toBeVisible()
     await expect(page.getByTestId('calendar-pricing-panel')).toBeHidden()
 
     release()
