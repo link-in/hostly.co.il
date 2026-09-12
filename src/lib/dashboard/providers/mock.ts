@@ -406,6 +406,7 @@ const reservations: Reservation[] = [
     unitName: 'נוף הרים ב',
     roomId: 'DEMO_ROOM_002',
     createdAt: '2026-08-20',
+    phone: '0528676516',
   },
   {
     id: 'res_1030',
