@@ -1,0 +1,39 @@
+# One-shot: mark HOS-12 Done after the hide-check-in fix shipped to main.
+# Uses repo secret LINEAR_API_KEY. Safe to re-run (no-op if already completed).
+
+name: Complete Linear HOS-12
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/scripts/complete-linear-issue.mjs'
+      - '.github/workflows/complete-linear-hos-12.yml'
+
+jobs:
+  complete:
+    name: Mark HOS-12 Done
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout scripts
+        uses: actions/checkout@v4
+
+      - name: Update Linear issue
+        env:
+          LINEAR_API_KEY: ${{ secrets.LINEAR_API_KEY }}
+          LINEAR_ISSUE_ID: HOS-12
+          LINEAR_COMMENT: |
+            התיקון עלה לפרודקשן בלי PR (ישירות ל-main).
+
+            מה שונה:
+            - פריט צ'ק-אין דיגיטלי מוסתר מהסיידבר בדסקטופ וממגירת "עוד" במובייל.
+            - הקבצים העיקריים: `src/components/dashboardNav.ts`, הסיידבר והמגירה.
+
+            איך:
+            - דגל `hidden: true` על פריט התפריט. הדף עצמו נשאר בכתובת `/dashboard/check-ins`.
+
+            פרודקשן:
+            - https://app.hostly.co.il
+            - קומיט `6ad4c6c` על `main`
+            - CI על main עבר בירוק.
+        run: node .github/scripts/complete-linear-issue.mjs
