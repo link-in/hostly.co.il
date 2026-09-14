@@ -41,7 +41,7 @@ test.describe('mobile drawer hides digital check-in', () => {
     await page.getByRole('button', { name: 'עוד תפריט' }).click()
     const drawer = page.getByRole('dialog', { name: 'תפריט ניווט' })
     await expect(drawer).toBeVisible()
-    await expect(drawer.getByRole('link', { name: 'כל ההזמנות' })).toBeVisible()
+    await expect(drawer.getByRole('link', { name: 'כל ההזמנות' })).toHaveCSS('opacity', '1')
     await expect(drawer.getByRole('link', { name: "צ'ק-אין דיגיטלי" })).toHaveCount(0)
   })
 })
