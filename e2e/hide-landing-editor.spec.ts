@@ -15,9 +15,9 @@ test.describe('landing editor hidden on desktop', () => {
     await signInAsDemoUser(context, baseURL!)
     await page.goto('/dashboard')
 
-    const sidebar = page.getByRole('navigation', { name: 'תפריט ניווט' })
-    await expect(sidebar.getByText('מפתחות API')).toBeVisible()
-    await expect(sidebar.getByText('ניהול דף נחיתה')).toHaveCount(0)
+    const sidebar = page.getByRole('complementary', { name: 'תפריט ניווט' })
+    await expect(sidebar.getByRole('link', { name: 'מפתחות API' })).toBeVisible()
+    await expect(sidebar.getByRole('link', { name: 'ניהול דף נחיתה' })).toHaveCount(0)
   })
 
   test('redirects /dashboard/landing to the dashboard', async ({ page, context, baseURL }) => {
@@ -38,7 +38,7 @@ test.describe('landing editor hidden on mobile', () => {
     await page.getByRole('button', { name: 'עוד תפריט' }).click()
 
     const drawer = page.getByRole('dialog', { name: 'תפריט ניווט' })
-    await expect(drawer.getByText('מפתחות API')).toBeVisible()
-    await expect(drawer.getByText('ניהול דף נחיתה')).toHaveCount(0)
+    await expect(drawer.getByRole('link', { name: 'מפתחות API' })).toBeVisible()
+    await expect(drawer.getByRole('link', { name: 'ניהול דף נחיתה' })).toHaveCount(0)
   })
 })
