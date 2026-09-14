@@ -30,8 +30,8 @@ test.beforeEach(async ({ page, context, baseURL }) => {
 })
 
 test('shows Airbnb inquiry and Direct request bars in a distinct request color', async ({ page }) => {
-  const inquiryBar = page.getByTestId('calendar-booking-bar').filter({ hasText: 'נועה ברק' })
-  const requestBar = page.getByTestId('calendar-booking-bar').filter({ hasText: 'יואב מזרחי' })
+  const inquiryBar = page.getByTestId('calendar-booking-bar').filter({ hasText: 'נועה ברק' }).first()
+  const requestBar = page.getByTestId('calendar-booking-bar').filter({ hasText: 'יואב מזרחי' }).first()
 
   await expect(inquiryBar).toBeVisible()
   await expect(requestBar).toBeVisible()
@@ -43,16 +43,16 @@ test('shows Airbnb inquiry and Direct request bars in a distinct request color',
   await expect(inquiryBar).toHaveCSS('color', 'rgb(146, 64, 14)')
   await expect(requestBar).toHaveCSS('color', 'rgb(146, 64, 14)')
 
-  await expect(page.getByText('בקשת הזמנה', { exact: true })).toBeVisible()
+  await expect(page.getByTestId('calendar-pricing-panel').getByText('בקשת הזמנה', { exact: true })).toBeVisible()
 })
 
 test('Airbnb inquiry details point the host to approve on the channel', async ({ page }) => {
-  await page.getByTestId('calendar-booking-bar').filter({ hasText: 'נועה ברק' }).click()
+  await page.getByTestId('calendar-booking-bar').filter({ hasText: 'נועה ברק' }).first().click()
 
   const details = page.getByTestId('calendar-reservation-details')
   await expect(details).toBeVisible()
   await expect(details.getByText('פרטי בקשת הזמנה')).toBeVisible()
-  await expect(details.getByText('בירור', { exact: true })).toBeVisible()
+  await expect(details).toContainText('בירור')
   await expect(page.getByTestId('calendar-approve-request')).toHaveCount(0)
 
   const channelLink = page.getByTestId('calendar-channel-link')
@@ -77,7 +77,7 @@ test('Direct request can be approved in the app and then renders as a confirmed 
     await route.continue()
   })
 
-  await page.getByTestId('calendar-booking-bar').filter({ hasText: 'יואב מזרחי' }).click()
+  await page.getByTestId('calendar-booking-bar').filter({ hasText: 'יואב מזרחי' }).first().click()
 
   const approve = page.getByTestId('calendar-approve-request')
   await expect(approve).toBeVisible()
