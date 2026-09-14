@@ -6,7 +6,7 @@ describe('normalizeBeds24BookingStatus', () => {
     [1, 'confirmed'],
     [2, 'confirmed'], // Beds24 "New" = real booking
     [3, 'request'],
-    [5, 'cancelled'], // Inquiry/question — hidden, not a reservation request
+    [5, 'inquiry'], // Airbnb request-to-book / inquiry — visible on calendar
     [0, 'cancelled'],
     [4, 'cancelled'],
   ] as const)('maps numeric status %s to %s', (input, expected) => {
@@ -17,7 +17,7 @@ describe('normalizeBeds24BookingStatus', () => {
     ['1', 'confirmed'],
     ['2', 'confirmed'],
     ['3', 'request'],
-    ['5', 'cancelled'],
+    ['5', 'inquiry'],
     ['0', 'cancelled'],
   ] as const)('maps digit string "%s" to %s', (input, expected) => {
     expect(normalizeBeds24BookingStatus(input)).toBe(expected)
@@ -28,7 +28,7 @@ describe('normalizeBeds24BookingStatus', () => {
     ['booked', 'confirmed'],
     ['new', 'confirmed'],
     ['request', 'request'],
-    ['inquiry', 'cancelled'],
+    ['inquiry', 'inquiry'],
     ['Request', 'request'],
     ['cancelled', 'cancelled'],
   ] as const)('maps string status "%s" to %s', (input, expected) => {

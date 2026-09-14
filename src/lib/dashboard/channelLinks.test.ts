@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildChannelBookingUrl, channelLinkLabel } from './channelLinks'
+import { buildChannelBookingUrl, channelLinkLabel, channelApproveLabel } from './channelLinks'
 
 describe('buildChannelBookingUrl', () => {
   it('builds an Airbnb host reservation URL from apiReference', () => {
@@ -33,5 +33,13 @@ describe('channelLinkLabel', () => {
     expect(channelLinkLabel('Airbnb.com')).toBe('פתח באיירבנב')
     expect(channelLinkLabel('booking')).toBe('פתח ב-Booking.com')
     expect(channelLinkLabel('other')).toBe('פתח במקור ההזמנה')
+  })
+})
+
+describe('channelApproveLabel', () => {
+  it('returns Hebrew approve CTAs per channel', () => {
+    expect(channelApproveLabel('Airbnb')).toBe('אשר באיירבנב')
+    expect(channelApproveLabel('Booking.com')).toBe('אשר ב-Booking.com')
+    expect(channelApproveLabel('direct')).toBe('אשר במקור ההזמנה')
   })
 })

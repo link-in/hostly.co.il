@@ -483,6 +483,7 @@ export default function ReservationsClient() {
                       <option value="all">כל הסטטוסים</option>
                       <option value="confirmed">מאושר</option>
                       <option value="request">בקשת הזמנה</option>
+                      <option value="inquiry">בירור</option>
                       <option value="pending">ממתין</option>
                       <option value="cancelled">מבוטל</option>
                     </select>
@@ -661,12 +662,12 @@ export default function ReservationsClient() {
                                       ? 'bg-success'
                                       : reservation.status === 'cancelled'
                                       ? 'bg-danger'
-                                      : reservation.status === 'request'
+                                      : reservation.status === 'request' || reservation.status === 'inquiry'
                                       ? 'bg-warning text-dark'
                                       : 'bg-warning'
                                   }`}
                                   style={
-                                    reservation.status === 'request'
+                                    reservation.status === 'request' || reservation.status === 'inquiry'
                                       ? { border: '1px dashed rgba(0,0,0,0.35)' }
                                       : undefined
                                   }

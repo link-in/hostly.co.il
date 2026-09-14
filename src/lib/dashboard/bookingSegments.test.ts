@@ -48,6 +48,24 @@ describe('isBookedOn', () => {
     expect(isBookedOn(map, new Date(2026, 6, 28))).toBe(true)
     expect(isBookedOn(map, new Date(2026, 6, 30))).toBe(false)
   })
+
+  it('does not occupy nights for an inquiry (Airbnb request-to-book)', () => {
+    const inquiry = makeReservation({
+      id: 'inq',
+      checkIn: '2026-07-28',
+      checkOut: '2026-07-30',
+      status: 'inquiry',
+    })
+    const request = makeReservation({
+      id: 'req',
+      checkIn: '2026-07-28',
+      checkOut: '2026-07-30',
+      status: 'request',
+    })
+
+    expect(buildBookingMap([inquiry]).size).toBe(0)
+    expect(isBookedOn(buildBookingMap([request]), new Date(2026, 6, 28))).toBe(true)
+  })
 })
 
 // ─── buildBookingSegments ──────────────────────────────────────────────────
@@ -118,6 +136,21 @@ describe('buildBookingSegments', () => {
     expect(segments.find((s) => s.id.startsWith('req'))?.status).toBe('request')
     expect(segments.find((s) => s.id.startsWith('conf'))?.status).toBe('confirmed')
     expect(segments.find((s) => s.id.startsWith('req'))?.reservationId).toBe('req')
+  })
+
+  it('still draws an overlay bar for an inquiry even though it does not occupy nights', () => {
+    const inquiry = makeReservation({
+      id: 'inq',
+      checkIn: '2026-07-28',
+      checkOut: '2026-07-30',
+      status: 'inquiry',
+      guestName: 'נועה',
+    })
+    const segments = buildBookingSegments([inquiry], days)
+
+    expect(segments).toHaveLength(1)
+    expect(segments[0].status).toBe('inquiry')
+    expect(segments[0].label).toBe('נועה')
   })
 
   it('ignores reservations with missing dates, invalid dates, or checkOut <= checkIn', () => {

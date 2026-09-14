@@ -46,7 +46,7 @@ export const createBeds24Provider = (config: Beds24ProviderConfig = {}): Dashboa
   return {
     getReservations: async () => {
       const endpoint = buildRoomParam(
-        `${baseUrl}/bookings?arrivalFrom=2024-01-01&includeInvoice=true`
+        `${baseUrl}/bookings?arrivalFrom=2024-01-01&includeInvoice=true&status=confirmed,new,request,inquiry`
       )
       const payload = await fetchJson<unknown>(endpoint, apiKey)
       const bookings = extractBookings(payload)
@@ -237,7 +237,7 @@ export const normalizeBeds24BookingStatus = (
     if (n === 1 || n === 2) return 'confirmed'
     if (n === 3) return 'request'
     if (n === 4) return 'cancelled' // Black (blocked dates)
-    if (n === 5) return 'cancelled' // Inquiry/question — not a reservation; hide from calendar
+    if (n === 5) return 'inquiry' // Airbnb request-to-book / inquiry — show on calendar, does not occupy
     return null
   }
 
@@ -254,7 +254,7 @@ export const normalizeBeds24BookingStatus = (
   }
 
   if (normalized.includes('inquiry')) {
-    return 'cancelled'
+    return 'inquiry'
   }
   if (normalized.includes('request')) {
     return 'request'

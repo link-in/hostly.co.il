@@ -1,20 +1,26 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react'
-import { Tag, Lock, Unlock, ExternalLink } from 'lucide-react'
+import { Tag, Lock, Unlock, ExternalLink, Check } from 'lucide-react'
 import { createPortal } from 'react-dom'
 import type { Reservation, ReservationStatus, RoomPrice } from '@/lib/dashboard/types'
 import { formatCurrency, formatStatus } from '@/lib/dashboard/utils'
-import { channelLinkLabel } from '@/lib/dashboard/channelLinks'
+import { channelLinkLabel, channelApproveLabel } from '@/lib/dashboard/channelLinks'
 import { useHolidays } from '@/hooks/useHolidays'
 import HolidayIndicator from '@/components/HolidayIndicator'
 import { useSelectedRoom } from '@/lib/rooms/RoomContext'
 import { toast } from 'sonner'
 import { normalizeDate, toKey, isSameDay, addDays, buildDateRanges } from '@/lib/dashboard/calendarDates'
 import { buildBookingMap, isBookedOn, buildBookingSegments } from '@/lib/dashboard/bookingSegments'
+import {
+  isAwaitingApprovalStatus,
+  canConfirmViaBeds24Api,
+} from '@/lib/dashboard/reservationStatus'
 
 type CalendarPricingProps = {
   reservations: Reservation[]
   prices: RoomPrice[]
   onPricesUpdated?: () => Promise<void> | void
+  /** Confirm a Beds24 request (status 3) via POST /bookings. */
+  onApproveRequest?: (reservation: Reservation) => Promise<void> | void
   /** When true (Beds24 credit exhausted), all mutating actions are disabled */
   disabled?: boolean
 }
@@ -22,11 +28,11 @@ type CalendarPricingProps = {
 const DEFAULT_PRICE = undefined
 
 function getSegmentBarStyle(status: ReservationStatus): React.CSSProperties {
-  // Requests (pending channel) = amber — awaiting approval
-  if (status === 'request') {
+  // Requests + Airbnb inquiries = amber dashed — awaiting approval, distinct from confirmed
+  if (isAwaitingApprovalStatus(status)) {
     return {
-      background: 'rgba(245, 158, 11, 0.15)',
-      border: '1.5px dashed rgba(217, 119, 6, 0.7)',
+      background: 'rgba(245, 158, 11, 0.18)',
+      border: status === 'inquiry' ? '1.5px dotted rgba(217, 119, 6, 0.85)' : '1.5px dashed rgba(217, 119, 6, 0.7)',
       color: '#92400E',
     }
   }
@@ -50,7 +56,7 @@ const addMonths = (date: Date, months: number) => {
 
 const HEBREW_MONTHS = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר']
 
-const CalendarPricing = ({ reservations, prices, onPricesUpdated, disabled = false }: CalendarPricingProps) => {
+const CalendarPricing = ({ reservations, prices, onPricesUpdated, onApproveRequest, disabled = false }: CalendarPricingProps) => {
   const { selectedRoomId } = useSelectedRoom()
   const [currentMonth, setCurrentMonth] = useState(() => startOfMonth(new Date()))
   const [showMonthPicker, setShowMonthPicker] = useState(false)
@@ -80,6 +86,7 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated, disabled = fal
     prevRoomRef.current = selectedRoomId
   }, [selectedRoomId])
   const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null)
+  const [approving, setApproving] = useState(false)
   const reservationDetailsRef = useRef<HTMLDivElement>(null)
   const lastSelectedRef = useRef<Date | null>(null)
   const todayKey = toKey(normalizeDate(new Date()))
@@ -767,10 +774,14 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated, disabled = fal
               >
                 {bookingSegments.map((segment) => {
                   const isSelected = selectedReservation?.id === segment.reservationId
+                  const awaiting = isAwaitingApprovalStatus(segment.status)
                   return (
                   <button
                     type="button"
                     key={segment.id}
+                    data-testid="calendar-booking-bar"
+                    data-booking-status={segment.status}
+                    data-guest={segment.label}
                     onClick={(e) => {
                       e.stopPropagation()
                       const reservation = reservations.find((r) => r.id === segment.reservationId) ?? null
@@ -800,9 +811,9 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated, disabled = fal
                       boxShadow: isSelected ? '0 0 0 2px #7133D9' : undefined,
                       ...getSegmentBarStyle(segment.status),
                     }}
-                    title={segment.status === 'request' ? `בקשת הזמנה: ${segment.label}` : segment.label}
+                    title={awaiting ? `בקשת הזמנה: ${segment.label}` : segment.label}
                   >
-                    {segment.status === 'request' ? `בקשה · ${segment.label}` : segment.label}
+                    {awaiting ? `בקשה · ${segment.label}` : segment.label}
                   </button>
                   )
                 })}
@@ -942,15 +953,17 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated, disabled = fal
               <div className="small fw-semibold mb-2" style={{ color: '#5B6670' }}>מקרא</div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px 4px' }}>
                 {[
-                  { badge: 'תפוס',    bg: 'rgba(16,185,129,0.15)', color: '#065F46', label: 'הזמנה קיימת' },
-                  { badge: 'חסום',    bg: '#FEF3C7',                color: '#D97706', label: 'חסום ב-Beds24' },
-                  { badge: 'לפתיחה', bg: '#EF4444',                color: '#fff',    label: 'נבחר לפתיחה' },
-                  { badge: 'נבחר',    bg: '#EFEBFF',               color: '#7133D9', label: 'לעדכון / סגירה' },
-                ].map(({ badge, bg, color, label }) => (
+                  { badge: 'תפוס',    bg: 'rgba(16,185,129,0.15)', color: '#065F46', label: 'הזמנה קיימת', border: undefined as string | undefined },
+                  { badge: 'בקשה',    bg: 'rgba(245,158,11,0.18)', color: '#92400E', label: 'בקשת הזמנה', border: '1.5px dashed rgba(217,119,6,0.7)' },
+                  { badge: 'חסום',    bg: '#FEF3C7',                color: '#D97706', label: 'חסום ב-Beds24', border: undefined },
+                  { badge: 'לפתיחה', bg: '#EF4444',                color: '#fff',    label: 'נבחר לפתיחה', border: undefined },
+                  { badge: 'נבחר',    bg: '#EFEBFF',               color: '#7133D9', label: 'לעדכון / סגירה', border: undefined },
+                ].map(({ badge, bg, color, label, border }) => (
                   <div key={badge} style={{ display: 'flex', alignItems: 'center', gap: 5, minWidth: 0 }}>
                     <span style={{
                       background: bg, color, fontSize: 10, fontWeight: 600,
                       padding: '2px 6px', borderRadius: 4, whiteSpace: 'nowrap', flexShrink: 0,
+                      border,
                     }}>{badge}</span>
                     <span style={{ fontSize: 11, color: '#6C7884', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{label}</span>
                   </div>
@@ -963,9 +976,19 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated, disabled = fal
             </div>
 
             {/* ── Reservation details ── */}
-            <div className="mt-3" ref={reservationDetailsRef} style={{ background: '#FFFDF7', border: '1px solid #FDE68A', borderRadius: 10, padding: '12px 14px' }}>
+            <div
+              className="mt-3"
+              ref={reservationDetailsRef}
+              data-testid="calendar-reservation-details"
+              style={{
+                background: selectedReservation && isAwaitingApprovalStatus(selectedReservation.status) ? '#FFFBEB' : '#FFFDF7',
+                border: selectedReservation && isAwaitingApprovalStatus(selectedReservation.status) ? '1px dashed #F59E0B' : '1px solid #FDE68A',
+                borderRadius: 10,
+                padding: '12px 14px',
+              }}
+            >
               <div className="small fw-semibold mb-2" style={{ color: '#92400E' }}>
-                {selectedReservation?.status === 'request' ? 'פרטי בקשת הזמנה' : 'פרטי הזמנה'}
+                {selectedReservation && isAwaitingApprovalStatus(selectedReservation.status) ? 'פרטי בקשת הזמנה' : 'פרטי הזמנה'}
               </div>
               {selectedReservation ? (
                 <div
@@ -979,7 +1002,12 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated, disabled = fal
                   <div className="small" style={{ color: '#6C7884' }}>{selectedReservation.checkIn} - {selectedReservation.checkOut}</div>
                   <div className="small mt-2" style={{ color: '#5B6670' }}><span className="fw-semibold">סטטוס:</span> {formatStatus(selectedReservation.status)}</div>
                   {selectedReservation.status === 'request' ? (
-                    <div className="small mt-1" style={{ color: '#D97706' }}>ממתין לאישורך בערוץ ההזמנות (Beds24 / Airbnb)</div>
+                    <div className="small mt-1" style={{ color: '#D97706' }}>ממתין לאישורך. ניתן לאשר כאן — Beds24 יעדכן את הסטטוס למאושר.</div>
+                  ) : null}
+                  {selectedReservation.status === 'inquiry' ? (
+                    <div className="small mt-1" style={{ color: '#D97706' }}>
+                      בקשת הזמנה / בירור מערוץ (Airbnb). לא חוסם את החדר — האישור מתבצע בערוץ עצמו, לא דרך Beds24.
+                    </div>
                   ) : null}
                   <div className="small" style={{ color: '#5B6670' }}><span className="fw-semibold">לילות:</span> {selectedReservation.nights}</div>
                   <div className="small" style={{ color: '#5B6670' }}><span className="fw-semibold">סה״כ:</span> {formatCurrency(selectedReservation.total)}</div>
@@ -998,24 +1026,63 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated, disabled = fal
                   {selectedReservation.apiReference ? (
                     <div className="small" style={{ color: '#5B6670' }}><span className="fw-semibold">מזהה ערוץ:</span> <span dir="ltr">{selectedReservation.apiReference}</span></div>
                   ) : null}
-                  {selectedReservation.channelUrl ? (
-                    <a
-                      href={selectedReservation.channelUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="btn btn-sm d-inline-flex align-items-center gap-2 mt-3"
-                      style={{
-                        background: selectedReservation.status === 'request' ? '#FEF3C7' : '#EFEBFF',
-                        border: selectedReservation.status === 'request' ? '1px solid #F59E0B' : '1px solid #7133D9',
-                        color: selectedReservation.status === 'request' ? '#D97706' : '#7133D9',
-                        borderRadius: '6px',
-                        textDecoration: 'none',
-                      }}
-                    >
-                      <ExternalLink size={14} />
-                      {channelLinkLabel(selectedReservation.source)}
-                    </a>
-                  ) : null}
+                  <div className="d-flex flex-wrap gap-2 mt-3">
+                    {onApproveRequest && canConfirmViaBeds24Api(selectedReservation.status) ? (
+                      <button
+                        type="button"
+                        data-testid="calendar-approve-request"
+                        className="btn btn-sm d-inline-flex align-items-center gap-2"
+                        style={{
+                          background: '#D97706',
+                          border: 'none',
+                          color: '#fff',
+                          borderRadius: '6px',
+                        }}
+                        disabled={approving || disabled}
+                        title={disabled ? 'לא ניתן לבצע פעולות — הקרדיט ב-Beds24 אזל' : 'אשר בקשה ב-Beds24'}
+                        onClick={async () => {
+                          if (approving || disabled) return
+                          setApproving(true)
+                          try {
+                            await onApproveRequest(selectedReservation)
+                            setSelectedReservation((current) =>
+                              current && current.id === selectedReservation.id
+                                ? { ...current, status: 'confirmed' }
+                                : current,
+                            )
+                          } catch {
+                            // Parent shows the error toast
+                          } finally {
+                            setApproving(false)
+                          }
+                        }}
+                      >
+                        <Check size={14} />
+                        {approving ? 'מאשר...' : 'אשר הזמנה'}
+                      </button>
+                    ) : null}
+                    {selectedReservation.channelUrl ? (
+                      <a
+                        href={selectedReservation.channelUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        data-testid="calendar-channel-link"
+                        className="btn btn-sm d-inline-flex align-items-center gap-2"
+                        style={{
+                          background: isAwaitingApprovalStatus(selectedReservation.status) ? '#FEF3C7' : '#EFEBFF',
+                          border: isAwaitingApprovalStatus(selectedReservation.status) ? '1px solid #F59E0B' : '1px solid #7133D9',
+                          color: isAwaitingApprovalStatus(selectedReservation.status) ? '#D97706' : '#7133D9',
+                          borderRadius: '6px',
+                          textDecoration: 'none',
+                        }}
+                      >
+                        <ExternalLink size={14} />
+                        {selectedReservation.status === 'inquiry'
+                          ? channelApproveLabel(selectedReservation.source)
+                          : channelLinkLabel(selectedReservation.source)}
+                      </a>
+                    ) : null}
+                  </div>
                 </div>
               ) : (
                 <div className="small" style={{ color: '#6C7884' }}>
