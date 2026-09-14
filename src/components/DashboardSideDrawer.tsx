@@ -22,6 +22,7 @@ import {
   X,
   type LucideProps,
 } from 'lucide-react'
+import { isDashboardNavPageVisible } from '@/lib/dashboard/landingEditor'
 
 export type DashboardPage =
   | 'dashboard'
@@ -64,6 +65,7 @@ export const NAV_ITEMS: NavItem[] = [
   { href: '/admin', label: 'לוח בקרה אדמין', icon: Shield, page: 'admin', adminOnly: true, section: 'admin' },
   { href: '/admin/users', label: 'ניהול משתמשים', icon: UserCog, adminOnly: true, section: 'admin' },
   { href: '/dashboard/api-keys', label: 'מפתחות API', icon: KeyRound, page: 'api-keys', section: 'main' },
+  // HOS-17 — נשאר ברשימה כדי שיהיה קל להחזיר; מסונן ב-isDashboardNavPageVisible
   { href: '/dashboard/landing', label: 'ניהול דף נחיתה', icon: LayoutTemplate, page: 'landing', section: 'main' },
 ]
 
@@ -127,7 +129,11 @@ export default function DashboardSideDrawer({
   )
   const adminItems = NAV_ITEMS.filter((item) => item.adminOnly)
   const extraItems = NAV_ITEMS.filter(
-    (item) => item.section === 'main' && !item.adminOnly && (item.page === 'api-keys' || item.page === 'landing')
+    (item) =>
+      item.section === 'main' &&
+      !item.adminOnly &&
+      (item.page === 'api-keys' || item.page === 'landing') &&
+      isDashboardNavPageVisible(item.page)
   )
 
   let animIndex = 0
