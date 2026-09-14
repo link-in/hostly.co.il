@@ -1,73 +1,16 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useState, type ComponentType } from 'react'
+import { useEffect, useState } from 'react'
+import { ExternalLink, LogOut, X, type LucideProps } from 'lucide-react'
 import {
-  BadgeCheck,
-  BellRing,
-  Calculator,
-  CalendarDays,
-  CircleHelp,
-  ClipboardList,
-  ExternalLink,
-  KeyRound,
-  LayoutTemplate,
-  LogOut,
-  FileText,
-  MessageSquare,
-  Shield,
-  UserCog,
-  UserRound,
-  Users,
-  X,
-  type LucideProps,
-} from 'lucide-react'
-import { isDashboardNavPageVisible } from '@/lib/dashboard/landingEditor'
+  getVisibleNavSections,
+  type DashboardPage,
+  type NavItem,
+} from './dashboardNav'
 
-export type DashboardPage =
-  | 'dashboard'
-  | 'reservations'
-  | 'customers'
-  | 'price-check'
-  | 'profile'
-  | 'landing'
-  | 'pricing-demo'
-  | 'check-ins'
-  | 'admin'
-  | 'pricing'
-  | 'api-keys'
-  | 'messages'
-  | 'receipts'
-  | 'arrival-message'
-
-type IconComponent = ComponentType<LucideProps>
-
-export interface NavItem {
-  href: string
-  label: string
-  icon: IconComponent
-  page?: DashboardPage
-  adminOnly?: boolean
-  section?: 'main' | 'admin'
-}
-
-export const NAV_ITEMS: NavItem[] = [
-  { href: '/dashboard', label: 'ניהול זמינות/מחירים', icon: CalendarDays, page: 'dashboard', section: 'main' },
-  { href: '/dashboard/reservations', label: 'כל ההזמנות', icon: ClipboardList, page: 'reservations', section: 'main' },
-  { href: '/dashboard/customers', label: 'מאגר לקוחות', icon: Users, page: 'customers', section: 'main' },
-  { href: '/dashboard/check-ins', label: "צ'ק-אין דיגיטלי", icon: BadgeCheck, page: 'check-ins', section: 'main' },
-  { href: '/dashboard/messages', label: 'הודעות WhatsApp', icon: MessageSquare, page: 'messages', section: 'main' },
-  { href: '/dashboard/arrival-message', label: 'הודעת יום הגעה', icon: BellRing, page: 'arrival-message', section: 'main' },
-  { href: '/dashboard/receipts', label: 'קבלות וחשבוניות', icon: FileText, page: 'receipts', section: 'main' },
-  { href: '/dashboard/price-check', label: 'בדיקת מחיר', icon: CircleHelp, page: 'price-check', section: 'main' },
-  { href: '/dashboard/pricing-demo', label: 'מחשבון מחירים', icon: Calculator, page: 'pricing-demo', section: 'main' },
-  { href: '/dashboard/profile', label: 'איזור אישי', icon: UserRound, page: 'profile', section: 'main' },
-  { href: '/admin', label: 'לוח בקרה אדמין', icon: Shield, page: 'admin', adminOnly: true, section: 'admin' },
-  { href: '/admin/users', label: 'ניהול משתמשים', icon: UserCog, adminOnly: true, section: 'admin' },
-  { href: '/dashboard/api-keys', label: 'מפתחות API', icon: KeyRound, page: 'api-keys', section: 'main' },
-  // HOS-17 — נשאר ברשימה כדי שיהיה קל להחזיר; מסונן ב-isDashboardNavPageVisible
-  { href: '/dashboard/landing', label: 'ניהול דף נחיתה', icon: LayoutTemplate, page: 'landing', section: 'main' },
-]
+export type { DashboardPage, NavItem }
+export { NAV_ITEMS } from './dashboardNav'
 
 const ICON_PROPS: LucideProps = { size: 16, strokeWidth: 1.75 }
 
@@ -124,17 +67,7 @@ export default function DashboardSideDrawer({
 
   if (!open) return null
 
-  const mainItems = NAV_ITEMS.filter(
-    (item) => item.section === 'main' && !item.adminOnly && item.page !== 'api-keys' && item.page !== 'landing'
-  )
-  const adminItems = NAV_ITEMS.filter((item) => item.adminOnly)
-  const extraItems = NAV_ITEMS.filter(
-    (item) =>
-      item.section === 'main' &&
-      !item.adminOnly &&
-      (item.page === 'api-keys' || item.page === 'landing') &&
-      isDashboardNavPageVisible(item.page)
-  )
+  const { mainItems, adminItems, extraItems } = getVisibleNavSections()
 
   let animIndex = 0
 

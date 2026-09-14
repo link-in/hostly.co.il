@@ -3,7 +3,8 @@
 import { signOut } from 'next-auth/react'
 import { useState, useCallback } from 'react'
 import DashboardBottomNav from './DashboardBottomNav'
-import DashboardSideDrawer, { type DashboardPage } from './DashboardSideDrawer'
+import DashboardSideDrawer from './DashboardSideDrawer'
+import type { DashboardPage } from './dashboardNav'
 
 interface DashboardHeaderProps {
   session: any

@@ -8,7 +8,7 @@ import {
   Users,
   type LucideProps,
 } from 'lucide-react'
-import type { DashboardPage } from './DashboardSideDrawer'
+import type { DashboardPage } from './dashboardNav'
 
 const ICON_PROPS: LucideProps = { size: 22, strokeWidth: 1.75 }
 

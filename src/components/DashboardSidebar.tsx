@@ -6,8 +6,7 @@ import { useSession, signOut } from 'next-auth/react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useCallback, useState } from 'react'
 import { LogOut } from 'lucide-react'
-import { NAV_ITEMS, type NavItem, type DashboardPage } from './DashboardSideDrawer'
-import { isDashboardNavPageVisible } from '@/lib/dashboard/landingEditor'
+import { NAV_ITEMS, getVisibleNavSections, type NavItem, type DashboardPage } from './dashboardNav'
 
 const ICON_PROPS = { size: 16, strokeWidth: 1.75 } as const
 
@@ -66,17 +65,7 @@ export default function DashboardSidebar() {
     router.push('/')
   }, [router])
 
-  const mainItems = NAV_ITEMS.filter(
-    (item) => item.section === 'main' && !item.adminOnly && item.page !== 'api-keys' && item.page !== 'landing'
-  )
-  const adminItems = NAV_ITEMS.filter((item) => item.adminOnly)
-  const extraItems = NAV_ITEMS.filter(
-    (item) =>
-      item.section === 'main' &&
-      !item.adminOnly &&
-      (item.page === 'api-keys' || item.page === 'landing') &&
-      isDashboardNavPageVisible(item.page)
-  )
+  const { mainItems, adminItems, extraItems } = getVisibleNavSections()
 
   const propertyName = session?.user?.displayName?.trim() || 'Hostly'
 
