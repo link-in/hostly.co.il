@@ -1,10 +1,104 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import DashboardHeader from '@/components/DashboardHeader'
+
+function Beds24TokenCard() {
+  const [inviteCode, setInviteCode] = useState('')
+  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
+  const [message, setMessage] = useState<string | null>(null)
+
+  const handleExchange = async () => {
+    if (!inviteCode.trim()) return
+    setStatus('loading')
+    setMessage(null)
+    try {
+      const res = await fetch('/api/admin/beds24/exchange-invite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ inviteCode: inviteCode.trim() }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'שגיאה')
+      setStatus('success')
+      setMessage('✅ הטוקנים עודכנו בהצלחה! האפלקציה פעילה שוב.')
+      setInviteCode('')
+    } catch (err) {
+      setStatus('error')
+      setMessage(err instanceof Error ? err.message : 'שגיאה לא ידועה')
+    }
+  }
+
+  return (
+    <div
+      className="card border-0 shadow-sm"
+      style={{ borderRadius: 12, borderRight: '4px solid #f59e0b' }}
+      dir="rtl"
+    >
+      <div className="card-body p-4">
+        <div className="d-flex align-items-center gap-2 mb-3">
+          <span style={{ fontSize: 24 }}>🔑</span>
+          <div>
+            <h5 className="mb-0 fw-bold" style={{ color: '#b45309' }}>
+              חידוש טוקן Beds24
+            </h5>
+            <small className="text-muted">
+              לשימוש כשמגיעה התראת WhatsApp שהטוקן עומד לפוג
+            </small>
+          </div>
+        </div>
+
+        <div className="input-group mb-2">
+          <input
+            type="text"
+            className="form-control font-monospace"
+            placeholder="הדבק כאן את ה-Invite Code מ-Beds24..."
+            value={inviteCode}
+            onChange={e => setInviteCode(e.target.value)}
+            disabled={status === 'loading'}
+            style={{ direction: 'ltr', fontSize: 13 }}
+          />
+          <button
+            className="btn fw-semibold"
+            style={{
+              background: status === 'success'
+                ? '#16a34a'
+                : 'linear-gradient(135deg, #f59e0b, #f97316)',
+              color: 'white',
+              border: 'none',
+              minWidth: 130,
+            }}
+            onClick={handleExchange}
+            disabled={status === 'loading' || !inviteCode.trim()}
+          >
+            {status === 'loading'
+              ? <><span className="spinner-border spinner-border-sm me-1" /> מעדכן...</>
+              : status === 'success' ? '✅ עודכן!'
+              : '🔄 עדכן טוקן'}
+          </button>
+        </div>
+
+        {message && (
+          <div
+            className={`alert py-2 mb-0 ${status === 'success' ? 'alert-success' : 'alert-danger'}`}
+            style={{ borderRadius: 8, fontSize: 13 }}
+          >
+            {message}
+          </div>
+        )}
+
+        {status === 'idle' && (
+          <small className="text-muted">
+            🏨 Beds24 → Settings → API → <strong>Generate Invite Code</strong> → העתק והדבק
+          </small>
+        )}
+      </div>
+    </div>
+  )
+}
 
 export default function AdminDashboardPage() {
   const { data: session, status } = useSession()
@@ -213,6 +307,11 @@ export default function AdminDashboardPage() {
               </div>
             </div>
           </Link>
+        </div>
+
+        {/* Beds24 Token Renewal Card */}
+        <div className="col-12">
+          <Beds24TokenCard />
         </div>
 
         {/* Analytics Card */}

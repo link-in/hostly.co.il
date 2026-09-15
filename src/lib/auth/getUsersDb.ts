@@ -56,6 +56,33 @@ export const getUserByEmail = async (email: string): Promise<User | null> => {
 }
 
 /**
+ * Get user by ID using the service role (bypasses RLS).
+ * Used server-side for token refresh fallback lookups.
+ */
+export const getUserById = async (userId: string): Promise<User | null> => {
+  try {
+    const supabase = createServiceRoleClient()
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', userId)
+      .single()
+
+    if (error) {
+      if (error.code === 'PGRST116') return null
+      console.error('Failed to fetch user by ID:', error)
+      return null
+    }
+
+    if (!data) return null
+    return mapRowToUser(data as Record<string, unknown>)
+  } catch (error) {
+    console.error('getUserById threw:', error)
+    return null
+  }
+}
+
+/**
  * Get user by email for credential auth (uses service role when available, bypasses RLS).
  * Use only in NextAuth authorize() so login works regardless of RLS on users.
  */

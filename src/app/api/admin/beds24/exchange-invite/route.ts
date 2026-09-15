@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth/authOptions'
-import { Beds24TokenManager } from '@/lib/beds24/tokenManager'
+import { Beds24TokenManager, tokenManager } from '@/lib/beds24/tokenManager'
 
 /**
  * POST /api/admin/beds24/exchange-invite
@@ -27,6 +27,10 @@ export async function POST(request: Request) {
 
   try {
     const tokens = await Beds24TokenManager.setupFromInviteCode(inviteCode.trim())
+
+    // Persist the new global tokens to Supabase so the app auto-refreshes
+    // them from now on without any manual Vercel env-var updates.
+    await tokenManager.seedTokens(tokens.accessToken, tokens.refreshToken, tokens.expiresIn)
 
     return NextResponse.json({
       success: true,

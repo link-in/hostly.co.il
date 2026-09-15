@@ -4,6 +4,109 @@ import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import type { CommissionRate } from '@/lib/types/commission'
 
+// ─── Beds24 Token Section ────────────────────────────────────────────────────
+
+function Beds24TokenSection() {
+  const [inviteCode, setInviteCode] = useState('')
+  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
+  const [message, setMessage] = useState<string | null>(null)
+
+  const handleExchange = async () => {
+    if (!inviteCode.trim()) return
+    setStatus('loading')
+    setMessage(null)
+    try {
+      const res = await fetch('/api/admin/beds24/exchange-invite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ inviteCode: inviteCode.trim() }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'שגיאה לא ידועה')
+      setStatus('success')
+      setMessage('✅ הטוקנים עודכנו בהצלחה! האפלקציה פעילה שוב.')
+      setInviteCode('')
+    } catch (err) {
+      setStatus('error')
+      setMessage(err instanceof Error ? err.message : 'שגיאה')
+    }
+  }
+
+  return (
+    <div className="card border-0 shadow-sm mt-4" style={{ borderRadius: '12px' }}>
+      <div
+        className="card-header border-0 d-flex align-items-center gap-2"
+        style={{
+          background: 'linear-gradient(135deg, rgba(234, 179, 8, 0.1) 0%, rgba(251, 146, 60, 0.1) 100%)',
+          borderRadius: '12px 12px 0 0',
+        }}
+      >
+        <span style={{ fontSize: 20 }}>🔑</span>
+        <h5 className="mb-0 fw-bold" style={{ color: '#b45309' }}>
+          Beds24 — חידוש טוקן
+        </h5>
+      </div>
+      <div className="card-body p-4" dir="rtl">
+        <p className="text-muted mb-3" style={{ fontSize: 14 }}>
+          כשתקבל התראת WhatsApp שהטוקן עומד לפוג — צור Invite Code ב-Beds24 והכנס אותו כאן.
+          הטוקן יתעדכן אוטומטית ללא צורך לגעת ב-Vercel.
+        </p>
+
+        <div className="mb-3">
+          <label className="form-label fw-semibold">Invite Code מ-Beds24</label>
+          <div className="input-group">
+            <input
+              type="text"
+              className="form-control font-monospace"
+              placeholder="הדבק כאן את ה-Invite Code..."
+              value={inviteCode}
+              onChange={e => setInviteCode(e.target.value)}
+              disabled={status === 'loading'}
+              style={{ direction: 'ltr', fontSize: 13 }}
+            />
+            <button
+              className="btn"
+              style={{
+                background: 'linear-gradient(135deg, #f59e0b 0%, #f97316 100%)',
+                color: 'white',
+                border: 'none',
+                minWidth: 120,
+                fontWeight: 600,
+              }}
+              onClick={handleExchange}
+              disabled={status === 'loading' || !inviteCode.trim()}
+            >
+              {status === 'loading' ? (
+                <span className="spinner-border spinner-border-sm me-1" />
+              ) : '🔄 עדכן טוקן'}
+            </button>
+          </div>
+        </div>
+
+        {message && (
+          <div
+            className={`alert ${status === 'success' ? 'alert-success' : 'alert-danger'} py-2`}
+            style={{ borderRadius: 8, fontSize: 14 }}
+          >
+            {message}
+          </div>
+        )}
+
+        <div className="alert alert-warning py-2 mb-0" style={{ borderRadius: 8, fontSize: 13 }}>
+          <strong>איך מקבלים Invite Code?</strong>
+          <ol className="mb-0 mt-1 pe-3">
+            <li>כנס ל-Beds24 → Settings → Apps &amp; Integrations → API</li>
+            <li>לחץ <strong>"Generate Invite Code"</strong></li>
+            <li>העתק את הקוד והדבק כאן</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Main Page ────────────────────────────────────────────────────────────────
+
 export default function SettingsPage() {
   const [rates, setRates] = useState<CommissionRate[]>([])
   const [loading, setLoading] = useState(true)
@@ -258,6 +361,8 @@ export default function SettingsPage() {
           </div>
         </div>
       </div>
+
+      <Beds24TokenSection />
     </div>
   )
 }

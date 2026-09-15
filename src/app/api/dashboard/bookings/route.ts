@@ -66,8 +66,15 @@ export async function GET(request: Request) {
 
     if (!response.ok) {
       const details = await response.text()
+      console.error(`❌ Beds24 GET /bookings failed: HTTP ${response.status} ${response.statusText}`, {
+        url: url.toString(),
+        details,
+        propertyId,
+        roomId,
+        usingUserTokens: !!userTokens,
+      })
       return NextResponse.json(
-        { error: 'Beds24 request failed', status: response.status, details },
+          { error: 'Beds24 request failed', status: response.status, details },
         { status: 502 }
       )
     }
@@ -76,6 +83,12 @@ export async function GET(request: Request) {
     console.log(`✅ Fetched ${Array.isArray(data) ? data.length : 'unknown'} bookings`)
     return NextResponse.json(data)
   } catch (error) {
+    console.error(`❌ Beds24 GET /bookings threw an exception:`, {
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      url: url.toString(),
+      usingUserTokens: !!userTokens,
+    })
     return NextResponse.json(
       {
         error: 'Failed to reach Beds24',

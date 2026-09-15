@@ -7,6 +7,10 @@
     {
       "path": "/api/cron/arrival-messages",
       "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/beds24-token-check",
+      "schedule": "0 8 * * *"
     }
   ]
 }

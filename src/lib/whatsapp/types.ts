@@ -42,7 +42,8 @@ export interface WhatsAppSendMeta {
     | 'public_booking_owner'
     | 'manual_booking_guest'
     | 'arrival_day_guest'
+    | 'system_alert'
     | 'other'
-  recipientRole?: 'guest' | 'owner' | 'other'
+  recipientRole?: 'guest' | 'owner' | 'admin' | 'other'
   recipientName?: string | null
 }

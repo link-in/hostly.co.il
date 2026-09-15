@@ -18,9 +18,10 @@ export type WhatsAppMessageType =
   | 'public_booking_owner'
   | 'manual_booking_guest'
   | 'arrival_day_guest'
+  | 'system_alert'
   | 'other'
 
-export type WhatsAppRecipientRole = 'guest' | 'owner' | 'other'
+export type WhatsAppRecipientRole = 'guest' | 'owner' | 'admin' | 'other'
 export type WhatsAppLogStatus = 'sent' | 'failed' | 'skipped'
 
 export interface WhatsAppMessageLogInsert {
