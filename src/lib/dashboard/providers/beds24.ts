@@ -45,8 +45,10 @@ export const createBeds24Provider = (config: Beds24ProviderConfig = {}): Dashboa
 
   return {
     getReservations: async () => {
+      // Beds24 API V2 requires one `status` param per value — build URL via our API route
+      // which in turn uses buildBookingsListUrl with proper URLSearchParams.append()
       const endpoint = buildRoomParam(
-        `${baseUrl}/bookings?arrivalFrom=2024-01-01&includeInvoice=true&status=confirmed,new,request,inquiry`
+        `${baseUrl}/bookings?arrivalFrom=2024-01-01&includeInvoice=true`
       )
       const payload = await fetchJson<unknown>(endpoint, apiKey)
       const bookings = extractBookings(payload)

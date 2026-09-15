@@ -4,8 +4,14 @@ import type { ReservationStatus } from '@/lib/dashboard/types'
  * Beds24 statuses the dashboard calendar should fetch.
  * Airbnb "Request to Book" is imported as `inquiry`; channel booking requests
  * awaiting host confirmation are `request`. Default GET /bookings often omits both.
+ *
+ * NOTE: Beds24 API V2 accepts only one `status` value per query parameter.
+ * Use `CALENDAR_BOOKING_STATUS_LIST` with URLSearchParams.append() to send
+ * multiple statuses as separate params: ?status=confirmed&status=new&…
  */
-export const CALENDAR_BOOKING_STATUSES = 'confirmed,new,request,inquiry'
+export const CALENDAR_BOOKING_STATUS_LIST = ['confirmed', 'new', 'request', 'inquiry'] as const
+/** @deprecated Use CALENDAR_BOOKING_STATUS_LIST — comma-separated is not valid for Beds24 V2 API */
+export const CALENDAR_BOOKING_STATUSES = CALENDAR_BOOKING_STATUS_LIST.join(',')
 
 /** Channel request (Beds24 3) or Airbnb inquiry/request-to-book (Beds24 5). */
 export function isAwaitingApprovalStatus(status: ReservationStatus | string): boolean {

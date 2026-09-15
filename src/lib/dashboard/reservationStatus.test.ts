@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import {
-  CALENDAR_BOOKING_STATUSES,
+  CALENDAR_BOOKING_STATUS_LIST,
   isAwaitingApprovalStatus,
   occupiesCalendarNight,
   countsTowardRevenue,
@@ -51,9 +51,9 @@ describe('canConfirmViaBeds24Api', () => {
   })
 })
 
-describe('CALENDAR_BOOKING_STATUSES', () => {
+describe('CALENDAR_BOOKING_STATUS_LIST', () => {
   it('includes confirmed, new, request and inquiry', () => {
-    expect(CALENDAR_BOOKING_STATUSES.split(',').sort()).toEqual(
+    expect([...CALENDAR_BOOKING_STATUS_LIST].sort()).toEqual(
       ['confirmed', 'inquiry', 'new', 'request'].sort(),
     )
   })
