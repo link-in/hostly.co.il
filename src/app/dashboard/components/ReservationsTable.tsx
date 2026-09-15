@@ -5,6 +5,7 @@ import { Phone, Pencil, X, Sparkles, Map, Plane, Home, Hotel, Globe, Bird, FileT
 import { Icon } from '@iconify/react'
 import type { Reservation } from '@/lib/dashboard/types'
 import { formatCurrency, formatDate, formatStatus } from '@/lib/dashboard/utils'
+import { isAwaitingApprovalStatus, countsTowardRevenue } from '@/lib/dashboard/reservationStatus'
 import { normalizePhoneNumber, formatPhoneForDisplay } from '@/lib/utils/phoneFormatter'
 
 /**
@@ -170,6 +171,8 @@ const getStatusClass = (status: Reservation['status']) => {
     case 'pending':
       return 'bg-warning text-dark'
     case 'request':
+      return 'bg-warning text-dark'
+    case 'inquiry':
       return 'bg-warning text-dark'
     case 'cancelled':
       return 'bg-secondary'
@@ -472,7 +475,7 @@ const ReservationsTable = ({
                     <span
                       className={`badge ${getStatusClass(reservation.status)}`}
                       style={
-                        reservation.status === 'request'
+                        isAwaitingApprovalStatus(reservation.status)
                           ? { border: '1px dashed rgba(0,0,0,0.35)' }
                           : undefined
                       }
@@ -483,7 +486,7 @@ const ReservationsTable = ({
                 </div>
 
                 {onIssueReceipt &&
-                  reservation.status !== 'cancelled' &&
+                  countsTowardRevenue(reservation.status) &&
                   !receiptIssuedBookingIds?.has(reservation.id) && (
                   <div className="mt-2 mb-2">
                     <button
@@ -789,7 +792,7 @@ const ReservationsTable = ({
                   <span
                     className={`badge ${getStatusClass(reservation.status)}`}
                     style={
-                      reservation.status === 'request'
+                      isAwaitingApprovalStatus(reservation.status)
                         ? { border: '1px dashed rgba(0,0,0,0.35)' }
                         : undefined
                     }
@@ -906,7 +909,7 @@ const ReservationsTable = ({
                               פעולות
                             </div>
                             {onIssueReceipt &&
-                              reservation.status !== 'cancelled' &&
+                              countsTowardRevenue(reservation.status) &&
                               !receiptIssuedBookingIds?.has(reservation.id) && (
                               <button
                                 type="button"

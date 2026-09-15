@@ -169,6 +169,8 @@ const getStatusClass = (status: Reservation['status']) => {
       return 'bg-warning text-dark'
     case 'request':
       return 'bg-warning text-dark'
+    case 'inquiry':
+      return 'bg-warning text-dark'
     case 'cancelled':
       return 'bg-secondary'
     default:

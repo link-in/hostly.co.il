@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import { toast, Toaster } from 'sonner'
 import type { Reservation, RoomPrice } from '@/lib/dashboard/types'
 import { formatCurrency } from '@/lib/dashboard/utils'
+import { occupiesCalendarNight, countsTowardRevenue } from '@/lib/dashboard/reservationStatus'
 import { getDashboardProvider } from '@/lib/dashboard/getDashboardProvider'
 import ReservationsTable from './components/ReservationsTable'
 import IssueReceiptModal from './components/IssueReceiptModal'
@@ -343,6 +344,44 @@ const DashboardClient = () => {
     }
   }
 
+  const handleApproveRequest = async (reservation: Reservation) => {
+    if (reservation.status !== 'request') {
+      throw new Error('ניתן לאשר רק בקשת הזמנה')
+    }
+
+    const propertyId = reservation.propertyId || session?.user?.propertyId
+    const roomId = reservation.roomId || session?.user?.roomId?.split(',')[0].split(':')[0].trim()
+
+    const response = await fetch('/api/dashboard/bookings', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        bookingId: reservation.id,
+        propertyId,
+        roomId,
+        status: 'confirmed',
+      }),
+    })
+
+    const result = await response.json().catch(() => ({}))
+    if (!response.ok) {
+      const message = typeof result.error === 'string' ? result.error : 'אישור הבקשה נכשל'
+      toast.error(message)
+      throw new Error(message)
+    }
+
+    if (result.demo || session?.user?.isDemo) {
+      setReservations((prev) =>
+        prev.map((item) => (item.id === reservation.id ? { ...item, status: 'confirmed' } : item)),
+      )
+      toast.success('בקשת ההזמנה אושרה (מצב דמו)')
+      return
+    }
+
+    toast.success('בקשת ההזמנה אושרה ב-Beds24')
+    await refreshReservations()
+  }
+
   const handleCreateReservation = async () => {
     if (savingReservation) {
       return
@@ -375,7 +414,7 @@ const DashboardClient = () => {
     }
     const conflictingReservations: Reservation[] = []
     const hasConflict = reservations.some((reservation) => {
-      if (reservation.status === 'cancelled' || !reservation.checkIn || !reservation.checkOut) {
+      if (reservation.status === 'cancelled' || !occupiesCalendarNight(reservation.status) || !reservation.checkIn || !reservation.checkOut) {
         return false
       }
       const checkIn = normalizeDate(new Date(reservation.checkIn))
@@ -541,7 +580,7 @@ const DashboardClient = () => {
         return false
       }
       
-      if (reservation.status === 'cancelled' || !reservation.checkIn || !reservation.checkOut) {
+      if (reservation.status === 'cancelled' || !occupiesCalendarNight(reservation.status) || !reservation.checkIn || !reservation.checkOut) {
         return false
       }
       const checkIn = normalizeDate(new Date(reservation.checkIn))
@@ -953,6 +992,9 @@ const DashboardClient = () => {
     let totalCommission = 0
 
     reservations.forEach((reservation) => {
+      if (!countsTowardRevenue(reservation.status)) {
+        return
+      }
       totalRevenue += reservation.total
       
       // חישוב עמלה לפי מקור ההזמנה מההגדרות הדינמיות
@@ -1833,7 +1875,7 @@ const DashboardClient = () => {
               className={loadingRoomPrices && !initialRoomPricesLoaded ? 'd-md-none' : undefined}
               data-testid="calendar-pricing-panel"
             >
-              <CalendarPricing reservations={reservations} prices={roomPrices} onPricesUpdated={refreshRoomPrices} disabled={isBeds24Suspended} />
+              <CalendarPricing reservations={reservations} prices={roomPrices} onPricesUpdated={refreshRoomPrices} onApproveRequest={handleApproveRequest} disabled={isBeds24Suspended} />
             </div>
           </div>
         </div>

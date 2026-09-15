@@ -5,7 +5,7 @@ import type { DashboardProvider, PriceRule, Reservation, RoomPrice } from '@/lib
  * עם נתונים ריאליסטיים למשתמשי דמו
  *
  * 3 demo rooms for multi-room experience:
- *   DEMO_ROOM_001 – "נוף הרים א"  (main room, res_1001-1020)
+ *   DEMO_ROOM_001 – "נוף הרים א"  (main room, res_1001-1020, plus request/inquiry 1041-1042)
  *   DEMO_ROOM_002 – "נוף הרים ב"  (second room, res_1021-1033)
  *   DEMO_ROOM_003 – "חדר גן"       (garden suite, res_1034-1040)
  */
@@ -287,6 +287,39 @@ const reservations: Reservation[] = [
     unitName: 'נוף הרים א',
     roomId: 'DEMO_ROOM_001',
     createdAt: '2026-05-15',
+  },
+
+  // ספטמבר 2026 — בקשת הזמנה + בירור (HOS-9)
+  {
+    id: 'res_1041',
+    guestName: 'נועה ברק',
+    checkIn: '2026-09-18',
+    checkOut: '2026-09-21',
+    nights: 3,
+    total: 2400,
+    status: 'inquiry',
+    source: 'Airbnb',
+    apiReference: 'HMTESTREQUEST',
+    channelUrl: 'https://www.airbnb.com/hosting/reservations/details/HMTESTREQUEST',
+    unitName: 'נוף הרים א',
+    roomId: 'DEMO_ROOM_001',
+    propertyId: 'DEMO_PROPERTY',
+    createdAt: '2026-09-14',
+  },
+  {
+    id: 'res_1042',
+    guestName: 'יואב מזרחי',
+    checkIn: '2026-09-22',
+    checkOut: '2026-09-24',
+    nights: 2,
+    total: 1600,
+    status: 'request',
+    source: 'Direct',
+    unitName: 'נוף הרים א',
+    roomId: 'DEMO_ROOM_001',
+    propertyId: 'DEMO_PROPERTY',
+    createdAt: '2026-09-14',
+    phone: '0525550100',
   },
 
   // ---- DEMO_ROOM_002 - "נוף הרים ב" ----

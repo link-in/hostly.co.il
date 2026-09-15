@@ -34,3 +34,11 @@ export function channelLinkLabel(source: string | undefined | null): string {
   if (channel.includes('booking')) return 'פתח ב-Booking.com'
   return 'פתח במקור ההזמנה'
 }
+
+/** CTA when the host must accept a request on the OTA (Beds24 cannot accept Airbnb inquiries). */
+export function channelApproveLabel(source: string | undefined | null): string {
+  const channel = (source || '').toLowerCase()
+  if (channel.includes('airbnb')) return 'אשר באיירבנב'
+  if (channel.includes('booking')) return 'אשר ב-Booking.com'
+  return 'אשר במקור ההזמנה'
+}

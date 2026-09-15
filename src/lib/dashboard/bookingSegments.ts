@@ -6,6 +6,7 @@
  */
 import type { Reservation } from '@/lib/dashboard/types'
 import { normalizeDate, toKey, isSameDay, addDays } from '@/lib/dashboard/calendarDates'
+import { occupiesCalendarNight } from '@/lib/dashboard/reservationStatus'
 
 /**
  * Map of date-key -> reservations that occupy that *full* day.
@@ -18,6 +19,10 @@ export const buildBookingMap = (reservations: Reservation[]) => {
 
   reservations.forEach((reservation) => {
     if (!reservation.checkIn || !reservation.checkOut) {
+      return
+    }
+    // Inquiries overlay the calendar but do not occupy nights (Beds24 does not block the room).
+    if (!occupiesCalendarNight(reservation.status)) {
       return
     }
 

@@ -8,6 +8,7 @@ import { getUserByEmail } from '@/lib/auth/getUsersDb'
 import { normalizePhoneNumber } from '@/lib/utils/phoneFormatter'
 import { addOrUpdateCustomer } from '@/lib/customers/addOrUpdateCustomer'
 import { normalizeBookingItem, extractBookingId, extractUserTokens } from '@/lib/bookings/normalizer'
+import { buildBookingsListUrl } from '@/lib/beds24/bookingsQuery'
 import { notifyOwnersOfBookingCancellation } from '@/lib/notifications/bookingAlerts'
 import { refreshRoomCache } from '@/lib/availability/cache'
 import { detectAndMarkCreditError } from '@/lib/beds24/creditGuard'
@@ -38,22 +39,11 @@ export async function GET(request: Request) {
     )
   }
 
-  const url = new URL(`${getBaseUrl()}/bookings`)
-  
-  const query = process.env.BEDS24_BOOKINGS_QUERY
-  if (query) {
-    const params = new URLSearchParams(query)
-    params.forEach((value, key) => {
-      url.searchParams.set(key, value)
-    })
-  } else {
-    url.searchParams.set('arrivalFrom', '2024-01-01')
-    url.searchParams.set('includeInvoice', 'true')
-  }
-  
-  // Filter by property; add roomId only when available
-  url.searchParams.set('propertyId', propertyId)
-  if (roomId) url.searchParams.set('roomId', roomId)
+  const url = buildBookingsListUrl(getBaseUrl(), {
+    propertyId,
+    roomId,
+    extraQuery: process.env.BEDS24_BOOKINGS_QUERY,
+  })
 
   console.log(`🔍 Fetching bookings for Property: ${propertyId}${roomId ? `, Room: ${roomId}` : ' (no roomId)'}`)
 
