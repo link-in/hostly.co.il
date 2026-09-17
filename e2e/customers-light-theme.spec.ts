@@ -65,6 +65,40 @@ async function openCustomersPage(page: Page, context: BrowserContext, baseURL: s
   await page.goto('/dashboard/customers')
 }
 
+async function expectLightThemePalette(page: Page) {
+  const title = page.getByTestId('customers-title')
+  await expect(title).toBeVisible()
+  await expect(title).toHaveText('רשימת לקוחות')
+  await expect(title).toHaveCSS('color', 'rgb(47, 49, 51)')
+
+  const subtitle = page.getByTestId('customers-subtitle')
+  await expect(subtitle).toBeVisible()
+  await expect(subtitle).toHaveCSS('color', 'rgb(91, 102, 112)')
+
+  const countBadge = page.getByTestId('customers-count-badge')
+  await expect(countBadge).toHaveText('2')
+  await expect(countBadge).toHaveCSS('color', 'rgb(113, 51, 217)')
+  await expect(countBadge).toHaveCSS('background-color', 'rgb(239, 235, 255)')
+
+  const guestName = page.getByTestId('customer-name').first()
+  await expect(guestName).toHaveText('ישראל ישראלי')
+  await expect(guestName).toHaveCSS('color', 'rgb(47, 49, 51)')
+
+  const phoneLink = page.getByTestId('customer-phone-link').first()
+  await expect(phoneLink).toBeVisible()
+  await expect(phoneLink).toHaveCSS('color', 'rgb(113, 51, 217)')
+
+  const emailLink = page.getByTestId('customer-email-link').first()
+  await expect(emailLink).toBeVisible()
+  await expect(emailLink).toHaveCSS('color', 'rgb(113, 51, 217)')
+
+  const importButton = page.getByRole('button', { name: 'סנכרון מהזמנות' })
+  await expect(importButton).toBeVisible()
+  const importColor = await importButton.evaluate((el) => getComputedStyle(el).color)
+  expect(importColor).not.toBe('rgb(255, 255, 255)')
+  expect(importColor).not.toMatch(/^rgba\(255,\s*255,\s*255/)
+}
+
 test.describe('customers list light theme', () => {
   test.use({ viewport: { width: 1280, height: 800 } })
 
@@ -74,37 +108,33 @@ test.describe('customers list light theme', () => {
     baseURL,
   }) => {
     await openCustomersPage(page, context, baseURL!)
+    await expectLightThemePalette(page)
+  })
 
-    const title = page.getByTestId('customers-title')
-    await expect(title).toBeVisible()
-    await expect(title).toHaveText('רשימת לקוחות')
-    await expect(title).toHaveCSS('color', 'rgb(47, 49, 51)')
+  test('filters the list by name and keeps dark readable text', async ({
+    page,
+    context,
+    baseURL,
+  }) => {
+    await openCustomersPage(page, context, baseURL!)
 
-    const subtitle = page.getByTestId('customers-subtitle')
-    await expect(subtitle).toBeVisible()
-    await expect(subtitle).toHaveCSS('color', 'rgb(91, 102, 112)')
+    await page.getByTestId('customers-search-input').fill('דנה')
+    await expect(page.getByTestId('customers-subtitle')).toHaveText('מציג 1 מתוך 2 לקוחות')
+    await expect(page.getByTestId('customer-name')).toHaveCount(1)
+    await expect(page.getByTestId('customer-name')).toHaveText('דנה כהן')
+    await expect(page.getByTestId('customer-name')).toHaveCSS('color', 'rgb(47, 49, 51)')
+  })
+})
 
-    const countBadge = page.getByTestId('customers-count-badge')
-    await expect(countBadge).toHaveText('2')
-    await expect(countBadge).toHaveCSS('color', 'rgb(113, 51, 217)')
-    await expect(countBadge).toHaveCSS('background-color', 'rgb(239, 235, 255)')
+test.describe('customers list light theme on mobile', () => {
+  test.use({ viewport: { width: 390, height: 844 } })
 
-    const guestName = page.getByTestId('customer-name').first()
-    await expect(guestName).toHaveText('ישראל ישראלי')
-    await expect(guestName).toHaveCSS('color', 'rgb(47, 49, 51)')
-
-    const phoneLink = page.getByTestId('customer-phone-link').first()
-    await expect(phoneLink).toBeVisible()
-    await expect(phoneLink).toHaveCSS('color', 'rgb(113, 51, 217)')
-
-    const emailLink = page.getByTestId('customer-email-link').first()
-    await expect(emailLink).toBeVisible()
-    await expect(emailLink).toHaveCSS('color', 'rgb(113, 51, 217)')
-
-    const importButton = page.getByRole('button', { name: 'סנכרון מהזמנות' })
-    await expect(importButton).toBeVisible()
-    const importColor = await importButton.evaluate((el) => getComputedStyle(el).color)
-    expect(importColor).not.toBe('rgb(255, 255, 255)')
-    expect(importColor).not.toMatch(/^rgba\(255,\s*255,\s*255/)
+  test('keeps customer names and links readable on a light surface', async ({
+    page,
+    context,
+    baseURL,
+  }) => {
+    await openCustomersPage(page, context, baseURL!)
+    await expectLightThemePalette(page)
   })
 })
