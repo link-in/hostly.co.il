@@ -7,9 +7,9 @@ on:
     branches: [main]
 
 # Dummy values only — no real secrets are used or required, since all tests
-# (unit/integration/E2E) mock Beds24 and Supabase. These just need to be
-# *present and well-formed* so module-level env checks (e.g. Supabase client
-# creation) don't crash the build.
+# (unit/integration/E2E) mock Beds24 and Supabase. Values still need to be
+# present so Next.js can inline NEXT_PUBLIC_* at build time; the Supabase
+# clients themselves no longer throw at module load.
 env:
   NEXT_PUBLIC_SUPABASE_URL: https://ci-placeholder.supabase.co
   NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder-anon-key

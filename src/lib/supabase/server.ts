@@ -1,21 +1,13 @@
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error(
-    'Missing Supabase environment variables. Please check your .env.local file.'
-  )
-}
+import { getSupabaseAnonEnv } from './env'
 
 /**
  * Create a Supabase client for server-side operations
  * This client uses the anon key and respects Row Level Security (RLS)
  */
 export function createServerClient() {
-  return createSupabaseClient(supabaseUrl, supabaseAnonKey)
+  const { url, anonKey } = getSupabaseAnonEnv()
+  return createSupabaseClient(url, anonKey)
 }
 
 /**
@@ -23,13 +15,16 @@ export function createServerClient() {
  * Use ONLY for trusted server-side operations
  */
 export function createServiceRoleClient() {
+  const { url } = getSupabaseAnonEnv()
+  const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
   if (!supabaseServiceRoleKey) {
     throw new Error(
-      'Missing SUPABASE_SERVICE_ROLE_KEY. Required for admin operations.'
+      'Missing SUPABASE_SERVICE_ROLE_KEY. Required for admin operations.',
     )
   }
-  
-  return createSupabaseClient(supabaseUrl, supabaseServiceRoleKey, {
+
+  return createSupabaseClient(url, supabaseServiceRoleKey, {
     auth: {
       autoRefreshToken: false,
       persistSession: false,
