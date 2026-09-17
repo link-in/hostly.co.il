@@ -14,7 +14,7 @@
 
 **הערה על "סדר הרצה":** Vitest מריץ קובצי בדיקה שונים **במקביל** (בין קבצים אין סדר כרונולוגי מובטח), ובתוך קובץ בודד הבדיקות רצות בסדר שהן מוגדרות בו. הטבלאות למטה מסודרות לפי סדר **לוגי** — שכבה 1 (יחידה) ← שכבה 2 (אינטגרציה) ← שכבה 3 (E2E) — לפי הכניסה שלהן ל-CI (`.github/workflows/ci.yml`): קודם ה-job `test` (Vitest + build), ואז ה-job `e2e` (Playwright, רץ במקביל אבל תלוי-build בפני עצמו).
 
-**סה"כ נכון להיום:** 405 בדיקות Vitest + 10 תרחישי Playwright בקטלוג (עודכנו עם בדיקות HOS-11 לרשימת הלקוחות).
+**סה"כ נכון להיום:** 411 בדיקות Vitest + 10 תרחישי Playwright בקטלוג (עודכנו עם בדיקות HOS-11 לרשימת הלקוחות + אתחול עציל של Supabase).
 
 ---
 
@@ -36,6 +36,7 @@
 | 10 | `src/lib/notifications/ownerPhones.test.ts` **(חדש)** | 8 | `buildOwnerPhoneList`: נירמול/דדופליקציה/השמטת ערכים ריקים בין מספר ראשי ומשני; `sendWhatsAppToAll`: שולח את אותה הודעה לכל מספר ברשימה ומחזיר תוצאה פר-נמען, כשל של נמען אחד לא עוצר את השליחה לאחרים, רשימה ריקה לא שולחת כלום | פונקציות עזר משותפות לפיצ'ר "מספר טלפון נוסף להתראות" — משמשות בכל 4 המקומות ששולחים הודעת WhatsApp לבעל הבית: `webhook/processor.ts`, `public/booking/route.ts`, `public/booking/confirm/route.ts`, `check-in/submit/route.ts` |
 | 10b | `src/lib/linear/previewComment.test.ts` **(חדש)** | 10 | חילוץ מזהה משימת Linear מתיאור PR (`Fixes HOS-7`), בניית תגובת Preview בעברית, ומניעת כפילות של אותו קישור | משמש את `.github/workflows/linear-preview-comment.yml` |
 | 10c | `src/components/dashboardNav.test.ts` **(חדש)** | 9 | `isNavItemVisible` / `getVisibleNavItems` / `getVisibleNavSections`: צ'ק-אין דיגיטלי נשאר ברשימה אבל מסומן `hidden`, לא מופיע באף מקטע תפריט, ושאר הקישורים נשארים; החזרת הפריט כשמסירים את הדגל | HOS-12 — הסתרה זמנית מהתפריט בלי למחוק את הדף |
+| 10d | `src/lib/supabase/env.test.ts` **(חדש)** | 6 | `getSupabaseAnonEnv` זורק בלי URL/מפתח ומחזיר ערכים כשהם מוגדרים; ייבוא `server.ts` **לא** זורק בזמן טעינת מודול בלי env (רגרסיה ל-Vercel `collect page data`); `createServerClient` / `createServiceRoleClient` זורקים רק בקריאה | מונע כשל `next build` כש-Supabase env חסר בשלב איסוף נתוני עמוד |
 
 ## שכבה 2 — אינטגרציה (Integration, Vitest + מוקים)
 
@@ -84,6 +85,7 @@
 | `src/lib/webhook/processor.ts` (`maybeRefreshCache`) | `src/lib/webhook/processor.integration.test.ts` |
 | `src/lib/db/users.ts` (`getUserBeds24Tokens`) | מכוסה בעקיפין דרך `processor.integration.test.ts` (מדומה עם `vi.mock`) |
 | `src/lib/db/users.ts` (`getUsersWithBeds24Access`, `getOwnerInfoByPropertyRoom`) | `src/lib/db/users.test.ts` |
+| `src/lib/supabase/env.ts` / `server.ts` | `src/lib/supabase/env.test.ts` |
 | `src/lib/notifications/ownerPhones.ts` (`buildOwnerPhoneList`, `sendWhatsAppToAll`) | `src/lib/notifications/ownerPhones.test.ts` |
 | `src/lib/reviewReminders/message.ts` | `src/lib/reviewReminders/message.test.ts` |
 | `src/lib/reviewReminders/dateUtils.ts` | `src/lib/reviewReminders/dateUtils.test.ts` |
