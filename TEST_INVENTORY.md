@@ -14,7 +14,7 @@
 
 **הערה על "סדר הרצה":** Vitest מריץ קובצי בדיקה שונים **במקביל** (בין קבצים אין סדר כרונולוגי מובטח), ובתוך קובץ בודד הבדיקות רצות בסדר שהן מוגדרות בו. הטבלאות למטה מסודרות לפי סדר **לוגי** — שכבה 1 (יחידה) ← שכבה 2 (אינטגרציה) ← שכבה 3 (E2E) — לפי הכניסה שלהן ל-CI (`.github/workflows/ci.yml`): קודם ה-job `test` (Vitest + build), ואז ה-job `e2e` (Playwright, רץ במקביל אבל תלוי-build בפני עצמו).
 
-**סה"כ נכון להיום:** 369 בדיקות Vitest + 7 תרחישי Playwright (עודכנו עם בדיקות HOS-12).
+**סה"כ נכון להיום:** 369 בדיקות Vitest + 8 תרחישי Playwright בקטלוג (עודכנו עם בדיקות HOS-11 לרשימת הלקוחות).
 
 ---
 
@@ -62,6 +62,7 @@
 | 20 | `e2e/mobile-calendar-loader.spec.ts` **(חדש)** | 2 | במובייל בזמן טעינה: לודר ההזמנות מוצג, לודר לוח השנה/הסיכום מוסתר ולוח השנה עצמו נראה; בדסקטופ לודר לוח השנה נשאר | עוצר את `/api/commission-rates` כדי להשאיר את מצב הטעינה על המסך; משתמש ב-cookie דמו כמו שאר בדיקות הדשבורד |
 | 21 | `e2e/reservation-call-icon.spec.ts` **(חדש)** | 1 | בהצגת הזמנה מורחבת במובייל, כפתור השיחה העגול הוא סגול מותג (`#7133D9`) ולא ורוד ישן (`#f093fb`), ווואטסאפ נשאר ירוק | HOS-8; משתמש בהזמנת דמו `מור אלמוג` עם מספר טלפון |
 | 22 | `e2e/hide-digital-checkin-nav.spec.ts` **(חדש)** | 2 | בדסקטופ קישור צ'ק-אין דיגיטלי לא מופיע בסיידבר; במובייל הוא לא מופיע במגירת "עוד"; קישור "כל ההזמנות" נשאר | HOS-12; cookie דמו כמו שאר בדיקות הדשבורד |
+| 23 | `e2e/customers-light-theme.spec.ts` **(חדש)** | 1 | רשימת לקוחות: כותרת ושם אורח בטקסט כהה (`#2F3133`), מונה בסגול מותג על רקע בהיר, קישורי טלפון/אימייל בסגול מותג (`#7133D9`) ולא לבן/ורוד ישן | HOS-11; מיירט `/api/dashboard/customers` עם שני לקוחות דמו |
 
 ---
 
@@ -77,6 +78,7 @@
 | `src/app/dashboard/components/ReservationsTable.tsx` | `e2e/reservation-call-icon.spec.ts` (צבע אייקון שיחה בהצגת הזמנות) |
 | `src/components/PasswordInput.tsx` / `src/app/HomeLanding.tsx` | `e2e/login-password-toggle.spec.ts` (הצגת/הסתרת סיסמה במסך ההתחברות) |
 | `src/components/dashboardNav.ts` | `src/components/dashboardNav.test.ts` (יחידה) + `e2e/hide-digital-checkin-nav.spec.ts` (סיידבר דסקטופ + מגירת מובייל) |
+| `src/app/dashboard/customers/CustomersClient.tsx` | `e2e/customers-light-theme.spec.ts` (פלטת צבעים בהירה, ניגודיות טקסט) |
 | `src/lib/availability/cache.ts` (`refreshRoomCache`) | מכוסה דרך תרחיש ה-round-trip ב-`rooms/route.test.ts`, ודרך `public/calendar/route.test.ts` (קריאה מ-cache-first) ו-`processor.integration.test.ts` (רענון מ-webhook) |
 | `src/app/api/public/calendar/route.ts` | `src/app/api/public/calendar/route.test.ts` |
 | `src/lib/webhook/processor.ts` (`maybeRefreshCache`) | `src/lib/webhook/processor.integration.test.ts` |
