@@ -36,6 +36,7 @@ const getPlatformIcon = (source: string | null | undefined, size: number = 24) =
   const sourceLower = (source || '').toLowerCase()
   
   // Container style to ensure consistent sizing
+  // צבע אייקון לפי פלטת הדשבורד הבהירה (לא לבן על רקע לבן)
   const containerStyle = {
     display: 'inline-flex',
     alignItems: 'center',
@@ -43,7 +44,7 @@ const getPlatformIcon = (source: string | null | undefined, size: number = 24) =
     width: `${size}px`,
     height: `${size}px`,
     flexShrink: 0,
-    color: 'rgba(226, 232, 255, 0.9)',
+    color: 'var(--htxt-3)',
   }
   
   if (sourceLower.includes('airbnb')) {
@@ -333,7 +334,12 @@ export default function CustomersClient() {
   }
 
   return (
-    <main style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
+    <main
+      className="customers-page"
+      data-testid="customers-page"
+      dir="rtl"
+      style={{ minHeight: '100vh', background: 'transparent' }}
+    >
       {/* Header */}
       <div className="container py-3 py-md-5">
         <div className="mb-3 mb-md-4">
@@ -347,18 +353,19 @@ export default function CustomersClient() {
 
       {/* Main Content */}
       <div className="container pb-5">
-        {/* Title and Stats */}
+        {/* Title and Stats — HOS-11: טקסט כהה על רקע בהיר, סגול מותג במקום ורוד/לבן */}
         <div className="mb-4 d-flex flex-wrap align-items-end justify-content-between gap-3">
           <div>
             <h2
-              className="h5 fw-bold mb-2"
-              style={{
-                color: 'rgba(249, 147, 251, 0.9)',
-              }}
+              className="h5 fw-bold mb-2 hostly-dark-title"
+              data-testid="customers-title"
             >
               רשימת לקוחות
             </h2>
-            <div style={{ color: 'rgba(255, 255, 255, 0.85)', fontSize: '1rem', fontWeight: 600 }}>
+            <div
+              data-testid="customers-subtitle"
+              style={{ color: 'var(--htxt-2)', fontSize: '1rem', fontWeight: 600 }}
+            >
               {searchQuery
                 ? `מציג ${filteredCustomers.length} מתוך ${customers.length} לקוחות`
                 : `סה״כ ${customers.length} לקוחות`}
@@ -366,9 +373,11 @@ export default function CustomersClient() {
           </div>
           <div
             className="px-3 py-2 rounded-3"
+            data-testid="customers-count-badge"
             style={{
-              background: 'rgba(255,255,255,0.15)',
-              color: 'white',
+              background: 'var(--hb-100)',
+              color: 'var(--hb)',
+              border: '1px solid var(--hb-200)',
               fontWeight: 700,
               fontSize: '1.25rem',
               minWidth: 72,
@@ -403,7 +412,7 @@ export default function CustomersClient() {
             </div>
             <button
               type="button"
-              className="hostly-btn hostly-btn-sm hostly-btn-primary"
+              className="hostly-btn hostly-btn-sm hostly-btn-on-light hostly-btn-primary"
               disabled={importing || auditing}
               onClick={() => {
                 setImporting(true)
@@ -433,18 +442,20 @@ export default function CustomersClient() {
                 <div className="position-relative">
                   <Search
                     size={16}
+                    data-testid="customers-search-icon"
                     style={{
                       position: 'absolute',
                       right: 12,
                       top: '50%',
                       transform: 'translateY(-50%)',
-                      color: 'rgba(255,255,255,0.45)',
+                      color: 'var(--htxt-3)',
                       pointerEvents: 'none',
                     }}
                   />
                   <input
                     type="text"
                     className="form-control"
+                    data-testid="customers-search-input"
                     placeholder="חיפוש לפי שם, טלפון או אימייל..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
@@ -455,7 +466,7 @@ export default function CustomersClient() {
               <div className="col-12 col-md-6 d-flex gap-2 justify-content-end flex-wrap">
                 <button
                   type="button"
-                  className="hostly-btn hostly-btn-primary"
+                  className="hostly-btn hostly-btn-on-light hostly-btn-primary"
                   onClick={handleImportFromBeds24}
                   disabled={importing}
                 >
@@ -474,7 +485,7 @@ export default function CustomersClient() {
                 
                 <button
                   type="button"
-                  className="hostly-btn hostly-btn-success"
+                  className="hostly-btn hostly-btn-on-light hostly-btn-success"
                   onClick={handleExport}
                   disabled={filteredCustomers.length === 0}
                 >
@@ -491,7 +502,7 @@ export default function CustomersClient() {
           <div className="card-body p-0">
             {filteredCustomers.length === 0 ? (
               <div className="text-center py-5">
-                <div className="mb-3 d-inline-flex" style={{ color: 'rgba(255,255,255,0.45)' }}>
+                <div className="mb-3 d-inline-flex" style={{ color: 'var(--htxt-3)' }}>
                   {searchQuery ? <Search size={40} strokeWidth={1.5} /> : <Users size={40} strokeWidth={1.5} />}
                 </div>
                 <p className="text-muted mb-0">
@@ -541,7 +552,7 @@ export default function CustomersClient() {
                           style={{
                             padding: '1rem',
                             verticalAlign: 'middle',
-                            color: '#94a3b8',
+                            color: 'var(--htxt-3)',
                             fontVariantNumeric: 'tabular-nums',
                             fontWeight: 600,
                           }}
@@ -549,14 +560,17 @@ export default function CustomersClient() {
                           {index + 1}
                         </td>
                         <td style={{ padding: '1rem', verticalAlign: 'middle' }}>
-                          <strong style={{ color: 'rgba(255, 255, 255, 0.95)' }}>{customer.fullName}</strong>
+                          <strong data-testid="customer-name" style={{ color: 'var(--htxt-1)' }}>
+                            {customer.fullName}
+                          </strong>
                         </td>
                         <td style={{ padding: '1rem', verticalAlign: 'middle' }}>
                           {customer.phone ? (
                             <a
                               href={`tel:${normalizePhoneNumber(customer.phone)}`}
                               className="text-decoration-none"
-                              style={{ color: '#c4b5fd' }}
+                              data-testid="customer-phone-link"
+                              style={{ color: 'var(--hb)' }}
                             >
                               {formatPhoneForDisplay(customer.phone)}
                             </a>
@@ -569,7 +583,8 @@ export default function CustomersClient() {
                             <a
                               href={`mailto:${customer.email}`}
                               className="text-decoration-none"
-                              style={{ color: '#c4b5fd' }}
+                              data-testid="customer-email-link"
+                              style={{ color: 'var(--hb)' }}
                             >
                               {customer.email}
                             </a>
