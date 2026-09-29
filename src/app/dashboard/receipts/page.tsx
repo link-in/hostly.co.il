@@ -150,44 +150,44 @@ export default function ReceiptsPage() {
 
   return pageShell(
     <>
-      <div className="row g-3 mb-3">
+      <div className="row g-2 g-md-3 mb-3">
         <div className="col-4">
-          <div className="hostly-dark-stat rounded-3 p-3 shadow-sm text-center">
+          <div className="hostly-dark-stat rounded-3 p-2 p-md-3 shadow-sm text-center h-100 d-flex flex-column justify-content-center">
             <div className="stat-label small">מסמכים</div>
-            <div className="stat-value fw-bold fs-4">{receipts.length}</div>
+            <div className="stat-value fw-bold fs-5 fs-md-4">{receipts.length}</div>
           </div>
         </div>
         <div className="col-4">
-          <div className="hostly-dark-stat rounded-3 p-3 shadow-sm text-center">
+          <div className="hostly-dark-stat rounded-3 p-2 p-md-3 shadow-sm text-center h-100 d-flex flex-column justify-content-center">
             <div className="stat-label small">הונפקו</div>
-            <div className="stat-value fw-bold fs-4 text-success">{issuedCount}</div>
+            <div className="stat-value fw-bold fs-5 fs-md-4 text-success">{issuedCount}</div>
           </div>
         </div>
         <div className="col-4">
-          <div className="hostly-dark-stat rounded-3 p-3 shadow-sm text-center">
+          <div className="hostly-dark-stat rounded-3 p-2 p-md-3 shadow-sm text-center h-100 d-flex flex-column justify-content-center">
             <div className="stat-label small">סה״כ שהונפק</div>
-            <div className="stat-value fw-bold fs-5">{formatMoney(totalAmount)}</div>
+            <div className="stat-value fw-bold fs-6 fs-md-5">{formatMoney(totalAmount)}</div>
             {failedCount > 0 && (
-              <div className="small text-danger mt-1">{failedCount} נכשלו</div>
+              <div className="small text-danger mt-1" style={{ fontSize: '0.75rem' }}>
+                {failedCount} נכשלו
+              </div>
             )}
           </div>
         </div>
       </div>
 
       <div className="hostly-dark-card rounded-3 shadow-sm p-3 p-md-4">
-        <div className="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
-          <div className="d-flex align-items-center gap-2">
-            <FileText size={20} color="#f093fb" />
-            <h2 className="h5 mb-0 text-white">כל המסמכים שהופקו</h2>
+        <div className="d-flex flex-column flex-sm-row sm:align-items-center justify-content-between gap-2 mb-3">
+          <div className="d-flex align-items-center gap-2 flex-nowrap" style={{ minWidth: 0 }}>
+            <FileText size={20} color="#7133D9" className="flex-shrink-0" />
+            <h2 className="h5 mb-0 text-truncate hostly-dark-title">כל המסמכים שהופקו</h2>
           </div>
-          <div className="d-flex flex-wrap gap-2 align-items-center">
+          <div className="d-flex align-items-center gap-2 flex-nowrap justify-content-between justify-content-sm-end">
             <select
               className="form-select form-select-sm"
               style={{
                 width: 'auto',
-                background: 'rgba(0,0,0,0.25)',
-                color: '#fff',
-                borderColor: 'rgba(255,255,255,0.2)',
+                minWidth: '100px',
               }}
               value={statusFilter}
               onChange={(e) =>
@@ -200,12 +200,12 @@ export default function ReceiptsPage() {
             </select>
             <button
               type="button"
-              className="hostly-btn hostly-btn-sm hostly-btn-ghost"
+              className="hostly-btn hostly-btn-sm hostly-btn-on-light hostly-btn-ghost flex-shrink-0"
               onClick={fetchReceipts}
               disabled={loading}
             >
               <RefreshCw size={14} className={loading ? 'spin' : undefined} />
-              רענון
+              <span>רענון</span>
             </button>
           </div>
         </div>
@@ -219,47 +219,102 @@ export default function ReceiptsPage() {
             עדיין לא הופקו קבלות. מהדשבורד — פתחו הזמנה ולחצו «הוצא קבלה».
           </div>
         ) : (
-          <div className="table-responsive dashboard-table-scroll-container hostly-modal-scroll">
-            <table className="table hostly-dark-table align-middle mb-0">
-              <thead>
-                <tr className="small">
-                  <th>תאריך</th>
-                  <th>הזמנה</th>
-                  <th>לקוח</th>
-                  <th>סוג</th>
-                  <th>תשלום</th>
-                  <th>סכום</th>
-                  <th>מס׳ מסמך</th>
-                  <th>סטטוס</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {receipts.map((row) => (
-                  <tr key={row.id}>
-                    <td className="small text-nowrap">{formatDate(row.createdAt)}</td>
-                    <td className="small fw-semibold">#{row.bookingId}</td>
-                    <td>
-                      <div className="fw-semibold">{row.customerName}</div>
-                      {row.customerEmail && (
-                        <div className="small" style={{ color: 'rgba(255,255,255,0.55)' }}>
-                          {row.customerEmail}
-                        </div>
-                      )}
-                    </td>
-                    <td className="small">
-                      {DOC_LABELS[row.documentType] || row.documentType}
-                    </td>
-                    <td className="small">
-                      {PAY_LABELS[row.paymentMethod] || row.paymentMethod}
-                    </td>
-                    <td className="fw-bold" style={{ color: '#f093fb' }}>
-                      {formatMoney(row.amount)}
-                    </td>
-                    <td className="small">
-                      {row.externalDocNumber ? `#${row.externalDocNumber}` : '—'}
-                    </td>
-                    <td>
+          <>
+            {/* Desktop Table View */}
+            <div className="d-none d-md-block table-responsive dashboard-table-scroll-container hostly-modal-scroll">
+              <table className="table hostly-dark-table align-middle mb-0">
+                <thead>
+                  <tr className="small">
+                    <th>תאריך</th>
+                    <th>הזמנה</th>
+                    <th>לקוח</th>
+                    <th>סוג</th>
+                    <th>תשלום</th>
+                    <th>סכום</th>
+                    <th>מס׳ מסמך</th>
+                    <th>סטטוס</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {receipts.map((row) => (
+                    <tr key={row.id}>
+                      <td className="small text-nowrap">{formatDate(row.createdAt)}</td>
+                      <td className="small fw-semibold">#{row.bookingId}</td>
+                      <td>
+                        <div className="fw-semibold">{row.customerName}</div>
+                        {row.customerEmail && (
+                          <div className="small" style={{ color: 'rgba(255,255,255,0.55)' }}>
+                            {row.customerEmail}
+                          </div>
+                        )}
+                      </td>
+                      <td className="small">
+                        {DOC_LABELS[row.documentType] || row.documentType}
+                      </td>
+                      <td className="small">
+                        {PAY_LABELS[row.paymentMethod] || row.paymentMethod}
+                      </td>
+                      <td className="fw-bold" style={{ color: 'var(--hb, #7133D9)' }}>
+                        {formatMoney(row.amount)}
+                      </td>
+                      <td className="small">
+                        {row.externalDocNumber ? `#${row.externalDocNumber}` : '—'}
+                      </td>
+                      <td>
+                        {row.status === 'issued' ? (
+                          <span className="badge bg-success d-inline-flex align-items-center gap-1">
+                            <CheckCircle2 size={12} /> הונפק
+                          </span>
+                        ) : (
+                          <span
+                            className="badge bg-danger d-inline-flex align-items-center gap-1"
+                            title={row.error || undefined}
+                          >
+                            <XCircle size={12} /> נכשל
+                          </span>
+                        )}
+                      </td>
+                      <td>
+                        {row.pdfUrl && (
+                        <a
+                          href={row.pdfUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="hostly-btn hostly-btn-sm hostly-btn-on-light hostly-btn-ghost"
+                        >
+                          <ExternalLink size={14} />
+                          PDF
+                        </a>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Data Cards View */}
+            <div className="d-md-none d-flex flex-column gap-3">
+              {receipts.map((row) => (
+                <div
+                  key={row.id}
+                  className="rounded-3 p-3 hostly-dark-panel"
+                  style={{
+                    border: '1px solid var(--hborder-light, #F2F6FA)',
+                  }}
+                >
+                  <div className="d-flex align-items-start justify-content-between gap-2 mb-2">
+                    <div>
+                      <div className="fw-bold" style={{ fontSize: '1.05rem', color: 'var(--htxt-1, #2F3133)' }}>
+                        {row.customerName}
+                      </div>
+                      <div className="small text-muted">
+                        הזמנה #{row.bookingId}
+                        {row.externalDocNumber ? ` · מסמך #${row.externalDocNumber}` : ''}
+                      </div>
+                    </div>
+                    <div>
                       {row.status === 'issued' ? (
                         <span className="badge bg-success d-inline-flex align-items-center gap-1">
                           <CheckCircle2 size={12} /> הונפק
@@ -272,25 +327,59 @@ export default function ReceiptsPage() {
                           <XCircle size={12} /> נכשל
                         </span>
                       )}
-                    </td>
-                    <td>
-                      {row.pdfUrl && (
-                        <a
-                          href={row.pdfUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="hostly-btn hostly-btn-sm hostly-btn-ghost"
-                        >
-                          <ExternalLink size={14} />
-                          PDF
-                        </a>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                    </div>
+                  </div>
+
+                  {row.customerEmail && (
+                    <div className="small text-muted mb-2 text-truncate">
+                      {row.customerEmail}
+                    </div>
+                  )}
+
+                  <div
+                    className="p-2 rounded mb-2 d-flex justify-content-between align-items-center"
+                    style={{ background: 'var(--hsurf, #FFFFFF)', border: '1px solid var(--hborder-light, #F2F6FA)' }}
+                  >
+                    <div className="small">
+                      <span className="text-muted">סוג: </span>
+                      <span className="fw-semibold">
+                        {DOC_LABELS[row.documentType] || row.documentType}
+                      </span>
+                      <span className="text-muted mx-1">·</span>
+                      <span className="text-muted">תשלום: </span>
+                      <span className="fw-semibold">
+                        {PAY_LABELS[row.paymentMethod] || row.paymentMethod}
+                      </span>
+                    </div>
+                    <div className="fw-bold fs-6" style={{ color: 'var(--hb, #7133D9)' }}>
+                      {formatMoney(row.amount)}
+                    </div>
+                  </div>
+
+                  <div className="d-flex align-items-center justify-content-between pt-1">
+                    <span className="small text-muted">{formatDate(row.createdAt)}</span>
+                    {row.pdfUrl && (
+                      <a
+                        href={row.pdfUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="hostly-btn hostly-btn-sm hostly-btn-on-light hostly-btn-ghost py-1 px-2"
+                        style={{ minHeight: '30px' }}
+                      >
+                        <ExternalLink size={13} />
+                        צפייה ב-PDF
+                      </a>
+                    )}
+                  </div>
+                  {row.error && row.status === 'failed' && (
+                    <div className="small text-danger mt-2 pt-2 border-top">
+                      שגיאה: {row.error}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </>
         )}
       </div>
     </>
