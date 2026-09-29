@@ -3,8 +3,8 @@
    Inspired by iCount UI (light, clean, RTL-first)
    ===================================================== */
 
-/* ─── Typography — Rubik (Hebrew-first, modern, slightly rounded) ─── */
-@import url('https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700&display=swap');
+/* ─── Typography — Heebo (הפונט הרשמי של Hostly, נטען ב-layout.tsx עם next/font) ─── */
+/* אין צורך ב-@import — Heebo מוגדר ב-layout.tsx ומוזרק כ-var(--font-heebo) */
 
 /* ─── Global scrollbar — track matches sidebar bg so no visible gap on the right ─── */
 html {
@@ -100,7 +100,7 @@ html::-webkit-scrollbar-thumb:hover {
 .hostly-layout-root {
   min-height: 100vh;
   background: var(--hn-50);
-  font-family: 'Rubik', system-ui, sans-serif;
+  font-family: var(--font-heebo), Heebo, system-ui, sans-serif;
 }
 
 .hostly-main-panel {
@@ -171,7 +171,7 @@ html::-webkit-scrollbar-thumb:hover {
 }
 
 .hostly-sidebar-property {
-  font-family: 'Rubik', system-ui, sans-serif;
+  font-family: var(--font-heebo), Heebo, system-ui, sans-serif;
   font-size: 11.5px;
   font-weight: 400;
   color: var(--htxt-3);
@@ -621,7 +621,7 @@ html::-webkit-scrollbar-thumb:hover {
   background: transparent;
   border: none;
   transition: color 0.15s;
-  font-family: 'Rubik', system-ui, sans-serif;
+  font-family: var(--font-heebo), Heebo, system-ui, sans-serif;
   font-size: 11px;
   font-weight: 500;
   line-height: 1.2;
