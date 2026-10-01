@@ -12,6 +12,7 @@ test.describe('reservation call icon color', () => {
 
   test('uses brand purple for the call button next to WhatsApp', async ({ page, context, baseURL }) => {
     await signInAsDemoUser(context, baseURL!)
+    await page.clock.setFixedTime(new Date('2026-09-12T10:00:00Z'))
 
     await page.route('**/api/dashboard/arrival-message-skip**', async (route) => {
       await route.fulfill({
