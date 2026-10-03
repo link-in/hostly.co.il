@@ -5,7 +5,7 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import DashboardHeader from '@/components/DashboardHeader'
 import DashboardLoader from '@/components/DashboardLoader'
-import { Loader2 } from 'lucide-react'
+import { Button } from '@/components/ui'
 
 interface Settings {
   enabled: boolean
@@ -214,23 +214,24 @@ export default function ArrivalMessageClient() {
                       style={{ width: '100%', maxHeight: 240, objectFit: 'cover', borderRadius: 8 }}
                     />
                     <div className="d-flex gap-2 mt-2">
-                      <button
+                      <Button
                         type="button"
-                        className="btn btn-sm btn-outline-secondary"
+                        variant="secondary"
+                        size="sm"
                         onClick={() => fileInputRef.current?.click()}
                         disabled={uploadingPhoto}
+                        loading={uploadingPhoto}
                       >
-                        {uploadingPhoto ? (
-                          <><Loader2 size={14} className="me-1" style={{ animation: 'spin 1s linear infinite' }} /> מעלה...</>
-                        ) : 'החלף תמונה'}
-                      </button>
-                      <button
+                        {uploadingPhoto ? 'מעלה...' : 'החלף תמונה'}
+                      </Button>
+                      <Button
                         type="button"
-                        className="btn btn-sm btn-outline-danger"
+                        variant="danger"
+                        size="sm"
                         onClick={handlePhotoDelete}
                       >
                         הסר תמונה
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 ) : (
@@ -247,16 +248,16 @@ export default function ArrivalMessageClient() {
                   onChange={handlePhotoUpload}
                 />
                 {!settings.photoUrl && (
-                  <button
+                  <Button
                     type="button"
-                    className="btn btn-outline-secondary btn-sm"
+                    variant="secondary"
+                    size="sm"
                     onClick={() => fileInputRef.current?.click()}
                     disabled={uploadingPhoto}
+                    loading={uploadingPhoto}
                   >
-                    {uploadingPhoto ? (
-                      <><Loader2 size={14} className="me-1" style={{ animation: 'spin 1s linear infinite' }} /> מעלה...</>
-                    ) : 'העלה תמונה'}
-                  </button>
+                    {uploadingPhoto ? 'מעלה...' : 'העלה תמונה'}
+                  </Button>
                 )}
               </div>
             </div>
@@ -297,28 +298,28 @@ export default function ArrivalMessageClient() {
 
             {/* Actions */}
             <div className="d-flex gap-2 flex-wrap mb-5">
-              <button
+              <Button
                 type="button"
-                className="btn btn-primary"
+                variant="primary"
                 onClick={handleSave}
                 disabled={saving}
-                style={{ minWidth: 130, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+                loading={saving}
+                style={{ minWidth: 130 }}
               >
-                {saving && <Loader2 size={14} style={{ animation: 'spin 1s linear infinite', flexShrink: 0 }} />}
                 {saving ? 'שומר...' : 'שמור הגדרות'}
-              </button>
+              </Button>
 
-              <button
+              <Button
                 type="button"
-                className="btn btn-outline-secondary"
+                variant="secondary"
                 onClick={handleTestSend}
                 disabled={testSending || !settings.photoUrl}
+                loading={testSending}
                 title={!settings.photoUrl ? 'יש להעלות תמונה לפני שליחת בדיקה' : ''}
-                style={{ minWidth: 160, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+                style={{ minWidth: 160 }}
               >
-                {testSending && <Loader2 size={14} style={{ animation: 'spin 1s linear infinite', flexShrink: 0 }} />}
                 {testSending ? 'שולח...' : 'שלח לי הודעת בדיקה'}
-              </button>
+              </Button>
             </div>
 
           </div>
