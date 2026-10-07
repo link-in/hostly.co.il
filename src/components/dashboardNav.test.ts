@@ -8,6 +8,8 @@ import {
 } from './dashboardNav'
 
 const checkInItem = NAV_ITEMS.find((item) => item.page === 'check-ins')
+const arrivalMessageItem = NAV_ITEMS.find((item) => item.page === 'arrival-message')
+const messagesItem = NAV_ITEMS.find((item) => item.page === 'messages')
 
 describe('isNavItemVisible', () => {
   it('treats items without hidden as visible', () => {
@@ -29,6 +31,25 @@ describe('NAV_ITEMS — HOS-12 temporary hide', () => {
   it('marks digital check-in as hidden from the menu', () => {
     expect(checkInItem?.hidden).toBe(true)
     expect(isNavItemVisible(checkInItem!)).toBe(false)
+  })
+})
+
+describe('NAV_ITEMS — HOS-22 consolidate into WhatsApp messages page', () => {
+  it('keeps the arrival-message entry for route compatibility', () => {
+    expect(arrivalMessageItem).toBeDefined()
+    expect(arrivalMessageItem?.href).toBe('/dashboard/arrival-message')
+    expect(arrivalMessageItem?.label).toBe('הודעת יום הגעה')
+  })
+
+  it('marks arrival-message as hidden from the menu', () => {
+    expect(arrivalMessageItem?.hidden).toBe(true)
+    expect(isNavItemVisible(arrivalMessageItem!)).toBe(false)
+  })
+
+  it('keeps the unified messages page visible in the menu', () => {
+    expect(messagesItem).toBeDefined()
+    expect(messagesItem?.href).toBe('/dashboard/messages')
+    expect(isNavItemVisible(messagesItem!)).toBe(true)
   })
 })
 

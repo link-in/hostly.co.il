@@ -802,6 +802,10 @@ const ProfileClient = () => {
                     <p className="text-muted small mb-3">
                       בבוקר שאחרי הצ'ק-אאוט תישלח לאורח הודעת WhatsApp אוטומטית עם תודה ובקשה לכתוב ביקורת.
                       בהזמנה ישירה תישלח ההודעה עם הקישור שתגדירו כאן; בהזמנה מ-Airbnb או Booking.com תישלח תזכורת לכתוב ביקורת באפליקציה עצמה.
+                      {' '}
+                      <Link href="/dashboard/messages" className="text-decoration-underline fw-semibold" style={{ color: '#667eea' }}>
+                        לניהול כל הודעות ה-WhatsApp לחצו כאן
+                      </Link>
                     </p>
                   </div>
 
