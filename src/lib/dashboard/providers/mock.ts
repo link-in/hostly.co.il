@@ -289,10 +289,10 @@ const reservations: Reservation[] = [
     createdAt: '2026-05-15',
   },
 
-  // ספטמבר 2026 — בקשת הזמנה + בירור (HOS-9)
+  // ספטמבר 2026 — בקשת הזמנה + בירור (HOS-21)
   {
     id: 'res_1041',
-    guestName: 'נועה ברק',
+    guestName: 'נועה ברק (Inquiry)',
     checkIn: '2026-09-18',
     checkOut: '2026-09-21',
     nights: 3,
@@ -308,7 +308,7 @@ const reservations: Reservation[] = [
   },
   {
     id: 'res_1042',
-    guestName: 'יואב מזרחי',
+    guestName: 'יואב מזרחי (Request)',
     checkIn: '2026-09-22',
     checkOut: '2026-09-24',
     nights: 2,
