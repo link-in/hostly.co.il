@@ -102,7 +102,7 @@ export function PushNotificationPrompt() {
   if (!isVisible) return null
 
   return (
-    <div className="fixed bottom-4 left-4 right-4 z-50 md:left-auto md:right-8 md:bottom-8 md:w-96 shadow-lg rounded-2xl bg-white border border-gray-200 p-4 animate-in slide-in-from-bottom-5 fade-in duration-300">
+    <div className="fixed bottom-4 left-4 right-4 z-50 md:right-auto md:left-8 md:bottom-8 md:w-96 shadow-lg rounded-2xl bg-white border border-gray-200 p-4 animate-in slide-in-from-bottom-5 fade-in duration-300">
       <div className="flex items-start gap-4">
         <div className="flex-shrink-0 w-10 h-10 bg-indigo-50 rounded-full flex items-center justify-center text-indigo-600">
           <BellRing className="w-5 h-5" />
