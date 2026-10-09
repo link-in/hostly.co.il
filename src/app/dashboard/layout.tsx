@@ -5,6 +5,7 @@ import SubscriptionBanner from '@/components/SubscriptionBanner'
 import Beds24SuspendedBanner from '@/components/Beds24SuspendedBanner'
 import DashboardSidebar from '@/components/DashboardSidebar'
 import { Beds24StatusProvider } from '@/lib/beds24/Beds24StatusContext'
+import { PushNotificationPrompt } from '@/components/PushNotificationPrompt'
 import type { ReactNode } from 'react'
 import './dashboard-surfaces.css'
 
@@ -21,6 +22,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
               {/* Main content area — offset right on desktop */}
               <div className="hostly-main-panel">
                 <SubscriptionBanner />
+                <PushNotificationPrompt />
                 {/* Beds24 credit exhaustion warning — renders only when suspended */}
                 <Beds24SuspendedBannerConnected />
                 {children}
