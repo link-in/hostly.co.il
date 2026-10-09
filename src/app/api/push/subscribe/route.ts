@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth/authOptions'
-import { createServerClient } from '@/lib/supabase/server'
+import { createServiceRoleClient } from '@/lib/supabase/server'
 
 export async function POST(request: Request) {
   const session = await getServerSession(authOptions)
@@ -15,7 +15,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid subscription object' }, { status: 400 })
     }
 
-    const supabase = createServerClient()
+    const supabase = createServiceRoleClient()
     const { error } = await supabase
       .from('push_subscriptions')
       .upsert(
@@ -53,7 +53,7 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'Missing endpoint' }, { status: 400 })
     }
 
-    const supabase = createServerClient()
+    const supabase = createServiceRoleClient()
     const { error } = await supabase
       .from('push_subscriptions')
       .delete()
