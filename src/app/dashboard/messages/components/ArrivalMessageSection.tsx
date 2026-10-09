@@ -85,7 +85,7 @@ export default function ArrivalMessageSection() {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'שגיאה בשמירה')
-      setMsg('ההגדרות נשמרו בהצלחה ✅')
+      setMsg('ההגדרות נשמרו בהצלחה')
     } catch (e) {
       setErr(e instanceof Error ? e.message : 'שגיאה בשמירה')
     } finally {
@@ -106,7 +106,7 @@ export default function ArrivalMessageSection() {
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'העלאה נכשלה')
       setSettings((s) => ({ ...s, photoUrl: data.url, photoStoragePath: data.storagePath }))
-      setMsg('התמונה הועלתה בהצלחה ✅')
+      setMsg('התמונה הועלתה בהצלחה')
     } catch (e) {
       setErr(e instanceof Error ? e.message : 'העלאה נכשלה')
     } finally {
@@ -140,7 +140,7 @@ export default function ArrivalMessageSection() {
       const res = await fetch('/api/dashboard/arrival-messages/test-send', { method: 'POST' })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'שליחה נכשלה')
-      setMsg(`הודעת בדיקה נשלחה לטלפון שלך (${data.sentTo ?? ''}) ✅`)
+      setMsg(`הודעת בדיקה נשלחה לטלפון שלך (${data.sentTo ?? ''})`)
     } catch (e) {
       setErr(e instanceof Error ? e.message : 'שליחה נכשלה')
     } finally {
