@@ -345,7 +345,7 @@ const DashboardClient = () => {
   }
 
   const handleApproveRequest = async (reservation: Reservation) => {
-    if (reservation.status !== 'request') {
+    if (reservation.status !== 'request' && reservation.status !== 'inquiry') {
       throw new Error('ניתן לאשר רק בקשת הזמנה')
     }
 
@@ -378,7 +378,46 @@ const DashboardClient = () => {
       return
     }
 
-    toast.success('בקשת ההזמנה אושרה ב-Beds24')
+    toast.success('בקשת ההזמנה אושרה בהצלחה')
+    await refreshReservations()
+  }
+
+  const handleDeclineRequest = async (reservation: Reservation) => {
+    if (reservation.status !== 'request' && reservation.status !== 'inquiry') {
+      throw new Error('ניתן לדחות רק בקשת הזמנה')
+    }
+
+    const propertyId = reservation.propertyId || session?.user?.propertyId
+    const roomId = reservation.roomId || session?.user?.roomId?.split(',')[0].split(':')[0].trim()
+
+    // Using PATCH to change status to cancelled (0) to cleanly decline without destroying data
+    const response = await fetch('/api/dashboard/bookings', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        bookingId: reservation.id,
+        propertyId,
+        roomId,
+        status: 'cancelled',
+      }),
+    })
+
+    const result = await response.json().catch(() => ({}))
+    if (!response.ok) {
+      const message = typeof result.error === 'string' ? result.error : 'דחיית הבקשה נכשלה'
+      toast.error(message)
+      throw new Error(message)
+    }
+
+    if (result.demo || session?.user?.isDemo) {
+      setReservations((prev) =>
+        prev.map((item) => (item.id === reservation.id ? { ...item, status: 'cancelled' } : item)),
+      )
+      toast.success('בקשת ההזמנה נדחתה (מצב דמו)')
+      return
+    }
+
+    toast.success('בקשת ההזמנה נדחתה בהצלחה')
     await refreshReservations()
   }
 
@@ -897,16 +936,27 @@ const DashboardClient = () => {
       }
 
       if (reservationsResult.status === 'fulfilled') {
-        // If demo mode, merge with session storage reservations
-        if (meta.isMock && session?.user?.isDemo) {
-          const demoReservations = loadDemoReservations()
-          const combined = [...demoReservations, ...reservationsResult.value]
-          console.log(`🎭 Initial load: ${demoReservations.length} new + ${reservationsResult.value.length} mock = ${combined.length} total`)
-          setReservations(markNewReservations(combined))
-        } else {
-          // Mark new reservations (created in last 7 days)
-          setReservations(markNewReservations(reservationsResult.value))
+        // Always include mock reservations on local for testing if it's the demo account
+        const data = reservationsResult.value;
+        const demoReservations = loadDemoReservations();
+        
+        let combined = data;
+        if (session?.user?.isDemo || process.env.NODE_ENV === 'development') {
+          // Manually add the testing requests if they aren't there yet
+          const hasTests = data.some(r => r.id === 'res_1041');
+          if (!hasTests) {
+            console.log('Injecting test mock reservations for development');
+            // Inject them manually from the array we know we need
+            const { createMockProvider } = await import('@/lib/dashboard/providers/mock');
+            const mockData = await createMockProvider().getReservations();
+            const testingMocks = mockData.filter(r => r.id === 'res_1041' || r.id === 'res_1042');
+            combined = [...demoReservations, ...data, ...testingMocks];
+          } else {
+            combined = [...demoReservations, ...data];
+          }
         }
+        
+        setReservations(markNewReservations(combined))
         setReservationsError(null)
       } else {
         setReservationsError(
@@ -1875,7 +1925,7 @@ const DashboardClient = () => {
               className={loadingRoomPrices && !initialRoomPricesLoaded ? 'd-md-none' : undefined}
               data-testid="calendar-pricing-panel"
             >
-              <CalendarPricing reservations={reservations} prices={roomPrices} onPricesUpdated={refreshRoomPrices} onApproveRequest={handleApproveRequest} disabled={isBeds24Suspended} />
+              <CalendarPricing reservations={reservations} prices={roomPrices} onPricesUpdated={refreshRoomPrices} onApproveRequest={handleApproveRequest} onDeclineRequest={handleDeclineRequest} disabled={isBeds24Suspended} />
             </div>
           </div>
         </div>

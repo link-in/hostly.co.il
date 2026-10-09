@@ -88,3 +88,46 @@ self.addEventListener('fetch', (event) => {
     })
   );
 });
+
+// ── Push Notifications ───────────────────────────────────────────────────────
+
+self.addEventListener('push', (event) => {
+  if (!event.data) return;
+
+  try {
+    const data = event.data.json();
+    const title = data.title || 'התראה חדשה מ-Hostly';
+    const options = {
+      body: data.body || '',
+      icon: data.icon || '/photos/hostly-logo.png',
+      badge: data.badge || '/photos/hostly-logo.png',
+      data: data.url ? { url: data.url } : { url: '/dashboard' },
+      dir: 'rtl' as const,
+      requireInteraction: true,
+      vibrate: [200, 100, 200]
+    };
+
+    event.waitUntil(self.registration.showNotification(title, options));
+  } catch (e) {
+    console.error('Error parsing push data', e);
+  }
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+
+  const targetUrl = event.notification.data?.url || '/dashboard';
+
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      for (const client of clientList) {
+        if (client.url.includes(targetUrl) && 'focus' in client) {
+          return client.focus();
+        }
+      }
+      if (clients.openWindow) {
+        return clients.openWindow(targetUrl);
+      }
+    })
+  );
+});

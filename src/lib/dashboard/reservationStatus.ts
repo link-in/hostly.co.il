@@ -32,10 +32,10 @@ export function countsTowardRevenue(status: ReservationStatus | string): boolean
 }
 
 /**
- * Beds24 POST /bookings can set status to `confirmed` for a Request (3).
- * Airbnb inquiries must be accepted on Airbnb — changing Beds24 status does not
- * accept the request on the channel.
+ * Beds24 POST /bookings can set status to `confirmed` (1) for Requests (3) and Inquiries (5).
+ * For Airbnb "Request to Book" (imported as inquiry), changing status to 1 accepts the request,
+ * and changing to 0 (cancelled) declines it.
  */
 export function canConfirmViaBeds24Api(status: ReservationStatus | string): boolean {
-  return status === 'request'
+  return status === 'request' || status === 'inquiry'
 }

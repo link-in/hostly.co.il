@@ -97,6 +97,14 @@ export async function processWebhook(webhookData: Beds24WebhookWrapper): Promise
   await maybeSaveCustomer(userId, guestName, guestPhone, guestEmail, booking)
   maybeRefreshCache(userId, booking).catch((e) => console.error('[Cache] refresh failed:', e))
 
+  if (userId) {
+    sendPushNotification(userId, {
+      title: 'הזמנה חדשה אושרה! 🎉',
+      body: `הזמנה חדשה מ-${guestName} ליחידה ${booking.roomId}`,
+      url: '/dashboard/reservations'
+    }).catch(console.error)
+  }
+
   const ownerInfo = await getOwnerInfoByPropertyRoom(booking.propertyId, booking.roomId)
   const guestResult = await sendGuestNotification(
     guestPhone,
@@ -244,6 +252,8 @@ async function sendGuestNotification(
     },
   )
 }
+
+import { sendPushNotification } from '@/lib/push/send'
 
 async function sendOwnerNotification(
   ownerPhones: string[],

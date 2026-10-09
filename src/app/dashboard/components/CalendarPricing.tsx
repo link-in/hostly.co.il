@@ -19,8 +19,10 @@ type CalendarPricingProps = {
   reservations: Reservation[]
   prices: RoomPrice[]
   onPricesUpdated?: () => Promise<void> | void
-  /** Confirm a Beds24 request (status 3) via POST /bookings. */
+  /** Confirm a Beds24 request via POST /bookings. */
   onApproveRequest?: (reservation: Reservation) => Promise<void> | void
+  /** Decline a Beds24 request (cancel) via POST /bookings. */
+  onDeclineRequest?: (reservation: Reservation) => Promise<void> | void
   /** When true (Beds24 credit exhausted), all mutating actions are disabled */
   disabled?: boolean
 }
@@ -56,7 +58,7 @@ const addMonths = (date: Date, months: number) => {
 
 const HEBREW_MONTHS = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר']
 
-const CalendarPricing = ({ reservations, prices, onPricesUpdated, onApproveRequest, disabled = false }: CalendarPricingProps) => {
+const CalendarPricing = ({ reservations, prices, onPricesUpdated, onApproveRequest, onDeclineRequest, disabled = false }: CalendarPricingProps) => {
   const { selectedRoomId } = useSelectedRoom()
   const [currentMonth, setCurrentMonth] = useState(() => startOfMonth(new Date()))
   const [showMonthPicker, setShowMonthPicker] = useState(false)
@@ -87,6 +89,7 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated, onApproveReque
   }, [selectedRoomId])
   const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null)
   const [approving, setApproving] = useState(false)
+  const [declining, setDeclining] = useState(false)
   const reservationDetailsRef = useRef<HTMLDivElement>(null)
   const lastSelectedRef = useRef<Date | null>(null)
   const todayKey = toKey(normalizeDate(new Date()))
@@ -808,10 +811,10 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated, onApproveReque
                       pointerEvents: 'auto',
                       textAlign: 'start' as const,
                       appearance: 'none' as const,
+                      zIndex: isSelected ? 10 : awaiting ? 5 : 2,
                       boxShadow: isSelected ? '0 0 0 2px #7133D9' : undefined,
                       ...getSegmentBarStyle(segment.status),
                     }}
-                    title={awaiting ? `בקשת הזמנה: ${segment.label}` : segment.label}
                   >
                     {awaiting ? `בקשה · ${segment.label}` : segment.label}
                   </button>
@@ -1002,11 +1005,13 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated, onApproveReque
                   <div className="small" style={{ color: '#6C7884' }}>{selectedReservation.checkIn} - {selectedReservation.checkOut}</div>
                   <div className="small mt-2" style={{ color: '#5B6670' }}><span className="fw-semibold">סטטוס:</span> {formatStatus(selectedReservation.status)}</div>
                   {selectedReservation.status === 'request' ? (
-                    <div className="small mt-1" style={{ color: '#D97706' }}>ממתין לאישורך. ניתן לאשר כאן — Beds24 יעדכן את הסטטוס למאושר.</div>
+                    <div className="small mt-1 fw-medium" style={{ color: '#D97706' }}>
+                      ממתין לאישורך. אישור ישנה את הסטטוס להזמנה סגורה, דחייה תבטל את הבקשה.
+                    </div>
                   ) : null}
                   {selectedReservation.status === 'inquiry' ? (
-                    <div className="small mt-1" style={{ color: '#D97706' }}>
-                      בקשת הזמנה / בירור מערוץ (Airbnb). לא חוסם את החדר — האישור מתבצע בערוץ עצמו, לא דרך Beds24.
+                    <div className="small mt-1 fw-medium" style={{ color: '#D97706' }}>
+                      בירור מערוץ (Airbnb Inquiry). לא חוסם את החדר — אם יבשיל לכדי הזמנה, תוכל לאשר כאן או באיירביאנבי.
                     </div>
                   ) : null}
                   <div className="small" style={{ color: '#5B6670' }}><span className="fw-semibold">לילות:</span> {selectedReservation.nights}</div>
@@ -1027,39 +1032,76 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated, onApproveReque
                     <div className="small" style={{ color: '#5B6670' }}><span className="fw-semibold">מזהה ערוץ:</span> <span dir="ltr">{selectedReservation.apiReference}</span></div>
                   ) : null}
                   <div className="d-flex flex-wrap gap-2 mt-3">
-                    {onApproveRequest && canConfirmViaBeds24Api(selectedReservation.status) ? (
-                      <button
-                        type="button"
-                        data-testid="calendar-approve-request"
-                        className="btn btn-sm d-inline-flex align-items-center gap-2"
-                        style={{
-                          background: '#D97706',
-                          border: 'none',
-                          color: '#fff',
-                          borderRadius: '6px',
-                        }}
-                        disabled={approving || disabled}
-                        title={disabled ? 'לא ניתן לבצע פעולות — הקרדיט ב-Beds24 אזל' : 'אשר בקשה ב-Beds24'}
-                        onClick={async () => {
-                          if (approving || disabled) return
-                          setApproving(true)
-                          try {
-                            await onApproveRequest(selectedReservation)
-                            setSelectedReservation((current) =>
-                              current && current.id === selectedReservation.id
-                                ? { ...current, status: 'confirmed' }
-                                : current,
-                            )
-                          } catch {
-                            // Parent shows the error toast
-                          } finally {
-                            setApproving(false)
-                          }
-                        }}
-                      >
-                        <Check size={14} />
-                        {approving ? 'מאשר...' : 'אשר הזמנה'}
-                      </button>
+                    {onApproveRequest && selectedReservation.status === 'request' ? (
+                      <>
+                        <button
+                          type="button"
+                          data-testid="calendar-approve-request"
+                          className="btn btn-sm d-inline-flex align-items-center gap-2"
+                          style={{
+                            background: '#D97706',
+                            border: 'none',
+                            color: '#fff',
+                            borderRadius: '6px',
+                          }}
+                          disabled={approving || declining || disabled}
+                          title={disabled ? 'לא ניתן לבצע פעולות — הקרדיט ב-Beds24 אזל' : 'אשר בקשה'}
+                          onClick={async () => {
+                            if (approving || declining || disabled) return
+                            setApproving(true)
+                            try {
+                              await onApproveRequest(selectedReservation)
+                              setSelectedReservation((current) =>
+                                current && current.id === selectedReservation.id
+                                  ? { ...current, status: 'confirmed' }
+                                  : current,
+                              )
+                            } catch {
+                              // Parent shows the error toast
+                            } finally {
+                              setApproving(false)
+                            }
+                          }}
+                        >
+                          <Check size={14} />
+                          {approving ? 'מאשר...' : 'אשר בקשה'}
+                        </button>
+                        
+                        {onDeclineRequest && (
+                          <button
+                            type="button"
+                            data-testid="calendar-decline-request"
+                            className="btn btn-sm d-inline-flex align-items-center gap-2"
+                            style={{
+                              background: '#FEF3C7',
+                              border: '1px solid #FDE68A',
+                              color: '#92400E',
+                              borderRadius: '6px',
+                            }}
+                            disabled={approving || declining || disabled}
+                            title={disabled ? 'לא ניתן לבצע פעולות — הקרדיט ב-Beds24 אזל' : 'דחה בקשה / בטל'}
+                            onClick={async () => {
+                              if (approving || declining || disabled) return
+                              if (!window.confirm('האם אתה בטוח שברצונך לדחות את בקשת ההזמנה? הפעולה תבטל אותה מול הערוץ.')) return
+                              setDeclining(true)
+                              try {
+                                await onDeclineRequest(selectedReservation)
+                                setSelectedReservation((current) =>
+                                  current && current.id === selectedReservation.id
+                                    ? { ...current, status: 'cancelled' }
+                                    : current,
+                                )
+                              } catch {
+                                // Parent shows the error toast
+                              } finally {
+                                setDeclining(false)
+                              }
+                            }}
+                          >
+                            {declining ? 'דוחה...' : 'דחה'}
+                          </button>
+                        )}
+                      </>
                     ) : null}
                     {selectedReservation.channelUrl ? (
                       <a
@@ -1078,8 +1120,10 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated, onApproveReque
                       >
                         <ExternalLink size={14} />
                         {selectedReservation.status === 'inquiry'
-                          ? channelApproveLabel(selectedReservation.source)
-                          : channelLinkLabel(selectedReservation.source)}
+                          ? 'פתח בירור / ענה באיירביאנבי'
+                          : selectedReservation.status === 'request'
+                            ? channelApproveLabel(selectedReservation.source)
+                            : channelLinkLabel(selectedReservation.source)}
                       </a>
                     ) : null}
                   </div>
