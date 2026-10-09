@@ -289,12 +289,12 @@ const reservations: Reservation[] = [
     createdAt: '2026-05-15',
   },
 
-  // ספטמבר 2026 — בקשת הזמנה + בירור (HOS-21)
+  // נובמבר 2026 — בקשת הזמנה + בירור (HOS-21)
   {
     id: 'res_1041',
     guestName: 'נועה ברק (Inquiry)',
-    checkIn: '2026-09-18',
-    checkOut: '2026-09-21',
+    checkIn: '2026-11-18',
+    checkOut: '2026-11-21',
     nights: 3,
     total: 2400,
     status: 'inquiry',
@@ -304,13 +304,13 @@ const reservations: Reservation[] = [
     unitName: 'נוף הרים א',
     roomId: 'DEMO_ROOM_001',
     propertyId: 'DEMO_PROPERTY',
-    createdAt: '2026-09-14',
+    createdAt: '2026-11-14',
   },
   {
     id: 'res_1042',
     guestName: 'יואב מזרחי (Request)',
-    checkIn: '2026-09-22',
-    checkOut: '2026-09-24',
+    checkIn: '2026-11-22',
+    checkOut: '2026-11-24',
     nights: 2,
     total: 1600,
     status: 'request',
@@ -318,7 +318,7 @@ const reservations: Reservation[] = [
     unitName: 'נוף הרים א',
     roomId: 'DEMO_ROOM_001',
     propertyId: 'DEMO_PROPERTY',
-    createdAt: '2026-09-14',
+    createdAt: '2026-11-14',
     phone: '0525550100',
   },
 
@@ -706,6 +706,7 @@ const allRoomPrices: RoomPrice[] = [
 export function createMockProvider(roomId?: string): DashboardProvider {
   return {
     getReservations: async () => {
+      console.log('🎭 Mock Provider: fetching reservations', { roomId, totalMock: reservations.length })
       if (roomId) {
         return reservations.filter((r) => r.roomId === roomId && r.status !== 'cancelled')
       }

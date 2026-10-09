@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ExternalLink, Loader2, Pencil, RefreshCw, MessageSquare, FileText, CheckCircle2 } from 'lucide-react'
 import DashboardHeader from '@/components/DashboardHeader'
+import { PushNotificationManager } from '@/components/PushNotificationManager'
 import DashboardLoader from '@/components/DashboardLoader'
 
 interface SubscriptionInfo {
@@ -452,6 +453,8 @@ const ProfileClient = () => {
                     ✅ {success}
                   </div>
                 ) : null}
+
+                <PushNotificationManager />
 
                 <div className="row g-3">
                   <div className="col-md-6">

@@ -811,10 +811,10 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated, onApproveReque
                       pointerEvents: 'auto',
                       textAlign: 'start' as const,
                       appearance: 'none' as const,
+                      zIndex: isSelected ? 10 : awaiting ? 5 : 2,
                       boxShadow: isSelected ? '0 0 0 2px #7133D9' : undefined,
                       ...getSegmentBarStyle(segment.status),
                     }}
-                    title={awaiting ? `בקשת הזמנה: ${segment.label}` : segment.label}
                   >
                     {awaiting ? `בקשה · ${segment.label}` : segment.label}
                   </button>
@@ -1011,7 +1011,7 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated, onApproveReque
                   ) : null}
                   {selectedReservation.status === 'inquiry' ? (
                     <div className="small mt-1 fw-medium" style={{ color: '#D97706' }}>
-                      בקשת הזמנה (Request to Book) מערוץ (Airbnb). ניתן לאשר או לדחות כאן — הפעולה תסתנכרן לערוץ.
+                      בירור מערוץ (Airbnb Inquiry). לא חוסם את החדר — אם יבשיל לכדי הזמנה, תוכל לאשר כאן או באיירביאנבי.
                     </div>
                   ) : null}
                   <div className="small" style={{ color: '#5B6670' }}><span className="fw-semibold">לילות:</span> {selectedReservation.nights}</div>
@@ -1032,7 +1032,7 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated, onApproveReque
                     <div className="small" style={{ color: '#5B6670' }}><span className="fw-semibold">מזהה ערוץ:</span> <span dir="ltr">{selectedReservation.apiReference}</span></div>
                   ) : null}
                   <div className="d-flex flex-wrap gap-2 mt-3">
-                    {onApproveRequest && canConfirmViaBeds24Api(selectedReservation.status) ? (
+                    {onApproveRequest && selectedReservation.status === 'request' ? (
                       <>
                         <button
                           type="button"
@@ -1120,8 +1120,10 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated, onApproveReque
                       >
                         <ExternalLink size={14} />
                         {selectedReservation.status === 'inquiry'
-                          ? channelApproveLabel(selectedReservation.source)
-                          : channelLinkLabel(selectedReservation.source)}
+                          ? 'פתח בירור / ענה באיירביאנבי'
+                          : selectedReservation.status === 'request'
+                            ? channelApproveLabel(selectedReservation.source)
+                            : channelLinkLabel(selectedReservation.source)}
                       </a>
                     ) : null}
                   </div>

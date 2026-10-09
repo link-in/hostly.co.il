@@ -96,6 +96,8 @@ export function buildOwnerBookingInquiryMessage(fields: OwnerBookingAlertFields)
     .join('\n')
 }
 
+import { sendPushNotification } from '@/lib/push/send'
+
 export interface NotifyOwnerAlertInput {
   bookingId: number | string
   propertyId: number | string
@@ -173,6 +175,20 @@ async function notifyOwnersOfBookingEvent(
     bookingId: input.bookingId,
     numAdult: input.numAdult,
   })
+
+  // Send push notification if we have a userId
+  if (ownerInfo.userId) {
+    let title = 'עדכון הזמנה'
+    if (event === 'cancelled') title = 'ביטול הזמנה ❌'
+    if (event === 'request') title = 'בקשת הזמנה חדשה 🛎️'
+    if (event === 'inquiry') title = 'פנייה חדשה (Inquiry) ✉️'
+
+    sendPushNotification(ownerInfo.userId, {
+      title,
+      body: `${input.guestName} - יחידה ${ownerInfo.roomName || 'שלך'}`,
+      url: '/dashboard/reservations'
+    }).catch(console.error)
+  }
 
   const results = await sendWhatsAppToAll(ownerInfo.phoneNumbers, message, {
     userId: ownerInfo.userId,

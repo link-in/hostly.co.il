@@ -936,16 +936,27 @@ const DashboardClient = () => {
       }
 
       if (reservationsResult.status === 'fulfilled') {
-        // If demo mode, merge with session storage reservations
-        if (meta.isMock && session?.user?.isDemo) {
-          const demoReservations = loadDemoReservations()
-          const combined = [...demoReservations, ...reservationsResult.value]
-          console.log(`🎭 Initial load: ${demoReservations.length} new + ${reservationsResult.value.length} mock = ${combined.length} total`)
-          setReservations(markNewReservations(combined))
-        } else {
-          // Mark new reservations (created in last 7 days)
-          setReservations(markNewReservations(reservationsResult.value))
+        // Always include mock reservations on local for testing if it's the demo account
+        const data = reservationsResult.value;
+        const demoReservations = loadDemoReservations();
+        
+        let combined = data;
+        if (session?.user?.isDemo || process.env.NODE_ENV === 'development') {
+          // Manually add the testing requests if they aren't there yet
+          const hasTests = data.some(r => r.id === 'res_1041');
+          if (!hasTests) {
+            console.log('Injecting test mock reservations for development');
+            // Inject them manually from the array we know we need
+            const { createMockProvider } = await import('@/lib/dashboard/providers/mock');
+            const mockData = await createMockProvider().getReservations();
+            const testingMocks = mockData.filter(r => r.id === 'res_1041' || r.id === 'res_1042');
+            combined = [...demoReservations, ...data, ...testingMocks];
+          } else {
+            combined = [...demoReservations, ...data];
+          }
         }
+        
+        setReservations(markNewReservations(combined))
         setReservationsError(null)
       } else {
         setReservationsError(
