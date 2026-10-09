@@ -78,4 +78,61 @@ describe('buildReviewReminderMessage', () => {
     expect(message).toContain('נועה')
     expect(message).toContain('מקווים לראותכם שוב')
   })
+
+  it('uses custom review message text with {guestName} and {propertyName} placeholders', () => {
+    const message = buildReviewReminderMessage({
+      guestName: 'דוד',
+      propertyName: 'וילה בגליל',
+      channel: 'direct',
+      googleReviewUrl: 'https://g.page/r/xyz',
+      reviewMessageText: 'תודה רבה שהתארחתם ב{propertyName}! נשמח לשמוע חוות דעת מ{guestName}.',
+    })
+
+    expect(message).toContain('שלום דוד! 🏔️')
+    expect(message).toContain('תודה רבה שהתארחתם בוילה בגליל! נשמח לשמוע חוות דעת מדוד.')
+    expect(message).toContain('👉 לחצו כאן: https://g.page/r/xyz')
+    expect(message).toContain('מקווים לראותכם שוב! 🎉')
+  })
+
+  it('does not duplicate greeting when custom text starts with a greeting', () => {
+    const message = buildReviewReminderMessage({
+      guestName: 'שירה',
+      propertyName: 'סוויטת נוף',
+      channel: 'airbnb',
+      reviewMessageText: 'היי {guestName}, תודה שבחרתם ב{propertyName}! היה תענוג לארח אתכם.',
+    })
+
+    expect(message).toContain('היי שירה, תודה שבחרתם בסוויטת נוף! היה תענוג לארח אתכם.')
+    expect(message).not.toContain('שלום שירה! 🏔️')
+    expect(message).toContain('Airbnb')
+    expect(message).toContain('מקווים לראותכם שוב! 🎉')
+  })
+
+  it('does not duplicate closing when custom text already has closing', () => {
+    const message = buildReviewReminderMessage({
+      guestName: 'אבי',
+      propertyName: 'צימר הרים',
+      channel: 'direct',
+      googleReviewUrl: 'https://g.page/r/abc',
+      reviewMessageText: 'תודה שהתארחתם! נשמח לראותכם שוב בקרוב.',
+    })
+
+    expect(message).toContain('נשמח לראותכם שוב בקרוב.')
+    // Should not have the default closing appended separately
+    expect(message).not.toContain('מקווים לראותכם שוב! 🎉')
+  })
+
+  it('falls back to default message when reviewMessageText is whitespace only', () => {
+    const message = buildReviewReminderMessage({
+      guestName: 'יוסי כהן',
+      propertyName: 'Mountain View',
+      channel: 'direct',
+      googleReviewUrl: 'https://g.page/r/abc123',
+      reviewMessageText: '   ',
+    })
+
+    expect(message).toContain('תודה שהתארחתם בMountain View! מקווים שנהניתם ושהרגשתם בבית 😊')
+    expect(message).toContain('אם היה משהו שאפשר לשפר – נשמח מאוד לשמוע ולהשתפר 🙏')
+    expect(message).toContain('👉 לחצו כאן: https://g.page/r/abc123')
+  })
 })

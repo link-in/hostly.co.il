@@ -163,4 +163,20 @@ describe('processReviewRemindersForUser', () => {
 
     expect(summary).toMatchObject({ bookingsFound: 3, sent: 2, skipped: 1, failed: 0 })
   })
+
+  it('uses user.reviewMessageText when configured', async () => {
+    vi.mocked(fetchWithTokenRefresh).mockResolvedValue(jsonResponse([buildBooking()]))
+
+    const userWithCustomText: UserWithBeds24Access = {
+      ...TEST_USER,
+      reviewMessageText: 'תודה רבה מכל הלב שהתארחתם ב{propertyName}!',
+    }
+
+    await processReviewRemindersForUser(userWithCustomText, DATE_STR)
+
+    expect(sendWhatsAppMessage).toHaveBeenCalledTimes(1)
+    const [{ message }] = vi.mocked(sendWhatsAppMessage).mock.calls[0]
+    expect(message).toContain('תודה רבה מכל הלב שהתארחתם בMountain View!')
+    expect(message).toContain('שלום Yossi Cohen! 🏔️')
+  })
 })

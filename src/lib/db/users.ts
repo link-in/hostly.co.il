@@ -28,6 +28,7 @@ export interface UserWithBeds24Access {
   propertyId: string
   displayName: string | null
   googleReviewUrl: string | null
+  reviewMessageText?: string | null
   beds24Token: string
   beds24RefreshToken: string
 }
@@ -95,25 +96,41 @@ export async function getUserBeds24Tokens(userId: string): Promise<UserBeds24Tok
 export async function getUsersWithBeds24Access(): Promise<UserWithBeds24Access[]> {
   try {
     const supabase = createServiceRoleClient()
+    let rows: Record<string, any>[] | null = null
+
     const { data, error } = await supabase
       .from('users')
-      .select('id, property_id, display_name, google_review_url, beds24_token, beds24_refresh_token')
+      .select('id, property_id, display_name, google_review_url, review_message_text, beds24_token, beds24_refresh_token')
       .not('property_id', 'is', null)
       .neq('property_id', '')
       .not('beds24_token', 'is', null)
 
-    if (error || !data) {
-      console.error('getUsersWithBeds24Access error:', error)
-      return []
+    if (error) {
+      // Fallback if review_message_text column is not yet present
+      const fallback = await supabase
+        .from('users')
+        .select('id, property_id, display_name, google_review_url, beds24_token, beds24_refresh_token')
+        .not('property_id', 'is', null)
+        .neq('property_id', '')
+        .not('beds24_token', 'is', null)
+
+      if (fallback.error || !fallback.data) {
+        console.error('getUsersWithBeds24Access error:', fallback.error || error)
+        return []
+      }
+      rows = fallback.data as Record<string, any>[]
+    } else {
+      rows = data as Record<string, any>[]
     }
 
-    return data
+    return (rows || [])
       .filter((row) => row.beds24_token && row.property_id)
       .map((row) => ({
         id: row.id,
         propertyId: String(row.property_id),
         displayName: row.display_name ?? null,
         googleReviewUrl: row.google_review_url ?? null,
+        reviewMessageText: (row.review_message_text as string) ?? null,
         beds24Token: row.beds24_token as string,
         beds24RefreshToken: (row.beds24_refresh_token as string) ?? '',
       }))

@@ -120,6 +120,7 @@ async function processBooking(
     propertyName: user.displayName || 'הנכס שלנו',
     channel,
     googleReviewUrl: user.googleReviewUrl,
+    reviewMessageText: user.reviewMessageText,
   })
 
   const result = await sendWhatsAppMessage(

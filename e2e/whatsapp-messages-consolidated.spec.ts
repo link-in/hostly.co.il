@@ -66,6 +66,28 @@ async function setupPageRoutes(page: Page) {
       body: JSON.stringify({ status: null }),
     })
   })
+
+  await page.route('**/api/dashboard/review-reminder-settings', async (route) => {
+    if (route.request().method() === 'POST') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          settings: route.request().postDataJSON(),
+        }),
+      })
+    } else {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          googleReviewUrl: 'https://g.page/r/demo',
+          reviewMessageText: 'תודה מיוחדת שהתארחתם ב{propertyName}!',
+        }),
+      })
+    }
+  })
 }
 
 test.describe('WhatsApp Messages Page Tabs & Mobile Experience', () => {
@@ -196,5 +218,71 @@ test.describe('WhatsApp Messages Page Tabs & Mobile Experience', () => {
     await page.waitForLoadState('networkidle')
     expect(page.url()).toContain('/dashboard/messages')
     await expect(page.locator('#arrival-message-title')).toBeVisible()
+  })
+
+  test('allows editing and saving review reminder message text and loading default template', async ({
+    page,
+    context,
+    baseURL,
+  }) => {
+    let currentSettings = {
+      googleReviewUrl: 'https://g.page/r/demo',
+      reviewMessageText: 'תודה מיוחדת שהתארחתם ב{propertyName}!',
+    }
+    await signInAsDemoUser(context, baseURL!)
+    await setupPageRoutes(page)
+
+    await page.route('**/api/dashboard/review-reminder-settings', async (route) => {
+      if (route.request().method() === 'POST') {
+        const body = route.request().postDataJSON()
+        currentSettings = { ...currentSettings, ...body }
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            success: true,
+            settings: currentSettings,
+          }),
+        })
+      } else {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify(currentSettings),
+        })
+      }
+    })
+
+    await page.goto(`${baseURL}/dashboard/messages?tab=review`)
+    await page.waitForLoadState('networkidle')
+
+    const messageTextarea = page.locator('textarea')
+    await expect(messageTextarea).toBeVisible()
+    await expect(messageTextarea).toHaveValue('תודה מיוחדת שהתארחתם ב{propertyName}!')
+
+    // Click "טען נוסח ברירת מחדל לעריכה"
+    const loadDefaultBtn = page.getByRole('button', { name: 'טען נוסח ברירת מחדל לעריכה' })
+    await expect(loadDefaultBtn).toBeVisible()
+    await loadDefaultBtn.click()
+
+    await expect(messageTextarea).toHaveValue(/מקווים שנהניתם ושהרגשתם בבית/)
+
+    // Edit text
+    await messageTextarea.fill('נוסח ביקורת חדש מותאם אישית!')
+
+    // Save
+    const saveBtn = page.getByRole('button', { name: 'שמור הגדרות' })
+    await saveBtn.click()
+
+    await expect(page.getByText('ההגדרות נשמרו בהצלחה')).toBeVisible()
+    expect(currentSettings).toMatchObject({
+      reviewMessageText: 'נוסח ביקורת חדש מותאם אישית!',
+      googleReviewUrl: 'https://g.page/r/demo',
+    })
+
+    await page.screenshot({
+      path: '/opt/cursor/artifacts/whatsapp_messages_tab_review_custom_text.png',
+      fullPage: true,
+    })
   })
 })

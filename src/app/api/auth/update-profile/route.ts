@@ -29,6 +29,7 @@ export async function POST(request: Request) {
       default_access_code?: string
     }
     googleReviewUrl?: string
+    reviewMessageText?: string
   }
 
   try {
@@ -117,6 +118,10 @@ export async function POST(request: Request) {
       updates.googleReviewUrl = trimmedUrl
     }
 
+    if (payload.reviewMessageText !== undefined) {
+      updates.reviewMessageText = payload.reviewMessageText ? payload.reviewMessageText.trim() : ''
+    }
+
     // Update user in database
     const updatedUser = await updateUser(session.user.id, updates)
     
@@ -135,6 +140,8 @@ export async function POST(request: Request) {
         landingPageUrl: updatedUser.landingPageUrl,
         phoneNumber: updatedUser.phoneNumber,
         secondaryPhoneNumber: updatedUser.secondaryPhoneNumber,
+        googleReviewUrl: updatedUser.googleReviewUrl,
+        reviewMessageText: updatedUser.reviewMessageText,
       },
     })
   } catch (error) {
