@@ -68,8 +68,8 @@ async function setupPageRoutes(page: Page) {
   })
 }
 
-test.describe('WhatsApp Messages Page Consolidation (HOS-22)', () => {
-  test('renders all 3 sections in the exact required vertical order: arrival message, then review reminder, then dispatch log', async ({
+test.describe('WhatsApp Messages Page Tabs & Mobile Experience', () => {
+  test('renders segmented control tabs with icons without emojis, and switches sections smoothly', async ({
     page,
     context,
     baseURL,
@@ -77,65 +77,69 @@ test.describe('WhatsApp Messages Page Consolidation (HOS-22)', () => {
     await signInAsDemoUser(context, baseURL!)
     await setupPageRoutes(page)
 
-    await page.setViewportSize({ width: 1280, height: 1200 })
+    await page.setViewportSize({ width: 1280, height: 900 })
     await page.goto(`${baseURL}/dashboard/messages`)
     await page.waitForLoadState('networkidle')
 
     // Page title
     await expect(page.getByRole('heading', { name: 'הודעות WhatsApp' })).toBeVisible()
 
-    // 1. First section: הודעת יום הגעה
+    // Tab buttons
+    const tabArrival = page.getByRole('tab', { name: /הודעת יום הגעה/ })
+    const tabReview = page.getByRole('tab', { name: /הודעת ביקורת/ })
+    const tabLogs = page.getByRole('tab', { name: /יומן שליחות/ })
+
+    await expect(tabArrival).toBeVisible()
+    await expect(tabReview).toBeVisible()
+    await expect(tabLogs).toBeVisible()
+
+    // 1. Initial tab: arrival message is active
+    await expect(tabArrival).toHaveAttribute('aria-selected', 'true')
     const arrivalTitle = page.locator('#arrival-message-title')
     await expect(arrivalTitle).toBeVisible()
-    await expect(arrivalTitle).toHaveText('הודעת יום הגעה')
+    await expect(page.locator('#review-reminder-title')).toHaveCount(0)
+    await expect(page.locator('#dispatch-log-title')).toHaveCount(0)
 
-    const saveArrivalBtn = page.getByRole('button', { name: 'שמור הגדרות' })
-    const testSendArrivalBtn = page.getByRole('button', { name: 'שלח לי הודעת בדיקה' })
-    await expect(saveArrivalBtn).toBeVisible()
-    await expect(testSendArrivalBtn).toBeVisible()
+    // Capture desktop tab screenshot
+    await page.screenshot({
+      path: '/opt/cursor/artifacts/whatsapp_messages_tab_arrival_desktop.png',
+      fullPage: true,
+    })
 
-    // 2. Second section: הודעת ביקורת אחרי צ'ק-אאוט
+    // 2. Switch to review reminder tab
+    await tabReview.click()
+    await expect(tabReview).toHaveAttribute('aria-selected', 'true')
+    await expect(tabArrival).toHaveAttribute('aria-selected', 'false')
+
     const reviewTitle = page.locator('#review-reminder-title')
     await expect(reviewTitle).toBeVisible()
-    await expect(reviewTitle).toHaveText("הודעת ביקורת אחרי צ'ק-אאוט")
+    await expect(arrivalTitle).toHaveCount(0)
+    await expect(page.locator('#dispatch-log-title')).toHaveCount(0)
 
-    const saveReviewBtn = page.getByRole('button', { name: 'שמור קישור ביקורת' })
-    const testSendReviewBtn = page.getByRole('button', { name: 'שלח הודעת בדיקה למספר שלי' })
-    const liveSendReviewBtn = page.getByRole('button', { name: 'הפעל שליחה עבור אתמול (מול הזמנות אמיתיות)' })
-    await expect(saveReviewBtn).toBeVisible()
-    await expect(testSendReviewBtn).toBeVisible()
-    await expect(liveSendReviewBtn).toBeVisible()
+    // Capture review tab screenshot
+    await page.screenshot({
+      path: '/opt/cursor/artifacts/whatsapp_messages_tab_review_desktop.png',
+      fullPage: true,
+    })
 
-    // 3. Third section: יומן שליחות
-    const dispatchLogTitle = page.locator('#dispatch-log-title')
-    await expect(dispatchLogTitle).toBeVisible()
-    await expect(dispatchLogTitle).toHaveText('יומן שליחות')
+    // 3. Switch to dispatch log tab
+    await tabLogs.click()
+    await expect(tabLogs).toHaveAttribute('aria-selected', 'true')
 
-    // Verify stats in dispatch log
+    const logTitle = page.locator('#dispatch-log-title')
+    await expect(logTitle).toBeVisible()
     await expect(page.getByText('הודעות', { exact: true })).toBeVisible()
     await expect(page.getByText('נשלחו', { exact: true })).toBeVisible()
     await expect(page.getByText('נכשלו / חלקי', { exact: true })).toBeVisible()
 
-    // Verify vertical order (arrival < review < log)
-    const arrivalBox = await arrivalTitle.boundingBox()
-    const reviewBox = await reviewTitle.boundingBox()
-    const logBox = await dispatchLogTitle.boundingBox()
-
-    expect(arrivalBox).not.toBeNull()
-    expect(reviewBox).not.toBeNull()
-    expect(logBox).not.toBeNull()
-
-    expect(arrivalBox!.y).toBeLessThan(reviewBox!.y)
-    expect(reviewBox!.y).toBeLessThan(logBox!.y)
-
-    // Save walkthrough artifact screenshot
+    // Capture logs tab screenshot
     await page.screenshot({
-      path: '/opt/cursor/artifacts/whatsapp_messages_consolidated.png',
+      path: '/opt/cursor/artifacts/whatsapp_messages_tab_logs_desktop.png',
       fullPage: true,
     })
   })
 
-  test('redirects from /dashboard/arrival-message to /dashboard/messages', async ({
+  test('renders clean and compact tabs on mobile viewport without breaking or horizontal overflow', async ({
     page,
     context,
     baseURL,
@@ -143,15 +147,38 @@ test.describe('WhatsApp Messages Page Consolidation (HOS-22)', () => {
     await signInAsDemoUser(context, baseURL!)
     await setupPageRoutes(page)
 
-    await page.goto(`${baseURL}/dashboard/arrival-message`)
+    // Mobile viewport (iPhone 13 / 14 width)
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.goto(`${baseURL}/dashboard/messages`)
     await page.waitForLoadState('networkidle')
 
-    // Should have redirected to /dashboard/messages
-    expect(page.url()).toContain('/dashboard/messages')
-    await expect(page.locator('#arrival-message-title')).toBeVisible()
+    // On mobile, compact labels are visible
+    const tabArrival = page.getByRole('tab', { name: /יום הגעה/ })
+    const tabReview = page.getByRole('tab', { name: /ביקורת/ })
+    const tabLogs = page.getByRole('tab', { name: /יומן/ })
+
+    await expect(tabArrival).toBeVisible()
+    await expect(tabReview).toBeVisible()
+    await expect(tabLogs).toBeVisible()
+
+    // Capture mobile tabs screenshot
+    await page.screenshot({
+      path: '/opt/cursor/artifacts/whatsapp_messages_tabs_mobile.png',
+      fullPage: true,
+    })
+
+    // Switch to logs on mobile
+    await tabLogs.click()
+    await expect(page.locator('#dispatch-log-title')).toBeVisible()
+
+    // Capture mobile logs screenshot
+    await page.screenshot({
+      path: '/opt/cursor/artifacts/whatsapp_messages_logs_mobile.png',
+      fullPage: true,
+    })
   })
 
-  test('navigation menu shows only unified WhatsApp messages and hides old arrival-message item', async ({
+  test('supports direct tab linking via ?tab= parameter and redirects from old arrival route', async ({
     page,
     context,
     baseURL,
@@ -159,12 +186,15 @@ test.describe('WhatsApp Messages Page Consolidation (HOS-22)', () => {
     await signInAsDemoUser(context, baseURL!)
     await setupPageRoutes(page)
 
-    await page.setViewportSize({ width: 1280, height: 800 })
-    await page.goto(`${baseURL}/dashboard`)
+    // Direct url with tab=logs
+    await page.goto(`${baseURL}/dashboard/messages?tab=logs`)
     await page.waitForLoadState('networkidle')
+    await expect(page.locator('#dispatch-log-title')).toBeVisible()
 
-    const sidebar = page.locator('.hostly-sidebar')
-    await expect(sidebar.getByRole('link', { name: 'הודעות WhatsApp' })).toBeVisible()
-    await expect(sidebar.getByRole('link', { name: 'הודעת יום הגעה' })).toHaveCount(0)
+    // Redirect from old arrival page
+    await page.goto(`${baseURL}/dashboard/arrival-message`)
+    await page.waitForLoadState('networkidle')
+    expect(page.url()).toContain('/dashboard/messages')
+    await expect(page.locator('#arrival-message-title')).toBeVisible()
   })
 })

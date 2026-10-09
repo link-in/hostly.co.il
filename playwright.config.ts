@@ -30,7 +30,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: `npx next build && npx next start -p ${PORT}`,
+    command: `./node_modules/.bin/next build && ./node_modules/.bin/next start -p ${PORT}`,
     url: baseURL,
     reuseExistingServer: !process.env.CI,
     timeout: 180_000,

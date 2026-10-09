@@ -190,7 +190,7 @@ const ProfileClient = () => {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'שליחת הודעת הבדיקה נכשלה')
-      setTestResult(`✅ הודעת בדיקה נשלחה למספר שלך (${phoneNumber || 'המספר בפרופיל'})`)
+      setTestResult(`הודעת בדיקה נשלחה למספר שלך (${phoneNumber || 'המספר בפרופיל'})`)
     } catch (err) {
       setTestError(err instanceof Error ? err.message : 'שגיאה לא ידועה')
     } finally {
@@ -211,7 +211,7 @@ const ProfileClient = () => {
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'השליחה נכשלה')
       setLiveResult(
-        `✅ נבדקו ${data.bookingsFound} הזמנות ל-${data.date}: ${data.sent} נשלחו, ${data.skipped} דולגו (כבר נשלחו/אין טלפון), ${data.failed} נכשלו`,
+        `נבדקו ${data.bookingsFound} הזמנות ל-${data.date}: ${data.sent} נשלחו, ${data.skipped} דולגו (כבר נשלחו/אין טלפון), ${data.failed} נכשלו`,
       )
     } catch (err) {
       setLiveError(err instanceof Error ? err.message : 'שגיאה לא ידועה')
@@ -789,7 +789,7 @@ const ProfileClient = () => {
                       }}
                     />
                     <h3
-                      className="h5 fw-bold mb-3"
+                      className="h5 fw-bold mb-3 d-flex align-items-center gap-2"
                       style={{
                         background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                         WebkitBackgroundClip: 'text',
@@ -797,7 +797,7 @@ const ProfileClient = () => {
                         backgroundClip: 'text',
                       }}
                     >
-                      ⭐ הודעת ביקורת אחרי צ'ק-אאוט
+                      הודעת ביקורת אחרי צ'ק-אאוט
                     </h3>
                     <p className="text-muted small mb-3">
                       בבוקר שאחרי הצ'ק-אאוט תישלח לאורח הודעת WhatsApp אוטומטית עם תודה ובקשה לכתוב ביקורת.
@@ -811,7 +811,7 @@ const ProfileClient = () => {
 
                   <div className="col-12">
                     <label className="form-label fw-semibold" style={{ color: '#667eea' }}>
-                      🔗 קישור לביקורת בגוגל (Google Review)
+                      קישור לביקורת בגוגל (Google Review)
                     </label>
                     <input
                       type="url"
@@ -868,9 +868,9 @@ const ProfileClient = () => {
                         )}
                       </button>
                     </div>
-                    {testError ? <div className="alert alert-danger py-2 mt-2 mb-0 small">⚠️ {testError}</div> : null}
+                    {testError ? <div className="alert alert-danger py-2 mt-2 mb-0 small">{testError}</div> : null}
                     {testResult ? <div className="alert alert-success py-2 mt-2 mb-0 small">{testResult}</div> : null}
-                    {liveError ? <div className="alert alert-danger py-2 mt-2 mb-0 small">⚠️ {liveError}</div> : null}
+                    {liveError ? <div className="alert alert-danger py-2 mt-2 mb-0 small">{liveError}</div> : null}
                     {liveResult ? <div className="alert alert-success py-2 mt-2 mb-0 small">{liveResult}</div> : null}
                     <small className="text-muted d-block mt-1">
                       "שלח הודעת בדיקה" — הודעת תצוגה מקדימה למספר שלך בלבד, לא נוגעת בהזמנות אמיתיות.<br />

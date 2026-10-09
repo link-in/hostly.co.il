@@ -59,7 +59,7 @@ export default function ReviewReminderSection() {
       if (!res.ok) throw new Error(data.error || 'שגיאה בשמירת הקישור')
 
       await update({ googleReviewUrl: trimmed })
-      setSaveSuccess('קישור הביקורת נשמר בהצלחה ✅')
+      setSaveSuccess('קישור הביקורת נשמר בהצלחה')
     } catch (err) {
       setSaveError(err instanceof Error ? err.message : 'שגיאה בשמירת הקישור')
     } finally {
@@ -80,7 +80,7 @@ export default function ReviewReminderSection() {
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'שליחת הודעת הבדיקה נכשלה')
       setTestResult(
-        `✅ הודעת בדיקה נשלחה למספר שלך (${session?.user?.phoneNumber || 'המספר בפרופיל'})`
+        `הודעת בדיקה נשלחה למספר שלך (${session?.user?.phoneNumber || 'המספר בפרופיל'})`
       )
     } catch (err) {
       setTestError(err instanceof Error ? err.message : 'שגיאה לא ידועה')
@@ -102,7 +102,7 @@ export default function ReviewReminderSection() {
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'השליחה נכשלה')
       setLiveResult(
-        `✅ נבדקו ${data.bookingsFound} הזמנות ל-${data.date}: ${data.sent} נשלחו, ${data.skipped} דולגו (כבר נשלחו/אין טלפון), ${data.failed} נכשלו`
+        `נבדקו ${data.bookingsFound} הזמנות ל-${data.date}: ${data.sent} נשלחו, ${data.skipped} דולגו (כבר נשלחו/אין טלפון), ${data.failed} נכשלו`
       )
     } catch (err) {
       setLiveError(err instanceof Error ? err.message : 'שגיאה לא ידועה')
@@ -151,7 +151,7 @@ export default function ReviewReminderSection() {
 
           <div>
             <label className="form-label" style={{ fontSize: '13px', fontWeight: 600 }}>
-              🔗 קישור לביקורת בגוגל (Google Review)
+              קישור לביקורת בגוגל (Google Review)
             </label>
             <input
               type="url"
@@ -224,9 +224,9 @@ export default function ReviewReminderSection() {
             </Button>
           </div>
 
-          {testError && <div className="alert alert-danger py-2 px-3 mb-0 small">⚠️ {testError}</div>}
+          {testError && <div className="alert alert-danger py-2 px-3 mb-0 small">{testError}</div>}
           {testResult && <div className="alert alert-success py-2 px-3 mb-0 small">{testResult}</div>}
-          {liveError && <div className="alert alert-danger py-2 px-3 mb-0 small">⚠️ {liveError}</div>}
+          {liveError && <div className="alert alert-danger py-2 px-3 mb-0 small">{liveError}</div>}
           {liveResult && <div className="alert alert-success py-2 px-3 mb-0 small">{liveResult}</div>}
 
           <div style={{ color: 'var(--htxt-3)', fontSize: '12px', lineHeight: 1.5 }}>
