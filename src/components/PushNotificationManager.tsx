@@ -109,6 +109,17 @@ export function PushNotificationManager() {
     }
   }
 
+  const handleTestNotification = async () => {
+    try {
+      const res = await fetch('/api/push/test', { method: 'POST' })
+      if (!res.ok) throw new Error('Test failed')
+      toast.success('נשלחה התראת בדיקה!')
+    } catch (err) {
+      console.error(err)
+      toast.error('שליחת בדיקה נכשלה')
+    }
+  }
+
   if (!isSupported) return null
 
   return (
@@ -134,14 +145,25 @@ export function PushNotificationManager() {
           </div>
         </div>
         
-        <button
-          onClick={isSubscribed ? handleUnsubscribe : handleSubscribe}
-          disabled={loading}
-          className={`btn btn-sm ${isSubscribed ? 'btn-outline-secondary' : 'btn-primary'}`}
-          style={{ borderRadius: '8px' }}
-        >
-          {loading ? 'טוען...' : isSubscribed ? 'בטל התראות' : 'הפעל התראות'}
-        </button>
+        <div className="d-flex gap-2">
+          {isSubscribed && (
+            <button
+              onClick={handleTestNotification}
+              className="btn btn-sm btn-outline-primary"
+              style={{ borderRadius: '8px' }}
+            >
+              שלח בדיקה
+            </button>
+          )}
+          <button
+            onClick={isSubscribed ? handleUnsubscribe : handleSubscribe}
+            disabled={loading}
+            className={`btn btn-sm ${isSubscribed ? 'btn-outline-secondary' : 'btn-primary'}`}
+            style={{ borderRadius: '8px' }}
+          >
+            {loading ? 'טוען...' : isSubscribed ? 'בטל התראות' : 'הפעל התראות'}
+          </button>
+        </div>
       </div>
     </div>
   )
