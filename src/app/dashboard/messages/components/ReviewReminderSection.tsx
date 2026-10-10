@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
-import { CheckCircle2, MessageSquare, RefreshCw, Star } from 'lucide-react'
+import { MessageSquare, RefreshCw, Star } from 'lucide-react'
 import { Button } from '@/components/ui'
+import { DEFAULT_REVIEW_TEXT_TEMPLATE } from '@/lib/reviewReminders/message'
 
 const inputStyle: React.CSSProperties = {
   borderRadius: '8px',
@@ -19,6 +20,7 @@ export default function ReviewReminderSection() {
   const { data: session, update } = useSession()
 
   const [googleReviewUrl, setGoogleReviewUrl] = useState('')
+  const [reviewMessageText, setReviewMessageText] = useState('')
   const [saving, setSaving] = useState(false)
   const [saveSuccess, setSaveSuccess] = useState<string | null>(null)
   const [saveError, setSaveError] = useState<string | null>(null)
@@ -32,36 +34,64 @@ export default function ReviewReminderSection() {
   const [liveError, setLiveError] = useState<string | null>(null)
 
   useEffect(() => {
+    let active = true
+
     if (session?.user?.googleReviewUrl !== undefined) {
       setGoogleReviewUrl(session.user.googleReviewUrl ?? '')
     }
-  }, [session?.user?.googleReviewUrl])
+    if (session?.user?.reviewMessageText !== undefined) {
+      setReviewMessageText(session.user.reviewMessageText ?? '')
+    }
 
-  const handleSaveUrl = async () => {
+    fetch('/api/dashboard/review-reminder-settings')
+      .then((r) => r.json())
+      .then((data) => {
+        if (!active) return
+        if (data.googleReviewUrl !== undefined) {
+          setGoogleReviewUrl(data.googleReviewUrl ?? '')
+        }
+        if (data.reviewMessageText !== undefined) {
+          setReviewMessageText(data.reviewMessageText ?? '')
+        }
+      })
+      .catch(() => {
+        // Fall back gracefully to session values
+      })
+
+    return () => {
+      active = false
+    }
+  }, [])
+
+  const handleSave = async () => {
     setSaveError(null)
     setSaveSuccess(null)
 
-    const trimmed = googleReviewUrl.trim()
-    if (trimmed && !trimmed.match(/^https?:\/\/.+/)) {
+    const trimmedUrl = googleReviewUrl.trim()
+    if (trimmedUrl && !trimmedUrl.match(/^https?:\/\/.+/)) {
       setSaveError('קישור לביקורת בגוגל חייב להיות כתובת URL תקינה (מתחילה ב-http:// או https://)')
       return
     }
 
+    const trimmedText = reviewMessageText.trim()
+
     setSaving(true)
     try {
-      const res = await fetch('/api/auth/update-profile', {
+      const res = await fetch('/api/dashboard/review-reminder-settings', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ googleReviewUrl: trimmed }),
+        body: JSON.stringify({
+          googleReviewUrl: trimmedUrl,
+          reviewMessageText: trimmedText,
+        }),
       })
 
       const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'שגיאה בשמירת הקישור')
+      if (!res.ok) throw new Error(data.error || 'שגיאה בשמירת ההגדרות')
 
-      await update({ googleReviewUrl: trimmed })
-      setSaveSuccess('קישור הביקורת נשמר בהצלחה')
+      setSaveSuccess('ההגדרות נשמרו בהצלחה')
     } catch (err) {
-      setSaveError(err instanceof Error ? err.message : 'שגיאה בשמירת הקישור')
+      setSaveError(err instanceof Error ? err.message : 'שגיאה בשמירת ההגדרות')
     } finally {
       setSaving(false)
     }
@@ -75,7 +105,11 @@ export default function ReviewReminderSection() {
       const res = await fetch('/api/dashboard/review-reminders/test-send', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ channel: 'direct' }),
+        body: JSON.stringify({
+          channel: 'direct',
+          googleReviewUrl: googleReviewUrl.trim() || undefined,
+          reviewMessageText: reviewMessageText.trim() || undefined,
+        }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'שליחת הודעת הבדיקה נכשלה')
@@ -140,14 +174,40 @@ export default function ReviewReminderSection() {
         </div>
       </div>
 
-      {/* הגדרות קישור ביקורת */}
+      {/* תוכן ההודעה והגדרות ביקורת */}
       <div className="hostly-card mb-3">
-        <div className="card-header">הגדרות ביקורת</div>
+        <div className="card-header">תוכן ההודעה</div>
         <div className="card-body d-flex flex-column gap-3">
           <p style={{ color: 'var(--htxt-3)', fontSize: '13.5px', margin: 0, lineHeight: 1.6 }}>
             בבוקר שאחרי הצ'ק-אאוט תישלח לאורח הודעת WhatsApp אוטומטית עם תודה ובקשה לכתוב ביקורת.
             בהזמנה ישירה תישלח ההודעה עם הקישור שתגדירו כאן; בהזמנה מ-Airbnb או Booking.com תישלח תזכורת לכתוב ביקורת באפליקציה עצמה.
           </p>
+
+          <div>
+            <div className="d-flex align-items-center justify-content-between mb-1">
+              <label className="form-label mb-0" style={{ fontSize: '13px', fontWeight: 600 }}>
+                הודעה
+              </label>
+              <button
+                type="button"
+                className="btn btn-link p-0"
+                style={{ fontSize: '12px', color: 'var(--hb)', textDecoration: 'none' }}
+                onClick={() => setReviewMessageText(DEFAULT_REVIEW_TEXT_TEMPLATE)}
+              >
+                טען נוסח ברירת מחדל לעריכה
+              </button>
+            </div>
+            <textarea
+              className="form-control"
+              style={{ ...inputStyle, minHeight: 140 }}
+              placeholder={DEFAULT_REVIEW_TEXT_TEMPLATE}
+              value={reviewMessageText}
+              onChange={(e) => setReviewMessageText(e.target.value)}
+            />
+            <small style={{ color: 'var(--htxt-3)', fontSize: '12px', marginTop: '4px', display: 'block' }}>
+              השאר ריק לשימוש בנוסח ברירת המחדל. ניתן להשתמש ב-&#123;guestName&#125; עבור שם האורח וב-&#123;propertyName&#125; עבור שם הנכס.
+            </small>
+          </div>
 
           <div>
             <label className="form-label" style={{ fontSize: '13px', fontWeight: 600 }}>
@@ -182,12 +242,12 @@ export default function ReviewReminderSection() {
             <Button
               type="button"
               variant="primary"
-              onClick={handleSaveUrl}
+              onClick={handleSave}
               disabled={saving}
               loading={saving}
               style={{ minWidth: 140 }}
             >
-              {saving ? 'שומר...' : 'שמור קישור ביקורת'}
+              {saving ? 'שומר...' : 'שמור הגדרות'}
             </Button>
           </div>
         </div>

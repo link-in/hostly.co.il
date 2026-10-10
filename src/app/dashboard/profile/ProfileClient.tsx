@@ -54,6 +54,7 @@ const ProfileClient = () => {
 
   // Post-checkout review reminder
   const [googleReviewUrl, setGoogleReviewUrl] = useState('')
+  const [reviewMessageText, setReviewMessageText] = useState('')
   const [testSending, setTestSending] = useState(false)
   const [testResult, setTestResult] = useState<string | null>(null)
   const [testError, setTestError] = useState<string | null>(null)
@@ -187,7 +188,11 @@ const ProfileClient = () => {
       const res = await fetch('/api/dashboard/review-reminders/test-send', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ channel: 'direct' }),
+        body: JSON.stringify({
+          channel: 'direct',
+          googleReviewUrl: googleReviewUrl.trim() || undefined,
+          reviewMessageText: reviewMessageText.trim() || undefined,
+        }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'שליחת הודעת הבדיקה נכשלה')
@@ -250,6 +255,7 @@ const ProfileClient = () => {
       setPhoneNumber(session.user.phoneNumber ?? '')
       setSecondaryPhoneNumber(session.user.secondaryPhoneNumber ?? '')
       setGoogleReviewUrl(session.user.googleReviewUrl ?? '')
+      setReviewMessageText(session.user.reviewMessageText ?? '')
       
       // Load check-in settings
       const settings = session.user.checkInSettings
@@ -296,6 +302,7 @@ const ProfileClient = () => {
           phoneNumber: phoneNumber.trim(),
           secondaryPhoneNumber: secondaryPhoneNumber.trim(),
           googleReviewUrl: googleReviewUrl.trim(),
+          reviewMessageText: reviewMessageText.trim(),
           checkInSettings: {
             wifi_ssid: wifiSsid.trim(),
             wifi_password: wifiPassword.trim(),
@@ -322,6 +329,7 @@ const ProfileClient = () => {
         phoneNumber: phoneNumber.trim(),
         secondaryPhoneNumber: secondaryPhoneNumber.trim(),
         googleReviewUrl: googleReviewUrl.trim(),
+        reviewMessageText: reviewMessageText.trim(),
         checkInSettings: {
           wifi_ssid: wifiSsid.trim(),
           wifi_password: wifiPassword.trim(),
@@ -832,6 +840,23 @@ const ProfileClient = () => {
                   </div>
 
                   <div className="col-12">
+                    <label className="form-label fw-semibold" style={{ color: '#667eea' }}>
+                      הודעת ביקורת (מותאמת אישית)
+                    </label>
+                    <textarea
+                      className="form-control shadow-sm profile-input"
+                      style={{ ...inputStyle, minHeight: '100px' }}
+                      value={reviewMessageText}
+                      onChange={(e) => setReviewMessageText(e.target.value)}
+                      disabled={!editing}
+                      placeholder="השאר ריק לשימוש בנוסח ברירת המחדל..."
+                    />
+                    <small className="text-muted">
+                      ניתן להזין טקסט אישי שיישלח לאורח (ניתן להשתמש ב-&#123;guestName&#125; וב-&#123;propertyName&#125;).
+                    </small>
+                  </div>
+
+                  <div className="col-12">
                     <div className="d-flex flex-wrap gap-2 align-items-center">
                       <button
                         type="button"
@@ -1331,6 +1356,7 @@ const ProfileClient = () => {
                             setPhoneNumber(session?.user?.phoneNumber ?? '')
                             setSecondaryPhoneNumber(session?.user?.secondaryPhoneNumber ?? '')
                             setGoogleReviewUrl(session?.user?.googleReviewUrl ?? '')
+                            setReviewMessageText(session?.user?.reviewMessageText ?? '')
                             
                             // Reset check-in settings
                             const settings = session?.user?.checkInSettings

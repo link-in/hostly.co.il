@@ -124,4 +124,20 @@ describe('POST /api/dashboard/review-reminders/send-now', () => {
 
     expect(processReviewRemindersForUser).toHaveBeenCalledWith(expect.anything(), '2026-07-10')
   })
+
+  it('forwards reviewMessageText from session user to processReviewRemindersForUser', async () => {
+    vi.mocked(getServerSession).mockResolvedValue({
+      user: { ...TEST_SESSION_USER, reviewMessageText: 'תודה רבה מ{propertyName}!' },
+    } as never)
+
+    const response = await POST(postRequest({}))
+    expect(response.status).toBe(200)
+
+    expect(processReviewRemindersForUser).toHaveBeenCalledWith(
+      expect.objectContaining({
+        reviewMessageText: 'תודה רבה מ{propertyName}!',
+      }),
+      '2026-07-10',
+    )
+  })
 })

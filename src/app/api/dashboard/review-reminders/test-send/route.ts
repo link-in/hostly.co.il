@@ -27,7 +27,7 @@ export async function POST(request: Request) {
     )
   }
 
-  let payload: { channel?: string } = {}
+  let payload: { channel?: string; reviewMessageText?: string; googleReviewUrl?: string } = {}
   try {
     payload = await request.json()
   } catch {
@@ -38,11 +38,22 @@ export async function POST(request: Request) {
     ? (payload.channel as BookingSource)
     : 'direct'
 
+  const reviewMessageText =
+    payload.reviewMessageText !== undefined
+      ? payload.reviewMessageText
+      : session.user.reviewMessageText
+
+  const googleReviewUrl =
+    payload.googleReviewUrl !== undefined
+      ? payload.googleReviewUrl
+      : session.user.googleReviewUrl
+
   const message = buildReviewReminderMessage({
     guestName: 'אורח/ת בדיקה',
     propertyName: session.user.displayName || 'הנכס שלנו',
     channel,
-    googleReviewUrl: session.user.googleReviewUrl,
+    googleReviewUrl,
+    reviewMessageText,
   })
 
   const preview = `🧪 *זו הודעת בדיקה* — כך תיראה ההודעה לאורח (ערוץ: ${channel})\n\n${message}`

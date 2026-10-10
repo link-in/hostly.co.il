@@ -86,4 +86,34 @@ describe('POST /api/dashboard/review-reminders/test-send', () => {
     const body = await response.json()
     expect(body.error).toBe('boom')
   })
+
+  it('uses custom reviewMessageText provided in request payload', async () => {
+    vi.mocked(getServerSession).mockResolvedValue({ user: TEST_SESSION_USER } as never)
+
+    const response = await POST(
+      postRequest({
+        channel: 'direct',
+        reviewMessageText: 'תודה שבחרתם בנו ב{propertyName}!',
+      }),
+    )
+    expect(response.status).toBe(200)
+
+    const [{ message }] = vi.mocked(sendWhatsAppMessage).mock.calls[0]
+    expect(message).toContain('תודה שבחרתם בנו בMountain View!')
+  })
+
+  it('uses reviewMessageText from session when not provided in body', async () => {
+    vi.mocked(getServerSession).mockResolvedValue({
+      user: {
+        ...TEST_SESSION_USER,
+        reviewMessageText: 'נוסח מפרופיל המשתמש ל{propertyName}',
+      },
+    } as never)
+
+    const response = await POST(postRequest({ channel: 'direct' }))
+    expect(response.status).toBe(200)
+
+    const [{ message }] = vi.mocked(sendWhatsAppMessage).mock.calls[0]
+    expect(message).toContain('נוסח מפרופיל המשתמש לMountain View')
+  })
 })
