@@ -271,8 +271,10 @@ test.describe('WhatsApp Messages Page Tabs & Mobile Experience', () => {
     await messageTextarea.fill('נוסח ביקורת חדש מותאם אישית!')
 
     // Save
+    const saveResponsePromise = page.waitForResponse('**/api/dashboard/review-reminder-settings')
     const saveBtn = page.getByRole('button', { name: 'שמור הגדרות' })
     await saveBtn.click()
+    await saveResponsePromise
 
     await expect(page.getByText('ההגדרות נשמרו בהצלחה')).toBeVisible()
     expect(currentSettings).toMatchObject({

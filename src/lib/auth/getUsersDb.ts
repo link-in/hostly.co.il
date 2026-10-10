@@ -137,7 +137,8 @@ export const hashPassword = async (plainPassword: string): Promise<string> => {
  */
 export const updateUser = async (userId: string, updates: Partial<User>): Promise<User | null> => {
   try {
-    const supabase = createServerClient()
+    // Use service role client to ensure reliable updates (bypasses RLS)
+    const supabase = createServiceRoleClient()
     
     // Map User interface to database columns
     const dbUpdates: Record<string, any> = {}

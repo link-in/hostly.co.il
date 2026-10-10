@@ -73,7 +73,13 @@ describe('POST /api/dashboard/review-reminder-settings', () => {
     const res = await POST(postRequest({ reviewMessageText: 'טקסט דמו' }))
     expect(res.status).toBe(200)
     const data = await res.json()
-    expect(data).toEqual({ success: true, demo: true })
+    expect(data).toMatchObject({
+      success: true,
+      demo: true,
+      settings: {
+        reviewMessageText: 'טקסט דמו',
+      },
+    })
     expect(updateUser).not.toHaveBeenCalled()
   })
 

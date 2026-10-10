@@ -17,10 +17,11 @@ const inputStyle: React.CSSProperties = {
 }
 
 export default function ReviewReminderSection() {
-  const { data: session, update } = useSession()
+  const { data: session } = useSession()
 
   const [googleReviewUrl, setGoogleReviewUrl] = useState('')
   const [reviewMessageText, setReviewMessageText] = useState('')
+  const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saveSuccess, setSaveSuccess] = useState<string | null>(null)
   const [saveError, setSaveError] = useState<string | null>(null)
@@ -36,26 +37,20 @@ export default function ReviewReminderSection() {
   useEffect(() => {
     let active = true
 
-    if (session?.user?.googleReviewUrl !== undefined) {
-      setGoogleReviewUrl(session.user.googleReviewUrl ?? '')
-    }
-    if (session?.user?.reviewMessageText !== undefined) {
-      setReviewMessageText(session.user.reviewMessageText ?? '')
-    }
-
     fetch('/api/dashboard/review-reminder-settings')
       .then((r) => r.json())
       .then((data) => {
         if (!active) return
-        if (data.googleReviewUrl !== undefined) {
-          setGoogleReviewUrl(data.googleReviewUrl ?? '')
-        }
-        if (data.reviewMessageText !== undefined) {
-          setReviewMessageText(data.reviewMessageText ?? '')
-        }
+        setGoogleReviewUrl(data.googleReviewUrl ?? '')
+        setReviewMessageText(data.reviewMessageText ?? '')
       })
       .catch(() => {
-        // Fall back gracefully to session values
+        if (!active) return
+        setGoogleReviewUrl(session?.user?.googleReviewUrl ?? '')
+        setReviewMessageText(session?.user?.reviewMessageText ?? '')
+      })
+      .finally(() => {
+        if (active) setLoading(false)
       })
 
     return () => {

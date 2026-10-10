@@ -26,10 +26,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  if (session.user.isDemo) {
-    return NextResponse.json({ success: true, demo: true })
-  }
-
   let body: unknown
   try {
     body = await request.json()
@@ -42,6 +38,18 @@ export async function POST(request: Request) {
   }
 
   const b = body as Record<string, unknown>
+
+  if (session.user.isDemo) {
+    return NextResponse.json({
+      success: true,
+      demo: true,
+      settings: {
+        googleReviewUrl: typeof b?.googleReviewUrl === 'string' ? b.googleReviewUrl : null,
+        reviewMessageText: typeof b?.reviewMessageText === 'string' ? b.reviewMessageText : null,
+      },
+    })
+  }
+
   const updates: Record<string, any> = {}
 
   if (b.googleReviewUrl !== undefined) {

@@ -266,6 +266,21 @@ const ProfileClient = () => {
         setLiabilityWaiverText(settings.liability_waiver_text ?? '')
         setDefaultAccessCode(settings.default_access_code ?? '')
       }
+
+      // Also fetch latest review reminder settings from DB
+      fetch('/api/dashboard/review-reminder-settings')
+        .then((r) => r.json())
+        .then((data) => {
+          if (data.googleReviewUrl !== undefined && data.googleReviewUrl !== null) {
+            setGoogleReviewUrl(data.googleReviewUrl)
+          }
+          if (data.reviewMessageText !== undefined && data.reviewMessageText !== null) {
+            setReviewMessageText(data.reviewMessageText)
+          }
+        })
+        .catch(() => {
+          // Fall back to session values
+        })
     }
   }, [session])
 
