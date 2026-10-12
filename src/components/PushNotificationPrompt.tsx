@@ -1,11 +1,27 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { toast } from 'sonner'
 import { X, BellRing } from 'lucide-react'
+import styles from './PushNotificationPrompt.module.css'
 
 // Same VAPID config and base64 helper as PushNotificationManager
 const NEXT_PUBLIC_VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+
+/**
+ * QA testing hook: browsing to any dashboard page with `?test_push=1`
+ * (e.g. https://app.hostly.co.il/dashboard?test_push=1) does two things:
+ *  - If this device already has an active push subscription, it fires a
+ *    fake "new booking" push (same shape as a real owner alert) so you can
+ *    verify delivery end-to-end on your phone against production.
+ *  - If this device is NOT subscribed yet, it force-shows the permission
+ *    prompt below, even if it was previously dismissed, so you can opt in
+ *    and re-test.
+ * It never permanently changes behaviour for real users — the "dismissed"
+ * flag is simply not written to localStorage while this param is active.
+ */
+const QA_PUSH_TEST_PARAM = 'test_push'
 
 function urlBase64ToUint8Array(base64String: string) {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4)
@@ -18,7 +34,24 @@ function urlBase64ToUint8Array(base64String: string) {
   return outputArray
 }
 
+async function triggerQaTestBookingPush() {
+  try {
+    const res = await fetch('/api/push/test-booking', { method: 'POST' })
+    const data = await res.json()
+    if (data?.sent > 0) {
+      toast.success('🔔 נשלחה התראת בדיקה (הזמנה מדומה) - בדוק את הטלפון')
+    } else {
+      toast.info('לא נמצא רישום להתראות במכשיר הזה - אשר קודם את הפופאפ')
+    }
+  } catch (error) {
+    console.error('QA test push failed:', error)
+  }
+}
+
 export function PushNotificationPrompt() {
+  const searchParams = useSearchParams()
+  const isQaPushTest = searchParams.get(QA_PUSH_TEST_PARAM) === '1'
+
   const [isVisible, setIsVisible] = useState(false)
   const [loading, setLoading] = useState(false)
 
@@ -31,22 +64,27 @@ export function PushNotificationPrompt() {
       return
     }
 
-    // Don't show if user already dismissed it
-    if (localStorage.getItem('hide_push_prompt') === 'true') {
+    // Don't show if user already dismissed it — unless we're in QA test mode
+    if (!isQaPushTest && localStorage.getItem('hide_push_prompt') === 'true') {
       return
     }
 
     const checkStatus = async () => {
-      // Don't show if permission is denied
-      if (Notification.permission === 'denied') return
+      // Don't show if permission is denied — unless we're in QA test mode
+      // (the native browser dialog still won't reopen on its own, but the
+      // card itself can reappear so a tester notices and fixes it manually)
+      if (!isQaPushTest && Notification.permission === 'denied') return
 
       try {
         const registration = await navigator.serviceWorker.ready
         const subscription = await registration.pushManager.getSubscription()
-        
-        // Show prompt only if they haven't subscribed yet
+
         if (!subscription) {
+          // Show prompt only if they haven't subscribed yet
           setIsVisible(true)
+        } else if (isQaPushTest) {
+          // Already subscribed on this device — simulate an incoming booking push
+          triggerQaTestBookingPush()
         }
       } catch (error) {
         console.error('Error checking subscription status:', error)
@@ -54,16 +92,25 @@ export function PushNotificationPrompt() {
     }
 
     checkStatus()
-  }, [])
+  }, [isQaPushTest])
 
   const dismiss = () => {
-    localStorage.setItem('hide_push_prompt', 'true')
+    // Don't persist the "hide" flag while QA testing, so normal behaviour
+    // for the real user isn't permanently affected by a test visit.
+    if (!isQaPushTest) {
+      localStorage.setItem('hide_push_prompt', 'true')
+    }
     setIsVisible(false)
   }
 
   const handleSubscribe = async () => {
     if (!NEXT_PUBLIC_VAPID_PUBLIC_KEY) {
-      toast.error('התראות פוש לא מוגדרות במערכת')
+      toast.error('התראות לא מוגדרות במערכת')
+      return
+    }
+
+    if (Notification.permission === 'denied') {
+      toast.error('ההתראות חסומות בדפדפן. יש לאפס את הרשאות ההתראות לאתר (לחיצה על המנעול בשורת הכתובת ← Notifications) ולנסות שוב.')
       return
     }
 
@@ -84,16 +131,21 @@ export function PushNotificationPrompt() {
         })
 
         if (!res.ok) throw new Error('Failed to save subscription on server')
-        
-        toast.success('התראות פוש הופעלו בהצלחה!')
+
+        toast.success('התראות הופעלו בהצלחה!')
         setIsVisible(false) // Auto dismiss on success
+
+        if (isQaPushTest) {
+          // Fire the fake booking push right away now that we're subscribed
+          triggerQaTestBookingPush()
+        }
       } else {
         toast.error('לא ניתן אישור להציג התראות')
         dismiss() // Dismiss if they denied permission
       }
     } catch (error) {
       console.error('Subscription error:', error)
-      toast.error('אירעה שגיאה בהפעלת התראות פוש')
+      toast.error('אירעה שגיאה בהפעלת התראות')
     } finally {
       setLoading(false)
     }
@@ -102,52 +154,41 @@ export function PushNotificationPrompt() {
   if (!isVisible) return null
 
   return (
-    <div className="fixed z-50 shadow-lg rounded-2xl bg-white border border-gray-200 p-4 animate-in fade-in duration-300
-      /* Mobile layout: bottom centered, above navbar/action buttons */
-      bottom-20 left-4 right-4 
-      /* Desktop layout (>= 992px): bottom left, right offset to avoid sidebar */
-      lg:bottom-8 lg:left-8 lg:right-auto lg:w-96
-    ">
-      <div className="flex items-start gap-4">
-        <div className="flex-shrink-0 w-10 h-10 bg-indigo-50 rounded-full flex items-center justify-center text-indigo-600">
-          <BellRing className="w-5 h-5" />
+    <div className={styles.card} role="dialog" aria-label="הפעלת התראות">
+      <div className={styles.row}>
+        <div className={styles.iconWrap}>
+          <BellRing size={20} />
         </div>
-        
-        <div className="flex-1">
-          <h3 className="text-sm font-semibold text-gray-900 mb-1">
-            הפעל התראות פוש
-          </h3>
-          <p className="text-sm text-gray-500 mb-3 leading-relaxed">
+
+        <div className={styles.content}>
+          <h3 className={styles.title}>הפעל התראות</h3>
+          <p className={styles.text}>
             קבל התראות מיידיות למכשיר שלך על הזמנות חדשות ובקשות אישור, כדי שתוכל להגיב מהר יותר.
           </p>
-          
-          <div className="flex gap-2">
+
+          <div className={styles.actions}>
             <button
+              type="button"
               onClick={handleSubscribe}
               disabled={loading}
-              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-70 disabled:cursor-not-allowed flex items-center gap-2"
+              className={`${styles.btn} ${styles.btnPrimary}`}
             >
-              {loading ? (
-                <span className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-              ) : null}
+              {loading ? <span className={styles.spinner} /> : null}
               הפעל עכשיו
             </button>
             <button
+              type="button"
               onClick={dismiss}
               disabled={loading}
-              className="px-4 py-2 bg-white hover:bg-gray-50 text-gray-600 border border-gray-200 text-sm font-medium rounded-lg transition-colors"
+              className={`${styles.btn} ${styles.btnSecondary}`}
             >
               לא כרגע
             </button>
           </div>
         </div>
 
-        <button
-          onClick={dismiss}
-          className="flex-shrink-0 text-gray-400 hover:text-gray-500 transition-colors"
-          aria-label="סגור"
-        >
-          <X className="w-5 h-5" />
+        <button type="button" onClick={dismiss} className={styles.close} aria-label="סגור">
+          <X size={18} />
         </button>
       </div>
     </div>

@@ -102,7 +102,7 @@ self.addEventListener('push', (event) => {
       icon: data.icon || '/photos/hostly-logo.png',
       badge: data.badge || '/photos/hostly-logo.png',
       data: data.url ? { url: data.url } : { url: '/dashboard' },
-      dir: 'rtl' as const,
+      dir: 'rtl',
       requireInteraction: true,
       vibrate: [200, 100, 200]
     };

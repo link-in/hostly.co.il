@@ -43,7 +43,7 @@ export function PushNotificationManager() {
 
   const handleSubscribe = async () => {
     if (!NEXT_PUBLIC_VAPID_PUBLIC_KEY) {
-      toast.error('התראות פוש לא מוגדרות במערכת (VAPID key חסר)')
+      toast.error('התראות לא מוגדרות במערכת (VAPID key חסר)')
       return
     }
 
