@@ -406,13 +406,13 @@ export default function Beds24SetupPage({ params }: { params: Promise<{ id: stri
                       חשבון הלקוח מחובר ל-Beds24 עם tokens, Property ID, Room ID וה-Cache מוכן.
                     </p>
                     <div className="d-flex gap-2 justify-content-center flex-wrap">
-                      <Link href={`/admin/users/${userId}/airbnb-setup`}>
+                      <Link href={`/admin/onboarding/${userId}`}>
                         <button
                           type="button"
                           className="btn btn-sm fw-bold"
                           style={{ background: '#ff5a5f', color: 'white', border: 'none' }}
                         >
-                          חיבור Airbnb ←
+                          לאשף הקליטה ←
                         </button>
                       </Link>
                       <Link href="/admin/users">

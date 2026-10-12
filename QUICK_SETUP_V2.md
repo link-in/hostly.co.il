@@ -1,158 +1,146 @@
-# התקנה מהירה - BEDS24 V2 Sub-Accounts
+# קליטת לקוח חדש – Beds24 V2
 
-## 🚀 3 צעדים להפעלה
+כל לקוח מקבל **נכס משני בחשבון המאסטר** של Beds24 (לא תת-חשבון).
+הקליטה מתבצעת באשף אדמין אחד: `/admin/onboarding/<userId>`.
 
-### 1️⃣ הרץ Migration ב-Supabase
-
-**Supabase Dashboard** → **SQL Editor** → **New Query**
-
-העתק והדבק:
-
-```sql
--- Add BEDS24 sub-account credentials
-ALTER TABLE users
-ADD COLUMN IF NOT EXISTS beds24_username TEXT;
-
-ALTER TABLE users
-ADD COLUMN IF NOT EXISTS beds24_password_encrypted TEXT;
-ALTER TABLE users
-ADD COLUMN IF NOT EXISTS beds24_username TEXT;
-
-ALTER TABLE users
-ADD COLUMN IF NOT EXISTS beds24_password_encrypted TEXT;
-
-ALTER TABLE users
-ADD COLUMN IF NOT EXISTS beds24_account_id TEXT;
-
-CREATE INDEX IF NOT EXISTS idx_users_beds24_account_id ON users(beds24_account_id);
-
-COMMENT ON COLUMN users.beds24_username IS 'BEDS24 sub-account username';
-COMMENT ON COLUMN users.beds24_password_encrypted IS 'Encrypted BEDS24 sub-account password';
-COMMENT ON COLUMN users.beds24_account_id IS 'BEDS24 sub-account ID from V2 API';ALTER TABLE users
-ADD COLUMN IF NOT EXISTS beds24_username TEXT;
-
-ALTER TABLE users
-ADD COLUMN IF NOT EXISTS beds24_password_encrypted TEXT;
-
-ALTER TABLE users
-ADD COLUMN IF NOT EXISTS beds24_account_id TEXT;
-
-CREATE INDEX IF NOT EXISTS idx_users_beds24_account_id ON users(beds24_account_id);
-
-COMMENT ON COLUMN users.beds24_username IS 'BEDS24 sub-account username';
-COMMENT ON COLUMN users.beds24_password_encrypted IS 'Encrypted BEDS24 sub-account password';
-COMMENT ON COLUMN users.beds24_account_id IS 'BEDS24 sub-account ID from V2 API';
-ALTER TABLE users
-ADD COLUMN IF NOT EXISTS beds24_account_id TEXT;
-
-CREATE INDEX IF NOT EXISTS idx_users_beds24_account_id ON users(beds24_account_id);
-
-COMMENT ON COLUMN users.beds24_username IS 'BEDS24 sub-account username';
-COMMENT ON COLUMN users.beds24_password_encrypted IS 'Encrypted BEDS24 sub-account password';
-COMMENT ON COLUMN users.beds24_account_id IS 'BEDS24 sub-account ID from V2 API';
-```
-
-לחץ **Run** (Ctrl+Enter)
+המעבר לתת-חשבון בעתיד נשאר אפשרי: אם נשמרים למשתמש `beds24_token` ו-`beds24_refresh_token`,
+כל קריאות הקליטה והמטמון עוברות אוטומטית לטוקנים שלו במקום לטוקני המאסטר.
 
 ---
 
-### 2️⃣ בדוק `.env.local`
+## 1. הכנה חד-פעמית
 
-ודא שיש לך:
+### Migration
+
+הרץ ב-Supabase (SQL Editor) את הקובץ:
+
+```
+supabase-migrations/027_onboarding_state_and_audit_log.sql
+```
+
+הוא מוסיף:
+- `users.onboarding_state` – סטטוס כל שלב באשף (JSONB), כדי שאפשר יהיה לחזור לאשף באמצע.
+- `users.onboarding_completed_at` – מתי הלקוח הופעל. משתמשים קיימים עם `property_id` מסומנים כפעילים.
+- טבלת `onboarding_audit_log` – כל קריאה ל-Beds24 מהאשף: שלב, נתיב, סטטוס, שגיאה, עלות קרדיטים ויתרה.
+  הטבלה עם RLS וללא policies, כלומר נגישה רק ל-service role.
+
+### משתני סביבה
 
 ```env
-# BEDS24 V2 API Token (לא API Key!)
-BEDS24_TOKEN=your_v2_token_here
-BEDS24_REFRESH_TOKEN=your_refresh_token_here
-
-# Encryption
-ENCRYPTION_KEY=your_encryption_key_here
-# או:
-NEXTAUTH_SECRET=your_nextauth_secret
-
-# URL
-NEXTAUTH_URL=http://localhost:3000
+BEDS24_TOKEN=...            # טוקן V2 של חשבון המאסטר
+BEDS24_REFRESH_TOKEN=...
+NEXTAUTH_URL=https://app.hostly.co.il
 ```
 
-**חשוב**: V2 API דורש **token** עם כל ה-scopes הנדרשים!
-
-### 🔑 איך לקבל token עם כל ה-permissions:
-
-**קרא את המדריך המלא:** `BEDS24_OAUTH_SCOPES_SETUP.md`
-
-**בקיצור:**
-1. התחבר ל-BEDS24 Dashboard
-2. Settings → Account → API → V2 API
-3. Create Invite Code
-4. **בחר את כל ה-scopes:**
-   - ✅ `write:accounts` ← **חובה ליצירת sub-accounts!**
-   - ✅ `write:properties` ← **חובה ליצירת properties!**
-   - ✅ `write:bookings` ← **חובה לניהול הזמנות!**
-   - ✅ `write:inventory` ← **חובה למחירים/זמינות!**
-   - ✅ כל ה-read scopes
-5. Generate → Copy invite code
-6. המר ל-token: [Swagger UI](https://beds24.com/api/v2) → GET /authentication/setup
+הטוקן צריך את ה-scopes: `properties`, `inventory`, `channels` (קריאה וכתיבה), ו-`accounts` ו-`bookings` (קריאה).
+פירוט ביצירת הטוקן: `BEDS24_OAUTH_SCOPES_SETUP.md`.
 
 ---
 
-### 3️⃣ הרץ ובדוק
+## 2. התהליך
 
-```bash
-# הרץ את השרת
-npm run dev
+1. **יצירת משתמש** – `/admin/users/create`. בסיום המערכת עוברת אוטומטית לאשף הקליטה.
+2. **אשף הקליטה** – `/admin/onboarding/<userId>`. אפשר להגיע אליו גם מרשימת הלקוחות
+   (תג "קליטה לא הושלמה") ומעמוד עריכת המשתמש.
+
+| שלב | מה קורה | Beds24 |
+|---|---|---|
+| נכס וחדר | יצירת נכס עם חדר אחד בקריאה אחת, או ייבוא ממודעת Airbnb קיימת | `POST /properties` / `POST /channels/airbnb` (`importAsNewProperty`) |
+| מחיר בסיס | מחיר ומינימום לילות ל-12 חודשים, וזמינות 1 | `POST /inventory/rooms/calendar` |
+| חיבור Airbnb | קישור הרשאה ללקוח, בחירת חשבון ומודעה, חיבור מלא לחדר | `GET /channels/airbnb/users`, `GET /channels/airbnb/listings`, `POST /channels/airbnb` (`connectToExistingRoom`) |
+| מכפיל Airbnb | מכפיל 1.21 ברמת הנכס (עמלה 15% ועמלות נלוות) | `POST /channels/settings` |
+| Booking.com | צ'קליסט ידני – ל-Beds24 אין API לחיבור Booking.com | – |
+| בדיקת חיבורים | קריאה חוזרת של מיפוי Airbnb והמכפיל, ומספר החיבורים בחשבון | `GET /channels/settings`, `GET /accounts?includeUsage=true` |
+| הפעלה | מילוי מטמון זמינות, יצירת מפתח API ליומן, סימון הלקוח כפעיל | `GET /inventory/rooms/calendar`, `GET /bookings` (דרך המטמון) |
+
+כללים:
+- השלבים Airbnb, המכפיל ו-Booking.com ניתנים לדילוג. דילוג על Airbnb מדלג גם על המכפיל.
+- שלב שהושלם לא ירוץ שוב (אין נכסים כפולים). מחיר, מכפיל, Booking.com ובדיקה ניתנים להרצה חוזרת.
+- כישלון נשמר עם הודעת השגיאה, ואפשר לנסות שוב מאותו מקום.
+- לפני כל קריאה נבדקת יתרת הקרדיטים של חלון 5 הדקות. אם נותרו פחות מ-10, הקריאה נחסמת עם 429 עד לאיפוס.
+  חלון הקרדיטים משותף לכל הלקוחות בחשבון המאסטר.
+- מפתח ה-API מוצג פעם אחת בלבד, בסיום שלב ההפעלה.
+
+### Booking.com – הצעדים הידניים
+
+1. הלקוח נכנס ל-Extranet, תחת חשבון ואז ספק קישוריות, מחפש את Beds24 ומסמן הזמנות וגם מחירים וזמינות.
+2. ב-Beds24, תחת מנהל ערוצים ואז Booking.com, מזינים את מזהה המלון.
+3. ממפים חדרים ותוכניות מחיר בעזרת הכפתור לקבלת הקודים.
+4. מפעילים את החדר, מייבאים הזמנות קיימות ומפעילים את החיבור.
+5. באשף מסמנים את הצ'קליסט, מזינים את מזהה המלון ומאשרים.
+
+---
+
+## 3. נתיבי API (אדמין בלבד)
+
+כולם תחת `/api/admin/onboarding/[userId]`, עם ולידציית Zod:
+
+```
+GET  /                     סטטוס האשף
+POST /property             { mode: 'create', name, propertyType?, maxPeople?, currency? }
+                           { mode: 'importAirbnb', airbnbUserId, airbnbListingId, listingName? }
+POST /base-price           { price, minStay?, months? }
+GET  /airbnb/users
+GET  /airbnb/listings?airbnbUserId=
+POST /airbnb/connect       { airbnbUserId, airbnbListingId, listingName? }
+POST /airbnb/multiplier
+POST /booking-com          { hotelId? }
+POST /verify
+POST /finalize
+POST /skip                 { step: 'airbnbConnect' | 'airbnbMultiplier' | 'bookingCom' }
 ```
 
-```bash
-# גש להרשמה
-http://localhost:3000/register
-```
+קודי שגיאה: 403 לא אדמין, 422 קלט לא תקין, 409 שלב קודם חסר, 429 קרדיטים, 502 שגיאת Beds24.
 
-צור משתמש חדש ובדוק בלוגים:
+נתיבים שהוסרו: `admin/beds24/create-subaccount`, `admin/users/[id]/airbnb`,
+`dashboard/beds24/{create-property, airbnb-connect, airbnb-users, airbnb-listings}`.
+`admin/beds24/create-property` נשאר ליצירת נכס ללא לקוח, לאדמין בלבד.
 
-```
-✅ [REGISTER] Creating BEDS24 sub-account (V2): username123
-✅ [BEDS24 Account V2] Response status: 200
-✅ [REGISTER] BEDS24 sub-account created
-✅ [REGISTER] Assigning property to sub-account...
-✅ [REGISTER] Property assigned successfully
-✅ [REGISTER] User created successfully!
+---
+
+## 4. בדיקות בלקוח האמיתי הראשון
+
+ל-Beds24 אין סביבת בדיקות, ולכן הלקוח הראשון הוא גם הבדיקה. לוודא:
+
+- [ ] מזהי הנכס והחדר שבאשף זהים למה שמופיע ב-Beds24, ו-`users.room_id` בפורמט `id:name`.
+- [ ] המחיר והזמינות מופיעים ביומן של Beds24 ל-12 החודשים הקרובים.
+- [ ] בשלב הבדיקה המכפיל שנקרא בחזרה הוא 1.21 (אם לא – לבדוק את המכפיל ב-Beds24 ידנית).
+- [ ] מספר החיבורים בחשבון עלה ב-Airbnb וב-Booking.com.
+- [ ] היומן הציבורי עובד עם מפתח ה-API החדש.
+- [ ] צריכת הקרדיטים לכל הקליטה, לפי `onboarding_audit_log`:
+
+```sql
+SELECT step, count(*), sum(request_cost), min(credits_remaining)
+FROM onboarding_audit_log
+WHERE user_id = '<userId>'
+GROUP BY step;
 ```
 
 ---
 
-## ✅ זהו!
+## 5. פנייה לתמיכה של Beds24
 
-עכשיו כל משתמש חדש מקבל:
-- ✅ Sub-account ב-BEDS24
-- ✅ Property + Room משלו
-- ✅ Property משויך לחשבון שלו
-- ✅ Credentials מוצפנים
+טקסט מוכן לשליחה:
 
----
+```text
+Subject: Questions about sub-accounts, moving properties and developer access
 
-## ⚠️ בעיות נפוצות
+Hello,
 
-### שגיאה: "BEDS24_TOKEN not configured"
-**פתרון**: הוסף `BEDS24_TOKEN` ל-`.env.local`
+We are a software company building a property management product on top of the Beds24 API V2.
+Each of our clients is currently set up as a property inside our own master account.
+Before we scale, we would like to confirm a few things:
 
-### שגיאה: "401 - Unauthorized"
-**פתרון**: 
-1. בדוק שה-token תקין
-2. בדוק שזה **V2 token**, לא API key
-3. רענן את ה-token אם פג תוקפו
+1. Sub-account billing: if we create a sub-account per client, does each sub-account pay
+   its own base subscription fee, or is it billed only per unit and channel link under our account?
 
-### שגיאה: "column does not exist"
-**פתרון**: הרץ את ה-migration (שלב 1)
+2. Moving properties: can a property (with its rooms, bookings, prices and channel connections
+   to Airbnb and Booking.com) be moved later from our master account into a new sub-account
+   without reconnecting the channels? If yes, what is the process?
 
-### שגיאה: "ENCRYPTION_KEY not configured"
-**פתרון**: הוסף `ENCRYPTION_KEY` או השתמש ב-`NEXTAUTH_SECRET`
+3. Developer access: is there a developer, sandbox or staging account we can use to test
+   API calls (creating properties, channel mapping) without affecting live listings or billing?
 
----
-
-## 📚 למידע נוסף
-
-קרא: **BEDS24_V2_SUB_ACCOUNTS.md** - מדריך מפורט
-
----
-
-**בהצלחה! 🎉**
+Thank you,
+Hostly
+```

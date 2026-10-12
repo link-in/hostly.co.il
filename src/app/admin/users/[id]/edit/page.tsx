@@ -215,15 +215,36 @@ export default function EditUserPage({ params }: { params: Promise<{ id: string 
                       onChange={(e) => handleChange('propertyId', e.target.value)} placeholder="306559" />
                   </div>
 
-                  {/* ── Beds24 Setup Wizard ── */}
+                  {/* ── Onboarding wizard ── */}
+                  <div className="mb-4 p-3 rounded-3" style={{ background: '#f0fdf4', border: '1px solid #86efac' }}>
+                    <div className="d-flex justify-content-between align-items-center">
+                      <div>
+                        <div className="fw-semibold" style={{ color: '#15803d', fontSize: 14 }}>
+                          אשף קליטת לקוח
+                        </div>
+                        <small className="text-muted">נכס וחדר, מחיר, Airbnb, Booking.com, בדיקה והפעלה</small>
+                      </div>
+                      <Link href={`/admin/onboarding/${userId}`}>
+                        <button
+                          type="button"
+                          className="btn btn-sm fw-bold"
+                          style={{ background: '#15803d', color: 'white', border: 'none', whiteSpace: 'nowrap' }}
+                        >
+                          לאשף הקליטה ←
+                        </button>
+                      </Link>
+                    </div>
+                  </div>
+
+                  {/* ── Dedicated Beds24 sub-account tokens (optional) ── */}
                   <div className="mb-4 p-3 rounded-3" style={{ background: '#eff6ff', border: '1px solid #bfdbfe' }}>
                     <div className="d-flex justify-content-between align-items-center">
                       <div>
                         <div className="fw-semibold" style={{ color: '#1d4ed8', fontSize: 14 }}>
-                          הגדרת חשבון-משנה ב-Beds24
+                          מעבר לתת-חשבון ב-Beds24
                         </div>
                         <small className="text-muted">
-                          חיבור Invite Code, שמירת Property/Room IDs ואתחול Cache
+                          אופציונלי: שמירת טוקנים של תת-חשבון ייעודי. בלי טוקנים, הלקוח עובד דרך חשבון המאסטר.
                         </small>
                       </div>
                       <Link href={`/admin/users/${userId}/beds24-setup`}>
@@ -232,28 +253,7 @@ export default function EditUserPage({ params }: { params: Promise<{ id: string 
                           className="btn btn-sm fw-bold"
                           style={{ background: '#1d4ed8', color: 'white', border: 'none', whiteSpace: 'nowrap' }}
                         >
-                          הגדרת Beds24 ←
-                        </button>
-                      </Link>
-                    </div>
-                  </div>
-
-                  {/* ── Airbnb Setup (after Beds24 tokens are set) ── */}
-                  <div className="mb-4 p-3 rounded-3" style={{ background: '#f0fdf4', border: '1px solid #86efac' }}>
-                    <div className="d-flex justify-content-between align-items-center">
-                      <div>
-                        <div className="fw-semibold" style={{ color: '#15803d', fontSize: 14 }}>
-                          חיבור Airbnb דרך Beds24
-                        </div>
-                        <small className="text-muted">לאחר הגדרת Beds24 — ייבא נכס מ-Airbnb, הגדר Cache ו-API Key</small>
-                      </div>
-                      <Link href={`/admin/users/${userId}/airbnb-setup`}>
-                        <button
-                          type="button"
-                          className="btn btn-sm fw-bold"
-                          style={{ background: '#15803d', color: 'white', border: 'none', whiteSpace: 'nowrap' }}
-                        >
-                          הגדר Airbnb ←
+                          טוקנים לתת-חשבון ←
                         </button>
                       </Link>
                     </div>

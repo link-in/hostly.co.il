@@ -5,13 +5,11 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Eye, EyeOff, RefreshCw, Check } from 'lucide-react'
 
-type WizardStep = 1 | 2 | 3
-type PropertyCreateState = 'idle' | 'creating' | 'done' | 'error'
+type WizardStep = 1 | 2
 
 const WIZARD_STEPS = [
   { id: 1 as WizardStep, label: 'חשבון',  icon: '👤' },
   { id: 2 as WizardStep, label: 'פרטים',  icon: '📝' },
-  { id: 3 as WizardStep, label: 'Beds24',  icon: '🏠' },
 ]
 
 function generatePassword(length = 12): string {
@@ -31,7 +29,6 @@ export default function CreateUserPage() {
     displayName: '',
     firstName: '',
     lastName: '',
-    propertyId: '',
     landingPageUrl: '',
     phoneNumber: '',
   })
@@ -39,11 +36,6 @@ export default function CreateUserPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
-
-  // Beds24 property creation
-  const [propertyName, setPropertyName] = useState('')
-  const [propertyCreateState, setPropertyCreateState] = useState<PropertyCreateState>('idle')
-  const [propertyCreateError, setPropertyCreateError] = useState<string | null>(null)
 
   // ── Helpers ───────────────────────────────────────────────────────────────
   const handleChange = (field: string, value: string) =>
@@ -55,7 +47,7 @@ export default function CreateUserPage() {
 
   const markCompleteAndNext = () => {
     setCompletedSteps((prev) => new Set([...prev, currentStep]))
-    if (currentStep < 3) setCurrentStep((prev) => (prev + 1) as WizardStep)
+    if (currentStep < 2) setCurrentStep((prev) => (prev + 1) as WizardStep)
   }
 
   const handleSubmit = async () => {
@@ -65,39 +57,16 @@ export default function CreateUserPage() {
       const res = await fetch('/api/admin/users/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...formData, roomId: '' }),
+        body: JSON.stringify({ ...formData, propertyId: '', roomId: '' }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'שגיאה ביצירת משתמש')
       setSuccess(true)
-      setTimeout(() => router.push('/admin/users'), 2000)
+      router.push(`/admin/onboarding/${data.user.id}`)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'שגיאה')
     } finally {
       setLoading(false)
-    }
-  }
-
-  const handleCreateProperty = async () => {
-    if (!propertyName.trim()) {
-      setPropertyCreateError('יש להזין שם לנכס')
-      return
-    }
-    setPropertyCreateState('creating')
-    setPropertyCreateError(null)
-    try {
-      const res = await fetch('/api/admin/beds24/create-property', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: propertyName.trim() }),
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'שגיאה ביצירת נכס')
-      handleChange('propertyId', data.propertyId)
-      setPropertyCreateState('done')
-    } catch (err) {
-      setPropertyCreateError(err instanceof Error ? err.message : 'שגיאה')
-      setPropertyCreateState('error')
     }
   }
 
@@ -157,7 +126,7 @@ export default function CreateUserPage() {
               {/* Step Content */}
               <div className="card-body p-4">
                 {error && <div className="alert alert-danger mb-3"><strong>שגיאה:</strong> {error}</div>}
-                {success && <div className="alert alert-success mb-3"><strong>הצלחה!</strong> המשתמש נוצר. מעביר לרשימה...</div>}
+                {success && <div className="alert alert-success mb-3"><strong>הצלחה!</strong> המשתמש נוצר. מעביר לאשף הקליטה...</div>}
 
                 {/* ─ Step 1: חשבון ─ */}
                 {currentStep === 1 && (
@@ -226,106 +195,16 @@ export default function CreateUserPage() {
                     </div>
                     <div className="d-flex justify-content-between mt-4">
                       <button type="button" className="btn btn-outline-secondary" onClick={() => setCurrentStep(1)}>→ חזור</button>
-                      <button type="button" className="btn btn-primary" onClick={markCompleteAndNext} disabled={!canStep2}
-                        style={{ background: 'linear-gradient(135deg,#667eea,#764ba2)', border: 'none' }}>
-                        הבא ←
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {/* ─ Step 3: Beds24 ─ */}
-                {currentStep === 3 && (
-                  <div>
-                    <p className="text-muted small mb-3">
-                      חבר את הלקוח לנכס ב-Beds24. ניתן לדלג ולהוסיף מאוחר יותר.
-                    </p>
-
-                    {/* יצירה אוטומטית */}
-                    <div className="card border-0 bg-light mb-3" style={{ borderRadius: 10 }}>
-                      <div className="card-body py-3">
-                        <p className="small fw-semibold mb-2">🏗️ צור נכס חדש ב-Beds24 אוטומטית</p>
-                        <div className="d-flex gap-2">
-                          <input
-                            type="text"
-                            className="form-control form-control-sm"
-                            value={propertyName}
-                            onChange={(e) => { setPropertyName(e.target.value); setPropertyCreateState('idle') }}
-                            placeholder="שם הנכס — למשל: דירת נופש תל אביב"
-                            disabled={propertyCreateState === 'creating'}
-                          />
-                          <button
-                            type="button"
-                            className={`btn btn-sm text-nowrap ${propertyCreateState === 'done' ? 'btn-success' : 'btn-primary'}`}
-                            onClick={handleCreateProperty}
-                            disabled={propertyCreateState === 'creating' || !propertyName.trim()}
-                            style={propertyCreateState !== 'done' ? { background: 'linear-gradient(135deg,#667eea,#764ba2)', border: 'none' } : {}}
-                          >
-                            {propertyCreateState === 'creating'
-                              ? <span className="spinner-border spinner-border-sm" />
-                              : propertyCreateState === 'done'
-                                ? '✅ נוצר'
-                                : '🏗️ צור'}
-                          </button>
-                        </div>
-                        {propertyCreateError && <small className="text-danger mt-1 d-block">{propertyCreateError}</small>}
-                        {propertyCreateState === 'done' && (
-                          <small className="text-success mt-1 d-block">
-                            ✅ נכס נוצר ב-Beds24 — Property ID <strong>{formData.propertyId}</strong> מולא אוטומטית
-                          </small>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="mb-3">
-                      <label className="form-label fw-semibold">
-                        Property ID
-                        {propertyCreateState !== 'done' && (
-                          <span className="text-muted fw-normal small me-2"> — או הכנס ידנית מ-Beds24 → Settings → Property</span>
-                        )}
-                      </label>
-                      <input
-                        type="text"
-                        className={`form-control ${propertyCreateState === 'done' ? 'border-success' : ''}`}
-                        value={formData.propertyId}
-                        onChange={(e) => { handleChange('propertyId', e.target.value); setPropertyCreateState('idle') }}
-                        placeholder="306559"
-                      />
-                    </div>
-
-                    {/* הסבר שלב הבא */}
-                    <div className="alert alert-warning small mb-3">
-                      <strong>⏭️ שלב הבא לאחר יצירה:</strong>
-                      <ol className="mb-0 mt-1">
-                        <li>היכנס ל-<a href="https://beds24.com" target="_blank" rel="noreferrer">beds24.com</a></li>
-                        <li>תחת הנכס שנוצר — הוסף חדר אחד (Rooms → Add Room)</li>
-                        <li>העתק את ה-Room ID</li>
-                        <li>חזור לכאן → <strong>ערוך משתמש</strong> → הכנס את ה-Room ID</li>
-                      </ol>
-                    </div>
-
-                    {/* Summary */}
-                    <div className="card bg-light border-0 mb-3" style={{ borderRadius: 10 }}>
-                      <div className="card-body py-3 px-4">
-                        <h6 className="fw-bold mb-2 small">סיכום לפני שמירה</h6>
-                        <div className="row g-1 small text-muted">
-                          <div className="col-6">📧 {formData.email}</div>
-                          <div className="col-6">🏷️ {formData.displayName}</div>
-                          <div className="col-6">🏠 Property: {formData.propertyId || <span className="text-warning">לא הוגדר</span>}</div>
-                          <div className="col-6">🚪 Room ID — יוגדר בעריכה</div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="d-flex justify-content-between">
-                      <button type="button" className="btn btn-outline-secondary" onClick={() => setCurrentStep(2)}>→ חזור</button>
                       <button type="button" className="btn btn-success fw-bold px-4"
-                        onClick={handleSubmit} disabled={loading}>
+                        onClick={handleSubmit} disabled={loading || !canStep2}>
                         {loading
                           ? <><span className="spinner-border spinner-border-sm me-2" />יוצר...</>
-                          : '✅ צור משתמש'}
+                          : '✅ צור משתמש והמשך לקליטה'}
                       </button>
                     </div>
+                    <p className="text-muted small mt-3 mb-0">
+                      אחרי היצירה תועבר לאשף הקליטה: נכס וחדר ב-Beds24, מחיר, חיבור ערוצים והפעלה.
+                    </p>
                   </div>
                 )}
 

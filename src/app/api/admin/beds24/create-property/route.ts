@@ -1,66 +1,39 @@
-import { NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth/authOptions'
-import { fetchWithTokenRefresh } from '@/lib/beds24/tokenManager'
-
-const BASE_URL = process.env.BEDS24_API_BASE_URL ?? 'https://api.beds24.com/v2'
-
 /**
  * POST /api/admin/beds24/create-property
- * Creates a new property in Beds24 under the master account.
- * Returns the new propertyId so it can be auto-filled in the user form.
+ * Admin-only: creates a property with one room in the master Beds24 account,
+ * without attaching it to a client. Client onboarding uses /api/admin/onboarding/[userId]/property.
+ * Returns: { propertyId, roomId, name }
  */
+import { NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
+import { z } from 'zod'
+import { authOptions } from '@/lib/auth/authOptions'
+import { errorResponse, parseJsonBody } from '@/lib/onboarding/http'
+import { PROPERTY_TYPES } from '@/lib/onboarding/schemas'
+import { createPropertyWithRoom } from '@/lib/onboarding/steps/property'
+
+export const dynamic = 'force-dynamic'
+
+const bodySchema = z.object({
+  name: z.string().trim().min(2, 'שם הנכס קצר מדי').max(100),
+  propertyType: z.enum(PROPERTY_TYPES).default('apartment'),
+  maxPeople: z.number().int().min(1).max(30).default(2),
+  currency: z.string().trim().length(3).default('ILS'),
+})
+
 export async function POST(request: Request) {
   const session = await getServerSession(authOptions)
-  if (!session?.user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+  if (session?.user?.role !== 'admin' || !session.user.id) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
-  const { name } = await request.json()
-  if (!name?.trim()) {
-    return NextResponse.json({ error: 'שם הנכס הוא שדה חובה' }, { status: 400 })
-  }
+  const parsed = await parseJsonBody(request, bodySchema)
+  if ('response' in parsed) return parsed.response
 
   try {
-    const res = await fetchWithTokenRefresh(`${BASE_URL}/properties`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify([{ name: name.trim() }]),
-    })
-
-    const rawText = await res.text()
-    let data: unknown
-    try { data = JSON.parse(rawText) } catch { data = rawText }
-
-    console.log(`[Beds24] POST /properties → ${res.status}:`, JSON.stringify(data).slice(0, 300))
-
-    if (!res.ok) {
-      return NextResponse.json(
-        { error: 'Beds24 לא הצליחה ליצור נכס', details: data },
-        { status: 502 }
-      )
-    }
-
-    const result = Array.isArray(data) ? data[0] : null
-    const propertyId = result?.new?.id ?? null
-
-    if (!propertyId) {
-      return NextResponse.json(
-        { error: 'הנכס נוצר אבל לא חזר מזהה — בדוק ב-Beds24', details: data },
-        { status: 502 }
-      )
-    }
-
-    return NextResponse.json({
-      success: true,
-      propertyId: String(propertyId),
-      name: name.trim(),
-    })
+    const ids = await createPropertyWithRoom({ userId: session.user.id, step: 'adminCreateProperty' }, parsed.data)
+    return NextResponse.json({ success: true, ...ids, name: parsed.data.name })
   } catch (err) {
-    console.error('[Beds24] create-property error:', err)
-    return NextResponse.json(
-      { error: 'שגיאה פנימית', details: err instanceof Error ? err.message : String(err) },
-      { status: 500 }
-    )
+    return errorResponse(err)
   }
 }

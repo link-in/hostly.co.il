@@ -12,7 +12,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth/authOptions'
-import { refreshRoomCache } from '@/lib/availability/cache'
+import { seedClientCache } from '@/lib/onboarding/steps/clientRecords'
 import { z } from 'zod'
 
 export const dynamic = 'force-dynamic'
@@ -48,22 +48,13 @@ export async function POST(request: NextRequest) {
 
   const { userId, propertyId, roomId } = parsed.data
 
-  const accessToken = process.env.BEDS24_TOKEN
-  const refreshToken = process.env.BEDS24_REFRESH_TOKEN
-
-  if (!accessToken || !refreshToken) {
-    return NextResponse.json(
-      { error: 'BEDS24_TOKEN / BEDS24_REFRESH_TOKEN not set in environment' },
-      { status: 500 },
-    )
-  }
-
   console.log(`[CacheSeed] Seeding cache for user=${userId} property=${propertyId} room=${roomId}`)
 
-  const result = await refreshRoomCache(userId, propertyId, roomId, accessToken, refreshToken)
+  // Uses the user's own sub-account tokens when stored, otherwise the master account.
+  const result = await seedClientCache(userId, propertyId, roomId)
 
-  if (result.error) {
-    return NextResponse.json({ success: false, error: result.error }, { status: 502 })
+  if (result.warning) {
+    return NextResponse.json({ success: false, error: result.warning }, { status: 502 })
   }
 
   return NextResponse.json({

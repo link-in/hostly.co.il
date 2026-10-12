@@ -71,6 +71,7 @@ export async function GET() {
         role: user.role,
         beds24Token: user.beds24_token,
         beds24RefreshToken: user.beds24_refresh_token,
+        onboardingCompletedAt: user.onboarding_completed_at ?? null,
         createdAt: user.created_at,
         updatedAt: user.updated_at,
         subscription: sub

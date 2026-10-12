@@ -25,6 +25,7 @@ interface AdminUser {
   landingPageUrl?: string
   phoneNumber?: string
   role: 'admin' | 'owner'
+  onboardingCompletedAt: string | null
   createdAt: string
   updatedAt: string
   subscription: AdminUserSubscription | null
@@ -807,7 +808,16 @@ export default function AdminUsersPage() {
                     </td>
                     <td>{user.email}</td>
                     <td>{user.phoneNumber || '-'}</td>
-                    <td><code>{user.propertyId}</code></td>
+                    <td>
+                      <code>{user.propertyId}</code>
+                      {user.role !== 'admin' && !user.onboardingCompletedAt && (
+                        <div>
+                          <Link href={`/admin/onboarding/${user.id}`} className="badge bg-warning text-dark text-decoration-none">
+                            קליטה לא הושלמה ←
+                          </Link>
+                        </div>
+                      )}
+                    </td>
                     <td>
                       <span 
                         className="badge"
