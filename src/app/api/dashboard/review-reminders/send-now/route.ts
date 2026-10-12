@@ -48,6 +48,7 @@ export async function POST(request: Request) {
     propertyId: session.user.propertyId,
     displayName: session.user.displayName || null,
     googleReviewUrl: session.user.googleReviewUrl || null,
+    reviewMessageText: session.user.reviewMessageText || null,
     beds24Token: session.user.beds24Token,
     beds24RefreshToken: session.user.beds24RefreshToken || '',
   }

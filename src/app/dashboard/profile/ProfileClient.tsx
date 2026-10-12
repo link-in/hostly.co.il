@@ -54,6 +54,7 @@ const ProfileClient = () => {
 
   // Post-checkout review reminder
   const [googleReviewUrl, setGoogleReviewUrl] = useState('')
+  const [reviewMessageText, setReviewMessageText] = useState('')
   const [testSending, setTestSending] = useState(false)
   const [testResult, setTestResult] = useState<string | null>(null)
   const [testError, setTestError] = useState<string | null>(null)
@@ -187,11 +188,15 @@ const ProfileClient = () => {
       const res = await fetch('/api/dashboard/review-reminders/test-send', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ channel: 'direct' }),
+        body: JSON.stringify({
+          channel: 'direct',
+          googleReviewUrl: googleReviewUrl.trim() || undefined,
+          reviewMessageText: reviewMessageText.trim() || undefined,
+        }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'שליחת הודעת הבדיקה נכשלה')
-      setTestResult(`✅ הודעת בדיקה נשלחה למספר שלך (${phoneNumber || 'המספר בפרופיל'})`)
+      setTestResult(`הודעת בדיקה נשלחה למספר שלך (${phoneNumber || 'המספר בפרופיל'})`)
     } catch (err) {
       setTestError(err instanceof Error ? err.message : 'שגיאה לא ידועה')
     } finally {
@@ -212,7 +217,7 @@ const ProfileClient = () => {
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'השליחה נכשלה')
       setLiveResult(
-        `✅ נבדקו ${data.bookingsFound} הזמנות ל-${data.date}: ${data.sent} נשלחו, ${data.skipped} דולגו (כבר נשלחו/אין טלפון), ${data.failed} נכשלו`,
+        `נבדקו ${data.bookingsFound} הזמנות ל-${data.date}: ${data.sent} נשלחו, ${data.skipped} דולגו (כבר נשלחו/אין טלפון), ${data.failed} נכשלו`,
       )
     } catch (err) {
       setLiveError(err instanceof Error ? err.message : 'שגיאה לא ידועה')
@@ -250,6 +255,7 @@ const ProfileClient = () => {
       setPhoneNumber(session.user.phoneNumber ?? '')
       setSecondaryPhoneNumber(session.user.secondaryPhoneNumber ?? '')
       setGoogleReviewUrl(session.user.googleReviewUrl ?? '')
+      setReviewMessageText(session.user.reviewMessageText ?? '')
       
       // Load check-in settings
       const settings = session.user.checkInSettings
@@ -296,6 +302,7 @@ const ProfileClient = () => {
           phoneNumber: phoneNumber.trim(),
           secondaryPhoneNumber: secondaryPhoneNumber.trim(),
           googleReviewUrl: googleReviewUrl.trim(),
+          reviewMessageText: reviewMessageText.trim(),
           checkInSettings: {
             wifi_ssid: wifiSsid.trim(),
             wifi_password: wifiPassword.trim(),
@@ -322,6 +329,7 @@ const ProfileClient = () => {
         phoneNumber: phoneNumber.trim(),
         secondaryPhoneNumber: secondaryPhoneNumber.trim(),
         googleReviewUrl: googleReviewUrl.trim(),
+        reviewMessageText: reviewMessageText.trim(),
         checkInSettings: {
           wifi_ssid: wifiSsid.trim(),
           wifi_password: wifiPassword.trim(),
@@ -792,7 +800,7 @@ const ProfileClient = () => {
                       }}
                     />
                     <h3
-                      className="h5 fw-bold mb-3"
+                      className="h5 fw-bold mb-3 d-flex align-items-center gap-2"
                       style={{
                         background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                         WebkitBackgroundClip: 'text',
@@ -800,17 +808,21 @@ const ProfileClient = () => {
                         backgroundClip: 'text',
                       }}
                     >
-                      ⭐ הודעת ביקורת אחרי צ'ק-אאוט
+                      הודעת ביקורת אחרי צ'ק-אאוט
                     </h3>
                     <p className="text-muted small mb-3">
                       בבוקר שאחרי הצ'ק-אאוט תישלח לאורח הודעת WhatsApp אוטומטית עם תודה ובקשה לכתוב ביקורת.
                       בהזמנה ישירה תישלח ההודעה עם הקישור שתגדירו כאן; בהזמנה מ-Airbnb או Booking.com תישלח תזכורת לכתוב ביקורת באפליקציה עצמה.
+                      {' '}
+                      <Link href="/dashboard/messages" className="text-decoration-underline fw-semibold" style={{ color: '#667eea' }}>
+                        לניהול כל הודעות ה-WhatsApp לחצו כאן
+                      </Link>
                     </p>
                   </div>
 
                   <div className="col-12">
                     <label className="form-label fw-semibold" style={{ color: '#667eea' }}>
-                      🔗 קישור לביקורת בגוגל (Google Review)
+                      קישור לביקורת בגוגל (Google Review)
                     </label>
                     <input
                       type="url"
@@ -824,6 +836,23 @@ const ProfileClient = () => {
                     />
                     <small className="text-muted">
                       יישלח לאורחים שהזמינו ישירות (לא דרך Airbnb/Booking.com). אם נשאר ריק, ההודעה תבקש משוב בלבד ללא קישור.
+                    </small>
+                  </div>
+
+                  <div className="col-12">
+                    <label className="form-label fw-semibold" style={{ color: '#667eea' }}>
+                      הודעת ביקורת (מותאמת אישית)
+                    </label>
+                    <textarea
+                      className="form-control shadow-sm profile-input"
+                      style={{ ...inputStyle, minHeight: '100px' }}
+                      value={reviewMessageText}
+                      onChange={(e) => setReviewMessageText(e.target.value)}
+                      disabled={!editing}
+                      placeholder="השאר ריק לשימוש בנוסח ברירת המחדל..."
+                    />
+                    <small className="text-muted">
+                      ניתן להזין טקסט אישי שיישלח לאורח (ניתן להשתמש ב-&#123;guestName&#125; וב-&#123;propertyName&#125;).
                     </small>
                   </div>
 
@@ -867,9 +896,9 @@ const ProfileClient = () => {
                         )}
                       </button>
                     </div>
-                    {testError ? <div className="alert alert-danger py-2 mt-2 mb-0 small">⚠️ {testError}</div> : null}
+                    {testError ? <div className="alert alert-danger py-2 mt-2 mb-0 small">{testError}</div> : null}
                     {testResult ? <div className="alert alert-success py-2 mt-2 mb-0 small">{testResult}</div> : null}
-                    {liveError ? <div className="alert alert-danger py-2 mt-2 mb-0 small">⚠️ {liveError}</div> : null}
+                    {liveError ? <div className="alert alert-danger py-2 mt-2 mb-0 small">{liveError}</div> : null}
                     {liveResult ? <div className="alert alert-success py-2 mt-2 mb-0 small">{liveResult}</div> : null}
                     <small className="text-muted d-block mt-1">
                       "שלח הודעת בדיקה" — הודעת תצוגה מקדימה למספר שלך בלבד, לא נוגעת בהזמנות אמיתיות.<br />
@@ -1327,6 +1356,7 @@ const ProfileClient = () => {
                             setPhoneNumber(session?.user?.phoneNumber ?? '')
                             setSecondaryPhoneNumber(session?.user?.secondaryPhoneNumber ?? '')
                             setGoogleReviewUrl(session?.user?.googleReviewUrl ?? '')
+                            setReviewMessageText(session?.user?.reviewMessageText ?? '')
                             
                             // Reset check-in settings
                             const settings = session?.user?.checkInSettings

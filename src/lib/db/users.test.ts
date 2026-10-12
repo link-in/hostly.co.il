@@ -145,6 +145,27 @@ describe('getUsersWithBeds24Access', () => {
 
     expect(users).toHaveLength(0)
   })
+
+  it('maps review_message_text when present on the user row', async () => {
+    vi.mocked(createServiceRoleClient).mockReturnValue(
+      makeClient([
+        {
+          id: 'user_5',
+          property_id: '555',
+          display_name: 'Custom Text Host',
+          google_review_url: 'https://g.page/r/abc',
+          review_message_text: 'תודה שהתארחתם אצלנו!',
+          beds24_token: 'access-token',
+          beds24_refresh_token: null,
+        },
+      ]) as never,
+    )
+
+    const users = await getUsersWithBeds24Access()
+
+    expect(users).toHaveLength(1)
+    expect(users[0].reviewMessageText).toBe('תודה שהתארחתם אצלנו!')
+  })
 })
 
 describe('getOwnerInfoByPropertyRoom — secondary phone number support', () => {

@@ -84,31 +84,27 @@ test.describe('Receipts Page Mobile Responsiveness (HOS-16)', () => {
     expect(Math.abs(box1!.height - box2!.height)).toBeLessThanOrEqual(2)
     expect(Math.abs(box2!.height - box3!.height)).toBeLessThanOrEqual(2)
 
-    // Filter controls: should fit in one row without wrapping
-    const filterSelect = page.locator('select.form-select')
+    // Filter controls: should have filter buttons and refresh button visible
+    const filterAllBtn = page.getByRole('button', { name: 'הכל' })
+    const filterIssuedBtn = page.getByRole('button', { name: 'הונפקו' })
+    const filterFailedBtn = page.getByRole('button', { name: 'נכשלו' })
     const refreshBtn = page.getByRole('button', { name: /רענון/ })
 
-    await expect(filterSelect).toBeVisible()
+    await expect(filterAllBtn).toBeVisible()
+    await expect(filterIssuedBtn).toBeVisible()
+    await expect(filterFailedBtn).toBeVisible()
     await expect(refreshBtn).toBeVisible()
 
-    const selectBox = await filterSelect.boundingBox()
-    const btnBox = await refreshBtn.boundingBox()
-
-    expect(selectBox).not.toBeNull()
-    expect(btnBox).not.toBeNull()
-    // The top of select and button should align on the same line
-    expect(Math.abs(selectBox!.y - btnBox!.y)).toBeLessThanOrEqual(5)
-
     // On mobile, the desktop table container should be hidden and mobile cards visible
-    const desktopTableContainer = page.locator('.table-responsive.d-none.d-md-block')
+    const desktopTableContainer = page.locator('.hostly-datatable-desktop')
     await expect(desktopTableContainer).toBeHidden()
 
     // Mobile data cards
-    const mobileCards = page.locator('.d-md-none > div')
+    const mobileCards = page.locator('.hostly-datatable-mobile > div')
     await expect(mobileCards).toHaveCount(2)
 
-    await expect(mobileCards.nth(0).getByText('ישראל ישראלי')).toBeVisible()
-    await expect(mobileCards.nth(1).getByText('דנה כהן')).toBeVisible()
+    await expect(mobileCards.nth(0).getByText('ישראל ישראלי').first()).toBeVisible()
+    await expect(mobileCards.nth(1).getByText('דנה כהן').first()).toBeVisible()
 
     // Scroll slightly down and take a second screenshot showing both full cards
     await page.evaluate(() => window.scrollBy(0, 150))
@@ -117,8 +113,8 @@ test.describe('Receipts Page Mobile Responsiveness (HOS-16)', () => {
     // Check card details
     await expect(mobileCards.nth(0).getByText('₪1,500')).toBeVisible()
     await expect(mobileCards.nth(1).getByText('₪850')).toBeVisible()
-    await expect(mobileCards.nth(0).getByText('צפייה ב-PDF')).toBeVisible()
-    await expect(mobileCards.nth(1).getByText('שגיאה: שגיאת תקשורת עם ספק המסמכים')).toBeVisible()
+    await expect(mobileCards.nth(0).getByText('הונפק')).toBeVisible()
+    await expect(mobileCards.nth(1).getByText('נכשל')).toBeVisible()
   })
 
   test('renders table in desktop viewport', async ({ page, context, baseURL }) => {

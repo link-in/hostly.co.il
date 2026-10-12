@@ -57,7 +57,8 @@ export const NAV_ITEMS: NavItem[] = [
   // HOS-12: הסתרה זמנית של צ'ק-אין דיגיטלי מהתפריט. להחזיר — הסירו את hidden: true.
   { href: '/dashboard/check-ins', label: "צ'ק-אין דיגיטלי", icon: BadgeCheck, page: 'check-ins', section: 'main', hidden: true },
   { href: '/dashboard/messages', label: 'הודעות WhatsApp', icon: MessageSquare, page: 'messages', section: 'main' },
-  { href: '/dashboard/arrival-message', label: 'הודעת יום הגעה', icon: BellRing, page: 'arrival-message', section: 'main' },
+  // HOS-22: אוחד לתוך עמוד הודעות WhatsApp. נשאר ברשימה עם hidden: true לצורך תאימות.
+  { href: '/dashboard/arrival-message', label: 'הודעת יום הגעה', icon: BellRing, page: 'arrival-message', section: 'main', hidden: true },
   { href: '/dashboard/receipts', label: 'קבלות וחשבוניות', icon: FileText, page: 'receipts', section: 'main' },
   { href: '/dashboard/price-check', label: 'בדיקת מחיר', icon: CircleHelp, page: 'price-check', section: 'main' },
   { href: '/dashboard/pricing-demo', label: 'מחשבון מחירים', icon: Calculator, page: 'pricing-demo', section: 'main' },
