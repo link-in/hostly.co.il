@@ -7,6 +7,7 @@ import Link from 'next/link'
 import { ExternalLink, Loader2, Pencil, RefreshCw, MessageSquare, FileText, CheckCircle2 } from 'lucide-react'
 import DashboardHeader from '@/components/DashboardHeader'
 import { PushNotificationManager } from '@/components/PushNotificationManager'
+import { AdminPushTestLink } from '@/components/AdminPushTestLink'
 import DashboardLoader from '@/components/DashboardLoader'
 
 interface SubscriptionInfo {
@@ -463,6 +464,7 @@ const ProfileClient = () => {
                 ) : null}
 
                 <PushNotificationManager />
+                <AdminPushTestLink />
 
                 <div className="row g-3">
                   <div className="col-md-6">

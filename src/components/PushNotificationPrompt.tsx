@@ -2,26 +2,16 @@
 
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
+import { useSession } from 'next-auth/react'
 import { toast } from 'sonner'
 import { X, BellRing } from 'lucide-react'
+import { QA_PUSH_TEST_PARAM, isPushQaTestActive } from '@/lib/push/qaTest'
 import styles from './PushNotificationPrompt.module.css'
 
 // Same VAPID config and base64 helper as PushNotificationManager
 const NEXT_PUBLIC_VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
 
-/**
- * QA testing hook: browsing to any dashboard page with `?test_push=1`
- * (e.g. https://app.hostly.co.il/dashboard?test_push=1) does two things:
- *  - If this device already has an active push subscription, it fires a
- *    fake "new booking" push (same shape as a real owner alert) so you can
- *    verify delivery end-to-end on your phone against production.
- *  - If this device is NOT subscribed yet, it force-shows the permission
- *    prompt below, even if it was previously dismissed, so you can opt in
- *    and re-test.
- * It never permanently changes behaviour for real users — the "dismissed"
- * flag is simply not written to localStorage while this param is active.
- */
-const QA_PUSH_TEST_PARAM = 'test_push'
+// Admin-only QA mode (?test_push=1) — see src/lib/push/qaTest.ts
 
 function urlBase64ToUint8Array(base64String: string) {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4)
@@ -50,7 +40,11 @@ async function triggerQaTestBookingPush() {
 
 export function PushNotificationPrompt() {
   const searchParams = useSearchParams()
-  const isQaPushTest = searchParams.get(QA_PUSH_TEST_PARAM) === '1'
+  const { data: session } = useSession()
+  const isQaPushTest = isPushQaTestActive(
+    searchParams.get(QA_PUSH_TEST_PARAM),
+    session?.user?.role,
+  )
 
   const [isVisible, setIsVisible] = useState(false)
   const [loading, setLoading] = useState(false)
