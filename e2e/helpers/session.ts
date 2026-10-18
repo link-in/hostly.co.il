@@ -1,6 +1,29 @@
 import type { BrowserContext } from '@playwright/test'
 import { encode } from 'next-auth/jwt'
-import { E2E_DEMO_USER, E2E_NEXTAUTH_SECRET } from '../constants'
+import { E2E_ADMIN_USER, E2E_DEMO_USER, E2E_NEXTAUTH_SECRET } from '../constants'
+
+type SessionUser = typeof E2E_DEMO_USER | typeof E2E_ADMIN_USER
+
+async function addSessionCookie(context: BrowserContext, baseURL: string, user: SessionUser): Promise<void> {
+  const token = await encode({
+    token: {
+      ...user,
+      sub: user.id,
+      issuedAt: Date.now(),
+    },
+    secret: E2E_NEXTAUTH_SECRET,
+  })
+
+  const { hostname } = new URL(baseURL)
+  const base = { value: token, domain: hostname, path: '/', httpOnly: true, sameSite: 'Lax' as const }
+
+  // `src/proxy.ts` reads the `__Secure-` cookie under `next start` (NODE_ENV=production),
+  // while NextAuth itself reads the plain name because NEXTAUTH_URL is http.
+  await context.addCookies([
+    { ...base, name: 'next-auth.session-token', secure: false },
+    { ...base, name: '__Secure-next-auth.session-token', secure: true },
+  ])
+}
 
 /**
  * Injects a signed NextAuth session-token cookie directly, bypassing the
@@ -9,26 +32,9 @@ import { E2E_DEMO_USER, E2E_NEXTAUTH_SECRET } from '../constants'
  * match is `NEXTAUTH_SECRET` (see `playwright.config.ts`'s `webServer.env`).
  */
 export async function signInAsDemoUser(context: BrowserContext, baseURL: string): Promise<void> {
-  const token = await encode({
-    token: {
-      ...E2E_DEMO_USER,
-      sub: E2E_DEMO_USER.id,
-      issuedAt: Date.now(),
-    },
-    secret: E2E_NEXTAUTH_SECRET,
-  })
+  await addSessionCookie(context, baseURL, E2E_DEMO_USER)
+}
 
-  const { hostname } = new URL(baseURL)
-
-  await context.addCookies([
-    {
-      name: 'next-auth.session-token',
-      value: token,
-      domain: hostname,
-      path: '/',
-      httpOnly: true,
-      secure: false,
-      sameSite: 'Lax',
-    },
-  ])
+export async function signInAsAdmin(context: BrowserContext, baseURL: string): Promise<void> {
+  await addSessionCookie(context, baseURL, E2E_ADMIN_USER)
 }

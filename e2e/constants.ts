@@ -16,3 +16,14 @@ export const E2E_DEMO_USER = {
   isDemo: true,
   subscriptionStatus: 'active' as const,
 }
+
+export const E2E_ADMIN_USER = {
+  id: 'e2e-admin-user',
+  email: 'e2e-admin@hostly.co.il',
+  displayName: 'E2E Admin',
+  propertyId: '',
+  roomId: '',
+  role: 'admin' as const,
+  isDemo: false,
+  subscriptionStatus: 'active' as const,
+}

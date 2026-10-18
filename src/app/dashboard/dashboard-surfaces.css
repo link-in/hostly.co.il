@@ -674,6 +674,52 @@ html::-webkit-scrollbar-thumb:hover {
   padding: 16px;
 }
 
+/* =====================================================
+   Admin Surfaces
+   Clean light admin pages that share the Hostly dashboard tokens
+   ===================================================== */
+.hostly-admin-root {
+  background: var(--hn-50);
+  color: var(--htxt-1);
+  font-family: var(--font-heebo), Heebo, system-ui, sans-serif;
+}
+
+.hostly-admin-root .btn-primary {
+  --bs-btn-bg: var(--hb);
+  --bs-btn-border-color: var(--hb);
+  --bs-btn-hover-bg: var(--hb-hover);
+  --bs-btn-hover-border-color: var(--hb-hover);
+  --bs-btn-active-bg: var(--hb-hover);
+  --bs-btn-active-border-color: var(--hb-hover);
+  --bs-btn-disabled-bg: var(--hb-200);
+  --bs-btn-disabled-border-color: var(--hb-200);
+}
+
+.hostly-admin-root .btn-outline-primary {
+  --bs-btn-color: var(--hb);
+  --bs-btn-border-color: var(--hb);
+  --bs-btn-hover-bg: var(--hb);
+  --bs-btn-hover-border-color: var(--hb);
+  --bs-btn-active-bg: var(--hb);
+  --bs-btn-active-border-color: var(--hb);
+}
+
+.hostly-admin-root .form-control,
+.hostly-admin-root .form-select {
+  border-color: var(--hborder);
+  color: var(--htxt-1);
+}
+
+.hostly-admin-root .form-control:focus,
+.hostly-admin-root .form-select:focus {
+  border-color: var(--hb);
+  box-shadow: 0 0 0 3px rgba(113, 51, 217, 0.12);
+}
+
+.hostly-admin-root .text-muted {
+  color: var(--htxt-3) !important;
+}
+
 .hostly-table thead th {
   background: var(--hn-50) !important;
   color: var(--htxt-3) !important;

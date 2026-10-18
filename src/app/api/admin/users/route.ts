@@ -5,6 +5,7 @@ import { createServiceRoleClient } from '@/lib/supabase/server'
 import { hashPassword } from '@/lib/auth/getUsersDb'
 import { createTrialSubscription } from '@/lib/auth/subscriptionDb'
 import type { User } from '@/lib/auth/types'
+import { validateOwnerPhone } from '@/lib/auth/ownerPhone'
 
 export const dynamic = 'force-dynamic'
 
@@ -71,6 +72,7 @@ export async function GET() {
         role: user.role,
         beds24Token: user.beds24_token,
         beds24RefreshToken: user.beds24_refresh_token,
+        onboardingCompletedAt: user.onboarding_completed_at ?? null,
         createdAt: user.created_at,
         updatedAt: user.updated_at,
         subscription: sub
@@ -135,6 +137,16 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // טלפון חובה ללקוח (לא אדמין): הוא יעד התראות ה-WhatsApp על הזמנות
+    let normalizedPhone: string | undefined = phoneNumber
+    if ((role || 'owner') !== 'admin') {
+      const phone = validateOwnerPhone(phoneNumber)
+      if (!phone.ok) {
+        return NextResponse.json({ error: phone.error }, { status: 400 })
+      }
+      normalizedPhone = phone.phone
+    }
+
     // Check if email already exists
     const supabase = createServiceRoleClient()
     const { data: existingUser } = await supabase
@@ -169,7 +181,7 @@ export async function POST(request: NextRequest) {
         property_id: propertyId,
         room_id: roomId,
         landing_page_url: landingPageUrl || null,
-        phone_number: phoneNumber || null,
+        phone_number: normalizedPhone || null,
         role: role || 'owner',
         beds24_token: beds24Token || null,
         beds24_refresh_token: beds24RefreshToken || null,

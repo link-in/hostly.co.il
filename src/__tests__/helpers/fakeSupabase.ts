@@ -2,7 +2,7 @@
  * Minimal in-memory fake of the subset of the Supabase JS query builder used
  * across the codebase: `.from(table).select().eq().eq().in().gte().lte()`,
  * `.order()`, `.limit()`, `.single()`/`.maybeSingle()`, `.update().eq().eq().in()`,
- * and `.upsert(rows, { onConflict, ignoreDuplicates })`.
+ * `.insert(row | rows)` and `.upsert(rows, { onConflict, ignoreDuplicates })`.
  *
  * This is NOT a full reimplementation of PostgREST — it only supports the
  * exact call shapes this codebase uses, which keeps it easy to reason about
@@ -20,7 +20,7 @@ interface OrderOptions {
   ascending?: boolean
 }
 
-type Mode = 'select' | 'update' | 'upsert'
+type Mode = 'select' | 'update' | 'upsert' | 'insert'
 type SingleMode = 'none' | 'single' | 'maybeSingle'
 
 type FakeResult = { data: FakeRow | FakeRow[] | null; error: { code?: string; message: string } | null }
@@ -97,6 +97,12 @@ class FakeQueryBuilder implements PromiseLike<FakeResult> {
     return this
   }
 
+  insert(rows: FakeRow | FakeRow[]): this {
+    this.mode = 'insert'
+    this.upsertRows = Array.isArray(rows) ? rows : [rows]
+    return this
+  }
+
   private conflictKeys(): string[] {
     return (this.upsertOpts.onConflict ?? 'id').split(',').map((k) => k.trim())
   }
@@ -120,6 +126,11 @@ class FakeQueryBuilder implements PromiseLike<FakeResult> {
   }
 
   private execute(): FakeResult {
+    if (this.mode === 'insert') {
+      this.upsertRows.forEach((row) => this.rows.push({ ...row }))
+      return { data: this.upsertRows, error: null }
+    }
+
     if (this.mode === 'upsert') {
       const keys = this.conflictKeys()
       for (const incoming of this.upsertRows) {
