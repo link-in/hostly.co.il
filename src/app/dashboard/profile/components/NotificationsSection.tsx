@@ -21,19 +21,9 @@ export function NotificationsSection({ values, onChange }: FormSectionProps) {
 
       <ProfileGroup
         title="התראות WhatsApp"
-        hint="הכנס מספר טלפון ישראלי — המערכת ממירה אוטומטית לפורמט בינלאומי."
+        hint="ההתראות נשלחות לטלפון הראשי שמוגדר ב״פרטים אישיים״. אפשר להוסיף כאן מספר נוסף שיקבל את אותן התראות."
       >
         <div className="profile-grid">
-          <TextField
-            id="profile-phone"
-            label="מספר WhatsApp ראשי"
-            type="tel"
-            ltr
-            placeholder="0528676516"
-            hint="המספר שמקבל את כל ההתראות"
-            value={values.phoneNumber}
-            onChange={(v) => onChange('phoneNumber', v)}
-          />
           <TextField
             id="profile-secondary-phone"
             label="מספר נוסף (מנהל / מארח) — אופציונלי"
