@@ -5,12 +5,12 @@ import { signInAsDemoUser } from './helpers/session'
  * HOS-9: booking requests / Airbnb inquiries must appear on the pricing
  * calendar in a distinct (amber) color, and Direct requests can be approved
  * in-app. Demo mock data for DEMO_ROOM_001 includes:
- *   - inquiry  2026-09-18..21  נועה ברק   (Airbnb — approve on channel)
- *   - request  2026-09-22..24  יואב מזרחי (Direct — approve via Beds24 API)
+ *   - inquiry  2026-11-18..21  נועה ברק   (Airbnb — approve on channel)
+ *   - request  2026-11-22..24  יואב מזרחי (Direct — approve via Beds24 API)
  */
 
-async function goToSeptember2026(page: import('@playwright/test').Page) {
-  const target = new Date(2026, 8, 1)
+async function goToMockRequestsMonth(page: import('@playwright/test').Page) {
+  const target = new Date(2026, 10, 1)
   const now = new Date()
   now.setDate(1)
   const months =
@@ -26,7 +26,7 @@ test.beforeEach(async ({ page, context, baseURL }) => {
   await signInAsDemoUser(context, baseURL!)
   await page.goto('/dashboard')
   await expect(page.getByTestId('calendar-day').first()).toBeVisible()
-  await goToSeptember2026(page)
+  await goToMockRequestsMonth(page)
 })
 
 test('shows Airbnb inquiry and Direct request bars in a distinct request color', async ({ page }) => {
@@ -57,7 +57,7 @@ test('Airbnb inquiry details point the host to approve on the channel', async ({
 
   const channelLink = page.getByTestId('calendar-channel-link')
   await expect(channelLink).toBeVisible()
-  await expect(channelLink).toHaveText('אשר באיירבנב')
+  await expect(channelLink).toHaveText('פתח בירור / ענה באיירביאנבי')
   await expect(channelLink).toHaveAttribute(
     'href',
     'https://www.airbnb.com/hosting/reservations/details/HMTESTREQUEST',
