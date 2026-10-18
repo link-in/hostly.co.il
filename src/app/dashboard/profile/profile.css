@@ -1,0 +1,483 @@
+/* =====================================================
+   אזור אישי — מבנה, ניווט מקטעים וטפסים
+   משתמש בטוקנים של dashboard-surfaces.css (--hb, --hn-*, --htxt-*)
+   ===================================================== */
+
+.profile-page {
+  min-height: 100vh;
+  background: var(--hn-50);
+  font-family: var(--font-heebo), Heebo, system-ui, sans-serif;
+  /* מונע גלישה אופקית בלי ליצור scroll container (שהיה שובר sticky) */
+  overflow-x: clip;
+}
+
+/* position: sticky (ניווט המקטעים וסרגל השמירה) לא עובד אם body/html הם scroll container.
+   בעמוד הזה מבטלים שם overflow-x כדי שהניווט יישאר קבוע גם בדפדפנים ללא תמיכה ב-clip. */
+html:has(.profile-page),
+body:has(.profile-page) {
+  overflow-x: visible;
+}
+
+/* ─── Layout: ניווט מקטעים + תוכן ─── */
+.profile-layout {
+  display: grid;
+  grid-template-columns: 232px minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+@media (max-width: 991px) {
+  .profile-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+  }
+}
+
+/* ─── Section nav ─── */
+.profile-nav {
+  position: sticky;
+  top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px;
+  background: var(--hsurf);
+  border: 1px solid var(--hborder);
+  border-radius: 12px;
+}
+
+.profile-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  color: var(--htxt-2);
+  font-size: 14px;
+  line-height: 1.3;
+  text-decoration: none !important;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s;
+}
+
+.profile-nav-item svg {
+  flex-shrink: 0;
+  color: var(--htxt-3);
+  transition: color 0.15s;
+}
+
+.profile-nav-item:hover {
+  background: var(--hn-100);
+  color: var(--htxt-1);
+}
+
+.profile-nav-item--active,
+.profile-nav-item--active:hover {
+  background: var(--hb-100);
+  color: var(--hb);
+  font-weight: 600;
+}
+
+.profile-nav-item--active svg {
+  color: var(--hb);
+}
+
+@media (max-width: 991px) {
+  .profile-nav {
+    top: 0;
+    z-index: 30;
+    flex-direction: row;
+    gap: 6px;
+    margin: 0 -12px;
+    padding: 8px 12px;
+    overflow-x: auto;
+    border-width: 0 0 1px;
+    border-radius: 0;
+    scrollbar-width: none;
+  }
+
+  .profile-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .profile-nav-item {
+    padding: 8px 12px;
+    border: 1px solid var(--hborder);
+    border-radius: 999px;
+    background: var(--hsurf);
+    font-size: 13px;
+  }
+
+  .profile-nav-item--active,
+  .profile-nav-item--active:hover {
+    border-color: var(--hb-200);
+  }
+}
+
+/* ─── Sections ─── */
+.profile-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
+.profile-section {
+  scroll-margin-top: 16px;
+  overflow: hidden;
+  background: var(--hsurf);
+  border: 1px solid var(--hborder);
+  border-radius: 12px;
+}
+
+@media (max-width: 991px) {
+  .profile-section {
+    scroll-margin-top: 64px;
+  }
+}
+
+.profile-section-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px 20px;
+  background: var(--hsurf-2);
+  border-bottom: 1px solid var(--hborder-light);
+}
+
+.profile-section-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--hb-100);
+  color: var(--hb);
+}
+
+.profile-section-title {
+  margin: 0;
+  color: var(--htxt-1);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.profile-section-desc {
+  margin: 2px 0 0;
+  color: var(--htxt-3);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.profile-section-body {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 20px;
+}
+
+@media (max-width: 575px) {
+  .profile-section-header,
+  .profile-section-body {
+    padding: 14px;
+  }
+}
+
+/* קבוצה פנימית בתוך מקטע (למשל "מכשיר זה" / "מספרי WhatsApp") */
+.profile-group {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.profile-group + .profile-group {
+  padding-top: 20px;
+  border-top: 1px solid var(--hborder-light);
+}
+
+.profile-group-title {
+  margin: 0;
+  color: var(--htxt-1);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.profile-group-hint {
+  margin: -8px 0 0;
+  color: var(--htxt-3);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.profile-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.profile-grid > .profile-field--full {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 767px) {
+  .profile-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ─── Fields ─── */
+.profile-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.profile-field-label {
+  margin: 0;
+  color: var(--htxt-1);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.profile-field-hint {
+  color: var(--htxt-3);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.profile-field .form-control,
+.profile-field .form-select {
+  min-height: 40px;
+  padding: 8px 12px;
+  background: #fff;
+  border: 1px solid var(--hborder);
+  border-radius: 8px;
+  color: var(--htxt-1);
+  font-size: 14px;
+  box-shadow: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.profile-field textarea.form-control {
+  min-height: 96px;
+  line-height: 1.6;
+  resize: vertical;
+}
+
+.profile-field .form-control:focus,
+.profile-field .form-select:focus {
+  border-color: var(--hb);
+  box-shadow: 0 0 0 3px rgba(113, 51, 217, 0.12);
+  outline: none;
+}
+
+.profile-field .form-control[readonly] {
+  background: var(--hn-100);
+  color: var(--htxt-2);
+  cursor: default;
+}
+
+.profile-field .form-control::placeholder {
+  color: var(--htxt-3);
+  opacity: 0.8;
+}
+
+/* ─── Rows / tiles ─── */
+.profile-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--hn-50);
+  border: 1px solid var(--hborder-light);
+  border-radius: 10px;
+}
+
+.profile-row--accent {
+  background: var(--hb-50);
+  border-color: var(--hb-200);
+}
+
+.profile-row--warm {
+  background: #fff7ed;
+  border-color: #fed7aa;
+}
+
+.profile-row-title {
+  color: var(--htxt-1);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.profile-row-text {
+  margin-top: 2px;
+  color: var(--htxt-3);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.profile-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ─── Main CTA — solid brand purple (matches admin primary) ─── */
+.profile-page .profile-cta.hostly-btn-primary {
+  background: var(--hb);
+  border-color: var(--hb);
+  color: #fff;
+}
+
+.profile-page .profile-cta.hostly-btn-primary:hover,
+.profile-page .profile-cta.hostly-btn-primary:focus-visible {
+  background: var(--hb-hover);
+  border-color: var(--hb-hover);
+  color: #fff;
+}
+
+.profile-page .profile-cta.hostly-btn-primary:disabled {
+  background: var(--hb-200);
+  border-color: var(--hb-200);
+  color: #fff;
+  opacity: 1;
+}
+
+.profile-page .profile-btn-danger-outline {
+  border-color: #fca5a5;
+  background: transparent;
+  color: #b91c1c;
+}
+
+.profile-page .profile-btn-danger-outline:hover {
+  background: #fef2f2;
+  border-color: #f87171;
+  color: #991b1b;
+}
+
+.profile-page .profile-btn-danger-solid {
+  border-color: #b91c1c;
+  background: #b91c1c;
+  color: #fff;
+}
+
+.profile-page .profile-btn-danger-solid:hover {
+  background: #991b1b;
+  border-color: #991b1b;
+  color: #fff;
+}
+
+.profile-link {
+  color: var(--hb);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* ─── Alerts ─── */
+.profile-alert {
+  padding: 10px 14px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.profile-alert--success {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+  color: #15803d;
+}
+
+.profile-alert--danger {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #b91c1c;
+}
+
+.profile-alert--info {
+  background: var(--hb-50);
+  border-color: var(--hb-200);
+  color: var(--hb-hover);
+}
+
+/* ─── Status badge ─── */
+.profile-badge {
+  display: inline-block;
+  padding: 3px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.profile-badge--success { background: #dcfce7; color: #15803d; }
+.profile-badge--info    { background: #dbeafe; color: #1d4ed8; }
+.profile-badge--warning { background: #fef3c7; color: #92400e; }
+.profile-badge--danger  { background: #fee2e2; color: #b91c1c; }
+
+/* ─── Subscription facts ─── */
+.profile-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 16px;
+}
+
+.profile-fact-label {
+  margin-bottom: 4px;
+  color: var(--htxt-3);
+  font-size: 12px;
+}
+
+.profile-fact-value {
+  color: var(--htxt-1);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.profile-fact-value--danger {
+  color: #b91c1c;
+}
+
+/* ─── Sticky save bar ─── */
+.profile-savebar {
+  position: sticky;
+  bottom: 16px;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--hsurf);
+  border: 1px solid var(--hb-200);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(47, 49, 51, 0.14);
+}
+
+.profile-savebar-text {
+  color: var(--htxt-1);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.profile-savebar-error {
+  margin-top: 2px;
+  color: #b91c1c;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+@media (max-width: 991px) {
+  /* מעל הניווט התחתון של המובייל */
+  .profile-savebar {
+    bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+  }
+}
