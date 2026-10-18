@@ -7,6 +7,15 @@
   min-height: 100vh;
   background: var(--hn-50);
   font-family: var(--font-heebo), Heebo, system-ui, sans-serif;
+  /* מונע גלישה אופקית בלי ליצור scroll container (שהיה שובר sticky) */
+  overflow-x: clip;
+}
+
+/* position: sticky (ניווט המקטעים וסרגל השמירה) לא עובד אם body/html הם scroll container.
+   בעמוד הזה מבטלים שם overflow-x כדי שהניווט יישאר קבוע גם בדפדפנים ללא תמיכה ב-clip. */
+html:has(.profile-page),
+body:has(.profile-page) {
+  overflow-x: visible;
 }
 
 /* ─── Layout: ניווט מקטעים + תוכן ─── */

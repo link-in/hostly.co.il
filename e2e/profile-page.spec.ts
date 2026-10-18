@@ -51,6 +51,16 @@ test('clicking a nav item jumps to its section and marks it active', async ({ pa
   await expect(page.locator('#security')).toBeInViewport()
 })
 
+test('section nav stays pinned while scrolling (desktop)', async ({ page }) => {
+  const nav = page.getByRole('navigation', { name: 'מקטעי האזור האישי' })
+  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight))
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(800)
+
+  await expect(nav).toBeInViewport({ ratio: 1 })
+  const box = await nav.boundingBox()
+  expect(box!.y).toBeLessThan(40)
+})
+
 test('save bar only appears when something changed and cancel restores the value', async ({ page }) => {
   const saveBar = page.getByRole('region', { name: 'שמירת שינויים' })
   await expect(saveBar).toHaveCount(0)
@@ -108,6 +118,15 @@ test('shows trial subscription details with an upgrade action', async ({ page })
 
 test.describe('mobile', () => {
   test.use({ viewport: { width: 390, height: 844 } })
+
+  test('chip bar stays pinned to the top while scrolling', async ({ page }) => {
+    const nav = page.getByRole('navigation', { name: 'מקטעי האזור האישי' })
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight))
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(800)
+
+    await expect(nav).toBeInViewport({ ratio: 1 })
+    expect((await nav.boundingBox())!.y).toBeLessThan(5)
+  })
 
   test('nav becomes a horizontal chip bar and the save bar stays above the bottom nav', async ({ page }) => {
     const nav = page.getByRole('navigation', { name: 'מקטעי האזור האישי' })
