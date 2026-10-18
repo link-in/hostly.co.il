@@ -247,18 +247,23 @@ export const tokenManager = new Beds24TokenManager()
  * Fetch with automatic token refresh on 401/502 errors
  * @param url - The URL to fetch
  * @param options - Fetch options
- * @param userTokens - Optional user-specific tokens (if not provided, uses global tokens)
+ * @param providedTokens - Optional user-specific tokens (if not provided, uses global tokens)
  * @param userId - Optional user ID for persisting refreshed tokens to database
  */
 export async function fetchWithTokenRefresh(
   url: string,
   options: RequestInit = {},
-  userTokens?: {
+  providedTokens?: {
     accessToken?: string
     refreshToken?: string
   },
   userId?: string
 ): Promise<Response> {
+  // ה-DB הוא מקור האמת לטוקנים של המשתמש; טוקנים שהגיעו מ-JWT ישן לא אמורים לקבוע (ראה userTokens.ts)
+  const userTokens = userId
+    ? await (await import('@/lib/beds24/userTokens')).resolveEffectiveUserTokens(userId, providedTokens)
+    : providedTokens
+
   // Determine which tokens to use
   const useUserTokens = userTokens?.accessToken && userTokens?.refreshToken
   
@@ -350,8 +355,8 @@ async function tryRefreshWithToken(
   // Persist the new access token to the database
   if (userId) {
     try {
-      const { updateUser } = await import('@/lib/auth/getUsersDb')
-      await updateUser(userId, { beds24Token: data.token })
+      const { saveUserAccessToken } = await import('@/lib/beds24/userTokens')
+      await saveUserAccessToken(userId, data.token)
       console.log('[Beds24] User token saved to database successfully')
     } catch (dbError) {
       console.error('[Beds24] Failed to save token to database:', dbError)

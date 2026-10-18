@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth/authOptions'
 import { createUser } from '@/lib/auth/getUsersDb'
 import { sendWelcomeEmail } from '@/lib/email/sendEmail'
+import { validateOwnerPhone } from '@/lib/auth/ownerPhone'
 
 export async function POST(request: Request) {
   try {
@@ -46,6 +47,17 @@ export async function POST(request: Request) {
       )
     }
     
+    // טלפון חובה ללקוח (לא אדמין): הוא יעד התראות ה-WhatsApp על הזמנות
+    const role = body.role || 'owner'
+    let phoneNumber: string | undefined = body.phoneNumber
+    if (role !== 'admin') {
+      const phone = validateOwnerPhone(body.phoneNumber)
+      if (!phone.ok) {
+        return NextResponse.json({ error: phone.error }, { status: 400 })
+      }
+      phoneNumber = phone.phone
+    }
+
     // Create user
     const newUser = await createUser({
       email,
@@ -56,8 +68,8 @@ export async function POST(request: Request) {
       propertyId,
       roomId,
       landingPageUrl: body.landingPageUrl,
-      phoneNumber: body.phoneNumber,
-      role: body.role || 'owner',
+      phoneNumber,
+      role,
       beds24Token: body.beds24Token,
       beds24RefreshToken: body.beds24RefreshToken,
       beds24AccountId: body.beds24AccountId,

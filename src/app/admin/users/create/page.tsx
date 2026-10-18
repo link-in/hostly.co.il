@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Check, Eye, EyeOff, Mail, RefreshCw, ShieldCheck, Sparkles, UserPlus } from 'lucide-react'
+import { validateOwnerPhone } from '@/lib/auth/ownerPhone'
 
 type WizardStep = 1 | 2
 
@@ -72,7 +73,7 @@ export default function CreateUserPage() {
 
   // ── Step validation ────────────────────────────────────────────────────────
   const canStep1 = formData.email.length > 3 && formData.password.length >= 6
-  const canStep2 = formData.displayName.trim().length > 0
+  const canStep2 = formData.displayName.trim().length > 0 && validateOwnerPhone(formData.phoneNumber).ok
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
@@ -285,9 +286,11 @@ export default function CreateUserPage() {
                               onChange={(e) => handleChange('lastName', e.target.value)} placeholder="ישראלי" />
                           </div>
                           <div className="col-md-6">
-                            <label className="form-label fw-semibold">טלפון</label>
-                            <input type="tel" className="form-control" value={formData.phoneNumber}
-                              onChange={(e) => handleChange('phoneNumber', e.target.value)} placeholder="+972501234567" />
+                            <label className="form-label fw-semibold">טלפון <span className="text-danger">*</span></label>
+                            <input type="tel" className="form-control" value={formData.phoneNumber} required
+                              aria-invalid={formData.phoneNumber.length > 0 && !validateOwnerPhone(formData.phoneNumber).ok}
+                              onChange={(e) => handleChange('phoneNumber', e.target.value)} placeholder="0501234567" />
+                            <div className="form-text">נדרש לקבלת התראות WhatsApp על הזמנות חדשות.</div>
                           </div>
                           <div className="col-md-6">
                             <label className="form-label fw-semibold">כתובת אתר</label>

@@ -6,6 +6,7 @@
 
 import { createServerClient, createServiceRoleClient } from '@/lib/supabase/server'
 import { buildOwnerPhoneList } from '@/lib/notifications/ownerPhones'
+import { roomFieldIncludes } from '@/lib/rooms/roomIds'
 
 export interface OwnerInfo {
   /** Host user id when resolved from DB (null for env fallback). */
@@ -40,19 +41,19 @@ export async function getUserIdByPropertyRoom(
 ): Promise<string | null> {
   try {
     const supabase = createServerClient()
+    // room_id יכול להיות "744952:שם" או רשימה — לכן מסננים בקוד ולא עם eq מדויק
     const { data, error } = await supabase
       .from('users')
-      .select('id')
+      .select('id, room_id')
       .eq('property_id', String(propertyId))
-      .eq('room_id', String(roomId))
-      .single()
 
-    if (error || !data) {
+    const match = (data ?? []).find((row) => roomFieldIncludes(row.room_id as string | null, roomId))
+    if (error || !match) {
       console.warn(`⚠️ No user found for property ${propertyId}, room ${roomId}`)
       return null
     }
 
-    return data.id
+    return match.id as string
   } catch (err) {
     console.error('getUserIdByPropertyRoom error:', err)
     return null

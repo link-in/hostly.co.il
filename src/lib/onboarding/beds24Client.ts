@@ -1,6 +1,7 @@
 import type { z } from 'zod'
 import { fetchWithTokenRefresh } from '@/lib/beds24/tokenManager'
 import { extractErrorMessages, isBeds24CreditError } from '@/lib/beds24/creditGuard'
+import { hasBeds24Failure } from '@/lib/beds24/responseFailure'
 import { BEDS24_BASE_URL } from './constants'
 import { assertCreditBudget, readCreditHeaders, recordCreditSnapshot } from './credits'
 import { logOnboardingCall } from './auditLog'
@@ -36,13 +37,7 @@ function parseBody(text: string): unknown {
   }
 }
 
-/** Beds24 reports per-item failures inside a 2xx body as `success: false`. */
-export function hasBeds24Failure(body: unknown): boolean {
-  const items = Array.isArray(body) ? body : [body]
-  return items.some(
-    (item) => !!item && typeof item === 'object' && (item as { success?: unknown }).success === false,
-  )
-}
+export { hasBeds24Failure }
 
 function describeFailure(status: number, body: unknown): string {
   const messages = extractErrorMessages(body).filter(Boolean)

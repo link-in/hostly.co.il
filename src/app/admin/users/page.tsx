@@ -633,10 +633,11 @@ export default function AdminUsersPage() {
                     </div>
 
                     <div className="col-md-6">
-                      <label className="form-label">טלפון</label>
+                      <label className="form-label">טלפון{!editingUser && ' *'}</label>
                       <input
                         type="tel"
                         className="form-control"
+                        required={!editingUser}
                         value={formData.phoneNumber}
                         onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
                       />

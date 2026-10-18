@@ -3,7 +3,8 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth/authOptions'
 import { fetchWithTokenRefresh } from '@/lib/beds24/tokenManager'
 import { overlayAvailabilityCache, writeCacheAvailability } from '@/lib/availability/blocking'
-import { detectAndMarkCreditError } from '@/lib/beds24/creditGuard'
+import { detectAndMarkCreditError, isBeds24CreditError } from '@/lib/beds24/creditGuard'
+import { describeBeds24Failure, hasBeds24Failure } from '@/lib/beds24/responseFailure'
 
 export const dynamic = 'force-dynamic'
 
@@ -432,7 +433,22 @@ export async function POST(request: Request) {
       )
     }
 
-    const data = await response.json()
+    // clone() כדי ש-detectAndMarkCreditError עדיין יוכל לקרוא את גוף התגובה
+    const data = await response.clone().json()
+
+    // Beds24 מחזירה 201 גם כשהעדכון נכשל (למשל "invalid roomId") — הכשל נמצא בגוף התגובה.
+    // אסור להציג הצלחה ואסור לכתוב ל-availability_cache במקרה כזה.
+    if (hasBeds24Failure(data)) {
+      await detectAndMarkCreditError(response, session?.user?.id)
+      return NextResponse.json(
+        {
+          error: `Beds24 דחתה את העדכון: ${describeBeds24Failure(data)}`,
+          details: data,
+          requestUrl: url.toString(),
+        },
+        { status: isBeds24CreditError(response.status, data) ? 402 : 502 }
+      )
+    }
 
     // Persist numAvail changes to availability_cache so the next GET reflects blocking state.
     // Beds24 calendar GET never returns numAvail, so we track it in Supabase.

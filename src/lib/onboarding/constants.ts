@@ -9,3 +9,7 @@ export const MIN_CREDITS_BEFORE_CALL = 10
 export const DEFAULT_BASE_PRICE_MONTHS = 12
 
 export const CALENDAR_API_KEY_NAME = 'לוח שנה'
+
+/** Beds24 booking webhook → Hostly (per property). Same config as the production reference property. */
+export const BOOKING_WEBHOOK_URL = process.env.HOSTLY_WEBHOOK_URL ?? 'https://app.hostly.co.il/api/webhook'
+export const BOOKING_WEBHOOK_VERSION = 'twoWithPersonalData'

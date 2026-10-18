@@ -10,6 +10,8 @@ import { addOrUpdateCustomer } from '@/lib/customers/addOrUpdateCustomer'
 import { normalizeBookingItem, extractBookingId, extractUserTokens } from '@/lib/bookings/normalizer'
 import { buildBookingsListUrl } from '@/lib/beds24/bookingsQuery'
 import { notifyOwnersOfBookingCancellation } from '@/lib/notifications/bookingAlerts'
+import { buildOwnerPhoneList } from '@/lib/notifications/ownerPhones'
+import { sendOwnerCopyOfGuestMessage } from '@/lib/notifications/ownerCopy'
 import { refreshRoomCache } from '@/lib/availability/cache'
 import { detectAndMarkCreditError } from '@/lib/beds24/creditGuard'
 
@@ -295,7 +297,7 @@ export async function POST(request: Request) {
     // Get owner info for room name and phone
     const ownerEmail = session?.user?.email
     console.log(`👤 Owner email: ${ownerEmail}`)
-    let ownerInfo = { phoneNumber: null as string | null, roomName: null as string | null }
+    let ownerInfo = { phoneNumber: null as string | null, phoneNumbers: [] as string[], roomName: null as string | null }
 
     if (ownerEmail) {
       try {
@@ -303,6 +305,7 @@ export async function POST(request: Request) {
         if (user) {
           ownerInfo = {
             phoneNumber: user.phoneNumber || null,
+            phoneNumbers: buildOwnerPhoneList(user.phoneNumber, user.secondaryPhoneNumber),
             roomName: user.displayName || null,
           }
           console.log(`📞 Owner info: phone=${ownerInfo.phoneNumber}, name=${ownerInfo.roomName}`)
@@ -324,12 +327,16 @@ export async function POST(request: Request) {
       error: 'No phone number',
     }
 
+    let guestMessage = ''
+    let guestMessageBookingId: string | number | null = null
+
     if (guestPhone) {
       const propertyName = ownerInfo.roomName || 'Mountain View'
 
       let message = `שלום ${guestName}! 🏔️\n\nקיבלנו את הזמנתך ב-${propertyName}.\n📅 תאריך כניסה: ${checkInDate}\n📅 תאריך יציאה: ${checkOutDate}\n\n`
 
       message += `נשמח לארח אותך! 🎉`
+      guestMessage = message
 
       const metaBookingId =
         typeof firstBooking.id === 'string' || typeof firstBooking.id === 'number'
@@ -337,6 +344,7 @@ export async function POST(request: Request) {
           : bookingId !== 'N/A'
             ? bookingId
             : (recordId ?? null)
+      guestMessageBookingId = metaBookingId
 
       whatsappResult = await sendWhatsAppMessage(
         {
@@ -357,8 +365,21 @@ export async function POST(request: Request) {
       console.warn('⚠️  Skipping guest WhatsApp - no phone number')
     }
 
-    // Skip owner notification for manual bookings (owner already knows - they created it!)
-    console.log('⏭️  Skipping owner WhatsApp for manual booking - owner created this booking themselves')
+    // העתק זהה של הודעת האורח לבעל הנכס — ביטחון שההזמנה נקלטה ושהאורח אכן קיבל הודעה.
+    // נשלח רק אחרי שהודעת האורח נשלחה בהצלחה, כדי שההעתק לא יטעה את הבעלים.
+    if (whatsappResult.success && guestMessage) {
+      const copyResults = await sendOwnerCopyOfGuestMessage({
+        ownerPhones: ownerInfo.phoneNumbers,
+        guestPhone,
+        message: guestMessage,
+        userId: session?.user?.id,
+        bookingId: guestMessageBookingId,
+        guestName,
+      })
+      for (const result of copyResults) {
+        console.log(`📋 Owner copy (${result.to}):`, result.success ? '✅ Sent' : `❌ Failed - ${result.error}`)
+      }
+    }
 
     // Update database with WhatsApp status
     if (recordId) {

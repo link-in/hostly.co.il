@@ -17,6 +17,7 @@ export type WhatsAppMessageType =
   | 'review_reminder_test'
   | 'public_booking_owner'
   | 'manual_booking_guest'
+  | 'manual_booking_owner_copy'
   | 'arrival_day_guest'
   | 'system_alert'
   | 'other'
