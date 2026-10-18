@@ -35,6 +35,15 @@ export async function signInAsDemoUser(context: BrowserContext, baseURL: string)
   await addSessionCookie(context, baseURL, E2E_DEMO_USER)
 }
 
+/** Same as above for an arbitrary session payload (e.g. a non-demo owner). */
+export async function signInAsUser(
+  context: BrowserContext,
+  baseURL: string,
+  user: SessionUser | (Omit<typeof E2E_DEMO_USER, 'isDemo'> & { isDemo: boolean }),
+): Promise<void> {
+  await addSessionCookie(context, baseURL, user as SessionUser)
+}
+
 export async function signInAsAdmin(context: BrowserContext, baseURL: string): Promise<void> {
   await addSessionCookie(context, baseURL, E2E_ADMIN_USER)
 }

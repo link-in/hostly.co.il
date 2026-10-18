@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { Bell, BellOff } from 'lucide-react'
+import { Button } from '@/components/ui'
 
 // You must expose the public VAPID key to the client
 const NEXT_PUBLIC_VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
@@ -120,50 +121,54 @@ export function PushNotificationManager() {
     }
   }
 
-  if (!isSupported) return null
+  if (!isSupported) {
+    return (
+      <div className="profile-row">
+        <div className="profile-row-text m-0">
+          הדפדפן או המכשיר הזה לא תומכים בהתראות Push. התראות WhatsApp ימשיכו להגיע כרגיל.
+        </div>
+      </div>
+    )
+  }
 
   return (
-    <div className="card shadow-sm border-0 mb-4" style={{ borderRadius: '12px' }}>
-      <div className="card-body p-3 p-md-4 d-flex align-items-center justify-content-between">
-        <div className="d-flex align-items-center gap-3">
-          <div 
-            className="d-flex align-items-center justify-content-center" 
-            style={{ 
-              width: '40px', height: '40px', borderRadius: '50%',
-              background: isSubscribed ? 'rgba(16, 185, 129, 0.15)' : 'rgba(113, 51, 217, 0.1)'
-            }}
-          >
-            {isSubscribed ? <Bell size={20} color="#10B981" /> : <BellOff size={20} color="#7133D9" />}
-          </div>
-          <div>
-            <h6 className="mb-0 fw-bold">התראות למכשיר (Push Notifications)</h6>
-            <div className="small text-muted mt-1">
-              {isSubscribed 
-                ? 'המכשיר הזה יקבל התראות על הזמנות ובקשות חדשות' 
-                : 'קבל התראה קופצת למסך כשיש הזמנה חדשה (מומלץ)'}
-            </div>
+    <div className="profile-row">
+      <div className="d-flex align-items-center gap-3">
+        <div
+          className="d-flex align-items-center justify-content-center flex-shrink-0"
+          style={{
+            width: '40px',
+            height: '40px',
+            borderRadius: '50%',
+            background: isSubscribed ? 'rgba(16, 185, 129, 0.15)' : 'var(--hb-100)',
+          }}
+        >
+          {isSubscribed ? <Bell size={20} color="#10B981" /> : <BellOff size={20} color="#7133D9" />}
+        </div>
+        <div>
+          <div className="profile-row-title">התראות למכשיר (Push)</div>
+          <div className="profile-row-text">
+            {isSubscribed
+              ? 'המכשיר הזה יקבל התראות על הזמנות ובקשות חדשות'
+              : 'קבל התראה קופצת למסך כשיש הזמנה חדשה (מומלץ)'}
           </div>
         </div>
-        
-        <div className="d-flex gap-2">
-          {isSubscribed && (
-            <button
-              onClick={handleTestNotification}
-              className="btn btn-sm btn-outline-primary"
-              style={{ borderRadius: '8px' }}
-            >
-              שלח בדיקה
-            </button>
-          )}
-          <button
-            onClick={isSubscribed ? handleUnsubscribe : handleSubscribe}
-            disabled={loading}
-            className={`btn btn-sm ${isSubscribed ? 'btn-outline-secondary' : 'btn-primary'}`}
-            style={{ borderRadius: '8px' }}
-          >
-            {loading ? 'טוען...' : isSubscribed ? 'בטל התראות' : 'הפעל התראות'}
-          </button>
-        </div>
+      </div>
+
+      <div className="profile-actions">
+        {isSubscribed && (
+          <Button variant="secondary" onClick={handleTestNotification}>
+            שלח בדיקה
+          </Button>
+        )}
+        <Button
+          variant={isSubscribed ? 'secondary' : 'primary'}
+          className={isSubscribed ? '' : 'profile-cta'}
+          onClick={isSubscribed ? handleUnsubscribe : handleSubscribe}
+          loading={loading}
+        >
+          {isSubscribed ? 'בטל התראות' : 'הפעל התראות'}
+        </Button>
       </div>
     </div>
   )
