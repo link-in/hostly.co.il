@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { Copy, ExternalLink } from 'lucide-react'
 import { PROPERTY_TYPES } from '@/lib/onboarding/schemas'
 import type { PropertyStepData } from '@/lib/onboarding/service'
 import { StepPanel } from './StepPanel'
@@ -26,6 +27,12 @@ export function PropertyStep({ api, overview, record, status, onChanged }: StepP
   const [name, setName] = useState(overview.client.displayName)
   const [propertyType, setPropertyType] = useState<(typeof PROPERTY_TYPES)[number]>('apartment')
   const [maxPeople, setMaxPeople] = useState(2)
+  const [authCopied, setAuthCopied] = useState(false)
+
+  async function copyAuthLink() {
+    await navigator.clipboard.writeText(overview.airbnbAuthUrl)
+    setAuthCopied(true)
+  }
 
   if (status === 'done') {
     return (
@@ -43,11 +50,38 @@ export function PropertyStep({ api, overview, record, status, onChanged }: StepP
 
   return (
     <StepPanel title="נכס וחדר ב-Beds24" status={status} savedError={record?.error} actionError={error}>
-      <div className="btn-group mb-3" role="group">
-        <button type="button" className={`btn btn-sm ${mode === 'create' ? 'btn-primary' : 'btn-outline-primary'}`} onClick={() => setMode('create')}>
+      <div
+        className="d-flex flex-column flex-sm-row gap-2 p-1 mb-4 rounded-4"
+        role="group"
+        aria-label="בחירת אופן יצירת הנכס"
+        style={{ background: 'var(--hn-50)', border: '1px solid var(--hborder-light)' }}
+      >
+        <button
+          type="button"
+          className="btn btn-sm border-0 flex-fill fw-semibold"
+          style={{
+            minHeight: 40,
+            borderRadius: 12,
+            background: mode === 'create' ? 'var(--hb)' : 'transparent',
+            color: mode === 'create' ? '#fff' : 'var(--hb)',
+            boxShadow: mode === 'create' ? '0 8px 18px rgba(113, 51, 217, 0.18)' : 'none',
+          }}
+          onClick={() => setMode('create')}
+        >
           יצירת נכס חדש
         </button>
-        <button type="button" className={`btn btn-sm ${mode === 'importAirbnb' ? 'btn-primary' : 'btn-outline-primary'}`} onClick={() => setMode('importAirbnb')}>
+        <button
+          type="button"
+          className="btn btn-sm border-0 flex-fill fw-semibold"
+          style={{
+            minHeight: 40,
+            borderRadius: 12,
+            background: mode === 'importAirbnb' ? 'var(--hb)' : 'transparent',
+            color: mode === 'importAirbnb' ? '#fff' : 'var(--hb)',
+            boxShadow: mode === 'importAirbnb' ? '0 8px 18px rgba(113, 51, 217, 0.18)' : 'none',
+          }}
+          onClick={() => setMode('importAirbnb')}
+        >
           ייבוא ממודעת Airbnb קיימת
         </button>
       </div>
@@ -81,9 +115,25 @@ export function PropertyStep({ api, overview, record, status, onChanged }: StepP
         </form>
       ) : (
         <>
-          <p className="text-muted small">
-            Beds24 תיצור את הנכס והחדר מתוך המודעה, ותחבר אותה מיד. מתאים ללקוח שכבר יש לו מודעה פעילה.
-          </p>
+          <div
+            className="rounded-4 p-3 mb-3"
+            style={{ background: 'var(--hb-50)', border: '1px solid var(--hb-200)' }}
+          >
+            <div className="fw-semibold mb-1" style={{ color: 'var(--htxt-1)' }}>ייבוא מחשבון Airbnb מחובר</div>
+            <p className="mb-3 small" style={{ color: 'var(--htxt-3)' }}>
+              אם החשבון עדיין לא מופיע, שלח ללקוח את קישור ההרשאה או פתח אותו בדפדפן. אחרי האישור טען את חשבונות Airbnb ובחר מודעה.
+            </p>
+            <div className="d-flex flex-wrap gap-2">
+              <button type="button" className="btn btn-outline-primary btn-sm d-inline-flex align-items-center gap-1" onClick={copyAuthLink}>
+                <Copy size={14} />
+                {authCopied ? 'הקישור הועתק' : 'העתק קישור הרשאה'}
+              </button>
+              <a className="btn btn-outline-primary btn-sm d-inline-flex align-items-center gap-1" href={overview.airbnbAuthUrl} target="_blank" rel="noreferrer">
+                <ExternalLink size={14} />
+                פתח הרשאת Airbnb
+              </a>
+            </div>
+          </div>
           <AirbnbListingPicker
             api={api}
             disabled={running}

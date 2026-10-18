@@ -17,21 +17,40 @@ function toId(value: unknown): string | undefined {
   return undefined
 }
 
+function firstRecord(value: unknown): Record<string, unknown> | undefined {
+  if (Array.isArray(value)) return asRecord(value[0])
+  return asRecord(value)
+}
+
+function idFromObject(value: unknown): string | undefined {
+  return toId(asRecord(value)?.id)
+}
+
 function idsFromNewObject(item: Record<string, unknown>): Partial<Beds24PropertyRoomIds> {
   const created = asRecord(item.new) ?? asRecord(item.modified)
   if (!created) return {}
-  const rooms = Array.isArray(created.roomTypes) ? created.roomTypes : []
+  const property = firstRecord(created.property ?? created.properties)
+  const room = firstRecord(
+    created.room
+      ?? created.rooms
+      ?? created.roomType
+      ?? created.roomTypes
+      ?? property?.room
+      ?? property?.rooms
+      ?? property?.roomType
+      ?? property?.roomTypes,
+  )
   return {
-    propertyId: toId(created.id),
-    roomId: toId(asRecord(rooms[0])?.id),
+    propertyId: toId(created.propertyId) ?? idFromObject(property) ?? toId(created.id),
+    roomId: toId(created.roomId ?? created.roomTypeId) ?? idFromObject(room),
   }
 }
 
 function idsFromFlatObject(item: Record<string, unknown>): Partial<Beds24PropertyRoomIds> {
   const nested = asRecord(item.data) ?? {}
   return {
-    propertyId: toId(item.propertyId ?? nested.propertyId),
-    roomId: toId(item.roomId ?? nested.roomId),
+    propertyId: toId(item.propertyId ?? item.propId ?? nested.propertyId ?? nested.propId),
+    roomId: toId(item.roomId ?? item.roomTypeId ?? nested.roomId ?? nested.roomTypeId),
   }
 }
 

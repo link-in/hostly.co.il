@@ -11,9 +11,9 @@ export default function AdminLayout({
   return (
     <SessionProvider>
       <div 
-        className="min-vh-100"
+        className="min-vh-100 hostly-admin-root"
         style={{ 
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
+          background: 'var(--hn-50)',
         }}
       >
         {children}

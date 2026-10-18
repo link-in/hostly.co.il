@@ -33,17 +33,30 @@ function firstString(record: Record<string, unknown>, keys: string[]): string | 
   return undefined
 }
 
+function nestedRecord(record: Record<string, unknown>, keys: string[]): Record<string, unknown> {
+  for (const key of keys) {
+    const value = record[key]
+    if (value && typeof value === 'object' && !Array.isArray(value)) {
+      return value as Record<string, unknown>
+    }
+  }
+  return {}
+}
+
 export function toAirbnbListingSummary(raw: Record<string, unknown>): AirbnbListingSummary | null {
-  const id = firstString(raw, ['airbnbListingId', 'listingId', 'id'])
+  const listing = { ...raw, ...nestedRecord(raw, ['airbnbListing', 'listing']) }
+  const id = firstString(listing, ['airbnbListingId', 'listingId', 'id'])
   if (!id) return null
-  const description = (raw.publicDescription ?? {}) as Record<string, unknown>
+  const description = nestedRecord(listing, ['publicDescription', 'description'])
+  const address = nestedRecord(listing, ['address'])
   return {
     airbnbListingId: id,
-    name: firstString(raw, ['name', 'nickname', 'title', 'listingName'])
+    name: firstString(listing, ['name', 'nickname', 'title', 'listingName'])
       ?? firstString(description, ['name', 'summary'])
       ?? `מודעה ${id}`,
-    address: firstString(raw, ['address', 'city', 'location', 'neighborhood']),
-    picture: firstString(raw, ['picture', 'photo', 'thumbnail', 'listingPicture']),
+    address: firstString(listing, ['address', 'city', 'location', 'neighborhood'])
+      ?? firstString(address, ['full', 'formatted', 'city', 'street']),
+    picture: firstString(listing, ['picture', 'photo', 'thumbnail', 'listingPicture']),
   }
 }
 
