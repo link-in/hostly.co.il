@@ -20,7 +20,14 @@ import {
   type OnboardingStepId,
   type SkippableStepId,
 } from './state'
-import { createPropertyWithRoom } from './steps/property'
+import type { OnboardingCallContext } from './beds24Client'
+import { resolveBeds24Tokens } from './tokens'
+import {
+  createPropertyWithRoom,
+  getExistingPropertyRoom,
+  listProperties,
+  type PropertySummary,
+} from './steps/property'
 import { setBasePrice } from './steps/pricing'
 import {
   connectAirbnbListing,
@@ -34,11 +41,17 @@ import {
 import { getAccountChannelLinks, getAirbnbRoomStatus } from './steps/channels'
 import { createCalendarApiKey, saveUserPropertyRoom, seedClientCache } from './steps/clientRecords'
 
+const PROPERTY_SOURCE = {
+  create: 'created',
+  importAirbnb: 'airbnbImport',
+  existing: 'existing',
+} as const satisfies Record<PropertyStepInput['mode'], string>
+
 export interface PropertyStepData extends Record<string, unknown> {
   propertyId: string
   roomId: string
   roomName: string
-  source: 'created' | 'airbnbImport'
+  source: (typeof PROPERTY_SOURCE)[keyof typeof PROPERTY_SOURCE]
 }
 
 export interface OnboardingOverview {
@@ -48,6 +61,8 @@ export interface OnboardingOverview {
   airbnbAuthUrl: string
   airbnbMultiplier: number
   credits: CreditSnapshot | null
+  /** True when the client has their own Beds24 (sub-)account tokens instead of the master account. */
+  usesOwnBeds24Account: boolean
 }
 
 function requirePropertyData(client: OnboardingClient): PropertyStepData {
@@ -65,6 +80,47 @@ export async function getOnboardingOverview(userId: string): Promise<OnboardingO
     airbnbAuthUrl: buildAirbnbOAuthUrl(client.propertyId ?? undefined),
     airbnbMultiplier: AIRBNB_PRICE_MULTIPLIER,
     credits: getLastCreditSnapshot(),
+    usesOwnBeds24Account: (await resolveBeds24Tokens(userId)) !== undefined,
+  }
+}
+
+export async function getAccountPropertiesForClient(userId: string): Promise<PropertySummary[]> {
+  return listProperties({ userId, step: 'property' })
+}
+
+async function resolvePropertyRoom(ctx: OnboardingCallContext, input: PropertyStepInput) {
+  switch (input.mode) {
+    case 'create':
+      return { ...(await createPropertyWithRoom(ctx, input)), roomName: input.name }
+    case 'importAirbnb':
+      return { ...(await importAirbnbListing(ctx, input)), roomName: input.listingName ?? '' }
+    case 'existing':
+      return getExistingPropertyRoom(ctx, input.propertyId, input.roomId)
+  }
+}
+
+async function markAirbnbConnectedFromImport(userId: string, input: Extract<PropertyStepInput, { mode: 'importAirbnb' }>) {
+  await saveStepRecord(userId, 'airbnbConnect', {
+    status: 'done',
+    data: {
+      airbnbUserId: input.airbnbUserId,
+      airbnbListingId: input.airbnbListingId,
+      listingName: input.listingName ?? null,
+    },
+  })
+}
+
+/** Best-effort: a failed channel lookup must not undo a property link that already succeeded. */
+async function markAirbnbConnectedIfDetected(userId: string, data: PropertyStepData) {
+  try {
+    const status = await getAirbnbRoomStatus({ userId, step: 'property' }, data.propertyId, data.roomId)
+    if (!status.connected) return
+    await saveStepRecord(userId, 'airbnbConnect', {
+      status: 'done',
+      data: { airbnbUserId: null, airbnbListingId: status.airbnbListingId, listingName: null, detectedFromBeds24: true },
+    })
+  } catch (err) {
+    console.warn('[onboarding] Airbnb detection for existing property failed:', err)
   }
 }
 
@@ -72,28 +128,14 @@ export async function runPropertyStep(userId: string, input: PropertyStepInput) 
   const ctx = { userId, step: 'property' }
 
   const result = await runOnboardingStep<PropertyStepData>(userId, 'property', async () => {
-    const ids = input.mode === 'create'
-      ? await createPropertyWithRoom(ctx, input)
-      : await importAirbnbListing(ctx, input)
-    const roomName = input.mode === 'create' ? input.name : (input.listingName ?? '')
-
-    await saveUserPropertyRoom(userId, ids.propertyId, ids.roomId, roomName || undefined)
-    return {
-      ...ids,
-      roomName,
-      source: input.mode === 'create' ? 'created' : 'airbnbImport',
-    }
+    const { propertyId, roomId, roomName } = await resolvePropertyRoom(ctx, input)
+    await saveUserPropertyRoom(userId, propertyId, roomId, roomName || undefined)
+    return { propertyId, roomId, roomName, source: PROPERTY_SOURCE[input.mode] }
   })
 
-  if (input.mode === 'importAirbnb' && !result.alreadyDone) {
-    await saveStepRecord(userId, 'airbnbConnect', {
-      status: 'done',
-      data: {
-        airbnbUserId: input.airbnbUserId,
-        airbnbListingId: input.airbnbListingId,
-        listingName: input.listingName ?? null,
-      },
-    })
+  if (!result.alreadyDone) {
+    if (input.mode === 'importAirbnb') await markAirbnbConnectedFromImport(userId, input)
+    if (input.mode === 'existing') await markAirbnbConnectedIfDetected(userId, result.data)
   }
   return result
 }

@@ -1,5 +1,7 @@
 import { beds24Request, type OnboardingCallContext } from '../beds24Client'
-import { parseCreatedPropertyRoomIds, type Beds24PropertyRoomIds } from '../beds24Response'
+import { extractCreatedIds, type Beds24PropertyRoomIds } from '../beds24Response'
+import { Beds24RequestError } from '../errors'
+import { findNewProperty, listPropertyRooms } from './property'
 import {
   airbnbListingsResponseSchema,
   airbnbUsersResponseSchema,
@@ -97,11 +99,16 @@ export async function connectAirbnbListing(
   })
 }
 
-/** Lets Beds24 create the property and room from an existing Airbnb listing. */
+/**
+ * Lets Beds24 create the property and room from an existing Airbnb listing.
+ * The import response shape is not documented, so when it carries no IDs the new
+ * property is found by diffing the account's properties before and after the import.
+ */
 export async function importAirbnbListing(
   ctx: OnboardingCallContext,
   listing: AirbnbListingRef,
 ): Promise<Beds24PropertyRoomIds> {
+  const before = await listPropertyRooms(ctx)
   const res = await beds24Request(ctx, {
     method: 'POST',
     path: '/channels/airbnb',
@@ -113,7 +120,21 @@ export async function importAirbnbListing(
     }],
     schema: multiplePostResponseSchema,
   })
-  return parseCreatedPropertyRoomIds(res)
+
+  const fromResponse = extractCreatedIds(res)
+  if (fromResponse.propertyId && fromResponse.roomId) {
+    return { propertyId: fromResponse.propertyId, roomId: fromResponse.roomId }
+  }
+
+  console.warn('[onboarding] importAsNewProperty response had no IDs:', JSON.stringify(res))
+  const found = findNewProperty(before, await listPropertyRooms(ctx))
+  if (!found) {
+    throw new Beds24RequestError(
+      'הייבוא נשלח ל-Beds24 אבל לא זוהה הנכס החדש. ייתכן שהנכס כבר נוצר – בדוק ב-Beds24 לפני ניסיון חוזר',
+      res,
+    )
+  }
+  return found
 }
 
 export async function setAirbnbMultiplier(

@@ -2,10 +2,12 @@
 
 import { useCallback, useEffect, useMemo, useState, type ComponentType } from 'react'
 import Link from 'next/link'
-import { Loader2 } from 'lucide-react'
+import { ArrowRight, Loader2, UserPlus } from 'lucide-react'
+import { Card, PageHeader } from '@/components/ui'
 import type { OnboardingStepId } from '@/lib/onboarding/state'
 import { createOnboardingApi, type OnboardingOverview } from '../onboardingApi'
 import { ProgressList } from './ProgressList'
+import { StatusBadge } from './StatusBadge'
 import type { StepStatus } from './stepMeta'
 import type { StepProps } from './stepProps'
 import { PropertyStep } from './PropertyStep'
@@ -63,32 +65,40 @@ export function OnboardingWizard({ userId }: { userId: string }) {
     return <div className="alert alert-danger">{loadError}</div>
   }
   if (!overview || !activeStep) {
-    return <div className="text-center py-5 text-white"><Loader2 size={32} className="spin" /></div>
+    return <div className="text-center py-5" style={{ color: 'var(--hb)' }}><Loader2 size={32} className="spin" /></div>
   }
 
   const statusOf = (step: OnboardingStepId): StepStatus => overview.steps[step]?.status ?? 'pending'
   const ActiveComponent = STEP_COMPONENTS[activeStep]
 
   return (
-    <div className="card border-0 shadow-lg" style={{ borderRadius: 16 }}>
-      <div className="card-header border-0 text-white d-flex justify-content-between align-items-center"
-        style={{ background: 'linear-gradient(135deg,#667eea,#764ba2)', borderRadius: '16px 16px 0 0', padding: '1.25rem 1.5rem' }}>
-        <div>
-          <h1 className="h5 mb-0 fw-bold">קליטת לקוח: {overview.client.displayName}</h1>
-          <small className="opacity-75">{overview.client.email}</small>
-        </div>
-        <div className="d-flex align-items-center gap-2">
-          {overview.client.completedAt && <span className="badge bg-success">פעיל</span>}
-          <Link href="/admin/users" className="btn btn-light btn-sm">← לרשימת הלקוחות</Link>
-        </div>
-      </div>
+    <>
+      <PageHeader
+        title={`קליטת לקוח: ${overview.client.displayName}`}
+        subtitle={overview.client.email}
+        icon={<UserPlus size={20} />}
+        actions={
+          <>
+            {overview.client.completedAt && <StatusBadge status="done" label="פעיל" />}
+            <Link href="/admin/users" className="hostly-btn hostly-btn-sm hostly-btn-on-light hostly-btn-ghost">
+              <ArrowRight size={14} /> לרשימת הלקוחות
+            </Link>
+          </>
+        }
+      />
 
-      <div className="card-body p-0">
+      <Card shadow>
         <div className="row g-0">
-          <div className="col-md-4 border-start p-3" style={{ background: '#fafbff' }}>
+          <div
+            className="col-md-4 p-3"
+            style={{ background: 'var(--hsurf-2)', borderLeft: '1px solid var(--hborder-light)', borderRadius: '0 10px 10px 0' }}
+          >
             <ProgressList stepOrder={overview.stepOrder} statusOf={statusOf} activeStep={activeStep} onSelect={setActiveStep} />
+            <p className="small mt-3 mb-0" style={{ color: 'var(--htxt-2)' }} data-testid="beds24-account-mode">
+              {overview.usesOwnBeds24Account ? 'עובד מול חשבון המשנה של הלקוח ב-Beds24' : 'עובד מול חשבון המאסטר ב-Beds24'}
+            </p>
             {overview.credits?.remaining != null && (
-              <p className="text-muted small mt-3 mb-0">
+              <p className="small mt-3 mb-0" style={{ color: 'var(--htxt-3)' }}>
                 קרדיטים שנותרו ב-Beds24: {overview.credits.remaining}{overview.credits.limit ? ` מתוך ${overview.credits.limit}` : ''}
               </p>
             )}
@@ -104,7 +114,7 @@ export function OnboardingWizard({ userId }: { userId: string }) {
             />
           </div>
         </div>
-      </div>
-    </div>
+      </Card>
+    </>
   )
 }

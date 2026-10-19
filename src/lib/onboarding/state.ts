@@ -13,7 +13,7 @@ export const ONBOARDING_STEPS = [
 ] as const
 export type OnboardingStepId = (typeof ONBOARDING_STEPS)[number]
 
-export const SKIPPABLE_STEPS = ['airbnbConnect', 'airbnbMultiplier', 'bookingCom'] as const
+export const SKIPPABLE_STEPS = ['basePrice', 'airbnbConnect', 'airbnbMultiplier', 'bookingCom'] as const
 export type SkippableStepId = (typeof SKIPPABLE_STEPS)[number]
 
 /** Steps that can safely be re-run after success (they overwrite, never duplicate). */

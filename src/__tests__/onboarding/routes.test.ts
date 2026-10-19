@@ -14,7 +14,7 @@ vi.mock('@/lib/supabase/server', () => ({ createServiceRoleClient: () => mocks.d
 vi.mock('@/lib/beds24/tokenManager', () => ({ fetchWithTokenRefresh: mocks.fetch }))
 
 import { GET as getOverview } from '@/app/api/admin/onboarding/[userId]/route'
-import { POST as postProperty } from '@/app/api/admin/onboarding/[userId]/property/route'
+import { GET as getProperties, POST as postProperty } from '@/app/api/admin/onboarding/[userId]/property/route'
 import { POST as postBasePrice } from '@/app/api/admin/onboarding/[userId]/base-price/route'
 import { GET as getListings } from '@/app/api/admin/onboarding/[userId]/airbnb/listings/route'
 import { POST as postSkip } from '@/app/api/admin/onboarding/[userId]/skip/route'
@@ -80,6 +80,12 @@ describe('onboarding routes – validation', () => {
     expect((await postSkip(jsonRequest('/x', { step: 'property' }), params())).status).toBe(422)
   })
 
+  it('returns 422 for an existing property with non-numeric IDs', async () => {
+    const res = await postProperty(jsonRequest('/x', { mode: 'existing', propertyId: 'abc', roomId: '1' }), params())
+    expect(res.status).toBe(422)
+    expect(mocks.fetch).not.toHaveBeenCalled()
+  })
+
   it('returns 422 for a non-numeric Airbnb user ID', async () => {
     const res = await getListings(new Request('http://localhost/x?airbnbUserId=abc'), params())
     expect(res.status).toBe(422)
@@ -104,6 +110,25 @@ describe('onboarding routes – flow', () => {
     const overview = await (await getOverview(new Request('http://localhost/x'), params())).json()
     expect(overview.client).toMatchObject({ propertyId: '301', roomId: '601:Villa Dafna' })
     expect(overview.steps.property.status).toBe('done')
+  })
+
+  it('lists the account properties for the existing-property picker', async () => {
+    mocks.fetch.mockImplementation(
+      createFakeBeds24({ 'GET /properties': { body: { data: [{ id: 501, name: 'Loft', roomTypes: [{ id: 901 }] }] } } }).fetchImpl,
+    )
+
+    const res = await getProperties(new Request('http://localhost/x'), params())
+
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({
+      properties: [{ propertyId: '501', name: 'Loft', rooms: [{ roomId: '901', name: 'חדר 901' }] }],
+    })
+  })
+
+  it('base price can be skipped once the property is linked', async () => {
+    await postProperty(jsonRequest('/x', { mode: 'create', name: 'Villa Dafna' }), params())
+    const res = await postSkip(jsonRequest('/x', { step: 'basePrice' }), params())
+    expect(res.status).toBe(200)
   })
 
   it('admin create-property returns the new property and room IDs', async () => {
