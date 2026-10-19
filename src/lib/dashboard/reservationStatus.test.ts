@@ -46,8 +46,13 @@ describe('canConfirmViaBeds24Api', () => {
     expect(canConfirmViaBeds24Api('request')).toBe(true)
   })
 
-  it('does not allow confirming an Airbnb inquiry via Beds24', () => {
-    expect(canConfirmViaBeds24Api('inquiry')).toBe(false)
+  it('allows approving an Airbnb request-to-book (imported as inquiry) via POST /bookings', () => {
+    expect(canConfirmViaBeds24Api('inquiry')).toBe(true)
+  })
+
+  it('does not allow confirming statuses that are already final', () => {
+    expect(canConfirmViaBeds24Api('confirmed')).toBe(false)
+    expect(canConfirmViaBeds24Api('cancelled')).toBe(false)
   })
 })
 

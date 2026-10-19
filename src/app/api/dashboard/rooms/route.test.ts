@@ -103,6 +103,28 @@ describe('POST /api/dashboard/rooms — blocking', () => {
   })
 })
 
+describe('POST /api/dashboard/rooms — Beds24 soft failure', () => {
+  it('returns an error (and skips availability_cache) when Beds24 answers 201 with success:false', async () => {
+    // Regression: a token from the wrong Beds24 account gets 201 + "invalid roomId".
+    vi.mocked(fetchWithTokenRefresh).mockImplementation(async () =>
+      jsonResponse(
+        [{ success: false, errors: [{ action: 'process inventory rooms calendar', message: 'invalid roomId' }] }],
+        201,
+      ),
+    )
+
+    const payload = [
+      { roomId: BEDS24_ROOM_ID, calendar: [{ from: '2026-07-12', to: '2026-07-12', price1: 600, numAvail: 1 }] },
+    ]
+    const response = await POST(postRequest(payload))
+
+    expect(response.status).toBe(502)
+    const body = await response.json()
+    expect(body.error).toContain('invalid roomId')
+    expect(fakeClient.__table('availability_cache')).toHaveLength(0)
+  })
+})
+
 describe('GET /api/dashboard/rooms — overlay', () => {
   it('shows a manually-blocked date as numAvail:0 even though Beds24 never returns it', async () => {
     // Beds24's calendar GET only ever returns price overrides for July 11-15 —

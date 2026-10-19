@@ -118,6 +118,19 @@ describe('full onboarding flow on the master account', () => {
       accountLinks: { airbnb: 4, booking: 2 },
     })
 
+    // finalize מגדיר את ה-webhook של Beds24 על הנכס (קריאה שנייה ל-POST /properties, אחרי היצירה)
+    expect(beds24.callsTo('POST', '/properties')[1].body).toEqual([
+      {
+        id: 301,
+        webhooks: {
+          url: 'https://app.hostly.co.il/api/webhook',
+          version: 'twoWithPersonalData',
+          additionalData: 'none',
+          customHeader: '',
+        },
+      },
+    ])
+
     expect(mocks.refreshRoomCache).toHaveBeenCalledWith(USER_ID, '301', '601', '', '')
     expect(finalize.apiKey).toBe('hk_test_key')
     expect(db.__table('api_keys')).toEqual([
@@ -347,6 +360,18 @@ describe('step ordering and repeats', () => {
     const again = await runFinalizeStep(USER_ID)
     expect(again).toMatchObject({ alreadyDone: true, apiKey: null })
     expect(db.__table('api_keys')).toHaveLength(1)
+  })
+
+  it('stops finalize before creating an API key when the webhook cannot be set', async () => {
+    useBeds24()
+    await runPropertyStep(USER_ID, createInput)
+    await runBasePriceStep(USER_ID, { price: 500, minStay: 1, months: 12 })
+
+    useBeds24({ 'POST /properties': { body: [{ success: false, errors: [{ message: 'no access' }] }] } })
+    await expect(runFinalizeStep(USER_ID)).rejects.toThrow(Beds24RequestError)
+
+    expect(db.__table('api_keys')).toHaveLength(0)
+    expect(user().onboarding_completed_at ?? null).toBeNull()
   })
 
   it('stores a cache warning without failing finalize', async () => {

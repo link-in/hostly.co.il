@@ -15,20 +15,16 @@ export function AdminPushTestLink() {
   if (!canRunPushQaTest(session?.user?.role)) return null
 
   return (
-    <div
-      className="d-flex align-items-center justify-content-between gap-3 flex-wrap mb-4 p-3"
-      style={{ borderRadius: '12px', background: '#f4f1fb', border: '1px solid #e8e3f5' }}
-    >
+    <div className="profile-row profile-row--accent">
       <div>
-        <div className="fw-bold" style={{ color: '#5b3aa8' }}>בדיקת התראות (אדמין)</div>
-        <div className="small text-muted">
+        <div className="profile-row-title">בדיקת התראות (אדמין)</div>
+        <div className="profile-row-text">
           שולח התראת הזמנה מדומה למכשיר, ואם ההתראות עוד לא אושרו - מציג את בקשת האישור.
         </div>
       </div>
       <Link
         href={QA_PUSH_TEST_HREF}
-        className="btn btn-sm d-inline-flex align-items-center gap-2"
-        style={{ borderRadius: '10px', background: '#7133D9', color: '#fff', fontWeight: 600 }}
+        className="hostly-btn hostly-btn-on-light hostly-btn-secondary"
       >
         <FlaskConical size={15} />
         הרץ בדיקה

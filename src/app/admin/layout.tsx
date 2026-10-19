@@ -11,7 +11,7 @@ export default function AdminLayout({
   return (
     <SessionProvider>
       <div 
-        className="min-vh-100"
+        className="min-vh-100 hostly-admin-root"
         style={{ 
           background: 'var(--hn-50)',
         }}

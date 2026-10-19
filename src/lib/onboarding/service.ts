@@ -29,6 +29,7 @@ import {
   type PropertySummary,
 } from './steps/property'
 import { setBasePrice } from './steps/pricing'
+import { setBookingWebhook } from './steps/webhook'
 import {
   connectAirbnbListing,
   importAirbnbListing,
@@ -215,10 +216,12 @@ export async function runFinalizeStep(userId: string) {
   let apiKey: string | null = null
 
   const result = await runOnboardingStep(userId, 'finalize', async () => {
+    // קודם ה-webhook: אם ההגדרה נכשלת הסיום נעצר לפני שנוצר מפתח API או סומן כהושלם, וניתן לנסות שוב
+    const webhook = await setBookingWebhook({ userId, step: 'finalize' }, propertyId)
     const cache = await seedClientCache(userId, propertyId, roomId)
     apiKey = await createCalendarApiKey(userId, roomId)
     await markOnboardingCompleted(userId)
-    return { cachedDays: cache.upserted, cacheWarning: cache.warning, apiKeyCreated: true }
+    return { cachedDays: cache.upserted, cacheWarning: cache.warning, apiKeyCreated: true, webhookUrl: webhook.url }
   })
 
   return { ...result, apiKey }

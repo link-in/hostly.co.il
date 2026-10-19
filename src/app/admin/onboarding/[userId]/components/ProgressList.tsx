@@ -1,7 +1,6 @@
 'use client'
 
 import { Check, X, Minus } from 'lucide-react'
-import { colors } from '@/lib/design-system'
 import type { OnboardingStepId } from '@/lib/onboarding/state'
 import { STEP_LABELS, type StepStatus } from './stepMeta'
 
@@ -20,10 +19,17 @@ function StatusIcon({ status, index }: { status: StepStatus; index: number }) {
 }
 
 const CIRCLE_BG: Record<StepStatus, string> = {
-  done: colors.semantic.success,
-  failed: colors.semantic.danger,
-  skipped: colors.neutral[300],
-  pending: colors.neutral[200],
+  done: '#DCFCE7',
+  failed: '#FEE2E2',
+  skipped: '#F2F6FA',
+  pending: '#FFFFFF',
+}
+
+const CIRCLE_COLOR: Record<StepStatus, string> = {
+  done: '#15803d',
+  failed: '#dc2626',
+  skipped: 'var(--htxt-3)',
+  pending: 'var(--htxt-3)',
 }
 
 export function ProgressList({ stepOrder, statusOf, activeStep, onSelect }: ProgressListProps) {
@@ -36,11 +42,13 @@ export function ProgressList({ stepOrder, statusOf, activeStep, onSelect }: Prog
           <li key={step}>
             <button
               type="button"
-              className="btn w-100 text-start d-flex align-items-center gap-2 py-2 border-0"
+              className="btn w-100 text-start d-flex align-items-center gap-3 py-2 px-2"
               style={{
-                background: isActive ? 'var(--hb-100)' : 'transparent',
-                color: isActive ? 'var(--hb)' : 'var(--htxt-2)',
-                borderRadius: 10,
+                background: isActive ? 'var(--hsurf)' : 'transparent',
+                borderRadius: 14,
+                border: isActive ? '1px solid var(--hb-200)' : '1px solid transparent',
+                boxShadow: isActive ? '0 10px 22px rgba(47,49,51,0.06)' : 'none',
+                color: isActive ? 'var(--htxt-1)' : 'var(--htxt-2)',
               }}
               onClick={() => onSelect(step)}
               aria-current={isActive ? 'step' : undefined}
@@ -48,13 +56,15 @@ export function ProgressList({ stepOrder, statusOf, activeStep, onSelect }: Prog
               <span
                 className="d-inline-flex align-items-center justify-content-center fw-bold"
                 style={{
-                  width: 26, height: 26, borderRadius: '50%', fontSize: 12, flexShrink: 0,
-                  background: CIRCLE_BG[status], color: status === 'pending' ? colors.neutral[600] : 'white',
+                  width: 30, height: 30, borderRadius: '50%', fontSize: 12, flexShrink: 0,
+                  background: isActive && status === 'pending' ? 'var(--hb-100)' : CIRCLE_BG[status],
+                  color: isActive && status === 'pending' ? 'var(--hb)' : CIRCLE_COLOR[status],
+                  border: status === 'pending' ? '1px solid var(--hborder)' : '1px solid transparent',
                 }}
               >
                 <StatusIcon status={status} index={index} />
               </span>
-              <span style={{ fontSize: 14, fontWeight: isActive ? 700 : 500 }}>{STEP_LABELS[step]}</span>
+              <span className={isActive ? 'fw-bold' : 'fw-semibold'} style={{ fontSize: 14 }}>{STEP_LABELS[step]}</span>
             </button>
           </li>
         )

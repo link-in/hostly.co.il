@@ -25,6 +25,17 @@ describe('extractCreatedIds', () => {
     expect(extractCreatedIds({ data: { propertyId: 7, roomId: 8 } })).toEqual({ propertyId: '7', roomId: '8' })
   })
 
+  it('reads nested property and room shapes returned by Airbnb import', () => {
+    expect(extractCreatedIds([{ success: true, new: { property: { id: 401, roomTypes: [{ id: 801 }] } } }])).toEqual({
+      propertyId: '401',
+      roomId: '801',
+    })
+    expect(extractCreatedIds([{ success: true, new: { properties: [{ id: 402, rooms: [{ id: 802 }] }] } }])).toEqual({
+      propertyId: '402',
+      roomId: '802',
+    })
+  })
+
   it('returns only the property ID when no room is present', () => {
     expect(extractCreatedIds([{ new: { id: 301 } }])).toEqual({ propertyId: '301', roomId: undefined })
   })
@@ -103,6 +114,22 @@ describe('toAirbnbListingSummary', () => {
       name: 'Loft',
       address: 'Haifa',
       picture: undefined,
+    })
+  })
+
+  it('normalises nested Beds24 airbnbListing payloads', () => {
+    expect(toAirbnbListingSummary({
+      airbnbListing: {
+        listingId: '555',
+        name: 'Villa on the river',
+        address: { city: 'Dafna' },
+        picture: 'https://example.test/listing.jpg',
+      },
+    })).toEqual({
+      airbnbListingId: '555',
+      name: 'Villa on the river',
+      address: 'Dafna',
+      picture: 'https://example.test/listing.jpg',
     })
   })
 

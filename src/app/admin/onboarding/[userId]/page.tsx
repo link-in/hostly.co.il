@@ -7,15 +7,15 @@ export default function OnboardingPage({ params }: { params: Promise<{ userId: s
   const { userId } = use(params)
 
   return (
-    <div
-      dir="rtl"
-      className="min-vh-100"
-      style={{ background: 'var(--hn-50)', fontFamily: 'var(--font-heebo), Heebo, system-ui, sans-serif' }}
-    >
-      <div className="container py-4" style={{ maxWidth: 1100 }}>
-        <OnboardingWizard userId={userId} />
+    <div dir="rtl" style={{ minHeight: '100vh', background: 'var(--hn-50)', color: 'var(--htxt-1)' }}>
+      <div className="container py-5">
+        <div className="row justify-content-center">
+          <div className="col-xl-11">
+            <OnboardingWizard userId={userId} />
+          </div>
+        </div>
+        <style>{`.spin { animation: spin .8s linear infinite; } @keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
-      <style>{`.spin { animation: spin .8s linear infinite; } @keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   )
 }

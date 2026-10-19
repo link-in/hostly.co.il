@@ -4,6 +4,7 @@ import GoogleProvider from 'next-auth/providers/google'
 import { getUserByEmailForAuth, verifyPassword, toAuthUser, findOrCreateGoogleUser } from './getUsersDb'
 import { getActiveSubscription } from './subscriptionDb'
 import type { AuthUser } from './types'
+import { isPropertyRoomSyncDue, loadPropertyRoom } from './syncPropertyRoom'
 
 declare module 'next-auth' {
   interface Session {
@@ -13,7 +14,9 @@ declare module 'next-auth' {
 }
 
 declare module 'next-auth/jwt' {
-  interface JWT extends AuthUser {}
+  interface JWT extends AuthUser {
+    propertyRoomSyncedAt?: number
+  }
 }
 
 export const authOptions: NextAuthOptions = {
@@ -173,7 +176,17 @@ export const authOptions: NextAuthOptions = {
           token.roomId = session.roomId
         }
       }
-      
+
+      // רענון הנכס/החדר מה-DB (למשל אחרי שאדמין סיים onboarding כשהמשתמש כבר מחובר)
+      if (token.id && isPropertyRoomSyncDue(token.propertyRoomSyncedAt)) {
+        const fresh = await loadPropertyRoom(token.id)
+        if (fresh) {
+          token.propertyId = fresh.propertyId
+          token.roomId = fresh.roomId
+        }
+        token.propertyRoomSyncedAt = Date.now()
+      }
+
       return token
     },
     async session({ session, token }) {

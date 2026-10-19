@@ -58,11 +58,29 @@ export function PropertyStep({ api, overview, record, status, onChanged }: StepP
 
   return (
     <StepPanel title="נכס וחדר ב-Beds24" status={status} savedError={record?.error} actionError={error}>
-      <div className="d-flex flex-wrap gap-2 mb-3" role="group">
+      <div
+        className="d-flex flex-column flex-sm-row gap-2 p-1 mb-4 rounded-4"
+        role="group"
+        aria-label="בחירת אופן יצירת הנכס"
+        style={{ background: 'var(--hn-50)', border: '1px solid var(--hborder-light)' }}
+      >
         {(Object.keys(MODE_LABELS) as Mode[]).map((m) => (
-          <Button key={m} type="button" size="sm" variant={mode === m ? 'primary' : 'outline'} aria-pressed={mode === m} onClick={() => setMode(m)}>
+          <button
+            key={m}
+            type="button"
+            className="btn btn-sm border-0 flex-fill fw-semibold"
+            aria-pressed={mode === m}
+            style={{
+              minHeight: 40,
+              borderRadius: 12,
+              background: mode === m ? 'var(--hb)' : 'transparent',
+              color: mode === m ? '#fff' : 'var(--hb)',
+              boxShadow: mode === m ? '0 8px 18px rgba(113, 51, 217, 0.18)' : 'none',
+            }}
+            onClick={() => setMode(m)}
+          >
             {MODE_LABELS[m]}
-          </Button>
+          </button>
         ))}
       </div>
 
@@ -111,13 +129,16 @@ export function PropertyStep({ api, overview, record, status, onChanged }: StepP
         </form>
       ) : (
         <>
-          <p className="text-muted small">
-            Beds24 תיצור את הנכס והחדר מתוך המודעה, ותחבר אותה מיד. מתאים ללקוח שכבר יש לו מודעה פעילה.
-          </p>
-          <h6 className="fw-semibold">שלב א – הרשאה מהלקוח</h6>
-          <AirbnbAuthLink authUrl={overview.airbnbAuthUrl} />
-          <h6 className="fw-semibold">שלב ב – בחירת המודעה</h6>
-          <AirbnbListingPicker
+          <div
+            className="rounded-4 p-3 mb-3"
+            style={{ background: 'var(--hb-50)', border: '1px solid var(--hb-200)' }}
+          >
+            <div className="fw-semibold mb-1" style={{ color: 'var(--htxt-1)' }}>ייבוא מחשבון Airbnb מחובר</div>
+            <p className="mb-2 small" style={{ color: 'var(--htxt-3)' }}>
+              Beds24 תיצור את הנכס והחדר מתוך המודעה ותחבר אותה מיד. אחרי אישור ההרשאה טען את חשבונות Airbnb ובחר מודעה.
+            </p>
+            <AirbnbAuthLink authUrl={overview.airbnbAuthUrl} />
+          </div>          <AirbnbListingPicker
             api={api}
             disabled={running}
             onPick={(listing) => run(() => api.createProperty({ mode: 'importAirbnb', ...listing }))}

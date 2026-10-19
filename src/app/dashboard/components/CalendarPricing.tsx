@@ -3,6 +3,7 @@ import { Tag, Lock, Unlock, ExternalLink, Check } from 'lucide-react'
 import { createPortal } from 'react-dom'
 import type { Reservation, ReservationStatus, RoomPrice } from '@/lib/dashboard/types'
 import { formatCurrency, formatStatus } from '@/lib/dashboard/utils'
+import { readApiError } from '@/lib/dashboard/apiError'
 import { channelLinkLabel, channelApproveLabel } from '@/lib/dashboard/channelLinks'
 import { useHolidays } from '@/hooks/useHolidays'
 import HolidayIndicator from '@/components/HolidayIndicator'
@@ -264,8 +265,7 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated, onApproveReque
         body: JSON.stringify(payload),
       })
       if (!response.ok) {
-        const details = await response.text()
-        throw new Error(details || 'Failed to update prices')
+        throw new Error(await readApiError(response, 'עדכון המחיר נכשל'))
       }
       const result = await response.json()
       if (result && typeof result === 'object' && (result as { success?: boolean; error?: string }).success === false) {
@@ -348,8 +348,7 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated, onApproveReque
         body: JSON.stringify(payload),
       })
       if (!response.ok) {
-        const details = await response.text()
-        throw new Error(details || 'סגירת התאריכים נכשלה')
+        throw new Error(await readApiError(response, 'סגירת התאריכים נכשלה'))
       }
 
       // Optimistic update — block dates in local state immediately for instant feedback
@@ -420,8 +419,7 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated, onApproveReque
         body: JSON.stringify(payload),
       })
       if (!response.ok) {
-        const details = await response.text()
-        throw new Error(details || 'שחרור החסימה נכשל')
+        throw new Error(await readApiError(response, 'שחרור החסימה נכשל'))
       }
 
       // Remove from optimistic local blocks
