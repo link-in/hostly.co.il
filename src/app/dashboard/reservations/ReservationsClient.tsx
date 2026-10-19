@@ -1,118 +1,65 @@
 'use client'
 
-import React, { useEffect, useMemo, useState } from 'react'
-import Link from 'next/link'
-import { useSession, signOut } from 'next-auth/react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
+import { ClipboardList } from 'lucide-react'
 import type { Reservation } from '@/lib/dashboard/types'
-import { formatCurrency, formatStatus } from '@/lib/dashboard/utils'
 import { getDashboardProvider } from '@/lib/dashboard/getDashboardProvider'
+import {
+  DEFAULT_COMMISSION_RATES,
+  calculateReservationStats,
+  filterReservations,
+  hasActiveFilters,
+  sortReservations,
+  type CommissionRates,
+  type ReservationFilters as Filters,
+  type ReservationSortField,
+  type SortDirection,
+} from '@/lib/dashboard/reservationsList'
+import { markNewReservations, markReservationAsViewed } from '@/lib/dashboard/viewedReservations'
 import DashboardHeader from '@/components/DashboardHeader'
 import DashboardLoader from '@/components/DashboardLoader'
+import { DataTable, PageHeader } from '@/components/ui'
 import RoomTabs from '../components/RoomTabs'
 import { useSelectedRoom } from '@/lib/rooms/RoomContext'
-import { RefreshCw, Calendar, Banknote, Sparkles, ArrowUp, ArrowDown } from 'lucide-react'
+import ReservationsStats from './components/ReservationsStats'
+import ReservationsFilters from './components/ReservationsFilters'
+import { NewReservationBadge } from './components/ReservationBadges'
+import { buildReservationColumns } from './components/reservationColumns'
 
-// LocalStorage key for viewed reservations
-const VIEWED_RESERVATIONS_KEY = 'hostly_viewed_reservations'
-
-// Get list of viewed reservation IDs
-const getViewedReservations = (): Set<string> => {
-  if (typeof window === 'undefined') return new Set()
-  try {
-    const stored = localStorage.getItem(VIEWED_RESERVATIONS_KEY)
-    return stored ? new Set(JSON.parse(stored)) : new Set()
-  } catch {
-    return new Set()
-  }
-}
-
-// Mark reservation as viewed
-const markReservationAsViewed = (reservationId: string) => {
-  if (typeof window === 'undefined') return
-  try {
-    const viewed = getViewedReservations()
-    viewed.add(reservationId)
-    localStorage.setItem(VIEWED_RESERVATIONS_KEY, JSON.stringify([...viewed]))
-  } catch (error) {
-    console.error('Failed to mark reservation as viewed:', error)
-  }
-}
-
-// Mark reservations created in the last 3 days as "new" (unless already viewed)
-const markNewReservations = (reservations: Reservation[]): Reservation[] => {
-  const threeDaysAgo = new Date()
-  threeDaysAgo.setDate(threeDaysAgo.getDate() - 3)
-  const viewedIds = getViewedReservations()
-  
-  return reservations.map(reservation => {
-    // Skip if already viewed
-    if (viewedIds.has(reservation.id)) {
-      return reservation
-    }
-    
-    if (reservation.isNew) {
-      // Already marked (e.g., demo reservations)
-      return reservation
-    }
-    
-    if (reservation.createdAt) {
-      const createdDate = new Date(reservation.createdAt)
-      if (!Number.isNaN(createdDate.getTime()) && createdDate >= threeDaysAgo) {
-        return { ...reservation, isNew: true }
-      }
-    }
-    
-    return reservation
-  })
-}
+const INITIAL_FILTERS: Filters = { search: '', status: 'all', source: 'all' }
 
 export default function ReservationsClient() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const { selectedRoomId } = useSelectedRoom()
+
   const [reservations, setReservations] = useState<Reservation[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [statusFilter, setStatusFilter] = useState<string>('all')
-  const [sourceFilter, setSourceFilter] = useState<string>('all')
-  const [sortField, setSortField] = useState<'checkIn' | 'total' | 'status'>('checkIn')
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
-  const [commissionRates, setCommissionRates] = useState<Record<string, number>>({
-    booking: 0.15,
-    airbnb: 0.16,
-    direct: 0,
-  })
-  const [viewedReservations, setViewedReservations] = useState<Set<string>>(new Set())
+  const [filters, setFilters] = useState<Filters>(INITIAL_FILTERS)
+  const [sortField, setSortField] = useState<ReservationSortField>('checkIn')
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc')
+  const [commissionRates, setCommissionRates] = useState<CommissionRates>(DEFAULT_COMMISSION_RATES)
+  const [viewedIds, setViewedIds] = useState<Set<string>>(new Set())
 
   const { provider, meta } = useMemo(
     () => getDashboardProvider(session?.user, selectedRoomId || session?.user?.roomId),
-    [session?.user, selectedRoomId]
+    [session?.user, selectedRoomId],
   )
-  
-  const handleReservationViewed = (reservationId: string) => {
-    markReservationAsViewed(reservationId)
-    setViewedReservations(prev => new Set([...prev, reservationId]))
-  }
-  
-  const isReservationViewed = (id: string) => viewedReservations.has(id)
 
-  // Authentication guard
+  // ── Auth guard ──
   useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/')
-    }
+    if (status === 'unauthenticated') router.push('/')
   }, [status, router])
 
-  // Reset loading state when selected room changes
+  // ── Reset loading when the selected room changes ──
   useEffect(() => {
-    if (selectedRoomId) {
-      setLoading(true)
-    }
+    if (selectedRoomId) setLoading(true)
   }, [selectedRoomId])
 
-  // Load data
+  // ── Load data ──
   useEffect(() => {
     let isActive = true
 
@@ -120,22 +67,16 @@ export default function ReservationsClient() {
       try {
         const [reservationsData, commissionRatesData] = await Promise.all([
           provider.getReservations(),
-          fetch('/api/commission-rates').then(res => res.json())
+          fetch('/api/commission-rates').then((res) => res.json()),
         ])
-
-        if (isActive) {
-          // Mark new reservations (created in last 7 days)
-          setReservations(markNewReservations(reservationsData))
-          if (commissionRatesData.rates) {
-            setCommissionRates(commissionRatesData.rates)
-          }
-          setLoading(false)
-        }
+        if (!isActive) return
+        setReservations(markNewReservations(reservationsData))
+        if (commissionRatesData.rates) setCommissionRates(commissionRatesData.rates)
+        setLoading(false)
       } catch (err) {
-        if (isActive) {
-          setError(err instanceof Error ? err.message : 'טעינת נתונים נכשלה')
-          setLoading(false)
-        }
+        if (!isActive) return
+        setError(err instanceof Error ? err.message : 'טעינת נתונים נכשלה')
+        setLoading(false)
       }
     }
 
@@ -144,567 +85,123 @@ export default function ReservationsClient() {
       isActive = false
     }
   }, [provider])
-  // Filtered and sorted reservations
-  const filteredReservations = useMemo(() => {
-    let filtered = [...reservations]
 
-    // Search filter
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase()
-      filtered = filtered.filter(
-        (r) =>
-          r.guestName?.toLowerCase().includes(query) ||
-          r.id?.toLowerCase().includes(query) ||
-          r.email?.toLowerCase().includes(query) ||
-          r.phone?.toLowerCase().includes(query)
-      )
+  // ── Derived data ──
+  const visibleReservations = useMemo(
+    () => sortReservations(filterReservations(reservations, filters), sortField, sortDirection),
+    [reservations, filters, sortField, sortDirection],
+  )
+  const stats = useMemo(
+    () => calculateReservationStats(reservations, commissionRates),
+    [reservations, commissionRates],
+  )
+
+  // ── Handlers ──
+  const isUnseenNew = useCallback((r: Reservation) => Boolean(r.isNew) && !viewedIds.has(r.id), [viewedIds])
+
+  const handleRowClick = useCallback(
+    (r: Reservation) => {
+      if (!isUnseenNew(r)) return
+      markReservationAsViewed(r.id)
+      setViewedIds((prev) => new Set([...prev, r.id]))
+    },
+    [isUnseenNew],
+  )
+
+  const handleSortChange = (field: ReservationSortField) => {
+    if (field === sortField) {
+      setSortDirection((d) => (d === 'asc' ? 'desc' : 'asc'))
+      return
     }
-
-    // Status filter
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter((r) => r.status === statusFilter)
-    }
-
-    // Source filter
-    if (sourceFilter !== 'all') {
-      filtered = filtered.filter((r) => r.source?.toLowerCase().includes(sourceFilter.toLowerCase()))
-    }
-
-    // Sort
-    filtered.sort((a, b) => {
-      let valA: any, valB: any
-
-      if (sortField === 'checkIn') {
-        valA = new Date(a.checkIn || 0).getTime()
-        valB = new Date(b.checkIn || 0).getTime()
-      } else if (sortField === 'total') {
-        valA = a.total || 0
-        valB = b.total || 0
-      } else if (sortField === 'status') {
-        valA = a.status || ''
-        valB = b.status || ''
-      }
-
-      if (sortDirection === 'asc') {
-        return valA > valB ? 1 : -1
-      } else {
-        return valA < valB ? 1 : -1
-      }
-    })
-
-    return filtered
-  }, [reservations, searchQuery, statusFilter, sourceFilter, sortField, sortDirection])
-
-  // Advanced statistics
-  const stats = useMemo(() => {
-    let totalRevenue = 0
-    let totalCommission = 0
-    let totalNights = 0
-    const statusCounts: Record<string, number> = {}
-    const sourceCounts: Record<string, number> = {}
-    const monthlyRevenue: Record<string, number> = {}
-
-    reservations.forEach((reservation) => {
-      totalRevenue += reservation.total
-
-      // Commission calculation
-      const source = reservation.source?.toLowerCase() || ''
-      let commissionRate = 0
-
-      if (source.includes('booking') && commissionRates.booking) {
-        commissionRate = commissionRates.booking
-      } else if (source.includes('airbnb') && commissionRates.airbnb) {
-        commissionRate = commissionRates.airbnb
-      } else if (source.includes('direct') && commissionRates.direct) {
-        commissionRate = commissionRates.direct
-      }
-
-      totalCommission += reservation.total * commissionRate
-
-      // Nights calculation
-      if (reservation.checkIn && reservation.checkOut) {
-        const checkIn = new Date(reservation.checkIn)
-        const checkOut = new Date(reservation.checkOut)
-        const nights = Math.round((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24))
-        if (nights > 0) totalNights += nights
-      }
-
-      // Status counts
-      const status = reservation.status || 'unknown'
-      statusCounts[status] = (statusCounts[status] || 0) + 1
-
-      // Source counts
-      const sourceKey = reservation.source || 'Unknown'
-      sourceCounts[sourceKey] = (sourceCounts[sourceKey] || 0) + 1
-
-      // Monthly revenue
-      if (reservation.checkIn) {
-        const month = new Intl.DateTimeFormat('he-IL', { year: 'numeric', month: 'long' }).format(new Date(reservation.checkIn))
-        monthlyRevenue[month] = (monthlyRevenue[month] || 0) + reservation.total
-      }
-    })
-
-    const netRevenue = totalRevenue - totalCommission
-    const avgNightlyRate = totalNights > 0 ? totalRevenue / totalNights : 0
-    const avgBookingValue = reservations.length > 0 ? totalRevenue / reservations.length : 0
-
-    return {
-      totalRevenue,
-      totalCommission,
-      netRevenue,
-      totalNights,
-      avgNightlyRate,
-      avgBookingValue,
-      totalReservations: reservations.length,
-      statusCounts,
-      sourceCounts,
-      monthlyRevenue,
-    }
-  }, [reservations, commissionRates])
-
-  // Custom styles for hover effects
-  const styles = `
-    .profile-btn-gradient:hover {
-      opacity: 0.9 !important;
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-    }
-    .sort-btn:hover {
-      background: rgba(102, 126, 234, 0.1) !important;
-    }
-  `
-
-  if (status === 'loading' || loading) {
-    return <DashboardLoader variant="fullscreen" label="טוען הזמנות…" />
+    setSortField(field)
+    setSortDirection('desc')
   }
 
-  if (status === 'unauthenticated') {
-    return null
+  const columns = useMemo(() => buildReservationColumns(isUnseenNew), [isUnseenNew])
+
+  // ── Render ──
+  if (status === 'unauthenticated') return null
+
+  if (status === 'loading' || loading) {
+    return (
+      <main dir="rtl" style={{ minHeight: '100vh', background: 'var(--hn-50)' }}>
+        <DashboardHeader session={session} currentPage="reservations" />
+        <div className="container-fluid py-3 py-md-4">
+          <DashboardLoader variant="section" label="טוען הזמנות…" minHeight={280} />
+        </div>
+      </main>
+    )
   }
 
   return (
-    <div dir="rtl" style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)' }}>
-      <style dangerouslySetInnerHTML={{ __html: styles }} />
-      
-      {/* Header */}
-      <div className="container py-3 py-md-5">
-        <div className="mb-3 mb-md-4">
-          <DashboardHeader 
-            session={session}
-            subtitle="כל ההזמנות"
-            showLandingPageButton={true}
-            currentPage="reservations"
-          />
-        </div>
+    <main dir="rtl" style={{ minHeight: '100vh', background: 'var(--hn-50)' }}>
+      {/* ניווט מובייל — bottom nav + drawer */}
+      <DashboardHeader session={session} currentPage="reservations" />
+
+      <div className="container-fluid py-3 py-md-4 px-3 px-md-4">
+        <PageHeader title="כל ההזמנות" subtitle="צפייה בהזמנות עם סטטיסטיקות מתקדמות" icon={<ClipboardList size={20} />} />
+
         <RoomTabs />
+
+        {meta.isMock && session?.user?.isDemo && (
+          <div
+            className="mb-3 p-3 rounded-2 d-flex align-items-center gap-3"
+            style={{ background: 'var(--hb-50)', border: '1px solid var(--hb-200)' }}
+          >
+            <div style={{ fontSize: '1.5rem' }}>🎭</div>
+            <div>
+              <div style={{ color: 'var(--hb)', fontWeight: 600 }}>מצב דמו</div>
+              <div style={{ color: 'var(--htxt-3)', fontSize: 13 }}>
+                אתה רואה נתונים מדומים. 40 הזמנות ריאליסטיות למשך שנת 2026.
+              </div>
+            </div>
+          </div>
+        )}
+
+        {error && (
+          <div
+            className="mb-3 p-3 rounded-2"
+            role="alert"
+            style={{
+              background: 'rgba(239,68,68,0.08)',
+              border: '1px solid rgba(239,68,68,0.25)',
+              color: '#dc2626',
+              fontSize: 14,
+            }}
+          >
+            {error}
+          </div>
+        )}
+
+        <ReservationsStats stats={stats} />
+
+        <ReservationsFilters
+          filters={filters}
+          onChange={setFilters}
+          onReset={() => setFilters(INITIAL_FILTERS)}
+          canReset={hasActiveFilters(filters)}
+          sortField={sortField}
+          sortDirection={sortDirection}
+          onSortChange={handleSortChange}
+          visibleCount={visibleReservations.length}
+          totalCount={reservations.length}
+        />
+
+        <DataTable
+          data={visibleReservations}
+          columns={columns}
+          keyField="id"
+          emptyMessage="לא נמצאו הזמנות"
+          onRowClick={handleRowClick}
+          mobileTitle={(r) => (
+            <span className="d-inline-flex align-items-center gap-2">
+              {r.guestName || '—'}
+              {isUnseenNew(r) && <NewReservationBadge />}
+            </span>
+          )}
+          mobileSubtitle="id"
+        />
       </div>
-
-      {/* Main Content */}
-      <div className="container pb-5">
-            {/* Demo Mode Banner */}
-            {meta.isMock && session?.user?.isDemo && (
-              <div
-                className="alert alert-info mb-4 d-flex align-items-center gap-3"
-                style={{
-                  background: 'rgba(255, 255, 255, 0.95)',
-                  border: '2px solid #667eea',
-                  borderRadius: '12px',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                }}
-              >
-                <div style={{ fontSize: '2rem' }}>🎭</div>
-                <div>
-                  <strong style={{ color: '#667eea' }}>מצב דמו</strong>
-                  <div className="small text-muted">
-                    אתה רואה נתונים מדומים. 40 הזמנות ריאליסטיות למשך שנת 2026.
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {error && (
-              <div className="alert alert-danger mb-4" role="alert">
-                {error}
-              </div>
-            )}
-
-            {/* Statistics Cards */}
-            <div className="row g-3 mb-4">
-              <div className="col-4 col-md-3">
-                <div className="card border-0 shadow-sm h-100 hostly-dark-stat">
-                  <div className="card-body text-center d-flex flex-column justify-content-center" style={{ minHeight: '85px' }}>
-                    <div className="small text-muted mb-1">סה"כ הזמנות</div>
-                    <div
-                      className="h5 fw-bold mb-0"
-                      style={{
-                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent',
-                        backgroundClip: 'text',
-                      }}
-                    >
-                      {stats.totalReservations}
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="col-4 col-md-3 d-none d-md-block">
-                <div className="card border-0 shadow-sm h-100 hostly-dark-stat">
-                  <div className="card-body text-center d-flex flex-column justify-content-center" style={{ minHeight: '85px' }}>
-                    <div className="small text-muted mb-1">סה"כ לילות</div>
-                    <div
-                      className="h5 fw-bold mb-0"
-                      style={{
-                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent',
-                        backgroundClip: 'text',
-                      }}
-                    >
-                      {stats.totalNights}
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="col-4 col-md-3">
-                <div className="card border-0 shadow-sm h-100 hostly-dark-stat">
-                  <div className="card-body text-center d-flex flex-column justify-content-center" style={{ minHeight: '85px' }}>
-                    <div className="small text-muted mb-1">מחיר ממוצע ללילה</div>
-                    <div
-                      className="h5 fw-bold mb-0"
-                      style={{
-                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent',
-                        backgroundClip: 'text',
-                      }}
-                    >
-                      {formatCurrency(stats.avgNightlyRate)}
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="col-4 col-md-3">
-                <div className="card border-0 shadow-sm h-100 hostly-dark-stat">
-                  <div className="card-body text-center d-flex flex-column justify-content-center" style={{ minHeight: '85px' }}>
-                    <div className="small text-muted mb-1">ממוצע להזמנה</div>
-                    <div
-                      className="h5 fw-bold mb-0"
-                      style={{
-                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent',
-                        backgroundClip: 'text',
-                      }}
-                    >
-                      {formatCurrency(stats.avgBookingValue)}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Revenue Cards */}
-            <div className="row g-3 mb-4">
-              <div className="col-4 col-md-4">
-                <div className="card border-0 shadow-sm h-100 hostly-dark-stat">
-                  <div className="card-body d-flex flex-column justify-content-center" style={{ minHeight: '85px' }}>
-                    <div className="small text-muted mb-2">הכנסות ברוטו</div>
-                    <div className="h5 fw-bold text-success mb-0">
-                      {formatCurrency(stats.totalRevenue)}
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="col-4 col-md-4">
-                <div className="card border-0 shadow-sm h-100 hostly-dark-stat">
-                  <div className="card-body d-flex flex-column justify-content-center" style={{ minHeight: '85px' }}>
-                    <div className="small text-muted mb-2">💸 סה"כ עמלות</div>
-                    <div className="h5 fw-bold text-danger mb-0">
-                      {formatCurrency(stats.totalCommission)}
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="col-4 col-md-4">
-                <div className="card border-0 shadow-sm h-100 hostly-dark-stat">
-                  <div className="card-body d-flex flex-column justify-content-center" style={{ minHeight: '85px' }}>
-                    <div className="small text-muted mb-2">✅ תשלום צפוי (נטו)</div>
-                    <div
-                      className="h5 fw-bold mb-0"
-                      style={{
-                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent',
-                        backgroundClip: 'text',
-                      }}
-                    >
-                      {formatCurrency(stats.netRevenue)}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Filters and Search */}
-            <div className="card border-0 shadow-sm mb-4 hostly-dark-card">
-              <div
-                className="card-body"
-                style={{
-                  background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(249, 147, 251, 0.05) 100%)',
-                }}
-              >
-                <div className="row g-3 mb-3">
-                  <div className="col-md-4">
-                    <label className="form-label small fw-semibold">חיפוש</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      placeholder="חיפוש לפי שם, מזהה הזמנה..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      style={{
-                        borderRadius: '8px',
-                        border: '1px solid #e0e0e0',
-                      }}
-                    />
-                  </div>
-                  <div className="col-md-3">
-                    <label className="form-label small fw-semibold">סטטוס</label>
-                    <select
-                      className="form-select"
-                      value={statusFilter}
-                      onChange={(e) => setStatusFilter(e.target.value)}
-                      style={{
-                        borderRadius: '8px',
-                        border: '1px solid #e0e0e0',
-                      }}
-                    >
-                      <option value="all">כל הסטטוסים</option>
-                      <option value="confirmed">מאושר</option>
-                      <option value="request">בקשת הזמנה</option>
-                      <option value="inquiry">בירור</option>
-                      <option value="pending">ממתין</option>
-                      <option value="cancelled">מבוטל</option>
-                    </select>
-                  </div>
-                  <div className="col-md-3">
-                    <label className="form-label small fw-semibold">🌐 מקור</label>
-                    <select
-                      className="form-select"
-                      value={sourceFilter}
-                      onChange={(e) => setSourceFilter(e.target.value)}
-                      style={{
-                        borderRadius: '8px',
-                        border: '1px solid #e0e0e0',
-                      }}
-                    >
-                      <option value="all">כל המקורות</option>
-                      <option value="booking">Booking.com</option>
-                      <option value="airbnb">Airbnb</option>
-                      <option value="direct">ישירה</option>
-                    </select>
-                  </div>
-                  <div className="col-md-2 d-flex align-items-end">
-                    <button
-                      type="button"
-                      className="hostly-btn hostly-btn-ghost w-100"
-                      onClick={() => {
-                        setSearchQuery('')
-                        setStatusFilter('all')
-                        setSourceFilter('all')
-                      }}
-                    >
-                      <RefreshCw size={14} />
-                      אפס
-                    </button>
-                  </div>
-                </div>
-
-                <div className="d-flex justify-content-between align-items-center">
-                  <div className="text-muted small">
-                    מציג {filteredReservations.length} מתוך {reservations.length} הזמנות
-                  </div>
-                  <div className="d-flex gap-2">
-                    <button
-                      type="button"
-                      className={`hostly-btn hostly-btn-sm ${sortField === 'checkIn' ? 'hostly-btn-primary' : 'hostly-btn-ghost'}`}
-                      onClick={() => {
-                        if (sortField === 'checkIn') {
-                          setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
-                        } else {
-                          setSortField('checkIn')
-                          setSortDirection('desc')
-                        }
-                      }}
-                    >
-                      <Calendar size={14} />
-                      תאריך
-                      {sortField === 'checkIn' && (sortDirection === 'asc' ? <ArrowUp size={13} /> : <ArrowDown size={13} />)}
-                    </button>
-                    <button
-                      type="button"
-                      className={`hostly-btn hostly-btn-sm ${sortField === 'total' ? 'hostly-btn-primary' : 'hostly-btn-ghost'}`}
-                      onClick={() => {
-                        if (sortField === 'total') {
-                          setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
-                        } else {
-                          setSortField('total')
-                          setSortDirection('desc')
-                        }
-                      }}
-                    >
-                      <Banknote size={14} />
-                      סכום
-                      {sortField === 'total' && (sortDirection === 'asc' ? <ArrowUp size={13} /> : <ArrowDown size={13} />)}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Reservations Table */}
-            <div className="card border-0 shadow-sm hostly-dark-card">
-              <div className="card-body p-0">
-                <div className="table-responsive dashboard-table-scroll-container" style={{ maxHeight: '120vh' }}>
-                  <table className="table table-hover mb-0 hostly-dark-table">
-                    <thead>
-                      <tr>
-                        <th className="p-3 fw-semibold">מזהה</th>
-                        <th className="p-3 fw-semibold">שם אורח</th>
-                        <th className="p-3 fw-semibold">כניסה</th>
-                        <th className="p-3 fw-semibold">יציאה</th>
-                        <th className="p-3 fw-semibold">לילות</th>
-                        <th className="p-3 fw-semibold">סכום</th>
-                        <th className="p-3 fw-semibold">מקור</th>
-                        <th className="p-3 fw-semibold">סטטוס</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredReservations.length === 0 ? (
-                        <tr>
-                          <td colSpan={8} className="text-center py-5 text-muted">
-                            לא נמצאו הזמנות
-                          </td>
-                        </tr>
-                      ) : (
-                        filteredReservations.map((reservation) => {
-                          const nights = reservation.checkIn && reservation.checkOut
-                            ? Math.round(
-                                (new Date(reservation.checkOut).getTime() - new Date(reservation.checkIn).getTime()) /
-                                  (1000 * 60 * 60 * 24)
-                              )
-                            : 0
-
-                          return (
-                            <tr 
-                              key={reservation.id}
-                              onClick={() => {
-                                if (reservation.isNew && !isReservationViewed(reservation.id)) {
-                                  handleReservationViewed(reservation.id)
-                                }
-                              }}
-                              style={{ cursor: reservation.isNew ? 'pointer' : 'default' }}
-                            >
-                              <td className="p-3">
-                                <small className="text-muted">{reservation.id}</small>
-                              </td>
-                              <td className="p-3">
-                                <div className="d-flex align-items-center gap-2">
-                                  <span className="fw-semibold">{reservation.guestName || 'N/A'}</span>
-                                  {reservation.isNew && !isReservationViewed(reservation.id) && (
-                                    <span 
-                                      className="badge d-inline-flex align-items-center gap-1" 
-                                      style={{
-                                        background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                                        color: 'white',
-                                        fontSize: '0.7rem',
-                                        padding: '2px 6px',
-                                      }}
-                                    >
-                                      חדש
-                                      <Sparkles size={11} />
-                                    </span>
-                                  )}
-                                </div>
-                              </td>
-                              <td className="p-3">
-                                {reservation.checkIn
-                                  ? new Date(reservation.checkIn).toLocaleDateString('he-IL')
-                                  : 'N/A'}
-                              </td>
-                              <td className="p-3">
-                                {reservation.checkOut
-                                  ? new Date(reservation.checkOut).toLocaleDateString('he-IL')
-                                  : 'N/A'}
-                              </td>
-                              <td className="p-3">{nights > 0 ? `${nights} לילות` : '-'}</td>
-                              <td className="p-3 fw-bold">{formatCurrency(reservation.total)}</td>
-                              <td className="p-3">
-                                <span
-                                  className="badge"
-                                  style={{
-                                    background: reservation.source?.toLowerCase().includes('booking')
-                                      ? '#003580'
-                                      : reservation.source?.toLowerCase().includes('airbnb')
-                                      ? '#FF5A5F'
-                                      : '#6c757d',
-                                    color: 'white',
-                                  }}
-                                >
-                                  {reservation.source || 'Unknown'}
-                                </span>
-                              </td>
-                              <td className="p-3">
-                                <span
-                                  className={`badge ${
-                                    reservation.status === 'confirmed'
-                                      ? 'bg-success'
-                                      : reservation.status === 'cancelled'
-                                      ? 'bg-danger'
-                                      : reservation.status === 'request' || reservation.status === 'inquiry'
-                                      ? 'bg-warning text-dark'
-                                      : 'bg-warning'
-                                  }`}
-                                  style={
-                                    reservation.status === 'request' || reservation.status === 'inquiry'
-                                      ? { border: '1px dashed rgba(0,0,0,0.35)' }
-                                      : undefined
-                                  }
-                                >
-                                  {formatStatus(reservation.status)}
-                                </span>
-                              </td>
-                            </tr>
-                          )
-                        })
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-
-        {/* Back to Dashboard Button */}
-        <div className="text-center mt-4">
-          <Link href="/dashboard">
-            <button
-              type="button"
-              className="btn btn-lg profile-btn-gradient"
-              style={{
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                padding: '0.75rem 2rem',
-                fontWeight: '500',
-              }}
-            >
-              ← חזרה לדשבורד הראשי
-            </button>
-          </Link>
-        </div>
-      </div>
-    </div>
+    </main>
   )
 }

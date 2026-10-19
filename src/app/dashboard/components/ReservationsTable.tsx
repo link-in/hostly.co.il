@@ -1,9 +1,10 @@
 'use client'
 
 import React, { useState, useCallback } from 'react'
-import { Phone, Pencil, X, Sparkles, Map, Plane, Home, Hotel, Globe, Bird, FileText, BellRing, BellOff } from 'lucide-react'
+import { Phone, Pencil, X, Map, Plane, Home, Hotel, Globe, Bird, FileText, BellRing, BellOff } from 'lucide-react'
 import { Icon } from '@iconify/react'
 import type { Reservation } from '@/lib/dashboard/types'
+import { NewReservationBadge } from '../reservations/components/ReservationBadges'
 import { formatCurrency, formatDate, formatStatus } from '@/lib/dashboard/utils'
 import { isAwaitingApprovalStatus, countsTowardRevenue } from '@/lib/dashboard/reservationStatus'
 import { normalizePhoneNumber, formatPhoneForDisplay } from '@/lib/utils/phoneFormatter'
@@ -426,19 +427,7 @@ const ReservationsTable = ({
               {/* New Badge and Chevron Icon */}
               <div className="d-flex align-items-center gap-2">
                 {reservation.isNew && !isReservationViewed(reservation.id) && (
-                  <span 
-                    className="badge d-inline-flex align-items-center gap-1" 
-                    style={{
-                      background: 'linear-gradient(135deg, #a855f7 0%, #f093fb 100%)',
-                      color: 'white',
-                      fontSize: '0.7rem',
-                      padding: '2px 6px',
-                      boxShadow: '0 2px 8px rgba(168, 85, 247, 0.3)',
-                    }}
-                  >
-                    חדש
-                    <Sparkles size={11} />
-                  </span>
+                  <NewReservationBadge />
                 )}
                 
                 {/* Chevron Icon */}
@@ -738,19 +727,7 @@ const ReservationsTable = ({
                 <td>
                   <div className="d-flex align-items-center gap-2">
                     {reservation.isNew && !isReservationViewed(reservation.id) && (
-                      <span 
-                        className="badge d-inline-flex align-items-center gap-1" 
-                        style={{
-                          background: 'linear-gradient(135deg, #a855f7 0%, #f093fb 100%)',
-                          color: 'white',
-                          fontSize: '0.7rem',
-                          padding: '2px 6px',
-                          boxShadow: '0 2px 8px rgba(168, 85, 247, 0.3)',
-                        }}
-                      >
-                        חדש
-                        <Sparkles size={11} />
-                      </span>
+                      <NewReservationBadge />
                     )}
                     <svg 
                       xmlns="http://www.w3.org/2000/svg" 
