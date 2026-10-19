@@ -13,7 +13,7 @@ export default function AdminLayout({
       <div 
         className="min-vh-100"
         style={{ 
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
+          background: 'var(--hn-50)',
         }}
       >
         {children}

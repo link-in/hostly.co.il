@@ -355,8 +355,8 @@ const ProfileClient = () => {
 
   const styles = `
     .profile-input:focus {
-      border-color: #667eea !important;
-      box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25) !important;
+      border-color: #7133D9 !important;
+      box-shadow: 0 0 0 0.2rem rgba(113, 51, 217, 0.15) !important;
       outline: none;
     }
     
@@ -371,7 +371,7 @@ const ProfileClient = () => {
 
     .profile-btn-gradient:hover:not(:disabled) {
       transform: translateY(-2px);
-      box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4) !important;
+      box-shadow: 0 8px 20px rgba(113, 51, 217, 0.3) !important;
     }
 
     .profile-btn-gradient:active:not(:disabled) {
@@ -393,7 +393,7 @@ const ProfileClient = () => {
       <main 
         style={{ 
           minHeight: '100vh',
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
+          background: 'var(--hn-50)',
         }} 
         dir="rtl"
       >
@@ -413,26 +413,16 @@ const ProfileClient = () => {
           <div className="row justify-content-center">
             <div className="col-lg-10">
               <div 
-                className="card border-0 shadow-lg"
-                style={{ borderRadius: '16px' }}
+                className="card hostly-dark-card shadow-sm"
               >
               <div 
-                className="card-header border-0 text-center py-4"
-                style={{
-                  background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(249, 147, 251, 0.1) 100%)',
-                  borderRadius: '16px 16px 0 0',
-                }}
+                className="card-header py-3"
               >
                 <h1 
-                  className="h3 fw-bold mb-0"
-                  style={{
-                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    backgroundClip: 'text',
-                  }}
+                  className="h4 fw-bold mb-0"
+                  style={{ color: 'var(--htxt-1)' }}
                 >
-                  👤 איזור אישי
+                  איזור אישי
                 </h1>
               </div>
               <div className="card-body p-4">
@@ -468,7 +458,7 @@ const ProfileClient = () => {
 
                 <div className="row g-3">
                   <div className="col-md-6">
-                    <label className="form-label fw-semibold" style={{ color: '#667eea' }}>
+                    <label className="form-label fw-semibold" style={{ color: 'var(--htxt-2)' }}>
                       🏷️ שם תצוגה
                     </label>
                     <input
@@ -482,7 +472,7 @@ const ProfileClient = () => {
                   </div>
 
                   <div className="col-md-6">
-                    <label className="form-label fw-semibold" style={{ color: '#667eea' }}>
+                    <label className="form-label fw-semibold" style={{ color: 'var(--htxt-2)' }}>
                       📧 אימייל
                     </label>
                     <input
@@ -496,7 +486,7 @@ const ProfileClient = () => {
                   </div>
 
                   <div className="col-md-6">
-                    <label className="form-label fw-semibold" style={{ color: '#667eea' }}>
+                    <label className="form-label fw-semibold" style={{ color: 'var(--htxt-2)' }}>
                       🌐 כתובת דף נחיתה
                     </label>
                     <input
@@ -512,7 +502,7 @@ const ProfileClient = () => {
                   </div>
 
                   <div className="col-md-6">
-                    <label className="form-label fw-semibold" style={{ color: '#667eea' }}>
+                    <label className="form-label fw-semibold" style={{ color: 'var(--htxt-2)' }}>
                       📱 מספר WhatsApp לקבלת התראות 
                       <span className="text-danger">*</span>
                     </label>
@@ -532,7 +522,7 @@ const ProfileClient = () => {
                   </div>
 
                   <div className="col-md-6">
-                    <label className="form-label fw-semibold" style={{ color: '#667eea' }}>
+                    <label className="form-label fw-semibold" style={{ color: 'var(--htxt-2)' }}>
                       📱 מספר טלפון נוסף (מנהל/מארח)
                     </label>
                     <input
@@ -635,21 +625,16 @@ const ProfileClient = () => {
                     <hr
                       className="my-4"
                       style={{
-                        background: 'linear-gradient(90deg, transparent, #667eea, transparent)',
-                        height: '2px',
+                        background: 'var(--hborder)',
+                        height: '1px',
                         border: 'none',
                       }}
                     />
                     <h3
                       className="h5 fw-bold mb-3 d-flex align-items-center gap-2"
-                      style={{
-                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent',
-                        backgroundClip: 'text',
-                      }}
+                      style={{ color: 'var(--htxt-1)' }}
                     >
-                      <FileText size={20} style={{ color: '#667eea', WebkitTextFillColor: '#667eea' }} />
+                      <FileText size={20} style={{ color: 'var(--hb)' }} />
                       הנפקת קבלות / חשבוניות
                     </h3>
                     <p className="text-muted small mb-3">
@@ -662,7 +647,7 @@ const ProfileClient = () => {
                     ) : (
                       <div className="row g-3">
                         <div className="col-md-6">
-                          <label className="form-label fw-semibold" style={{ color: '#667eea' }}>
+                          <label className="form-label fw-semibold" style={{ color: 'var(--htxt-2)' }}>
                             ספק
                           </label>
                           <select
@@ -678,7 +663,7 @@ const ProfileClient = () => {
                           </select>
                         </div>
                         <div className="col-md-6">
-                          <label className="form-label fw-semibold" style={{ color: '#667eea' }}>
+                          <label className="form-label fw-semibold" style={{ color: 'var(--htxt-2)' }}>
                             פעיל
                           </label>
                           <div className="form-check form-switch mt-2">
@@ -697,7 +682,7 @@ const ProfileClient = () => {
                         {receiptProvider === 'icount' && (
                           <>
                             <div className="col-12">
-                              <label className="form-label fw-semibold" style={{ color: '#667eea' }}>
+                              <label className="form-label fw-semibold" style={{ color: 'var(--htxt-2)' }}>
                                 API Token (iCount)
                               </label>
                               <input
@@ -722,7 +707,7 @@ const ProfileClient = () => {
                               </small>
                             </div>
                             <div className="col-md-6">
-                              <label className="form-label fw-semibold" style={{ color: '#667eea' }}>
+                              <label className="form-label fw-semibold" style={{ color: 'var(--htxt-2)' }}>
                                 ח.פ / ע.מ ברירת מחדל (אופציונלי)
                               </label>
                               <input
@@ -796,19 +781,14 @@ const ProfileClient = () => {
                     <hr
                       className="my-4"
                       style={{
-                        background: 'linear-gradient(90deg, transparent, #667eea, transparent)',
-                        height: '2px',
+                        background: 'var(--hborder)',
+                        height: '1px',
                         border: 'none',
                       }}
                     />
                     <h3
                       className="h5 fw-bold mb-3 d-flex align-items-center gap-2"
-                      style={{
-                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent',
-                        backgroundClip: 'text',
-                      }}
+                      style={{ color: 'var(--htxt-1)' }}
                     >
                       הודעת ביקורת אחרי צ'ק-אאוט
                     </h3>
@@ -816,14 +796,14 @@ const ProfileClient = () => {
                       בבוקר שאחרי הצ'ק-אאוט תישלח לאורח הודעת WhatsApp אוטומטית עם תודה ובקשה לכתוב ביקורת.
                       בהזמנה ישירה תישלח ההודעה עם הקישור שתגדירו כאן; בהזמנה מ-Airbnb או Booking.com תישלח תזכורת לכתוב ביקורת באפליקציה עצמה.
                       {' '}
-                      <Link href="/dashboard/messages" className="text-decoration-underline fw-semibold" style={{ color: '#667eea' }}>
+                      <Link href="/dashboard/messages" className="text-decoration-underline fw-semibold" style={{ color: 'var(--hb)' }}>
                         לניהול כל הודעות ה-WhatsApp לחצו כאן
                       </Link>
                     </p>
                   </div>
 
                   <div className="col-12">
-                    <label className="form-label fw-semibold" style={{ color: '#667eea' }}>
+                    <label className="form-label fw-semibold" style={{ color: 'var(--htxt-2)' }}>
                       קישור לביקורת בגוגל (Google Review)
                     </label>
                     <input
@@ -842,7 +822,7 @@ const ProfileClient = () => {
                   </div>
 
                   <div className="col-12">
-                    <label className="form-label fw-semibold" style={{ color: '#667eea' }}>
+                    <label className="form-label fw-semibold" style={{ color: 'var(--htxt-2)' }}>
                       הודעת ביקורת (מותאמת אישית)
                     </label>
                     <textarea
@@ -913,19 +893,14 @@ const ProfileClient = () => {
                     <hr 
                       className="my-4" 
                       style={{
-                        background: 'linear-gradient(90deg, transparent, #667eea, transparent)',
-                        height: '2px',
+                        background: 'var(--hborder)',
+                        height: '1px',
                         border: 'none',
                       }}
                     />
                     <h3 
                       className="h5 fw-bold mb-3"
-                      style={{
-                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent',
-                        backgroundClip: 'text',
-                      }}
+                      style={{ color: 'var(--htxt-1)' }}
                     >
                       ⭐ הגדרות צ'ק-אין דיגיטלי
                     </h3>
@@ -935,7 +910,7 @@ const ProfileClient = () => {
                   </div>
 
                   <div className="col-md-6">
-                    <label className="form-label fw-semibold" style={{ color: '#667eea' }}>
+                    <label className="form-label fw-semibold" style={{ color: 'var(--htxt-2)' }}>
                       📶 שם רשת WiFi (SSID)
                     </label>
                     <input
@@ -951,7 +926,7 @@ const ProfileClient = () => {
                   </div>
 
                   <div className="col-md-6">
-                    <label className="form-label fw-semibold" style={{ color: '#667eea' }}>
+                    <label className="form-label fw-semibold" style={{ color: 'var(--htxt-2)' }}>
                       🔑 סיסמת WiFi
                     </label>
                     <input
@@ -967,7 +942,7 @@ const ProfileClient = () => {
                   </div>
 
                   <div className="col-12">
-                    <label className="form-label fw-semibold" style={{ color: '#667eea' }}>
+                    <label className="form-label fw-semibold" style={{ color: 'var(--htxt-2)' }}>
                       📄 קישור למדריך הנכס (URL)
                     </label>
                     <input
@@ -983,7 +958,7 @@ const ProfileClient = () => {
                   </div>
 
                   <div className="col-12">
-                    <label className="form-label fw-semibold" style={{ color: '#667eea' }}>
+                    <label className="form-label fw-semibold" style={{ color: 'var(--htxt-2)' }}>
                       🚪 קוד כניסה ברירת מחדל
                     </label>
                     <input
@@ -999,7 +974,7 @@ const ProfileClient = () => {
                   </div>
 
                   <div className="col-12">
-                    <label className="form-label fw-semibold" style={{ color: '#667eea' }}>
+                    <label className="form-label fw-semibold" style={{ color: 'var(--htxt-2)' }}>
                       📜 תנאי אירוח מותאמים אישית
                     </label>
                     <textarea
@@ -1016,7 +991,7 @@ const ProfileClient = () => {
                   </div>
 
                   <div className="col-12">
-                    <label className="form-label fw-semibold" style={{ color: '#667eea' }}>
+                    <label className="form-label fw-semibold" style={{ color: 'var(--htxt-2)' }}>
                       ⚠️ כתב ויתור אחריות מותאם אישית
                     </label>
                     <textarea
@@ -1036,26 +1011,21 @@ const ProfileClient = () => {
                         <hr 
                           className="my-4" 
                           style={{
-                            background: 'linear-gradient(90deg, transparent, #667eea, transparent)',
-                            height: '2px',
+                            background: 'var(--hborder)',
+                        height: '1px',
                             border: 'none',
                           }}
                         />
                         <h3 
                           className="h5 fw-bold mb-3"
-                          style={{
-                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                            WebkitBackgroundClip: 'text',
-                            WebkitTextFillColor: 'transparent',
-                            backgroundClip: 'text',
-                          }}
+                          style={{ color: 'var(--htxt-1)' }}
                         >
                           🔐 שינוי סיסמה (אופציונלי)
                         </h3>
                       </div>
 
                       <div className="col-12">
-                        <label className="form-label fw-semibold" style={{ color: '#667eea' }}>
+                        <label className="form-label fw-semibold" style={{ color: 'var(--htxt-2)' }}>
                           🔑 סיסמה נוכחית
                         </label>
                         <input
@@ -1069,7 +1039,7 @@ const ProfileClient = () => {
                       </div>
 
                       <div className="col-12 col-md-6">
-                        <label className="form-label fw-semibold" style={{ color: '#667eea' }}>
+                        <label className="form-label fw-semibold" style={{ color: 'var(--htxt-2)' }}>
                           🆕 סיסמה חדשה
                         </label>
                         <input
@@ -1083,7 +1053,7 @@ const ProfileClient = () => {
                       </div>
 
                       <div className="col-12 col-md-6">
-                        <label className="form-label fw-semibold" style={{ color: '#667eea' }}>
+                        <label className="form-label fw-semibold" style={{ color: 'var(--htxt-2)' }}>
                           ✔️ אימות סיסמה
                         </label>
                         <input
@@ -1104,19 +1074,14 @@ const ProfileClient = () => {
                       <hr
                         className="my-4"
                         style={{
-                          background: 'linear-gradient(90deg, transparent, #667eea, transparent)',
-                          height: '2px',
+                          background: 'var(--hborder)',
+                        height: '1px',
                           border: 'none',
                         }}
                       />
                       <h3
                         className="h5 fw-bold mb-3"
-                        style={{
-                          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                          WebkitBackgroundClip: 'text',
-                          WebkitTextFillColor: 'transparent',
-                          backgroundClip: 'text',
-                        }}
+                        style={{ color: 'var(--htxt-1)' }}
                       >
                         💳 ניהול מנוי
                       </h3>
@@ -1128,8 +1093,8 @@ const ProfileClient = () => {
                       ) : (
                         <div
                           style={{
-                            background: 'linear-gradient(135deg, rgba(102,126,234,0.06) 0%, rgba(249,147,251,0.06) 100%)',
-                            border: '1px solid rgba(102,126,234,0.2)',
+                            background: 'var(--hn-50)',
+                            border: '1px solid var(--hborder)',
                             borderRadius: '12px',
                             padding: '20px 24px',
                           }}
@@ -1208,7 +1173,7 @@ const ProfileClient = () => {
                                 type="button"
                                 onClick={() => router.push('/dashboard/pricing')}
                                 style={{
-                                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                  background: 'var(--hb)',
                                   color: 'white',
                                   border: 'none',
                                   borderRadius: '8px',
@@ -1227,7 +1192,7 @@ const ProfileClient = () => {
                                 type="button"
                                 onClick={() => router.push('/dashboard/pricing')}
                                 style={{
-                                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                  background: 'var(--hb)',
                                   color: 'white',
                                   border: 'none',
                                   borderRadius: '8px',
@@ -1330,7 +1295,7 @@ const ProfileClient = () => {
                           type="button"
                           className="btn shadow profile-btn-gradient"
                           style={{
-                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                            background: 'var(--hb)',
                             color: 'white',
                             border: 'none',
                             borderRadius: '8px',

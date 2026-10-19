@@ -76,19 +76,19 @@ export default function CreateUserPage() {
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <div dir="rtl" style={{ minHeight: '100vh', background: 'linear-gradient(135deg,#667eea 0%,#764ba2 50%,#f093fb 100%)' }}>
+    <div dir="rtl" style={{ minHeight: '100vh', background: 'var(--hn-50)' }}>
       <div className="container py-5">
         <div className="row justify-content-center">
           <div className="col-lg-6">
-            <div className="card border-0 shadow-lg" style={{ borderRadius: 16 }}>
+            <div className="card hostly-dark-card shadow-sm">
 
               {/* Header */}
-              <div className="card-header border-0 text-white"
-                style={{ background: 'linear-gradient(135deg,#667eea,#764ba2)', borderRadius: '16px 16px 0 0', padding: '1.5rem' }}>
+              <div className="card-header border-0"
+                style={{ background: 'var(--hsurf)', borderBottom: '1px solid var(--hborder-light)', borderRadius: '8px 8px 0 0', padding: '1.25rem 1.5rem' }}>
                 <div className="d-flex justify-content-between align-items-center">
                   <h1 className="h4 mb-0 fw-bold">הוספת לקוח חדש</h1>
                   <Link href="/admin/users">
-                    <button className="btn btn-light btn-sm">← חזרה</button>
+                    <button className="btn btn-outline-secondary btn-sm">← חזרה</button>
                   </Link>
                 </div>
               </div>
@@ -106,7 +106,7 @@ export default function CreateUserPage() {
                           style={{
                             flex: 1, border: 'none', borderRadius: '10px 10px 0 0',
                             padding: '10px 8px 12px', cursor: isAccessible ? 'pointer' : 'default',
-                            background: isCurrent ? 'linear-gradient(135deg,#667eea,#764ba2)' : isDone ? '#e8f5e9' : '#f8f9fa',
+                            background: isCurrent ? 'var(--hb)' : isDone ? '#e8f5e9' : '#f8f9fa',
                             color: isCurrent ? '#fff' : isDone ? '#2e7d32' : '#adb5bd',
                             fontWeight: isCurrent ? 700 : 500, fontSize: 13,
                             position: 'relative',
@@ -154,7 +154,7 @@ export default function CreateUserPage() {
                     </div>
                     <div className="d-flex justify-content-end mt-4">
                       <button type="button" className="btn btn-primary" onClick={markCompleteAndNext} disabled={!canStep1}
-                        style={{ background: 'linear-gradient(135deg,#667eea,#764ba2)', border: 'none' }}>
+                        style={{ background: 'var(--hb)', border: 'none' }}>
                         הבא ←
                       </button>
                     </div>

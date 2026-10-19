@@ -78,13 +78,13 @@ export default function AdminSubscriptionsPage() {
 
   const getStatusBadge = (status: string) => {
     const badges: Record<string, { text: string; gradient: string }> = {
-      active: { text: 'פעיל', gradient: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' },
-      trial: { text: 'ניסיון', gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' },
-      expired: { text: 'פג תוקף', gradient: 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)' },
-      cancelled: { text: 'בוטל', gradient: 'linear-gradient(135deg, #6c757d 0%, #5a6268 100%)' },
-      suspended: { text: 'מושעה', gradient: 'linear-gradient(135deg, #ffc107 0%, #ff9800 100%)' },
+      active: { text: 'פעיל', gradient: '#10b981' },
+      trial: { text: 'ניסיון', gradient: 'var(--hb)' },
+      expired: { text: 'פג תוקף', gradient: '#dc3545' },
+      cancelled: { text: 'בוטל', gradient: '#6c757d' },
+      suspended: { text: 'מושעה', gradient: '#ffc107' },
     }
-    const badge = badges[status] || { text: status, gradient: 'linear-gradient(135deg, #6c757d 0%, #5a6268 100%)' }
+    const badge = badges[status] || { text: status, gradient: '#6c757d' }
     return <span className="badge" style={{ background: badge.gradient, color: 'white' }}>{badge.text}</span>
   }
 
@@ -127,14 +127,11 @@ export default function AdminSubscriptionsPage() {
           <h3 
             className="mb-0 d-inline-flex align-items-center gap-2"
             style={{
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
+              color: 'var(--htxt-1)',
               fontWeight: 'bold',
             }}
           >
-            <Banknote size={22} style={{ WebkitTextFillColor: 'initial', color: '#764ba2' }} />
+            <Banknote size={22} style={{ WebkitTextFillColor: 'initial', color: '#5D22BD' }} />
             ניהול מנויים
           </h3>
         </div>
@@ -151,15 +148,12 @@ export default function AdminSubscriptionsPage() {
       {/* Stats Cards */}
       <div className="row g-3 mb-4">
         <div className="col-md-3">
-          <div className="card border-0 shadow-sm" style={{ borderRadius: '12px', background: 'white' }}>
+          <div className="card hostly-dark-card" style={{ borderRadius: '12px', background: 'white' }}>
             <div className="card-body text-center">
               <div 
                 className="display-6 mb-2"
                 style={{
-                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
+                  color: 'var(--htxt-1)',
                   fontWeight: 'bold',
                 }}
               >
@@ -170,15 +164,12 @@ export default function AdminSubscriptionsPage() {
           </div>
         </div>
         <div className="col-md-3">
-          <div className="card border-0 shadow-sm" style={{ borderRadius: '12px', background: 'white' }}>
+          <div className="card hostly-dark-card" style={{ borderRadius: '12px', background: 'white' }}>
             <div className="card-body text-center">
               <div 
                 className="display-6 mb-2"
                 style={{
-                  background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
+                  color: 'var(--htxt-1)',
                   fontWeight: 'bold',
                 }}
               >
@@ -189,15 +180,12 @@ export default function AdminSubscriptionsPage() {
           </div>
         </div>
         <div className="col-md-3">
-          <div className="card border-0 shadow-sm" style={{ borderRadius: '12px', background: 'white' }}>
+          <div className="card hostly-dark-card" style={{ borderRadius: '12px', background: 'white' }}>
             <div className="card-body text-center">
               <div 
                 className="display-6 mb-2"
                 style={{
-                  background: 'linear-gradient(135deg, #667eea 0%, #f093fb 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
+                  color: 'var(--htxt-1)',
                   fontWeight: 'bold',
                 }}
               >
@@ -208,15 +196,12 @@ export default function AdminSubscriptionsPage() {
           </div>
         </div>
         <div className="col-md-3">
-          <div className="card border-0 shadow-sm" style={{ borderRadius: '12px', background: 'white' }}>
+          <div className="card hostly-dark-card" style={{ borderRadius: '12px', background: 'white' }}>
             <div className="card-body text-center">
               <div 
                 className="display-6 mb-2"
                 style={{
-                  background: 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
+                  color: 'var(--htxt-1)',
                   fontWeight: 'bold',
                 }}
               >
@@ -229,11 +214,11 @@ export default function AdminSubscriptionsPage() {
       </div>
 
       {/* Main Card */}
-      <div className="card border-0 shadow-sm" style={{ borderRadius: '12px' }}>
+      <div className="card hostly-dark-card" style={{ borderRadius: '12px' }}>
         <div 
           className="card-body"
           style={{
-            background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(249, 147, 251, 0.05) 100%)',
+            background: 'var(--hn-50)',
           }}
         >
           {error && (
@@ -252,17 +237,17 @@ export default function AdminSubscriptionsPage() {
               <thead>
                 <tr 
                   style={{
-                    background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(249, 147, 251, 0.1) 100%)',
+                    background: 'var(--hn-50)',
                   }}
                 >
-                  <th style={{ fontWeight: 'bold', color: '#667eea' }}>משתמש</th>
-                  <th style={{ fontWeight: 'bold', color: '#667eea' }}>תוכנית</th>
-                  <th style={{ fontWeight: 'bold', color: '#667eea' }}>סטטוס</th>
-                  <th style={{ fontWeight: 'bold', color: '#667eea' }}>מחזור</th>
-                  <th style={{ fontWeight: 'bold', color: '#667eea' }}>מחיר</th>
-                  <th style={{ fontWeight: 'bold', color: '#667eea' }}>שימוש WhatsApp</th>
-                  <th style={{ fontWeight: 'bold', color: '#667eea' }}>תוקף עד</th>
-                  <th style={{ fontWeight: 'bold', color: '#667eea' }}>חידוש אוטומטי</th>
+                  <th style={{ fontWeight: 600, color: 'var(--htxt-3)' }}>משתמש</th>
+                  <th style={{ fontWeight: 600, color: 'var(--htxt-3)' }}>תוכנית</th>
+                  <th style={{ fontWeight: 600, color: 'var(--htxt-3)' }}>סטטוס</th>
+                  <th style={{ fontWeight: 600, color: 'var(--htxt-3)' }}>מחזור</th>
+                  <th style={{ fontWeight: 600, color: 'var(--htxt-3)' }}>מחיר</th>
+                  <th style={{ fontWeight: 600, color: 'var(--htxt-3)' }}>שימוש WhatsApp</th>
+                  <th style={{ fontWeight: 600, color: 'var(--htxt-3)' }}>תוקף עד</th>
+                  <th style={{ fontWeight: 600, color: 'var(--htxt-3)' }}>חידוש אוטומטי</th>
                 </tr>
               </thead>
               <tbody>
@@ -276,7 +261,7 @@ export default function AdminSubscriptionsPage() {
                       <span 
                         className="badge"
                         style={{
-                          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                          background: 'var(--hb)',
                           color: 'white',
                         }}
                       >
@@ -339,9 +324,9 @@ export default function AdminSubscriptionsPage() {
             href="/admin" 
             className="btn"
             style={{
-              border: '1px solid white',
-              color: 'white',
-              backgroundColor: 'rgba(255, 255, 255, 0.1)',
+              border: '1px solid var(--hborder)',
+              color: 'var(--htxt-2)',
+              backgroundColor: 'var(--hsurf)',
             }}
           >
             ← חזור ללוח בקרה אדמין

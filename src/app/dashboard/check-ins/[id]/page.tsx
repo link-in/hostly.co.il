@@ -1,12 +1,60 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
-import { ArrowLeft, CheckCircle, Clock, XCircle, Download, Send } from 'lucide-react'
+import { ArrowRight, Download, Send, UserCheck } from 'lucide-react'
 import type { CheckIn } from '@/lib/check-in/types'
 import DashboardHeader from '@/components/DashboardHeader'
 import DashboardLoader from '@/components/DashboardLoader'
+import { Button, Card, PageHeader } from '@/components/ui'
+import CheckInStatusBadge from '../components/CheckInStatusBadge'
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+const ID_DOCUMENT_LABELS: Record<string, string> = {
+  id_card: 'תעודת זהות',
+  passport: 'דרכון',
+  drivers_license: 'רישיון נהיגה',
+}
+
+const formatDate = (iso: string) => new Date(iso).toLocaleDateString('he-IL')
+const formatDateTime = (iso: string) => new Date(iso).toLocaleString('he-IL')
+
+interface DetailRow {
+  label: string
+  value: React.ReactNode
+}
+
+/** רשימת שדות "תווית — ערך" בתוך כרטיס. שורות עם ערך ריק מוסתרות. */
+function DetailsList({ rows }: { rows: (DetailRow | false | null | undefined | '' | 0)[] }) {
+  const visible = rows.filter(Boolean) as DetailRow[]
+  return (
+    <dl className="mb-0">
+      {visible.map((row, i) => (
+        <div
+          key={row.label}
+          className="d-flex gap-3 py-2"
+          style={{ borderTop: i === 0 ? 'none' : '1px solid var(--hborder-light)', fontSize: 14 }}
+        >
+          <dt style={{ width: '40%', margin: 0, fontWeight: 500, color: 'var(--htxt-3)' }}>{row.label}</dt>
+          <dd style={{ margin: 0, color: 'var(--htxt-1)' }}>{row.value}</dd>
+        </div>
+      ))}
+    </dl>
+  )
+}
+
+function SectionCard({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <Card className="h-100">
+      <Card.Header>{title}</Card.Header>
+      <Card.Body>{children}</Card.Body>
+    </Card>
+  )
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
 
 function CheckInDetailsPageContent() {
   const params = useParams()
@@ -26,8 +74,7 @@ function CheckInDetailsPageContent() {
       try {
         const res = await fetch(`/api/dashboard/check-ins/${params.id}`)
         if (res.ok) {
-          const data = await res.json()
-          setCheckIn(data)
+          setCheckIn(await res.json())
         } else {
           alert('שגיאה בטעינת פרטי הצ\'ק-אין')
           router.push('/dashboard/check-ins')
@@ -46,370 +93,216 @@ function CheckInDetailsPageContent() {
     }
   }, [status, params.id, router])
 
-  const getStatusBadge = (status?: string) => {
-    const currentStatus = status || checkIn?.status
-    switch (currentStatus) {
-      case 'completed':
-        return <span className="badge bg-success fs-6"><CheckCircle size={16} /> הושלם</span>
-      case 'pending':
-        return <span className="badge bg-warning text-dark fs-6"><Clock size={16} /> ממתין</span>
-      case 'expired':
-        return <span className="badge bg-danger fs-6"><XCircle size={16} /> פג תוקף</span>
-      default:
-        return <span className="badge bg-secondary fs-6">{currentStatus}</span>
-    }
-  }
-
   if (loading) {
-    return <DashboardLoader variant="fullscreen" label="טוען פרטי צ'ק-אין…" />
+    return (
+      <main dir="rtl" style={{ minHeight: '100vh', background: 'var(--hn-50)' }}>
+        <DashboardHeader session={session} currentPage="check-ins" />
+        <div className="container-fluid py-3 py-md-4">
+          <DashboardLoader variant="section" label="טוען פרטי צ'ק-אין…" minHeight={280} />
+        </div>
+      </main>
+    )
   }
 
   if (!checkIn) {
     return null
   }
 
+  const isCompleted = checkIn.status === 'completed'
+  const hasEmergencyContact = checkIn.emergency_contact_name || checkIn.emergency_contact_phone
+
   return (
-    <main 
-      style={{ 
-        minHeight: '100vh',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
-      }} 
-      dir="rtl"
-    >
-      <div className="container py-3 py-md-5">
-        <div className="row justify-content-center">
-          <div className="col-lg-11 col-xl-10">
-            <div className="mb-3 mb-md-4">
-              <DashboardHeader 
-                session={session}
-                title={`צ'ק-אין - ${checkIn.guest_name}`}
-                subtitle={new Date(checkIn.check_in_date).toLocaleDateString('he-IL')}
-                showLandingPageButton={true}
-                currentPage="check-ins"
-              />
-            </div>
-          </div>
-        </div>
+    <main dir="rtl" style={{ minHeight: '100vh', background: 'var(--hn-50)' }}>
+      <DashboardHeader session={session} currentPage="check-ins" />
 
-        <div className="row justify-content-center">
-          <div className="col-lg-11 col-xl-10">
-            {/* Back Button & Status */}
-            <div className="d-flex align-items-center gap-2 mb-3">
-              <button
+      <div className="container-fluid py-3 py-md-4 px-3 px-md-4">
+        <PageHeader
+          title={`צ'ק-אין — ${checkIn.guest_name}`}
+          subtitle={formatDate(checkIn.check_in_date)}
+          icon={<UserCheck size={20} />}
+          actions={
+            <>
+              <CheckInStatusBadge status={checkIn.status} />
+              <Button
+                variant="ghost"
+                size="sm"
+                iconStart={<ArrowRight size={14} />}
                 onClick={() => router.push('/dashboard/check-ins')}
-                className="btn btn-light shadow-sm"
-                style={{ borderRadius: '8px' }}
               >
-                <ArrowLeft size={20} /> חזרה
-              </button>
-              <div className="ms-auto">{getStatusBadge()}</div>
-            </div>
+                חזרה
+              </Button>
+            </>
+          }
+        />
 
-            <div className="row g-4">
-              {/* Guest Information */}
-              <div className="col-md-6">
-                <div className="card border-0 shadow-sm hostly-dark-card" style={{ borderRadius: '12px' }}>
-                  <div 
-                    className="card-header text-white" 
-                    style={{
-                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                      borderRadius: '12px 12px 0 0',
-                      border: 'none'
-                    }}
-                  >
-                    <h5 className="mb-0">פרטי האורח</h5>
-                  </div>
-            <div className="card-body">
-              <table className="table table-borderless mb-0 hostly-dark-table">
-                <tbody>
-                  <tr>
-                    <td width="40%"><strong>שם מלא:</strong></td>
-                    <td>{checkIn.guest_name}</td>
-                  </tr>
-                  <tr>
-                    <td><strong>טלפון:</strong></td>
-                    <td>{checkIn.guest_phone}</td>
-                  </tr>
-                  {checkIn.guest_email && (
-                    <tr>
-                      <td><strong>אימייל:</strong></td>
-                      <td>{checkIn.guest_email}</td>
-                    </tr>
-                  )}
-                  <tr>
-                    <td><strong>תאריך כניסה:</strong></td>
-                    <td>{new Date(checkIn.check_in_date).toLocaleDateString('he-IL')}</td>
-                  </tr>
-                  <tr>
-                    <td><strong>תאריך יציאה:</strong></td>
-                    <td>{new Date(checkIn.check_out_date).toLocaleDateString('he-IL')}</td>
-                  </tr>
-                  <tr>
-                    <td><strong>מספר אורחים:</strong></td>
-                    <td>{checkIn.num_adults + checkIn.num_children}</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+        <div className="row g-3 g-md-4">
+          <div className="col-md-6">
+            <SectionCard title="פרטי האורח">
+              <DetailsList
+                rows={[
+                  { label: 'שם מלא', value: checkIn.guest_name },
+                  { label: 'טלפון', value: checkIn.guest_phone },
+                  checkIn.guest_email && { label: 'אימייל', value: checkIn.guest_email },
+                  { label: 'תאריך כניסה', value: formatDate(checkIn.check_in_date) },
+                  { label: 'תאריך יציאה', value: formatDate(checkIn.check_out_date) },
+                  { label: 'מספר אורחים', value: checkIn.num_adults + checkIn.num_children },
+                ]}
+              />
+            </SectionCard>
           </div>
-        </div>
 
-              {/* Check-in Status */}
-              <div className="col-md-6">
-                <div className="card border-0 shadow-sm hostly-dark-card" style={{ borderRadius: '12px' }}>
-                  <div 
-                    className="card-header text-white"
-                    style={{
-                      background: 'linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)',
-                      borderRadius: '12px 12px 0 0',
-                      border: 'none'
-                    }}
-                  >
-                    <h5 className="mb-0">מצב צ'ק-אין</h5>
-                  </div>
-            <div className="card-body">
-              <table className="table table-borderless mb-0 hostly-dark-table">
-                <tbody>
-                  <tr>
-                    <td width="40%"><strong>סטטוס:</strong></td>
-                    <td>{getStatusBadge(checkIn.status)}</td>
-                  </tr>
-                  <tr>
-                    <td><strong>נוצר בתאריך:</strong></td>
-                    <td>{new Date(checkIn.created_at).toLocaleString('he-IL')}</td>
-                  </tr>
-                  {checkIn.completed_at && (
-                    <tr>
-                      <td><strong>הושלם בתאריך:</strong></td>
-                      <td>{new Date(checkIn.completed_at).toLocaleString('he-IL')}</td>
-                    </tr>
-                  )}
-                  <tr>
-                    <td><strong>תוקף:</strong></td>
-                    <td>{new Date(checkIn.expires_at).toLocaleDateString('he-IL')}</td>
-                  </tr>
-                  {checkIn.access_code && (
-                    <tr>
-                      <td><strong>קוד כניסה:</strong></td>
-                      <td>
-                        <span className="badge bg-success fs-5">{checkIn.access_code}</span>
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+          <div className="col-md-6">
+            <SectionCard title="מצב צ'ק-אין">
+              <DetailsList
+                rows={[
+                  { label: 'סטטוס', value: <CheckInStatusBadge status={checkIn.status} /> },
+                  { label: 'נוצר בתאריך', value: formatDateTime(checkIn.created_at) },
+                  checkIn.completed_at && { label: 'הושלם בתאריך', value: formatDateTime(checkIn.completed_at) },
+                  { label: 'תוקף', value: formatDate(checkIn.expires_at) },
+                  checkIn.access_code && {
+                    label: 'קוד כניסה',
+                    value: (
+                      <code
+                        style={{
+                          padding: '2px 10px',
+                          borderRadius: 6,
+                          background: 'var(--hb-100)',
+                          color: 'var(--hb)',
+                          fontWeight: 700,
+                          fontSize: 15,
+                        }}
+                      >
+                        {checkIn.access_code}
+                      </code>
+                    ),
+                  },
+                ]}
+              />
+            </SectionCard>
           </div>
-        </div>
 
-        {/* Personal Details (if completed) */}
-        {checkIn.status === 'completed' && (
-          <>
-            <div className="col-md-6">
-              <div className="card hostly-dark-card">
-                <div className="card-header bg-secondary text-white">
-                  <h5 className="mb-0">פרטים אישיים</h5>
-                </div>
-                <div className="card-body">
-                  <table className="table table-borderless mb-0 hostly-dark-table">
-                    <tbody>
-                      {checkIn.id_document_type && (
-                        <tr>
-                          <td width="40%"><strong>סוג תעודה:</strong></td>
-                          <td>
-                            {checkIn.id_document_type === 'id_card' && 'תעודת זהות'}
-                            {checkIn.id_document_type === 'passport' && 'דרכון'}
-                            {checkIn.id_document_type === 'drivers_license' && 'רישיון נהיגה'}
-                          </td>
-                        </tr>
-                      )}
-                      {checkIn.id_number && (
-                        <tr>
-                          <td><strong>מספר תעודה:</strong></td>
-                          <td>{checkIn.id_number}</td>
-                        </tr>
-                      )}
-                      {checkIn.date_of_birth && (
-                        <tr>
-                          <td><strong>תאריך לידה:</strong></td>
-                          <td>{new Date(checkIn.date_of_birth).toLocaleDateString('he-IL')}</td>
-                        </tr>
-                      )}
-                      {checkIn.address && (
-                        <tr>
-                          <td><strong>כתובת:</strong></td>
-                          <td>{checkIn.address}</td>
-                        </tr>
-                      )}
-                      {checkIn.actual_num_guests && (
-                        <tr>
-                          <td><strong>מספר אורחים בפועל:</strong></td>
-                          <td>{checkIn.actual_num_guests}</td>
-                        </tr>
-                      )}
-                      {checkIn.estimated_arrival_time && (
-                        <tr>
-                          <td><strong>שעת הגעה משוערת:</strong></td>
-                          <td>{checkIn.estimated_arrival_time}</td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
+          {isCompleted && (
+            <>
+              <div className="col-md-6">
+                <SectionCard title="פרטים אישיים">
+                  <DetailsList
+                    rows={[
+                      checkIn.id_document_type && {
+                        label: 'סוג תעודה',
+                        value: ID_DOCUMENT_LABELS[checkIn.id_document_type] ?? checkIn.id_document_type,
+                      },
+                      checkIn.id_number && { label: 'מספר תעודה', value: checkIn.id_number },
+                      checkIn.date_of_birth && { label: 'תאריך לידה', value: formatDate(checkIn.date_of_birth) },
+                      checkIn.address && { label: 'כתובת', value: checkIn.address },
+                      checkIn.actual_num_guests && { label: 'מספר אורחים בפועל', value: checkIn.actual_num_guests },
+                      checkIn.estimated_arrival_time && {
+                        label: 'שעת הגעה משוערת',
+                        value: checkIn.estimated_arrival_time,
+                      },
+                    ]}
+                  />
+                </SectionCard>
               </div>
-            </div>
 
-            <div className="col-md-6">
-              <div className="card border-0 shadow-sm hostly-dark-card" style={{ borderRadius: '12px' }}>
-                <div 
-                  className="card-header text-white"
-                  style={{
-                    background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-                    borderRadius: '12px 12px 0 0',
-                    border: 'none'
-                  }}
-                >
-                  <h5 className="mb-0">איש קשר לחירום</h5>
-                </div>
-                <div className="card-body">
-                  {checkIn.emergency_contact_name || checkIn.emergency_contact_phone ? (
-                    <table className="table table-borderless mb-0 hostly-dark-table">
-                      <tbody>
-                        {checkIn.emergency_contact_name && (
-                          <tr>
-                            <td width="40%"><strong>שם:</strong></td>
-                            <td>{checkIn.emergency_contact_name}</td>
-                          </tr>
-                        )}
-                        {checkIn.emergency_contact_phone && (
-                          <tr>
-                            <td><strong>טלפון:</strong></td>
-                            <td>{checkIn.emergency_contact_phone}</td>
-                          </tr>
-                        )}
-                      </tbody>
-                    </table>
-                  ) : (
-                    <p className="text-muted mb-0">לא הוזן איש קשר לחירום</p>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* ID Document */}
-            {checkIn.id_document_url && (
-              <div className="col-12">
-                <div className="card border-0 shadow-sm hostly-dark-card" style={{ borderRadius: '12px' }}>
-                  <div 
-                    className="card-header text-white"
-                    style={{
-                      background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                      borderRadius: '12px 12px 0 0',
-                      border: 'none'
-                    }}
-                  >
-                    <h5 className="mb-0">תעודת זהות</h5>
-                  </div>
-                  <div className="card-body text-center">
-                    <img
-                      src={checkIn.id_document_url}
-                      alt="תעודת זהות"
-                      style={{
-                        maxWidth: '100%',
-                        maxHeight: '500px',
-                        borderRadius: '8px',
-                        border: '2px solid #dee2e6'
-                      }}
+              <div className="col-md-6">
+                <SectionCard title="איש קשר לחירום">
+                  {hasEmergencyContact ? (
+                    <DetailsList
+                      rows={[
+                        checkIn.emergency_contact_name && { label: 'שם', value: checkIn.emergency_contact_name },
+                        checkIn.emergency_contact_phone && { label: 'טלפון', value: checkIn.emergency_contact_phone },
+                      ]}
                     />
-                  </div>
-                </div>
+                  ) : (
+                    <p className="mb-0" style={{ color: 'var(--htxt-3)', fontSize: 14 }}>
+                      לא הוזן איש קשר לחירום
+                    </p>
+                  )}
+                </SectionCard>
               </div>
-            )}
 
-            {/* Digital Signature */}
-            {checkIn.signature_data_url && (
-              <div className="col-12">
-                <div className="card border-0 shadow-sm hostly-dark-card" style={{ borderRadius: '12px' }}>
-                  <div 
-                    className="card-header text-white"
-                    style={{
-                      background: 'linear-gradient(135deg, #6b7280 0%, #4b5563 100%)',
-                      borderRadius: '12px 12px 0 0',
-                      border: 'none'
-                    }}
-                  >
-                    <h5 className="mb-0">חתימה דיגיטלית</h5>
-                  </div>
-                  <div className="card-body">
+              {checkIn.id_document_url && (
+                <div className="col-12">
+                  <SectionCard title="תעודת זהות">
+                    <div className="text-center">
+                      <img
+                        src={checkIn.id_document_url}
+                        alt="תעודת זהות"
+                        style={{
+                          maxWidth: '100%',
+                          maxHeight: 500,
+                          borderRadius: 8,
+                          border: '1px solid var(--hborder)',
+                        }}
+                      />
+                    </div>
+                  </SectionCard>
+                </div>
+              )}
+
+              {checkIn.signature_data_url && (
+                <div className="col-12">
+                  <SectionCard title="חתימה דיגיטלית">
                     <img
                       src={checkIn.signature_data_url}
                       alt="חתימה דיגיטלית"
                       style={{
-                        maxWidth: '400px',
-                        border: '2px solid #dee2e6',
-                        borderRadius: '8px',
-                        background: 'rgba(0,0,0,0.25)'
+                        maxWidth: 400,
+                        width: '100%',
+                        border: '1px solid var(--hborder)',
+                        borderRadius: 8,
+                        background: 'var(--hsurf)',
                       }}
                     />
                     {checkIn.signature_timestamp && (
-                      <p className="text-muted mt-2 mb-0">
-                        נחתם ב: {new Date(checkIn.signature_timestamp).toLocaleString('he-IL')}
+                      <p className="mt-2 mb-0" style={{ color: 'var(--htxt-3)', fontSize: 13 }}>
+                        נחתם ב: {formatDateTime(checkIn.signature_timestamp)}
                       </p>
                     )}
                     {checkIn.ip_address && (
-                      <p className="text-muted mt-1 mb-0" style={{ fontSize: '0.85rem' }}>
+                      <p className="mt-1 mb-0" style={{ color: 'var(--htxt-3)', fontSize: 12 }}>
                         IP: {checkIn.ip_address}
                       </p>
                     )}
-                  </div>
+                  </SectionCard>
                 </div>
-              </div>
-            )}
-          </>
-        )}
+              )}
+            </>
+          )}
 
-            {/* Actions */}
+          {(isCompleted || checkIn.status === 'pending') && (
             <div className="col-12">
-              <div className="card border-0 shadow-sm hostly-dark-card" style={{ borderRadius: '12px' }}>
-                <div className="card-body">
-                  <div className="d-flex gap-2 justify-content-end">
-                    {checkIn.status === 'completed' && (
-                      <button
-                        className="btn shadow-sm"
-                        style={{
-                          background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '8px'
-                        }}
-                        onClick={() => {/* TODO: Generate PDF */}}
-                      >
-                        <Download size={18} /> הורד PDF
-                      </button>
-                    )}
-                    {checkIn.status === 'pending' && (
-                      <button
-                        className="btn shadow-sm"
-                        style={{
-                          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '8px'
-                        }}
-                        onClick={() => {/* TODO: Resend */}}
-                      >
-                        <Send size={18} /> שלח שוב
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
+              <Card>
+                <Card.Footer className="justify-content-end">
+                  {isCompleted && (
+                    <Button
+                      variant="success"
+                      iconStart={<Download size={16} />}
+                      onClick={() => {
+                        /* TODO: Generate PDF */
+                      }}
+                    >
+                      הורד PDF
+                    </Button>
+                  )}
+                  {checkIn.status === 'pending' && (
+                    <Button
+                      variant="primary"
+                      iconStart={<Send size={16} />}
+                      onClick={() => {
+                        /* TODO: Resend */
+                      }}
+                    >
+                      שלח שוב
+                    </Button>
+                  )}
+                </Card.Footer>
+              </Card>
             </div>
-          </div>
+          )}
         </div>
       </div>
-    </div>
-  </main>
+    </main>
   )
 }
 

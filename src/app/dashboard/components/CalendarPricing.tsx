@@ -578,11 +578,11 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated, onApproveReque
                 height: '32px',
                 border: 'none',
                 backgroundColor: 'transparent',
-                color: '#667eea',
+                color: 'var(--hb)',
                 padding: 0,
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = 'rgba(102, 126, 234, 0.1)'
+                e.currentTarget.style.backgroundColor = 'var(--hb-100)'
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.backgroundColor = 'transparent'
@@ -613,11 +613,11 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated, onApproveReque
                 height: '32px',
                 border: 'none',
                 backgroundColor: 'transparent',
-                color: '#667eea',
+                color: 'var(--hb)',
                 padding: 0,
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = 'rgba(102, 126, 234, 0.1)'
+                e.currentTarget.style.backgroundColor = 'var(--hb-100)'
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.backgroundColor = 'transparent'

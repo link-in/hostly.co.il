@@ -3,10 +3,13 @@
 import React from 'react'
 import { useSelectedRoom } from '@/lib/rooms/RoomContext'
 
+/**
+ * בורר יחידות — סגנון segmented control בהיר, תואם למערכת העיצוב.
+ * מוצג רק כשיש יותר מיחידה אחת.
+ */
 export default function RoomTabs() {
   const { rooms, selectedRoomId, setSelectedRoom, isLoading } = useSelectedRoom()
 
-  // Don't render if only one room (nothing to switch)
   if (isLoading || rooms.length <= 1) {
     return null
   }
@@ -14,26 +17,11 @@ export default function RoomTabs() {
   return (
     <div
       dir="rtl"
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '0.5rem',
-        padding: '0.5rem',
-        background: 'rgba(0,0,0,0.2)',
-        borderRadius: '12px',
-        marginBottom: '1rem',
-        flexWrap: 'wrap',
-      }}
+      role="tablist"
+      aria-label="בחירת יחידה"
+      className="d-flex align-items-center flex-wrap gap-2 mb-3"
     >
-      <span
-        style={{
-          color: 'rgba(249,147,251,0.8)',
-          fontSize: '0.8rem',
-          fontWeight: 600,
-          marginLeft: '0.25rem',
-          whiteSpace: 'nowrap',
-        }}
-      >
+      <span style={{ color: 'var(--htxt-3)', fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap' }}>
         יחידה:
       </span>
       {rooms.map((room) => {
@@ -42,37 +30,23 @@ export default function RoomTabs() {
           <button
             key={room.id}
             type="button"
+            role="tab"
+            aria-selected={isActive}
             onClick={() => setSelectedRoom(room.id)}
             style={{
-              padding: '0.375rem 1rem',
-              borderRadius: '8px',
-              border: isActive
-                ? '2px solid rgba(249,147,251,0.8)'
-                : '2px solid rgba(255,255,255,0.15)',
-              background: isActive
-                ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-                : 'rgba(255,255,255,0.05)',
-              color: isActive ? '#fff' : 'rgba(255,255,255,0.65)',
-              fontSize: '0.875rem',
-              fontWeight: isActive ? 700 : 400,
+              display: 'inline-flex',
+              alignItems: 'center',
+              padding: '5px 14px',
+              borderRadius: 9999,
+              fontSize: 13,
+              fontWeight: isActive ? 600 : 400,
               cursor: 'pointer',
-              transition: 'all 0.18s ease',
               whiteSpace: 'nowrap',
-              boxShadow: isActive
-                ? '0 2px 10px rgba(102,126,234,0.45)'
-                : 'none',
-            }}
-            onMouseEnter={(e) => {
-              if (!isActive) {
-                e.currentTarget.style.background = 'rgba(255,255,255,0.1)'
-                e.currentTarget.style.color = 'rgba(255,255,255,0.9)'
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (!isActive) {
-                e.currentTarget.style.background = 'rgba(255,255,255,0.05)'
-                e.currentTarget.style.color = 'rgba(255,255,255,0.65)'
-              }
+              border: '1px solid',
+              borderColor: isActive ? 'rgba(113,51,217,0.4)' : 'var(--hborder)',
+              background: isActive ? 'rgba(113,51,217,0.1)' : 'var(--hsurf)',
+              color: isActive ? 'var(--hb)' : 'var(--htxt-2)',
+              transition: 'all 0.15s',
             }}
           >
             {room.name}

@@ -1551,14 +1551,14 @@ const DashboardClient = () => {
                   value={selectedMonth}
                   onChange={(e) => setSelectedMonth(e.target.value)}
                 >
-                  <option value="all" style={{ background: '#1e293b', color: 'white' }}>כל החודשים</option>
+                  <option value="all" style={{ background: '#fff', color: 'var(--htxt-1)' }}>כל החודשים</option>
                   {availableMonths.map((monthKey) => {
                     const [year, month] = monthKey.split('-')
                     const monthName = new Intl.DateTimeFormat('he-IL', { month: 'long', year: 'numeric' }).format(
                       new Date(parseInt(year), parseInt(month) - 1)
                     )
                     return (
-                      <option key={monthKey} value={monthKey} style={{ background: '#1e293b', color: 'white' }}>
+                      <option key={monthKey} value={monthKey} style={{ background: '#fff', color: 'var(--htxt-1)' }}>
                         {monthName}
                       </option>
                     )
@@ -1570,8 +1570,8 @@ const DashboardClient = () => {
                   value={sortOrder}
                   onChange={(e) => setSortOrder(e.target.value as 'newest' | 'oldest')}
                 >
-                  <option value="oldest" style={{ background: '#1e293b', color: 'white' }}>קרובות תחילה</option>
-                  <option value="newest" style={{ background: '#1e293b', color: 'white' }}>רחוקות תחילה</option>
+                  <option value="oldest" style={{ background: '#fff', color: 'var(--htxt-1)' }}>קרובות תחילה</option>
+                  <option value="newest" style={{ background: '#fff', color: 'var(--htxt-1)' }}>רחוקות תחילה</option>
                 </select>
                 <button
                   type="button"

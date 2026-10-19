@@ -115,22 +115,22 @@ export default function EditUserPage({ params }: { params: Promise<{ id: string 
 
   return (
     <>
-    <div dir="rtl" style={{ minHeight: '100vh', background: 'linear-gradient(135deg,#667eea 0%,#764ba2 50%,#f093fb 100%)' }}>
+    <div dir="rtl" style={{ minHeight: '100vh', background: 'var(--hn-50)' }}>
       <div className="container py-5">
         <div className="row justify-content-center">
           <div className="col-lg-6">
-            <div className="card border-0 shadow-lg" style={{ borderRadius: 16 }}>
+            <div className="card hostly-dark-card shadow-sm">
 
               {/* Header */}
-              <div className="card-header border-0 text-white"
-                style={{ background: 'linear-gradient(135deg,#667eea,#764ba2)', borderRadius: '16px 16px 0 0', padding: '1.5rem' }}>
+              <div className="card-header border-0"
+                style={{ background: 'var(--hsurf)', borderBottom: '1px solid var(--hborder-light)', borderRadius: '8px 8px 0 0', padding: '1.25rem 1.5rem' }}>
                 <div className="d-flex justify-content-between align-items-center">
                   <div>
                     <h1 className="h4 mb-0 fw-bold">עריכת משתמש</h1>
                     <small className="opacity-75">{formData.email}</small>
                   </div>
                   <Link href="/admin/users">
-                    <button className="btn btn-light btn-sm">← חזרה לרשימה</button>
+                    <button className="btn btn-outline-secondary btn-sm">← חזרה לרשימה</button>
                   </Link>
                 </div>
               </div>
@@ -295,7 +295,7 @@ export default function EditUserPage({ params }: { params: Promise<{ id: string 
                       <button type="button" className="btn btn-outline-secondary">ביטול</button>
                     </Link>
                     <button type="submit" className="btn btn-primary fw-bold px-4" disabled={saving}
-                      style={{ background: 'linear-gradient(135deg,#667eea,#764ba2)', border: 'none' }}>
+                      style={{ background: 'var(--hb)', border: 'none' }}>
                       {saving
                         ? <><span className="spinner-border spinner-border-sm me-2" />שומר...</>
                         : '💾 שמור שינויים'}

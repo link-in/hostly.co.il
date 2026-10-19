@@ -281,10 +281,10 @@ export default function AdminUsersPage() {
   const getSubBadge = (sub: AdminUserSubscription | null) => {
     if (!sub) return <span className="badge bg-secondary">אין מנוי</span>
     const cfg: Record<string, { label: string; bg: string }> = {
-      trial:     { label: 'ניסיון',   bg: 'linear-gradient(135deg,#667eea,#764ba2)' },
-      active:    { label: 'פעיל',     bg: 'linear-gradient(135deg,#10b981,#059669)' },
-      cancelled: { label: 'בוטל',     bg: 'linear-gradient(135deg,#6c757d,#495057)' },
-      expired:   { label: 'פג תוקף', bg: 'linear-gradient(135deg,#dc3545,#c82333)' },
+      trial:     { label: 'ניסיון',   bg: 'var(--hb)' },
+      active:    { label: 'פעיל',     bg: '#10b981' },
+      cancelled: { label: 'בוטל',     bg: '#6c757d' },
+      expired:   { label: 'פג תוקף', bg: '#dc3545' },
     }
     const c = cfg[sub.status] ?? cfg.expired
     const days = sub.daysRemaining
@@ -408,9 +408,9 @@ export default function AdminUsersPage() {
                     type="button"
                     className="btn btn-sm"
                     style={{
-                      border: '1px solid #667eea',
-                      color: subForm.extendDays === String(d) ? 'white' : '#667eea',
-                      background: subForm.extendDays === String(d) ? '#667eea' : 'white',
+                      border: '1px solid #7133D9',
+                      color: subForm.extendDays === String(d) ? 'white' : '#7133D9',
+                      background: subForm.extendDays === String(d) ? '#7133D9' : 'white',
                       padding: '4px 12px',
                       fontSize: '13px',
                     }}
@@ -436,7 +436,7 @@ export default function AdminUsersPage() {
                 type="button"
                 className="btn"
                 style={{
-                  background: 'linear-gradient(135deg,#667eea,#764ba2)',
+                  background: 'var(--hb)',
                   color: 'white', border: 'none', flex: 1,
                   padding: '8px 0',
                 }}
@@ -504,10 +504,7 @@ export default function AdminUsersPage() {
           <h3 
             className="mb-0"
             style={{
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
+              color: 'var(--htxt-1)',
               fontWeight: 'bold',
             }}
           >
@@ -518,7 +515,7 @@ export default function AdminUsersPage() {
           <button
             className="btn"
             style={{
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              background: 'var(--hb)',
               border: 'none',
               color: 'white',
             }}
@@ -529,11 +526,11 @@ export default function AdminUsersPage() {
         </div>
       </div>
 
-      <div className="card border-0 shadow-sm" style={{ borderRadius: '12px' }}>
+      <div className="card hostly-dark-card" style={{ borderRadius: '12px' }}>
         <div 
           className="card-body"
           style={{
-            background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(249, 147, 251, 0.05) 100%)',
+            background: 'var(--hn-50)',
           }}
         >
 
@@ -553,17 +550,14 @@ export default function AdminUsersPage() {
               <div 
                 className="card-header"
                 style={{
-                  background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(249, 147, 251, 0.1) 100%)',
+                  background: 'var(--hn-50)',
                   borderRadius: '12px 12px 0 0',
                 }}
               >
                 <h5 
                   className="mb-0"
                   style={{
-                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    backgroundClip: 'text',
+                    color: 'var(--htxt-1)',
                     fontWeight: 'bold',
                   }}
                 >
@@ -693,7 +687,7 @@ export default function AdminUsersPage() {
                       type="submit" 
                       className="btn"
                       style={{
-                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                        background: 'var(--hb)',
                         border: 'none',
                         color: 'white',
                       }}
@@ -725,17 +719,14 @@ export default function AdminUsersPage() {
               <div 
                 className="card-header"
                 style={{
-                  background: 'linear-gradient(135deg, rgba(255, 92, 92, 0.1) 0%, rgba(255, 154, 158, 0.1) 100%)',
+                  background: 'var(--hn-50)',
                   borderRadius: '12px 12px 0 0',
                 }}
               >
                 <h5 
                   className="mb-0"
                   style={{
-                    background: 'linear-gradient(135deg, #FF5A5F 0%, #FF9A9E 100%)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    backgroundClip: 'text',
+                    color: 'var(--htxt-1)',
                     fontWeight: 'bold',
                   }}
                 >
@@ -754,7 +745,7 @@ export default function AdminUsersPage() {
                     type="button"
                     className="btn"
                     style={{
-                      background: 'linear-gradient(135deg, #FF5A5F 0%, #FF9A9E 100%)',
+                      background: '#FF5A5F',
                       border: 'none',
                       color: 'white',
                       minWidth: '150px',
@@ -781,16 +772,16 @@ export default function AdminUsersPage() {
               <thead>
                 <tr 
                   style={{
-                    background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(249, 147, 251, 0.1) 100%)',
+                    background: 'var(--hn-50)',
                   }}
                 >
-                  <th style={{ fontWeight: 'bold', color: '#667eea' }}>שם מלא</th>
-                  <th style={{ fontWeight: 'bold', color: '#667eea' }}>אימייל</th>
-                  <th style={{ fontWeight: 'bold', color: '#667eea' }}>טלפון</th>
-                  <th style={{ fontWeight: 'bold', color: '#667eea' }}>Property ID</th>
-                  <th style={{ fontWeight: 'bold', color: '#667eea' }}>תפקיד</th>
-                  <th style={{ fontWeight: 'bold', color: '#667eea' }}>מנוי</th>
-                  <th style={{ fontWeight: 'bold', color: '#667eea' }}>פעולות</th>
+                  <th style={{ fontWeight: 600, color: 'var(--htxt-3)' }}>שם מלא</th>
+                  <th style={{ fontWeight: 600, color: 'var(--htxt-3)' }}>אימייל</th>
+                  <th style={{ fontWeight: 600, color: 'var(--htxt-3)' }}>טלפון</th>
+                  <th style={{ fontWeight: 600, color: 'var(--htxt-3)' }}>Property ID</th>
+                  <th style={{ fontWeight: 600, color: 'var(--htxt-3)' }}>תפקיד</th>
+                  <th style={{ fontWeight: 600, color: 'var(--htxt-3)' }}>מנוי</th>
+                  <th style={{ fontWeight: 600, color: 'var(--htxt-3)' }}>פעולות</th>
                 </tr>
               </thead>
               <tbody>
@@ -823,8 +814,8 @@ export default function AdminUsersPage() {
                         className="badge"
                         style={{
                           background: user.role === 'admin' 
-                            ? 'linear-gradient(135deg, #764ba2 0%, #f093fb 100%)'
-                            : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                            ? 'var(--hb)'
+                            : 'var(--hb)',
                           color: 'white',
                         }}
                       >
@@ -836,24 +827,33 @@ export default function AdminUsersPage() {
                     </td>
                     <td>
                       <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'nowrap' }}>
+                        {user.role !== 'admin' && (
+                          <Link
+                            href={`/admin/onboarding/${user.id}`}
+                            className="btn btn-sm btn-outline-primary"
+                            style={{ fontSize: '13px', lineHeight: '1.4', padding: '4px 10px' }}
+                          >
+                            קליטה
+                          </Link>
+                        )}
                         <Link href={`/admin/users/${user.id}/edit`}>
                           <button
                             className="btn btn-sm"
                             style={{
-                              border: '1px solid #667eea',
-                              color: '#667eea',
+                              border: '1px solid #7133D9',
+                              color: '#7133D9',
                               backgroundColor: 'transparent',
                               fontSize: '13px',
                               lineHeight: '1.4',
                               padding: '4px 10px',
                             }}
                             onMouseEnter={(e) => {
-                              e.currentTarget.style.backgroundColor = '#667eea'
+                              e.currentTarget.style.backgroundColor = '#7133D9'
                               e.currentTarget.style.color = 'white'
                             }}
                             onMouseLeave={(e) => {
                               e.currentTarget.style.backgroundColor = 'transparent'
-                              e.currentTarget.style.color = '#667eea'
+                              e.currentTarget.style.color = '#7133D9'
                             }}
                           >
                             ערוך
@@ -862,20 +862,20 @@ export default function AdminUsersPage() {
                         <button
                           className="btn btn-sm"
                           style={{
-                            border: '1px solid #764ba2',
-                            color: '#764ba2',
+                            border: '1px solid #5D22BD',
+                            color: '#5D22BD',
                             backgroundColor: 'transparent',
                             fontSize: '13px',
                             lineHeight: '1.4',
                             padding: '4px 10px',
                           }}
                           onMouseEnter={(e) => {
-                            e.currentTarget.style.backgroundColor = '#764ba2'
+                            e.currentTarget.style.backgroundColor = '#5D22BD'
                             e.currentTarget.style.color = 'white'
                           }}
                           onMouseLeave={(e) => {
                             e.currentTarget.style.backgroundColor = 'transparent'
-                            e.currentTarget.style.color = '#764ba2'
+                            e.currentTarget.style.color = '#5D22BD'
                           }}
                           onClick={() => subPanel === user.id ? setSubPanel(null) : openSubPanel(user)}
                         >
@@ -927,9 +927,9 @@ export default function AdminUsersPage() {
             href="/admin" 
             className="btn"
             style={{
-              border: '1px solid white',
-              color: 'white',
-              backgroundColor: 'rgba(255, 255, 255, 0.1)',
+              border: '1px solid var(--hborder)',
+              color: 'var(--htxt-2)',
+              backgroundColor: 'var(--hsurf)',
             }}
           >
             ← חזור ללוח בקרה אדמין

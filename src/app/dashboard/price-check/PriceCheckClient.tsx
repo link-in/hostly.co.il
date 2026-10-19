@@ -9,7 +9,8 @@ import DashboardLoader from '@/components/DashboardLoader'
 import RoomTabs from '../components/RoomTabs'
 import { useSelectedRoom } from '@/lib/rooms/RoomContext'
 import { formatCurrency } from '@/lib/dashboard/utils'
-import { Search } from 'lucide-react'
+import { Button, Card, PageHeader } from '@/components/ui'
+import { CalendarDays, CheckCircle2, Moon, Banknote, Search, Users, CalendarX } from 'lucide-react'
 
 type PriceCheckResult = {
   available: boolean
@@ -23,17 +24,125 @@ type PriceCheckResult = {
   numChild: number
 }
 
+const CHANNEL_PRICES = [
+  { name: 'Airbnb', multiplier: 1.18, helper: '+18%' },
+  { name: 'Booking', multiplier: 1.21, helper: '+21%' },
+  { name: 'ישירות', multiplier: 1, helper: 'מחיר בסיס' },
+]
+
+const labelStyle: React.CSSProperties = {
+  color: 'var(--htxt-2)',
+  fontSize: 12.5,
+  fontWeight: 600,
+}
+
+// ─── Presentational pieces ────────────────────────────────────────────────────
+
+function ResultFact({ icon, children }: { icon: React.ReactNode; children: React.ReactNode }) {
+  return (
+    <div className="d-flex flex-column align-items-center gap-1 text-center" style={{ color: 'var(--htxt-2)', fontSize: 14 }}>
+      <span style={{ color: 'var(--hb)' }}>{icon}</span>
+      <span style={{ fontWeight: 600, color: 'var(--htxt-1)' }}>{children}</span>
+    </div>
+  )
+}
+
+function AvailableResult({ result }: { result: PriceCheckResult }) {
+  return (
+    <div>
+      <div className="text-center mb-3">
+        <span
+          className="d-inline-flex align-items-center gap-1"
+          style={{
+            padding: '3px 12px',
+            borderRadius: 9999,
+            fontSize: 12.5,
+            fontWeight: 600,
+            color: '#15803d',
+            background: 'rgba(34,197,94,0.12)',
+            border: '1px solid rgba(34,197,94,0.3)',
+          }}
+        >
+          <CheckCircle2 size={13} />
+          זמין
+        </span>
+        <div style={{ fontSize: 'clamp(2rem, 7vw, 2.75rem)', fontWeight: 700, color: 'var(--hb)', lineHeight: 1.2, marginTop: 8 }}>
+          {formatCurrency(result.price)}
+        </div>
+        <div style={{ color: 'var(--htxt-3)', fontSize: 13 }}>
+          {new Date(result.checkIn).toLocaleDateString('he-IL')} – {new Date(result.checkOut).toLocaleDateString('he-IL')}
+        </div>
+      </div>
+
+      <div className="row g-3 py-3" style={{ borderTop: '1px solid var(--hborder-light)' }}>
+        <div className="col-4">
+          <ResultFact icon={<Moon size={20} />}>{result.nights} לילות</ResultFact>
+        </div>
+        <div className="col-4">
+          <ResultFact icon={<Banknote size={20} />}>{formatCurrency(result.pricePerNight)} ללילה</ResultFact>
+        </div>
+        <div className="col-4">
+          <ResultFact icon={<Users size={20} />}>
+            {result.numAdult} מבוגרים
+            {result.numChild > 0 && `, ${result.numChild} ילדים`}
+          </ResultFact>
+        </div>
+      </div>
+
+      <div className="pt-3" style={{ borderTop: '1px solid var(--hborder-light)' }}>
+        <div className="mb-2" style={{ color: 'var(--htxt-2)', fontSize: 13, fontWeight: 600 }}>
+          מחיר לאורח בכל ערוץ
+        </div>
+        <div className="row g-2">
+          {CHANNEL_PRICES.map((channel) => (
+            <div className="col-4" key={channel.name}>
+              <div
+                className="text-center"
+                style={{ background: 'var(--hn-50)', border: '1px solid var(--hborder)', borderRadius: 8, padding: '10px 6px' }}
+              >
+                <div style={{ color: 'var(--htxt-3)', fontSize: 12, fontWeight: 500 }}>{channel.name}</div>
+                <div style={{ color: 'var(--htxt-1)', fontSize: 16, fontWeight: 700 }}>
+                  {formatCurrency(result.price * channel.multiplier)}
+                </div>
+                <div style={{ color: 'var(--htxt-3)', fontSize: 11 }}>{channel.helper}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function UnavailableResult() {
+  return (
+    <div className="text-center py-3">
+      <div style={{ color: 'var(--htxt-3)' }}>
+        <CalendarX size={36} />
+      </div>
+      <h4 className="mt-2 mb-1" style={{ color: 'var(--htxt-1)', fontSize: 18, fontWeight: 600 }}>
+        לא זמין
+      </h4>
+      <p className="mb-0" style={{ color: 'var(--htxt-3)', fontSize: 14 }}>
+        התאריכים שבחרת אינם זמינים להזמנה
+      </p>
+    </div>
+  )
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
+
 export default function PriceCheckClient() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const { selectedRoomId } = useSelectedRoom()
-  
+
   // Form state
   const [checkIn, setCheckIn] = useState('')
   const [checkOut, setCheckOut] = useState('')
   const [numAdult, setNumAdult] = useState(2)
   const [numChild, setNumChild] = useState(0)
-  
+
   // Result state
   const [result, setResult] = useState<PriceCheckResult | null>(null)
   const [loading, setLoading] = useState(false)
@@ -51,7 +160,7 @@ export default function PriceCheckClient() {
       const today = new Date()
       today.setHours(0, 0, 0, 0)
       setCheckIn(today.toISOString().split('T')[0])
-      
+
       const tomorrow = new Date(today)
       tomorrow.setDate(tomorrow.getDate() + 1)
       setCheckOut(tomorrow.toISOString().split('T')[0])
@@ -132,263 +241,107 @@ export default function PriceCheckClient() {
     return null
   }
 
+  const todayIso = new Date().toISOString().split('T')[0]
+
   return (
-    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
+    <main dir="rtl" style={{ minHeight: '100vh', background: 'var(--hn-50)' }}>
       <Toaster position="top-center" dir="rtl" />
-      
-      <div className="container py-4">
-        <DashboardHeader
-          session={session}
-          currentPage="price-check"
-          showLandingPageButton={true}
+      <DashboardHeader session={session} currentPage="price-check" showLandingPageButton={true} />
+
+      <div className="container-fluid py-3 py-md-4 px-3 px-md-4">
+        <PageHeader
+          title="בדיקת מחיר וזמינות"
+          subtitle="הזן תאריכים ומספר אורחים לבדיקת מחיר"
+          icon={<CalendarDays size={20} />}
         />
+
         <RoomTabs />
 
-        <div className="row mt-4">
-          <div className="col-12">
-            {/* Main Card */}
-            <div 
-              className="card shadow-lg hostly-dark-card"
-              style={{
-                borderRadius: '12px',
-                border: 'none',
-              }}
-            >
-              <div 
-                className="card-header text-white text-center"
-                style={{
-                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                  borderRadius: '12px 12px 0 0',
-                  padding: '1.5rem',
-                }}
-              >
-                <h4 className="mb-0" style={{ fontWeight: '600' }}>בדיקת מחיר וזמינות</h4>
-                <p className="mb-0 mt-2" style={{ fontSize: '0.9rem', opacity: 0.9 }}>
-                  הזן תאריכים ומספר אורחים לבדיקת מחיר
-                </p>
-              </div>
-
-              <div className="card-body p-4">
-                <div className="row g-3">
-                  {/* Check-in Date */}
-                  <div className="col-md-6">
-                    <label className="form-label fw-semibold">תאריך כניסה</label>
-                    <input
-                      type="date"
-                      className="form-control"
-                      value={checkIn}
-                      onChange={(e) => setCheckIn(e.target.value)}
-                      min={new Date().toISOString().split('T')[0]}
-                      style={{
-                        padding: '0.75rem',
-                        borderRadius: '8px',
-                        border: '2px solid #e0e0e0',
-                      }}
-                    />
-                  </div>
-
-                  {/* Check-out Date */}
-                  <div className="col-md-6">
-                    <label className="form-label fw-semibold">תאריך יציאה</label>
-                    <input
-                      type="date"
-                      className="form-control"
-                      value={checkOut}
-                      onChange={(e) => setCheckOut(e.target.value)}
-                      min={checkIn || new Date().toISOString().split('T')[0]}
-                      style={{
-                        padding: '0.75rem',
-                        borderRadius: '8px',
-                        border: '2px solid #e0e0e0',
-                      }}
-                    />
-                  </div>
-
-                  {/* Number of Adults */}
-                  <div className="col-md-6">
-                    <label className="form-label fw-semibold">מספר מבוגרים</label>
-                    <input
-                      type="number"
-                      className="form-control"
-                      value={numAdult}
-                      onChange={(e) => setNumAdult(Math.max(1, parseInt(e.target.value) || 1))}
-                      min="1"
-                      max="20"
-                      style={{
-                        padding: '0.75rem',
-                        borderRadius: '8px',
-                        border: '2px solid #e0e0e0',
-                      }}
-                    />
-                  </div>
-
-                  {/* Number of Children */}
-                  <div className="col-md-6">
-                    <label className="form-label fw-semibold">מספר ילדים</label>
-                    <input
-                      type="number"
-                      className="form-control"
-                      value={numChild}
-                      onChange={(e) => setNumChild(Math.max(0, parseInt(e.target.value) || 0))}
-                      min="0"
-                      max="20"
-                      style={{
-                        padding: '0.75rem',
-                        borderRadius: '8px',
-                        border: '2px solid #e0e0e0',
-                      }}
-                    />
-                  </div>
-
-                  {/* Check Price Button */}
-                  <div className="col-12 text-center mt-4">
-                    <button
-                      type="button"
-                      onClick={handleCheckPrice}
-                      disabled={loading}
-                      className="hostly-btn hostly-btn-lg hostly-btn-primary"
-                    >
-                      {loading ? (
-                        <>
-                          <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                          בודק מחיר...
-                        </>
-                      ) : (
-                        <>
-                          <Search size={18} />
-                          בדוק מחיר
-                        </>
-                      )}
-                    </button>
-                  </div>
+        <div className="row justify-content-center">
+          <div className="col-12 col-lg-8 col-xl-6">
+            <Card padded className="hostly-dark-card">
+              <div className="row g-3">
+                <div className="col-md-6">
+                  <label className="form-label mb-1" style={labelStyle} htmlFor="price-check-in">
+                    תאריך כניסה
+                  </label>
+                  <input
+                    id="price-check-in"
+                    type="date"
+                    className="form-control"
+                    value={checkIn}
+                    onChange={(e) => setCheckIn(e.target.value)}
+                    min={todayIso}
+                  />
                 </div>
 
-                {/* Results */}
-                {result && (
-                  <div className="mt-4">
-                    <hr />
-                    {result.available ? (
-                      <div 
-                        className="text-center p-4"
-                        style={{
-                          background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-                          borderRadius: '12px',
-                          color: 'white',
-                        }}
-                      >
-                        <div className="mb-3">
-                          <span 
-                            className="badge bg-white text-success fw-semibold"
-                            style={{ fontSize: '0.9rem', padding: '0.5rem 1rem' }}
-                          >
-                            ✓ זמין
-                          </span>
-                        </div>
-                        
-                        <h2 className="mb-3" style={{ fontSize: '3rem', fontWeight: '700' }}>
-                          {formatCurrency(result.price)}
-                        </h2>
-                        
-                        <div className="row text-center mt-4">
-                          <div className="col-4">
-                            <div style={{ fontSize: '2rem' }}>🌙</div>
-                            <div className="mt-2 fw-semibold">{result.nights} לילות</div>
-                          </div>
-                          <div className="col-4">
-                            <div style={{ fontSize: '2rem' }}>💵</div>
-                            <div className="mt-2 fw-semibold">{formatCurrency(result.pricePerNight)} ללילה</div>
-                          </div>
-                          <div className="col-4">
-                            <div style={{ fontSize: '2rem' }}>👥</div>
-                            <div className="mt-2 fw-semibold">
-                              {result.numAdult} מבוגרים
-                              {result.numChild > 0 && `, ${result.numChild} ילדים`}
-                            </div>
-                          </div>
-                        </div>
+                <div className="col-md-6">
+                  <label className="form-label mb-1" style={labelStyle} htmlFor="price-check-out">
+                    תאריך יציאה
+                  </label>
+                  <input
+                    id="price-check-out"
+                    type="date"
+                    className="form-control"
+                    value={checkOut}
+                    onChange={(e) => setCheckOut(e.target.value)}
+                    min={checkIn || todayIso}
+                  />
+                </div>
 
-                        <div className="mt-4 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.3)' }}>
-                          <small style={{ opacity: 0.9 }}>
-                            📅 {new Date(result.checkIn).toLocaleDateString('he-IL')} - {new Date(result.checkOut).toLocaleDateString('he-IL')}
-                          </small>
-                        </div>
+                <div className="col-md-6">
+                  <label className="form-label mb-1" style={labelStyle} htmlFor="price-check-adults">
+                    מספר מבוגרים
+                  </label>
+                  <input
+                    id="price-check-adults"
+                    type="number"
+                    className="form-control"
+                    value={numAdult}
+                    onChange={(e) => setNumAdult(Math.max(1, parseInt(e.target.value) || 1))}
+                    min="1"
+                    max="20"
+                  />
+                </div>
 
-                        {/* Channel Prices */}
-                        <div className="mt-4 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.3)' }}>
-                          <h6 className="mb-3" style={{ opacity: 0.95, fontSize: '0.95rem' }}>💰 מחיר לאורח בכל ערוץ:</h6>
-                          <div className="row g-2">
-                            <div className="col-4">
-                              <div style={{ 
-                                background: 'rgba(255,255,255,0.15)', 
-                                borderRadius: '8px', 
-                                padding: '0.75rem',
-                                backdropFilter: 'blur(10px)'
-                              }}>
-                                <div style={{ fontSize: '1.3rem', marginBottom: '0.25rem' }}>🏠</div>
-                                <div style={{ fontSize: '0.75rem', opacity: 0.9, marginBottom: '0.25rem' }}>Airbnb</div>
-                                <div style={{ fontSize: '1.1rem', fontWeight: '600' }}>
-                                  {formatCurrency(result.price * 1.18)}
-                                </div>
-                                <div style={{ fontSize: '0.7rem', opacity: 0.8 }}>+18%</div>
-                              </div>
-                            </div>
-                            <div className="col-4">
-                              <div style={{ 
-                                background: 'rgba(255,255,255,0.15)', 
-                                borderRadius: '8px', 
-                                padding: '0.75rem',
-                                backdropFilter: 'blur(10px)'
-                              }}>
-                                <div style={{ fontSize: '1.3rem', marginBottom: '0.25rem' }}>🏨</div>
-                                <div style={{ fontSize: '0.75rem', opacity: 0.9, marginBottom: '0.25rem' }}>Booking</div>
-                                <div style={{ fontSize: '1.1rem', fontWeight: '600' }}>
-                                  {formatCurrency(result.price * 1.21)}
-                                </div>
-                                <div style={{ fontSize: '0.7rem', opacity: 0.8 }}>+21%</div>
-                              </div>
-                            </div>
-                            <div className="col-4">
-                              <div style={{ 
-                                background: 'rgba(255,255,255,0.15)', 
-                                borderRadius: '8px', 
-                                padding: '0.75rem',
-                                backdropFilter: 'blur(10px)'
-                              }}>
-                                <div style={{ fontSize: '1.3rem', marginBottom: '0.25rem' }}>✨</div>
-                                <div style={{ fontSize: '0.75rem', opacity: 0.9, marginBottom: '0.25rem' }}>ישירות</div>
-                                <div style={{ fontSize: '1.1rem', fontWeight: '600' }}>
-                                  {formatCurrency(result.price)}
-                                </div>
-                                <div style={{ fontSize: '0.7rem', opacity: 0.8 }}>מחיר בסיס</div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      <div 
-                        className="text-center p-4"
-                        style={{
-                          background: 'rgba(0,0,0,0.25)',
-                          borderRadius: '12px',
-                          color: 'rgba(255,255,255,0.92)',
-                          border: '1px solid rgba(249,147,251,0.25)',
-                        }}
-                      >
-                        <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📅</div>
-                        <h4 className="mb-2" style={{ color: '#c4b5fd', fontWeight: '600' }}>לא זמין</h4>
-                        <p className="mb-0" style={{ color: 'rgba(255,255,255,0.7)' }}>
-                          התאריכים שבחרת אינם זמינים להזמנה
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                )}
+                <div className="col-md-6">
+                  <label className="form-label mb-1" style={labelStyle} htmlFor="price-check-children">
+                    מספר ילדים
+                  </label>
+                  <input
+                    id="price-check-children"
+                    type="number"
+                    className="form-control"
+                    value={numChild}
+                    onChange={(e) => setNumChild(Math.max(0, parseInt(e.target.value) || 0))}
+                    min="0"
+                    max="20"
+                  />
+                </div>
+
+                <div className="col-12">
+                  <Button
+                    variant="primary"
+                    size="lg"
+                    className="w-100"
+                    loading={loading}
+                    iconStart={<Search size={18} />}
+                    onClick={handleCheckPrice}
+                  >
+                    {loading ? 'בודק מחיר...' : 'בדוק מחיר'}
+                  </Button>
+                </div>
               </div>
-            </div>
+
+              {result && (
+                <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--hborder-light)' }}>
+                  {result.available ? <AvailableResult result={result} /> : <UnavailableResult />}
+                </div>
+              )}
+            </Card>
           </div>
         </div>
       </div>
-    </div>
+    </main>
   )
 }
