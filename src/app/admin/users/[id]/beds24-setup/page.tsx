@@ -185,7 +185,7 @@ export default function Beds24SetupPage({ params }: { params: Promise<{ id: stri
         .step-body { padding: 18px; }
       `}</style>
 
-      <div dir="rtl" style={{ minHeight: '100vh', background: 'linear-gradient(135deg,#667eea 0%,#764ba2 50%,#f093fb 100%)' }}>
+      <div dir="rtl" style={{ minHeight: '100vh', background: 'var(--hn-50)' }}>
         <div className="container py-5">
           <div className="row justify-content-center">
             <div className="col-lg-6">
@@ -193,8 +193,8 @@ export default function Beds24SetupPage({ params }: { params: Promise<{ id: stri
               {/* ── Header ── */}
               <div className="card border-0 shadow-lg mb-4" style={{ borderRadius: 16 }}>
                 <div
-                  className="card-header border-0 text-white"
-                  style={{ background: 'linear-gradient(135deg,#667eea,#764ba2)', borderRadius: '16px 16px 0 0', padding: '1.5rem' }}
+                  className="card-header border-0"
+                  style={{ background: 'var(--hsurf)', borderBottom: '1px solid var(--hborder-light)', borderRadius: '8px 8px 0 0', padding: '1.25rem 1.5rem' }}
                 >
                   <div className="d-flex justify-content-between align-items-center">
                     <div>
@@ -204,7 +204,7 @@ export default function Beds24SetupPage({ params }: { params: Promise<{ id: stri
                       <small className="opacity-75">חיבור חשבון-משנה ידני — שלושה שלבים</small>
                     </div>
                     <Link href={`/admin/users/${userId}/edit`}>
-                      <button className="btn btn-light btn-sm">← חזרה לעריכה</button>
+                      <button className="btn btn-outline-secondary btn-sm">← חזרה לעריכה</button>
                     </Link>
                   </div>
                 </div>
@@ -213,7 +213,7 @@ export default function Beds24SetupPage({ params }: { params: Promise<{ id: stri
               {/* ── Step 1: Invite Code ── */}
               <div className={`step-card ${steps.invite}`}>
                 <div className="step-header">
-                  <KeyRound size={18} style={{ color: steps.invite === 'done' ? '#15803d' : '#667eea', flexShrink: 0 }} />
+                  <KeyRound size={18} style={{ color: steps.invite === 'done' ? '#15803d' : '#7133D9', flexShrink: 0 }} />
                   <span style={{ flex: 1 }}>שלב 1 — Invite Code</span>
                   {stepBadge(steps.invite, steps.invite === 'done' ? 'הושלם' : steps.invite === 'error' ? 'שגיאה' : 'ממתין')}
                 </div>
@@ -257,7 +257,7 @@ export default function Beds24SetupPage({ params }: { params: Promise<{ id: stri
                       <button
                         type="submit"
                         className="btn btn-primary fw-bold"
-                        style={{ background: 'linear-gradient(135deg,#667eea,#764ba2)', border: 'none' }}
+                        style={{ background: 'var(--hb)', border: 'none' }}
                         disabled={inviteLoading || !inviteCode.trim()}
                       >
                         {inviteLoading
@@ -272,7 +272,7 @@ export default function Beds24SetupPage({ params }: { params: Promise<{ id: stri
               {/* ── Step 2: Property + Room IDs ── */}
               <div className={`step-card ${steps.ids}`}>
                 <div className="step-header">
-                  <Database size={18} style={{ color: steps.ids === 'done' ? '#15803d' : '#667eea', flexShrink: 0 }} />
+                  <Database size={18} style={{ color: steps.ids === 'done' ? '#15803d' : '#7133D9', flexShrink: 0 }} />
                   <span style={{ flex: 1 }}>שלב 2 — Property ID + Room ID</span>
                   {stepBadge(steps.ids, steps.ids === 'done' ? 'הושלם' : steps.ids === 'error' ? 'שגיאה' : steps.ids === 'pending' ? 'ממתין לשלב 1' : 'ממתין')}
                 </div>
@@ -337,7 +337,7 @@ export default function Beds24SetupPage({ params }: { params: Promise<{ id: stri
                       <button
                         type="submit"
                         className="btn btn-primary fw-bold"
-                        style={{ background: 'linear-gradient(135deg,#667eea,#764ba2)', border: 'none' }}
+                        style={{ background: 'var(--hb)', border: 'none' }}
                         disabled={idsLoading || !inviteDone || !propertyId.trim() || !roomId.trim()}
                       >
                         {idsLoading
@@ -352,7 +352,7 @@ export default function Beds24SetupPage({ params }: { params: Promise<{ id: stri
               {/* ── Step 3: Seed Cache ── */}
               <div className={`step-card ${steps.cache}`}>
                 <div className="step-header">
-                  <Server size={18} style={{ color: steps.cache === 'done' ? '#15803d' : '#667eea', flexShrink: 0 }} />
+                  <Server size={18} style={{ color: steps.cache === 'done' ? '#15803d' : '#7133D9', flexShrink: 0 }} />
                   <span style={{ flex: 1 }}>שלב 3 — אתחול Cache זמינות</span>
                   {stepBadge(steps.cache, steps.cache === 'done' ? 'הושלם' : steps.cache === 'error' ? 'שגיאה' : steps.cache === 'pending' ? 'ממתין לשלב 2' : 'ממתין')}
                 </div>
@@ -380,7 +380,7 @@ export default function Beds24SetupPage({ params }: { params: Promise<{ id: stri
                       <button
                         type="button"
                         className="btn btn-primary fw-bold"
-                        style={{ background: 'linear-gradient(135deg,#667eea,#764ba2)', border: 'none' }}
+                        style={{ background: 'var(--hb)', border: 'none' }}
                         disabled={cacheLoading || !idsDone}
                         onClick={handleSeedCache}
                       >
@@ -397,7 +397,7 @@ export default function Beds24SetupPage({ params }: { params: Promise<{ id: stri
               {allDone && (
                 <div
                   className="card border-0 shadow"
-                  style={{ borderRadius: 12, background: 'linear-gradient(135deg,#f0fdf4,#dcfce7)', border: '1.5px solid #86efac' }}
+                  style={{ borderRadius: 12, background: '#f0fdf4', border: '1.5px solid #86efac' }}
                 >
                   <div className="card-body p-4 text-center">
                     <CheckCircle size={40} style={{ color: '#15803d', marginBottom: 12 }} />

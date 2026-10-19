@@ -5,6 +5,8 @@ import { useSession, signOut } from 'next-auth/react'
 import Link from 'next/link'
 import Image from 'next/image'
 import DashboardHeader from '@/components/DashboardHeader'
+import { PageHeader } from '@/components/ui'
+import { Globe } from 'lucide-react'
 import DashboardLoader from '@/components/DashboardLoader'
 
 export default function LandingEditor() {
@@ -384,7 +386,7 @@ export default function LandingEditor() {
   return (
     <div dir="rtl" style={{ 
       minHeight: '100vh', 
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
+      background: 'var(--hn-50)',
       padding: '20px 20px 40px'
     }}>
         {/* Notification Toast */}
@@ -397,7 +399,7 @@ export default function LandingEditor() {
             zIndex: 9999,
             minWidth: '300px',
             maxWidth: '500px',
-            backgroundColor: notification.type === 'success' ? '#28a745' : '#dc3545',
+            backgroundColor: notification.type === 'success' ? '#15803d' : '#dc2626',
             color: 'white',
             padding: '1rem 1.5rem',
             borderRadius: '8px',
@@ -453,6 +455,11 @@ export default function LandingEditor() {
         />
       </div>
 
+      {/* Page title */}
+      <div style={{ maxWidth: '1296px', margin: '0 auto' }}>
+        <PageHeader title="ניהול דף נחיתה" subtitle="עריכת תוכן, תמונות והגדרות דף הנחיתה של הנכס" icon={<Globe size={20} />} />
+      </div>
+
       {/* Tabs */}
       <div style={{ maxWidth: '1296px', margin: '0 auto 20px' }}>
         <div style={{ 
@@ -460,9 +467,9 @@ export default function LandingEditor() {
           gap: '10px', 
           overflowX: 'auto',
           padding: '10px',
-          background: 'white',
-          borderRadius: '12px',
-          boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+          background: 'var(--hsurf)',
+          border: '1px solid var(--hborder)',
+          borderRadius: '8px'
         }}>
           {tabs.map(tab => (
             <button
@@ -471,9 +478,9 @@ export default function LandingEditor() {
               className="btn"
               style={{
                 background: activeTab === tab.id 
-                  ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' 
-                  : '#f8f9fa',
-                color: activeTab === tab.id ? 'white' : '#333',
+                  ? 'var(--hb)' 
+                  : 'var(--hn-100)',
+                color: activeTab === tab.id ? '#fff' : 'var(--htxt-2)',
                 border: 'none',
                 whiteSpace: 'nowrap',
                 fontWeight: activeTab === tab.id ? 'bold' : 'normal'
@@ -599,7 +606,7 @@ export default function LandingEditor() {
                 <button
                   className="btn btn-lg w-100"
                   style={{
-                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    background: 'var(--hb)',
                     border: 'none',
                     color: 'white',
                   }}
@@ -710,7 +717,7 @@ export default function LandingEditor() {
                 <button
                   className="btn btn-lg w-100"
                   style={{
-                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    background: 'var(--hb)',
                     border: 'none',
                     color: 'white',
                   }}
@@ -777,7 +784,7 @@ export default function LandingEditor() {
                             transition: 'all 0.2s'
                           }}
                           onMouseEnter={(e) => {
-                            e.currentTarget.style.borderColor = '#667eea'
+                            e.currentTarget.style.borderColor = '#7133D9'
                             e.currentTarget.style.backgroundColor = item.icon ? '#f8f9ff' : '#f0f0f5'
                           }}
                           onMouseLeave={(e) => {
@@ -800,7 +807,7 @@ export default function LandingEditor() {
                               left: 0,
                               right: 0,
                               backgroundColor: 'white',
-                              border: '2px solid #667eea',
+                              border: '2px solid var(--hb)',
                               borderRadius: '8px',
                               padding: '10px',
                               boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
@@ -871,7 +878,7 @@ export default function LandingEditor() {
                 <button
                   className="btn btn-lg w-100"
                   style={{
-                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    background: 'var(--hb)',
                     border: 'none',
                     color: 'white',
                   }}

@@ -37,7 +37,7 @@ function Beds24TokenSection() {
       <div
         className="card-header border-0 d-flex align-items-center gap-2"
         style={{
-          background: 'linear-gradient(135deg, rgba(234, 179, 8, 0.1) 0%, rgba(251, 146, 60, 0.1) 100%)',
+          background: 'var(--hn-50)',
           borderRadius: '12px 12px 0 0',
         }}
       >
@@ -67,7 +67,7 @@ function Beds24TokenSection() {
             <button
               className="btn"
               style={{
-                background: 'linear-gradient(135deg, #f59e0b 0%, #f97316 100%)',
+                background: '#f59e0b',
                 color: 'white',
                 border: 'none',
                 minWidth: 120,
@@ -198,10 +198,7 @@ export default function SettingsPage() {
           <h1 
             className="display-5 fw-bold mb-2"
             style={{
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
+              color: 'var(--htxt-1)',
             }}
           >
             ⚙️ הגדרות מערכת
@@ -227,15 +224,15 @@ export default function SettingsPage() {
         </div>
       )}
 
-      <div className="card border-0 shadow-sm" style={{ borderRadius: '12px' }}>
+      <div className="card hostly-dark-card" style={{ borderRadius: '12px' }}>
         <div 
           className="card-header border-0"
           style={{
-            background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(249, 147, 251, 0.1) 100%)',
+            background: 'var(--hn-50)',
             borderRadius: '12px 12px 0 0',
           }}
         >
-          <h5 className="mb-0 fw-bold" style={{ color: '#667eea' }}>
+          <h5 className="mb-0 fw-bold" style={{ color: '#7133D9' }}>
             📊 עמלות פלטפורמות
           </h5>
         </div>
@@ -271,7 +268,7 @@ export default function SettingsPage() {
                         <span 
                           className="badge"
                           style={{
-                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                            background: 'var(--hb)',
                             color: 'white',
                             fontSize: '1rem',
                             padding: '0.5rem 1rem',
@@ -313,7 +310,7 @@ export default function SettingsPage() {
                         <button
                           className="btn btn-sm"
                           style={{
-                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                            background: 'var(--hb)',
                             color: 'white',
                             border: 'none',
                           }}
@@ -336,7 +333,7 @@ export default function SettingsPage() {
           <div 
             className="alert alert-info mt-4"
             style={{
-              background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(249, 147, 251, 0.05) 100%)',
+              background: 'var(--hn-50)',
               border: '1px solid rgba(102, 126, 234, 0.2)',
               borderRadius: '8px',
             }}

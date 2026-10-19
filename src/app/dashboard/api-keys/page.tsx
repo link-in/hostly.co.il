@@ -5,6 +5,8 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import DashboardHeader from '@/components/DashboardHeader'
 import DashboardLoader from '@/components/DashboardLoader'
+import { Button, PageHeader } from '@/components/ui'
+import { KeyRound, RefreshCw } from 'lucide-react'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -190,26 +192,25 @@ export default function ApiKeysPage() {
   }
 
   return (
-    <div dir="rtl" style={{ minHeight: '100vh' }}>
-      <div className="container py-4" style={{ maxWidth: 760 }}>
+    <main dir="rtl" style={{ minHeight: '100vh', background: 'var(--hn-50)' }}>
+      <DashboardHeader session={session} currentPage="api-keys" />
 
-        {/* Header */}
-        <DashboardHeader session={session} currentPage="api-keys" title="מפתחות API" />
+      <div className="container-fluid py-3 py-md-4 px-3 px-md-4" style={{ maxWidth: 840, marginInline: 'auto' }}>
+        <PageHeader
+          title="מפתחות API"
+          subtitle="חיבור הלוח המוטמע והאינטגרציות לחשבון שלך"
+          icon={<KeyRound size={20} />}
+        />
 
-        <div className="mt-4">
+        <div>
 
           {/* ── Create new key card ────────────────────────────────────── */}
           <div
             className="card border-0 shadow-sm mb-4 hostly-dark-card"
-            style={{ borderRadius: 14, overflow: 'hidden' }}
+            style={{ overflow: 'hidden' }}
           >
-            <div
-              className="card-header border-0 py-3 px-4"
-              style={{
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              }}
-            >
-              <h5 className="mb-0 fw-bold text-white d-flex align-items-center gap-2">
+            <div className="card-header py-3 px-4">
+              <h5 className="mb-0 fw-semibold d-flex align-items-center gap-2" style={{ fontSize: 15 }}>
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" /><path d="M2 12h3M19 12h3M12 2v3M12 19v3" /><line x1="4.22" y1="4.22" x2="6.34" y2="6.34" /><line x1="17.66" y1="17.66" x2="19.78" y2="19.78" /><line x1="4.22" y1="19.78" x2="6.34" y2="17.66" /><line x1="17.66" y1="6.34" x2="19.78" y2="4.22" /></svg>
                 צור מפתח API חדש
               </h5>
@@ -234,23 +235,17 @@ export default function ApiKeysPage() {
                   disabled={createState === 'loading'}
                   style={{ borderRadius: 8 }}
                 />
-                <button
-                  type="button"
-                  className="btn fw-bold text-nowrap"
-                  style={{
-                    background: 'linear-gradient(135deg, #667eea, #764ba2)',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: 8,
-                    minWidth: 120,
-                  }}
+                <Button
+                  variant="primary"
+                  className="text-nowrap"
+                  style={{ minWidth: 120 }}
                   onClick={handleCreate}
-                  disabled={createState === 'loading' || !newKeyName.trim()}
+                  loading={createState === 'loading'}
+                  disabled={!newKeyName.trim()}
+                  iconStart={<KeyRound size={14} />}
                 >
-                  {createState === 'loading'
-                    ? <span className="spinner-border spinner-border-sm" />
-                    : '🔑 צור מפתח'}
-                </button>
+                  צור מפתח
+                </Button>
               </div>
 
               {createError && (
@@ -284,21 +279,14 @@ export default function ApiKeysPage() {
                     >
                       {newlyCreated.key}
                     </code>
-                    <button
-                      type="button"
-                      className="btn btn-sm fw-bold"
-                      style={{
-                        background: keyCopied ? '#16a34a' : '#374151',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: 8,
-                        flexShrink: 0,
-                        minWidth: 80,
-                      }}
+                    <Button
+                      variant={keyCopied ? 'success' : 'primary'}
+                      size="sm"
+                      style={{ flexShrink: 0, minWidth: 80 }}
                       onClick={() => copyKey(newlyCreated.key)}
                     >
                       {keyCopied ? '✓ הועתק' : 'העתק'}
-                    </button>
+                    </Button>
                   </div>
                 </div>
               )}
@@ -308,19 +296,17 @@ export default function ApiKeysPage() {
           {/* ── Keys list ─────────────────────────────────────────────── */}
           <div
             className="card border-0 shadow-sm mb-4 hostly-dark-card"
-            style={{ borderRadius: 14, overflow: 'hidden' }}
+            style={{ overflow: 'hidden' }}
           >
-            <div
-              className="card-header border-0 py-3 px-4 d-flex justify-content-between align-items-center"
-              style={{ background: 'transparent', borderBottom: '1px solid rgba(255,255,255,0.1)' }}
-            >
+            <div className="card-header py-3 px-4 d-flex justify-content-between align-items-center">
               <h6 className="mb-0 fw-bold hostly-dark-title">
                 המפתחות שלי
                 {keys.length > 0 && (
                   <span
                     className="badge ms-2"
                     style={{
-                      background: 'linear-gradient(135deg, #667eea, #764ba2)',
+                      background: 'var(--hb-100)',
+                      color: 'var(--hb)',
                       borderRadius: 20,
                       fontSize: 11,
                     }}
@@ -329,15 +315,15 @@ export default function ApiKeysPage() {
                   </span>
                 )}
               </h6>
-              <button
-                type="button"
-                className="btn btn-sm btn-outline-light"
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={fetchKeys}
-                disabled={loading}
-                style={{ borderRadius: 8 }}
+                loading={loading}
+                iconStart={<RefreshCw size={14} />}
               >
-                {loading ? <span className="spinner-border spinner-border-sm" /> : '↻ רענן'}
-              </button>
+                רענן
+              </Button>
             </div>
 
             <div className="card-body p-0">
@@ -364,7 +350,7 @@ export default function ApiKeysPage() {
                   key={key.id}
                   className="px-4 py-3 hostly-dark-list-row"
                   style={{
-                    borderBottom: idx < keys.length - 1 ? '1px solid rgba(255,255,255,0.1)' : 'none',
+                    borderBottom: idx < keys.length - 1 ? '1px solid var(--hborder-light)' : 'none',
                     opacity: key.isActive ? 1 : 0.55,
                   }}
                 >
@@ -387,7 +373,7 @@ export default function ApiKeysPage() {
                       </div>
                       <code
                         className="small d-block mb-1"
-                        style={{ color: '#6b7280', direction: 'ltr', fontSize: 12 }}
+                        style={{ color: 'var(--htxt-3)', direction: 'ltr', fontSize: 12 }}
                       >
                         {key.keyPreview}
                       </code>
@@ -463,7 +449,7 @@ export default function ApiKeysPage() {
           </div>
 
           {/* ── Embed Booking Settings ─────────────────────────────────── */}
-          <div className="card border-0 shadow-sm mt-4 hostly-dark-card" style={{ borderRadius: 16 }}>
+          <div className="card border-0 shadow-sm mt-4 hostly-dark-card">
             <div className="card-body p-4">
               <h5 className="fw-bold mb-1" style={{ fontSize: '1.05rem' }}>
                 הגדרות הזמנה
@@ -474,7 +460,7 @@ export default function ApiKeysPage() {
 
               <div
                 className="d-flex align-items-center justify-content-between p-3"
-                style={{ background: '#f8faff', borderRadius: 12, border: '1px solid #e8edf5' }}
+                style={{ background: 'var(--hn-50)', borderRadius: 8, border: '1px solid var(--hborder-light)' }}
               >
                 <div>
                   <div className="fw-semibold" style={{ fontSize: '0.95rem' }}>
@@ -496,7 +482,7 @@ export default function ApiKeysPage() {
                     height: 28,
                     borderRadius: 14,
                     border: 'none',
-                    background: paymentRequired ? '#667eea' : '#d1d5db',
+                    background: paymentRequired ? 'var(--hb)' : 'var(--hn-300)',
                     position: 'relative',
                     cursor: 'pointer',
                     transition: 'background 0.2s',
@@ -513,7 +499,7 @@ export default function ApiKeysPage() {
                       width: 22,
                       height: 22,
                       borderRadius: '50%',
-                      background: 'rgba(0,0,0,0.28)',
+                      background: '#fff',
                       boxShadow: '0 1px 4px rgba(0,0,0,0.2)',
                       transition: 'all 0.2s',
                     }}
@@ -526,7 +512,7 @@ export default function ApiKeysPage() {
                   className="mt-3 p-3"
                   style={{ background: '#fffbeb', border: '1px solid #fcd34d', borderRadius: 10, fontSize: '0.83rem', color: '#78350f' }}
                 >
-                  <strong>⚠️ נדרש:</strong> ודא שמשתני הסביבה <code>CARDCOM_TERMINAL_NUMBER</code> ו-<code>CARDCOM_API_NAME</code> מוגדרים בשרת.
+                  <strong>נדרש:</strong> ודא שמשתני הסביבה <code>CARDCOM_TERMINAL_NUMBER</code> ו-<code>CARDCOM_API_NAME</code> מוגדרים בשרת.
                 </div>
               )}
             </div>
@@ -534,6 +520,6 @@ export default function ApiKeysPage() {
 
         </div>
       </div>
-    </div>
+    </main>
   )
 }

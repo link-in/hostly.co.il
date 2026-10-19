@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
-import { Copy, ExternalLink } from 'lucide-react'
+import { Button } from '@/components/ui'
 import { StepPanel } from './StepPanel'
+import { AirbnbAuthLink } from './AirbnbAuthLink'
 import { AirbnbListingPicker } from './AirbnbListingPicker'
 import { useStepAction } from './useStepAction'
 import { readData, type StepProps } from './stepProps'
@@ -16,7 +16,6 @@ interface AirbnbConnectData {
 export function AirbnbConnectStep({ api, overview, record, status, onChanged }: StepProps) {
   const { running, error, run } = useStepAction(onChanged)
   const done = readData<AirbnbConnectData>(record)
-  const [copied, setCopied] = useState(false)
 
   if (status === 'done') {
     return (
@@ -28,26 +27,10 @@ export function AirbnbConnectStep({ api, overview, record, status, onChanged }: 
     )
   }
 
-  async function copyLink() {
-    await navigator.clipboard.writeText(overview.airbnbAuthUrl)
-    setCopied(true)
-  }
-
   return (
     <StepPanel title="חיבור מודעת Airbnb" status={status} savedError={record?.error} actionError={error}>
       <h6 className="fw-semibold">שלב א – הרשאה מהלקוח</h6>
-      <p className="text-muted small">
-        שלח ללקוח את הקישור. הוא מתחבר ל-Airbnb ומאשר גישה, ואז חשבון ה-Airbnb שלו יופיע ברשימה למטה.
-        רק בעל המודעה יכול לאשר, לא מארח משותף.
-      </p>
-      <div className="d-flex gap-2 mb-4">
-        <button type="button" className="btn btn-outline-secondary btn-sm" onClick={copyLink}>
-          <Copy size={14} className="ms-1" /> {copied ? 'הועתק' : 'העתק קישור הרשאה'}
-        </button>
-        <a className="btn btn-outline-secondary btn-sm" href={overview.airbnbAuthUrl} target="_blank" rel="noreferrer">
-          <ExternalLink size={14} className="ms-1" /> פתח
-        </a>
-      </div>
+      <AirbnbAuthLink authUrl={overview.airbnbAuthUrl} />
 
       <h6 className="fw-semibold">שלב ב – בחירת המודעה</h6>
       <AirbnbListingPicker
@@ -57,9 +40,9 @@ export function AirbnbConnectStep({ api, overview, record, status, onChanged }: 
       />
 
       {status !== 'skipped' && (
-        <button type="button" className="btn btn-link btn-sm text-muted mt-3 p-0" disabled={running} onClick={() => run(() => api.skip('airbnbConnect'))}>
+        <Button type="button" variant="ghost" size="sm" className="mt-3" disabled={running} onClick={() => run(() => api.skip('airbnbConnect'))}>
           ללקוח אין Airbnb – דלג
-        </button>
+        </Button>
       )}
     </StepPanel>
   )
