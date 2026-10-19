@@ -9,110 +9,12 @@ import {
   Users,
   RefreshCw,
   Download,
-  Map,
-  Plane,
-  Home,
-  Hotel,
-  Globe,
-  Bird,
 } from 'lucide-react'
 import DashboardHeader from '@/components/DashboardHeader'
 import DashboardLoader from '@/components/DashboardLoader'
 import { normalizePhoneNumber, formatPhoneForDisplay } from '@/lib/utils/phoneFormatter'
-
-type Customer = {
-  id: string
-  fullName: string
-  phone: string | null
-  email: string | null
-  firstBookingDate: string
-  lastBookingDate: string
-  totalBookings: number
-  bookingSource: string
-}
-
-// Helper function to get platform icon/logo based on source
-const getPlatformIcon = (source: string | null | undefined, size: number = 24) => {
-  const sourceLower = (source || '').toLowerCase()
-  
-  // Container style to ensure consistent sizing
-  // צבע אייקון לפי פלטת הדשבורד הבהירה (לא לבן על רקע לבן)
-  const containerStyle = {
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: `${size}px`,
-    height: `${size}px`,
-    flexShrink: 0,
-    color: 'var(--htxt-3)',
-  }
-  
-  if (sourceLower.includes('airbnb')) {
-    // Airbnb logo
-    return (
-      <div style={containerStyle}>
-        <img 
-          src="/airbnb-logo.png" 
-          alt="Airbnb" 
-          style={{ 
-            width: '100%',
-            height: '100%',
-            borderRadius: '50%',
-            objectFit: 'cover'
-          }} 
-        />
-      </div>
-    )
-  }
-  if (sourceLower.includes('booking')) {
-    // Booking.com logo
-    return (
-      <div style={containerStyle}>
-        <img 
-          src="/booking-logo.png" 
-          alt="Booking.com" 
-          style={{ 
-            width: '100%',
-            height: '100%',
-            borderRadius: '50%',
-            objectFit: 'cover'
-          }} 
-        />
-      </div>
-    )
-  }
-  if (sourceLower.includes('agoda')) {
-    return <div style={containerStyle}><Map size={size * 0.85} strokeWidth={1.75} /></div>
-  }
-  if (sourceLower.includes('expedia')) {
-    return <div style={containerStyle}><Plane size={size * 0.85} strokeWidth={1.75} /></div>
-  }
-  if (sourceLower.includes('vrbo') || sourceLower.includes('homeaway')) {
-    return <div style={containerStyle}><Home size={size * 0.85} strokeWidth={1.75} /></div>
-  }
-  if (sourceLower.includes('tripadvisor')) {
-    return <div style={containerStyle}><Bird size={size * 0.85} strokeWidth={1.75} /></div>
-  }
-  if (sourceLower.includes('hotels.com')) {
-    return <div style={containerStyle}><Hotel size={size * 0.85} strokeWidth={1.75} /></div>
-  }
-  // הזמנה ישירה או לא מוכר
-  return <div style={containerStyle}><Globe size={size * 0.85} strokeWidth={1.75} /></div>
-}
-
-// Helper function to get source label text
-const getSourceLabel = (source: string) => {
-  const lowerSource = source.toLowerCase()
-  if (lowerSource.includes('airbnb')) return 'Airbnb'
-  if (lowerSource.includes('booking')) return 'Booking'
-  if (lowerSource === 'direct') return 'ישירות'
-  if (lowerSource.includes('agoda')) return 'Agoda'
-  if (lowerSource.includes('expedia')) return 'Expedia'
-  if (lowerSource.includes('vrbo') || lowerSource.includes('homeaway')) return 'VRBO'
-  if (lowerSource.includes('tripadvisor')) return 'TripAdvisor'
-  if (lowerSource.includes('hotels.com')) return 'Hotels.com'
-  return source || 'ישירות'
-}
+import CustomerMobileCard from './CustomerMobileCard'
+import { Customer, getPlatformIcon, getSourceLabel } from './customerHelpers'
 
 export default function CustomersClient() {
   const { data: session, status } = useSession()
@@ -125,6 +27,21 @@ export default function CustomersClient() {
   const [missingCount, setMissingCount] = useState(0)
   const [missingPreview, setMissingPreview] = useState<string[]>([])
   const [auditing, setAuditing] = useState(false)
+  const [isMobile, setIsMobile] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth < 768
+    }
+    return false
+  })
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -497,10 +414,10 @@ export default function CustomersClient() {
           </div>
         </div>
 
-        {/* Customers Table Card */}
-        <div className="card border-0 shadow-sm hostly-dark-card">
-          <div className="card-body p-0">
-            {filteredCustomers.length === 0 ? (
+        {/* Customers Table / Mobile Cards */}
+        {filteredCustomers.length === 0 ? (
+          <div className="card border-0 shadow-sm hostly-dark-card" data-testid="customers-empty-state">
+            <div className="card-body p-0">
               <div className="text-center py-5">
                 <div className="mb-3 d-inline-flex" style={{ color: 'var(--htxt-3)' }}>
                   {searchQuery ? <Search size={40} strokeWidth={1.5} /> : <Users size={40} strokeWidth={1.5} />}
@@ -514,7 +431,29 @@ export default function CustomersClient() {
                   </p>
                 )}
               </div>
-            ) : (
+            </div>
+          </div>
+        ) : isMobile ? (
+          /* Mobile View: Modern Data Cards (HOS-29) */
+          <div
+            className="customers-cards-mobile d-flex flex-column gap-3 d-md-none"
+            data-testid="customers-cards-mobile"
+          >
+            {filteredCustomers.map((customer, index) => (
+              <CustomerMobileCard
+                key={customer.id}
+                customer={customer}
+                index={index}
+              />
+            ))}
+          </div>
+        ) : (
+          /* Desktop View: Table */
+          <div
+            className="card border-0 shadow-sm hostly-dark-card d-none d-md-block customers-table-desktop"
+            data-testid="customers-table-desktop"
+          >
+            <div className="card-body p-0">
               <div className="table-responsive dashboard-table-scroll-container">
                 <table className="table table-hover mb-0 hostly-dark-table">
                   <thead>
@@ -614,9 +553,9 @@ export default function CustomersClient() {
                   </tbody>
                 </table>
               </div>
-            )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       <Toaster 
