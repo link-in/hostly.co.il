@@ -780,7 +780,9 @@ html::-webkit-scrollbar-thumb:hover {
 .hostly-dark-card input[type='text'],
 .hostly-dark-card input[type='search'],
 .hostly-dark-card input[type='email'],
-.hostly-dark-card input[type='tel'] {
+.hostly-dark-card input[type='tel'],
+.hostly-dark-card input[type='number'],
+.hostly-dark-card input[type='date'] {
   background: #fff !important;
   border: 1px solid var(--hborder) !important;
   color: var(--htxt-1) !important;

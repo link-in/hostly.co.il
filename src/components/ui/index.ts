@@ -19,3 +19,7 @@ export type { PageHeaderProps } from './PageHeader';
 
 export { DataTable } from './DataTable';
 export type { DataTableProps, ColumnDef, ColumnAlign } from './DataTable';
+
+export { NumberStepper } from './NumberStepper';
+export type { NumberStepperProps } from './NumberStepper';
+
