@@ -254,6 +254,7 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated, onApproveReque
           minStay: minStayInput,
           price1: Number(priceInput),
           numAvail: 1,
+          override: 'none',
         })),
       },
     ]
@@ -323,6 +324,7 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated, onApproveReque
     // Send one entry per date so each can carry its current price1.
     // Beds24 only returns calendar records in GET when a price override exists;
     // including price1 ensures the blocked entry appears in future GET calls.
+    // override: 'blackout' instructs Beds24 to mark the date as blackout and propagate the closure to Airbnb/OTAs.
     const calendarEntries = selectedDates.map((date) => {
       const key = toKey(date)
       const currentPrice = priceOverrides[key] ?? priceMap[key]
@@ -330,6 +332,7 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated, onApproveReque
         from: key,
         to: key,
         numAvail: 0,
+        override: 'blackout',
         ...(currentPrice !== undefined && currentPrice > 0 ? { price1: currentPrice } : {}),
       }
     })
@@ -393,7 +396,8 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated, onApproveReque
       prices.find((entry) => entry.roomId)?.roomId ||
       null
 
-    // Send numAvail: 1 per date, preserving current price so the calendar record stays in Beds24
+    // Send numAvail: 1 per date with override: 'none', preserving current price so the calendar record stays in Beds24
+    // and clears the blackout so Airbnb/OTAs reopen.
     const calendarEntries = selectedBlockedDates.map((date) => {
       const key = toKey(date)
       const currentPrice = priceOverrides[key] ?? priceMap[key]
@@ -401,6 +405,7 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated, onApproveReque
         from: key,
         to: key,
         numAvail: 1,
+        override: 'none',
         ...(currentPrice !== undefined && currentPrice > 0 ? { price1: currentPrice } : {}),
       }
     })

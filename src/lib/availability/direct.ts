@@ -127,7 +127,9 @@ function flattenCalendar( data: unknown, numGuest: number ): DayRow[] {
 			const from    = getString( calendar, [ 'from', 'startDate' ] )
 			const to      = getString( calendar, [ 'to', 'endDate' ] )
 			const price   = resolvePriceForGuests( c, numGuest )
-			const avail   = getNumber( calendar, [ 'numAvail', 'avail', 'available', 'availability', 'units' ] ) ?? 1
+			const override = getString( calendar, [ 'override' ] )
+			const isBlackout = override === 'blackout'
+			const avail   = isBlackout ? 0 : (getNumber( calendar, [ 'numAvail', 'avail', 'available', 'availability', 'units' ] ) ?? 1)
 			const minStay = getNumber( calendar, [ 'minStay', 'minimumStay', 'min_stay' ] ) ?? 1
 
 			if ( ! from || ! to || price === undefined ) return []
@@ -263,6 +265,8 @@ export async function fetchLiveAvailability(
 		calUrl.searchParams.set( 'startDate', from )
 		calUrl.searchParams.set( 'endDate', to )
 		calUrl.searchParams.set( 'includePrices', '1' )
+		calUrl.searchParams.set( 'includeNumAvail', '1' )
+		calUrl.searchParams.set( 'includeOverrides', '1' )
 
 		console.log( `[LiveAvail] Fetching calendar: ${ calUrl.toString() }` )
 
