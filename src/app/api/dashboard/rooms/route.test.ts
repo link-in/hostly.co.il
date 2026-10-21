@@ -226,6 +226,40 @@ describe('GET /api/dashboard/rooms — overlay', () => {
     expect(july12).toMatchObject({ date: '2026-07-12', numAvail: 1 })
   })
 
+  it('treats Capitalized "Blackout", flat CalendarDay items, and numAvail <= 0 as blocked', async () => {
+    vi.mocked(fetchWithTokenRefresh).mockImplementation(async (url) => {
+      if ((url as string).includes('/inventory/rooms/calendar')) {
+        return jsonResponse({
+          success: true,
+          data: [
+            // Case with capital 'Blackout' and negative availability
+            { roomId: BEDS24_ROOM_ID, date: '2026-10-22', price1: 700, override: 'Blackout', numAvail: 0 },
+            { roomId: BEDS24_ROOM_ID, date: '2026-10-23', price1: 700, override: 'Blackout', numAvail: -1 },
+            { roomId: BEDS24_ROOM_ID, date: '2026-10-24', price1: 400, numAvail: 0 },
+            { roomId: BEDS24_ROOM_ID, date: '2026-10-25', price1: 500, numAvail: 1 },
+          ],
+        })
+      }
+      if ((url as string).includes('/inventory/rooms')) {
+        return jsonResponse(beds24RoomsInfoResponse())
+      }
+      return jsonResponse({ success: false }, 404)
+    })
+
+    const response = await GET(getRequest())
+    expect(response.status).toBe(200)
+    const body = await response.json()
+    const oct22 = body.prices.find((p: { date: string }) => p.date === '2026-10-22')
+    const oct23 = body.prices.find((p: { date: string }) => p.date === '2026-10-23')
+    const oct24 = body.prices.find((p: { date: string }) => p.date === '2026-10-24')
+    const oct25 = body.prices.find((p: { date: string }) => p.date === '2026-10-25')
+
+    expect(oct22).toMatchObject({ date: '2026-10-22', numAvail: 0 })
+    expect(oct23).toMatchObject({ date: '2026-10-23', numAvail: 0 })
+    expect(oct24).toMatchObject({ date: '2026-10-24', numAvail: 0 })
+    expect(oct25).toMatchObject({ date: '2026-10-25', numAvail: 1 })
+  })
+
   it('injects a synthetic blocked entry for a date with no Beds24 price at all', async () => {
     mockBeds24({ calendarEntries: [{ from: '2026-07-11', to: '2026-07-15', price1: 600 }] })
     fakeClient = createFakeSupabaseClient({

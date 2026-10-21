@@ -1141,7 +1141,7 @@ const DashboardClient = () => {
     let monthCommission = 0
 
     roomPrices.forEach((entry) => {
-      if (entry.numAvail !== 0) return
+      if ((entry.numAvail ?? 1) > 0) return
       if (entry.date < availableFromKey || entry.date > monthRange.endKey) return
       blockedDates.add(entry.date)
     })
