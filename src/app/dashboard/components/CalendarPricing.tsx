@@ -464,8 +464,8 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated, onApproveReque
 
   // Derived selection state for sidebar logic
   const selectedHasBooked = selectedDates.some((d) => bookingMap.has(toKey(d)))
-  const selectedBlockedDates = selectedDates.filter((d) => (availabilityMap[toKey(d)] ?? 1) === 0)
-  const selectedFreeDates = selectedDates.filter((d) => (availabilityMap[toKey(d)] ?? 1) !== 0)
+  const selectedBlockedDates = selectedDates.filter((d) => (availabilityMap[toKey(d)] ?? 1) <= 0)
+  const selectedFreeDates = selectedDates.filter((d) => (availabilityMap[toKey(d)] ?? 1) > 0)
   const allSelectedAreBlocked = selectedDates.length > 0 && selectedBlockedDates.length === selectedDates.length
 
   const monthLabel = new Intl.DateTimeFormat('he-IL', { month: 'long', year: 'numeric' }).format(currentMonth)
@@ -674,7 +674,7 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated, onApproveReque
                 const key = toKey(date)
                 const isBooked = bookingMap.has(key)
                 const numAvail = availabilityMap[key] ?? 1
-                const isBlocked = numAvail === 0 && !isBooked
+                const isBlocked = numAvail <= 0 && !isBooked
                 const isSelected = selectedDates.some((item) => isSameDay(item, date))
                 const isBlockedSelected = isBlocked && isSelected
                 const price = priceOverrides[key] ?? priceMap[key] ?? DEFAULT_PRICE

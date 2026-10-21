@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth/authOptions'
 import { fetchWithTokenRefresh } from '@/lib/beds24/tokenManager'
-import { overlayAvailabilityCache, writeCacheAvailability } from '@/lib/availability/blocking'
+import { overlayAvailabilityCache, writeCacheAvailability, type PriceEntry } from '@/lib/availability/blocking'
 import { detectAndMarkCreditError, isBeds24CreditError } from '@/lib/beds24/creditGuard'
 import { describeBeds24Failure, hasBeds24Failure } from '@/lib/beds24/responseFailure'
 import { resolveBeds24Tokens } from '@/lib/onboarding/tokens'
@@ -125,6 +125,48 @@ const extractRowPrice = (row: unknown) => {
   return undefined
 }
 
+export function extractAvailabilityMap(data: unknown, targetRoomId?: string): Record<string, boolean> {
+  const map: Record<string, boolean> = {}
+  if (!data || typeof data !== 'object') return map
+
+  const rooms = Array.isArray((data as { data?: unknown }).data)
+    ? ((data as { data?: unknown[] }).data as Record<string, unknown>[])
+    : Array.isArray(data)
+    ? (data as Record<string, unknown>[])
+    : []
+
+  for (const item of rooms) {
+    if (!item || typeof item !== 'object') continue
+    const itemRoomId = String(item.roomId ?? item.id ?? '')
+    if (targetRoomId && itemRoomId && itemRoomId !== String(targetRoomId)) {
+      continue
+    }
+
+    // Shape 1: item has `availability` map { "YYYY-MM-DD": boolean } (Beds24 /inventory/rooms/availability)
+    if (item.availability && typeof item.availability === 'object') {
+      for (const [date, isAvail] of Object.entries(item.availability as Record<string, unknown>)) {
+        if (typeof isAvail === 'boolean') {
+          map[date] = isAvail
+        } else if (typeof isAvail === 'number') {
+          map[date] = isAvail > 0
+        }
+      }
+    }
+
+    // Shape 2: item is an AvailabilityDay { date: string, available?: boolean, numAvail?: number }
+    if (typeof item.date === 'string') {
+      const isAvail = typeof item.available === 'boolean'
+        ? item.available
+        : typeof item.numAvail === 'number'
+        ? item.numAvail > 0
+        : true
+      map[item.date] = isAvail
+    }
+  }
+
+  return map
+}
+
 export async function GET(request: Request) {
   const session = await getServerSession(authOptions)
   const propertyId = session?.user?.propertyId ?? process.env.BEDS24_PROPERTY_ID
@@ -191,12 +233,20 @@ export async function GET(request: Request) {
     fallbackUrl.searchParams.set('includeOverrides', '1')
   }
 
+  // Also query Beds24 ground-truth availability endpoint /inventory/rooms/availability
+  const availUrl = new URL(`${getBaseUrl()}/inventory/rooms/availability`)
+  if (roomId) availUrl.searchParams.set('roomId', roomId)
+  if (propertyId) availUrl.searchParams.set('propertyId', propertyId)
+  availUrl.searchParams.set('startDate', queryStartDate)
+  availUrl.searchParams.set('endDate', queryEndDate)
+
   try {
-    const [response, roomsInfoRes] = await Promise.all([
+    const [response, roomsInfoRes, availRes] = await Promise.all([
       fetchWithTokenRefresh(url.toString(), {
         headers: { 'content-type': 'application/json' },
       }, userTokens, session?.user?.id),
       fetchWithTokenRefresh(roomsInfoUrl.toString(), {}, userTokens, session?.user?.id),
+      fetchWithTokenRefresh(availUrl.toString(), {}, userTokens, session?.user?.id).catch(() => null),
     ])
 
     if (!response.ok) {
@@ -209,6 +259,15 @@ export async function GET(request: Request) {
     }
 
     let data = await response.json()
+    let availMap: Record<string, boolean> = {}
+    if (availRes && availRes.ok) {
+      try {
+        const availData = await availRes.json()
+        availMap = extractAvailabilityMap(availData, roomId)
+      } catch {
+        // Non-fatal availability parse failure
+      }
+    }
 
     // If primary query returned empty and we have a fallback, retry without propertyId
     const primaryEmpty = Array.isArray(data?.data) ? data.data.length === 0 : !data?.data
@@ -261,10 +320,13 @@ export async function GET(request: Request) {
     const rooms = Array.isArray(data?.data) ? data.data : []
   const calendarOnly = !rooms.length && data?.calendar ? [{ calendar: data.calendar }] : []
   const sourceRooms = rooms.length ? rooms : calendarOnly
-  const prices = sourceRooms.flatMap((room: unknown) => {
+  let prices: PriceEntry[] = sourceRooms.flatMap((room: unknown): PriceEntry[] => {
     const roomId = getString(room, ['roomId', 'id'])
-    const calendars = Array.isArray((room as Record<string, unknown>)?.calendar)
-      ? ((room as Record<string, unknown>).calendar as unknown[])
+    const rawCalendars = (room as Record<string, unknown>)?.calendar
+    const calendars = Array.isArray(rawCalendars)
+      ? (rawCalendars as unknown[])
+      : (room && typeof room === 'object' && ('date' in room || 'day' in room || 'from' in room || 'startDate' in room || 'rows' in room))
+      ? [room]
       : []
 
     return calendars.flatMap((calendar: unknown) => {
@@ -280,11 +342,11 @@ export async function GET(request: Request) {
           const price = extractRowPrice(row)
           const numAvail = getNumber(row, ['numAvail', 'avail', 'available', 'availability', 'units'])
           const override = getString(row, ['override'])
-          const isBlackout = override === 'blackout'
-          const effectiveNumAvail = isBlackout ? 0 : (numAvail !== undefined ? numAvail : 1)
-          const isBlocked = isBlackout || numAvail === 0
+          const isBlackout = String(override ?? '').toLowerCase() === 'blackout'
+          const isBlocked = isBlackout || (numAvail !== undefined && numAvail <= 0)
+          const effectiveNumAvail = isBlocked ? 0 : (numAvail !== undefined ? numAvail : 1)
 
-          // Skip entries with no date. Allow blocked entries (numAvail=0 or blackout) even without a price.
+          // Skip entries with no date. Allow blocked entries (numAvail<=0 or blackout) even without a price.
           if (!date || (price === undefined && !isBlocked)) {
             return []
           }
@@ -306,9 +368,9 @@ export async function GET(request: Request) {
         const price = extractRowPrice(calendar)
         const numAvail = getNumber(calendar, ['numAvail', 'avail', 'available', 'availability', 'units'])
         const override = getString(calendar, ['override'])
-        const isBlackout = override === 'blackout'
-        const effectiveNumAvail = isBlackout ? 0 : (numAvail !== undefined ? numAvail : 1)
-        const isBlocked = isBlackout || numAvail === 0
+        const isBlackout = String(override ?? '').toLowerCase() === 'blackout'
+        const isBlocked = isBlackout || (numAvail !== undefined && numAvail <= 0)
+        const effectiveNumAvail = isBlocked ? 0 : (numAvail !== undefined ? numAvail : 1)
         if (price === undefined && !isBlocked) return []
         return [
           {
@@ -326,9 +388,9 @@ export async function GET(request: Request) {
       const price = extractRowPrice(calendar)
       const numAvail = getNumber(calendar, ['numAvail', 'avail', 'available', 'availability', 'units'])
       const override = getString(calendar, ['override'])
-      const isBlackout = override === 'blackout'
-      const effectiveNumAvail = isBlackout ? 0 : (numAvail !== undefined ? numAvail : 1)
-      const isBlockedRange = isBlackout || numAvail === 0
+      const isBlackout = String(override ?? '').toLowerCase() === 'blackout'
+      const isBlockedRange = isBlackout || (numAvail !== undefined && numAvail <= 0)
+      const effectiveNumAvail = isBlockedRange ? 0 : (numAvail !== undefined ? numAvail : 1)
 
       if (!from || !to || (price === undefined && !isBlockedRange)) {
         return []
@@ -357,6 +419,28 @@ export async function GET(request: Request) {
     })
   })
 
+    // Merge Beds24 /inventory/rooms/availability ground-truth availability
+    if (Object.keys(availMap).length > 0) {
+      prices = prices.map((p) => {
+        if (availMap[p.date] === false) {
+          return { ...p, numAvail: 0 }
+        }
+        return p
+      })
+
+      const datesInPrices = new Set(prices.map((p) => p.date))
+      for (const [date, isAvail] of Object.entries(availMap)) {
+        if (isAvail === false && !datesInPrices.has(date)) {
+          prices.push({
+            date,
+            price: basePrice ?? 0,
+            roomId: roomId ?? null,
+            numAvail: 0,
+          })
+        }
+      }
+    }
+
     // If no calendar overrides exist but we have a base price, fill the date range with it
     if (!prices.length && basePrice !== undefined && roomId) {
       const start = normalizeDate(new Date(queryStartDate))
@@ -364,20 +448,25 @@ export async function GET(request: Request) {
       const filled: typeof prices = []
       let cursor = start
       while (cursor <= end) {
+        const dStr = formatLocalDate(cursor)
+        const isAvail = availMap[dStr] !== false
         filled.push({
-          date: formatLocalDate(cursor),
+          date: dStr,
           price: basePrice,
           roomId,
-          numAvail: 1,
+          numAvail: isAvail ? 1 : 0,
         })
         cursor = addDays(cursor, 1)
       }
-      return NextResponse.json({ prices: filled, raw: data, basePriceUsed: true })
+      const overlaidFilled = await overlayAvailabilityCache(filled, session?.user?.id, roomId)
+      overlaidFilled.sort((a, b) => a.date.localeCompare(b.date))
+      return NextResponse.json({ prices: overlaidFilled, raw: data, basePriceUsed: true })
     }
 
     // Overlay numAvail from availability_cache so manually-blocked dates appear correctly.
-    // Beds24 calendar GET never returns numAvail — we track it in Supabase instead.
+    // Beds24 closures (blackouts, bookings, 0 units) are always preserved.
     const overlaidPrices = await overlayAvailabilityCache(prices, session?.user?.id, roomId)
+    overlaidPrices.sort((a, b) => a.date.localeCompare(b.date))
     return NextResponse.json({ prices: overlaidPrices, raw: data })
   } catch (error) {
     return NextResponse.json(
