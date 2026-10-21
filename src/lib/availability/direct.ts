@@ -100,8 +100,11 @@ function flattenCalendar( data: unknown, numGuest: number ): DayRow[] {
 	const sourceRooms = rooms.length ? rooms : calendarOnly
 
 	return sourceRooms.flatMap( ( room: unknown ) => {
-		const calendars = Array.isArray( ( room as Record<string, unknown> )?.calendar )
-			? ( ( room as Record<string, unknown> ).calendar as unknown[] )
+		const rawCalendars = ( room as Record<string, unknown> )?.calendar
+		const calendars = Array.isArray( rawCalendars )
+			? ( rawCalendars as unknown[] )
+			: ( room && typeof room === 'object' && ( 'date' in room || 'day' in room || 'from' in room || 'startDate' in room || 'rows' in room ) )
+			? [ room ]
 			: []
 
 		return calendars.flatMap( ( calendar: unknown ) => {
@@ -115,7 +118,10 @@ function flattenCalendar( data: unknown, numGuest: number ): DayRow[] {
 					const r       = row as Record<string, unknown>
 					const date    = getString( row, [ 'date', 'day', 'startDate' ] )
 					const price   = resolvePriceForGuests( r, numGuest )
-					const avail   = getNumber( row, [ 'numAvail', 'avail', 'available', 'availability', 'units' ] ) ?? 1
+					const override = getString( row, [ 'override' ] )
+					const isBlackout = String( override ?? '' ).toLowerCase() === 'blackout'
+					const rawAvail = getNumber( row, [ 'numAvail', 'avail', 'available', 'availability', 'units' ] )
+					const avail   = isBlackout || ( rawAvail !== undefined && rawAvail <= 0 ) ? 0 : ( rawAvail ?? 1 )
 					const minStay = getNumber( row, [ 'minStay', 'minimumStay', 'min_stay' ] ) ?? 1
 					if ( ! date || price === undefined ) return []
 					return [ { date, price, available: avail > 0, minStay } ]
@@ -124,12 +130,13 @@ function flattenCalendar( data: unknown, numGuest: number ): DayRow[] {
 
 			// Range format: { from, to, price1, price2, numAvail, minStay }
 			const c       = calendar as Record<string, unknown>
-			const from    = getString( calendar, [ 'from', 'startDate' ] )
-			const to      = getString( calendar, [ 'to', 'endDate' ] )
+			const from    = getString( calendar, [ 'from', 'startDate', 'date', 'day' ] )
+			const to      = getString( calendar, [ 'to', 'endDate', 'date', 'day' ] )
 			const price   = resolvePriceForGuests( c, numGuest )
 			const override = getString( calendar, [ 'override' ] )
-			const isBlackout = override === 'blackout'
-			const avail   = isBlackout ? 0 : (getNumber( calendar, [ 'numAvail', 'avail', 'available', 'availability', 'units' ] ) ?? 1)
+			const isBlackout = String( override ?? '' ).toLowerCase() === 'blackout'
+			const rawAvail = getNumber( calendar, [ 'numAvail', 'avail', 'available', 'availability', 'units' ] )
+			const avail   = isBlackout || ( rawAvail !== undefined && rawAvail <= 0 ) ? 0 : ( rawAvail ?? 1 )
 			const minStay = getNumber( calendar, [ 'minStay', 'minimumStay', 'min_stay' ] ) ?? 1
 
 			if ( ! from || ! to || price === undefined ) return []
