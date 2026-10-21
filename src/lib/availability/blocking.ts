@@ -71,7 +71,7 @@ export async function overlayAvailabilityCache(
     // Also inject blocked dates from cache that have no price entry in Beds24
     const pricesDates = new Set(overlaid.map((p) => p.date))
     cacheRows.forEach((row) => {
-      if (row.num_avail === 0 && !pricesDates.has(row.date)) {
+      if (row.num_avail <= 0 && !pricesDates.has(row.date)) {
         overlaid.push({ date: row.date, price: 0, roomId, numAvail: 0 })
       }
     })
@@ -133,7 +133,7 @@ export function buildCacheRowsFromPayload(
       const e = entry as CalendarPayloadEntry
       if (!e.from || (e.numAvail === undefined && !e.override)) continue
 
-      const isManualBlock = e.override === 'blackout' || e.numAvail === 0
+      const isManualBlock = String(e.override ?? '').toLowerCase() === 'blackout' || (e.numAvail !== undefined && e.numAvail <= 0)
       const effectiveNumAvail = isManualBlock ? 0 : (e.numAvail ?? 1)
 
       const dates = expandDateRangeLocal(e.from, e.to ?? e.from)
@@ -174,22 +174,31 @@ export async function writeCacheAvailability(
     for (const rows of Object.values(byRoom)) {
       if (!rows.length) continue
       // Upsert — on conflict update num_avail, is_manual_block, and cached_at to preserve existing price/min_stay.
-      // We do this by first trying UPDATE, then INSERT for any missing rows.
-      const dates = rows.map((r) => r.date)
-      const numAvail = rows[0].num_avail // same per batch (blockDates/unblockDates send uniform value)
-      const isManualBlock = rows[0].is_manual_block
-      const roomIdStr = rows[0].room_id
+      // Group by (num_avail, is_manual_block) so mixed batches update correctly.
+      const groups = new Map<string, { numAvail: number; isManualBlock: boolean; dates: string[] }>()
+      for (const r of rows) {
+        const key = `${r.num_avail}:${r.is_manual_block}`
+        let g = groups.get(key)
+        if (!g) {
+          g = { numAvail: r.num_avail, isManualBlock: r.is_manual_block, dates: [] }
+          groups.set(key, g)
+        }
+        g.dates.push(r.date)
+      }
 
-      await supabase
-        .from('availability_cache')
-        .update({
-          num_avail: numAvail,
-          is_manual_block: isManualBlock,
-          cached_at: now,
-        })
-        .eq('user_id', userId)
-        .eq('room_id', roomIdStr)
-        .in('date', dates)
+      const roomIdStr = rows[0].room_id
+      for (const g of groups.values()) {
+        await supabase
+          .from('availability_cache')
+          .update({
+            num_avail: g.numAvail,
+            is_manual_block: g.isManualBlock,
+            cached_at: now,
+          })
+          .eq('user_id', userId)
+          .eq('room_id', roomIdStr)
+          .in('date', g.dates)
+      }
 
       // Insert rows that didn't exist yet (e.g. brand-new date range)
       await supabase

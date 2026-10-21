@@ -5,6 +5,20 @@ import { signInAsUser } from './helpers/session'
 const OWNER = { ...E2E_DEMO_USER, isDemo: false }
 
 async function setupMocks(page: Page) {
+  await page.route('**/api/dashboard/subscription', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        status: 'active',
+        planId: 'pro',
+        billingCycle: 'monthly',
+        daysRemaining: 30,
+        expiresAt: null,
+      }),
+    })
+  })
+
   await page.route('**/api/dashboard/price-check**', async (route) => {
     const postData = route.request().postDataJSON()
     if (postData?.checkIn === '2026-12-01') {

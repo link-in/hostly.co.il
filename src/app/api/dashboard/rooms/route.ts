@@ -263,8 +263,11 @@ export async function GET(request: Request) {
   const sourceRooms = rooms.length ? rooms : calendarOnly
   const prices = sourceRooms.flatMap((room: unknown) => {
     const roomId = getString(room, ['roomId', 'id'])
-    const calendars = Array.isArray((room as Record<string, unknown>)?.calendar)
-      ? ((room as Record<string, unknown>).calendar as unknown[])
+    const rawCalendars = (room as Record<string, unknown>)?.calendar
+    const calendars = Array.isArray(rawCalendars)
+      ? (rawCalendars as unknown[])
+      : (room && typeof room === 'object' && ('date' in room || 'day' in room || 'from' in room || 'startDate' in room || 'rows' in room))
+      ? [room]
       : []
 
     return calendars.flatMap((calendar: unknown) => {
@@ -280,11 +283,11 @@ export async function GET(request: Request) {
           const price = extractRowPrice(row)
           const numAvail = getNumber(row, ['numAvail', 'avail', 'available', 'availability', 'units'])
           const override = getString(row, ['override'])
-          const isBlackout = override === 'blackout'
-          const effectiveNumAvail = isBlackout ? 0 : (numAvail !== undefined ? numAvail : 1)
-          const isBlocked = isBlackout || numAvail === 0
+          const isBlackout = String(override ?? '').toLowerCase() === 'blackout'
+          const isBlocked = isBlackout || (numAvail !== undefined && numAvail <= 0)
+          const effectiveNumAvail = isBlocked ? 0 : (numAvail !== undefined ? numAvail : 1)
 
-          // Skip entries with no date. Allow blocked entries (numAvail=0 or blackout) even without a price.
+          // Skip entries with no date. Allow blocked entries (numAvail<=0 or blackout) even without a price.
           if (!date || (price === undefined && !isBlocked)) {
             return []
           }
@@ -306,9 +309,9 @@ export async function GET(request: Request) {
         const price = extractRowPrice(calendar)
         const numAvail = getNumber(calendar, ['numAvail', 'avail', 'available', 'availability', 'units'])
         const override = getString(calendar, ['override'])
-        const isBlackout = override === 'blackout'
-        const effectiveNumAvail = isBlackout ? 0 : (numAvail !== undefined ? numAvail : 1)
-        const isBlocked = isBlackout || numAvail === 0
+        const isBlackout = String(override ?? '').toLowerCase() === 'blackout'
+        const isBlocked = isBlackout || (numAvail !== undefined && numAvail <= 0)
+        const effectiveNumAvail = isBlocked ? 0 : (numAvail !== undefined ? numAvail : 1)
         if (price === undefined && !isBlocked) return []
         return [
           {
@@ -326,9 +329,9 @@ export async function GET(request: Request) {
       const price = extractRowPrice(calendar)
       const numAvail = getNumber(calendar, ['numAvail', 'avail', 'available', 'availability', 'units'])
       const override = getString(calendar, ['override'])
-      const isBlackout = override === 'blackout'
-      const effectiveNumAvail = isBlackout ? 0 : (numAvail !== undefined ? numAvail : 1)
-      const isBlockedRange = isBlackout || numAvail === 0
+      const isBlackout = String(override ?? '').toLowerCase() === 'blackout'
+      const isBlockedRange = isBlackout || (numAvail !== undefined && numAvail <= 0)
+      const effectiveNumAvail = isBlockedRange ? 0 : (numAvail !== undefined ? numAvail : 1)
 
       if (!from || !to || (price === undefined && !isBlockedRange)) {
         return []
