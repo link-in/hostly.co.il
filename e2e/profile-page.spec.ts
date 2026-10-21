@@ -43,6 +43,12 @@ test('splits the page into separate section cards with a section nav', async ({ 
   await expect(nav.getByRole('link')).toHaveCount(8)
 })
 
+test('owner phone is editable in the personal details section', async ({ page }) => {
+  const phone = page.locator('#details').getByLabel('טלפון (WhatsApp להתראות)')
+  await expect(phone).toBeVisible()
+  await expect(phone).toHaveValue('+972524892229')
+})
+
 test('clicking a nav item jumps to its section and marks it active', async ({ page }) => {
   const nav = page.getByRole('navigation', { name: 'מקטעי האזור האישי' })
   await nav.getByRole('link', { name: 'אבטחה' }).click()

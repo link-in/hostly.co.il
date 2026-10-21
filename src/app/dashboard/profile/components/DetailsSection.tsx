@@ -34,6 +34,16 @@ export function DetailsSection({ values, onChange, propertyId, roomId }: Details
           onChange={(v) => onChange('email', v)}
         />
         <TextField
+          id="profile-phone"
+          label="טלפון (WhatsApp להתראות)"
+          type="tel"
+          ltr
+          placeholder="0528676516"
+          hint="לכאן נשלחות התראות על הזמנות חדשות. מספר ישראלי — מומר אוטומטית לפורמט בינלאומי."
+          value={values.phoneNumber}
+          onChange={(v) => onChange('phoneNumber', v)}
+        />
+        <TextField
           id="profile-landing-url"
           label="כתובת דף נחיתה"
           type="url"
