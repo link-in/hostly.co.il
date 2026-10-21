@@ -87,19 +87,55 @@ beforeEach(() => {
 })
 
 describe('POST /api/dashboard/rooms — blocking', () => {
-  it('forwards numAvail:0 to Beds24 and writes it to availability_cache', async () => {
+  it('forwards numAvail:0 and override:blackout to Beds24 and writes it to availability_cache', async () => {
     mockBeds24({ postCalendarEcho: [{ from: '2026-07-12', to: '2026-07-12', numAvail: 0 }] })
 
     const payload = [
-      { roomId: BEDS24_ROOM_ID, calendar: [{ from: '2026-07-12', to: '2026-07-12', numAvail: 0, price1: 600 }] },
+      { roomId: BEDS24_ROOM_ID, calendar: [{ from: '2026-07-12', to: '2026-07-12', numAvail: 0, override: 'blackout', price1: 600 }] },
     ]
     const response = await POST(postRequest(payload))
     expect(response.status).toBe(200)
 
     const cacheRows = fakeClient.__table('availability_cache')
     expect(cacheRows).toHaveLength(1)
-    // Regression: date must be exactly 2026-07-12, not shifted by a day.
-    expect(cacheRows[0]).toMatchObject({ date: '2026-07-12', num_avail: 0 })
+    // Regression: date must be exactly 2026-07-12, not shifted by a day, with is_manual_block: true
+    expect(cacheRows[0]).toMatchObject({ date: '2026-07-12', num_avail: 0, is_manual_block: true })
+
+    // Verify payload sent to Beds24 includes override: 'blackout'
+    const beds24Calls = vi.mocked(fetchWithTokenRefresh).mock.calls
+    const postCall = beds24Calls.find((call) => call[1]?.method === 'POST')
+    expect(postCall).toBeDefined()
+    const sentBody = JSON.parse(postCall![1]!.body as string)
+    expect(sentBody[0].calendar[0]).toMatchObject({
+      numAvail: 0,
+      override: 'blackout',
+    })
+  })
+})
+
+describe('POST /api/dashboard/rooms — token resolution', () => {
+  it('falls back to resolveBeds24Tokens from DB when session has no beds24Token', async () => {
+    fakeClient = createFakeSupabaseClient({
+      availability_cache: [],
+      users: [
+        { id: 'user-1', beds24_token: 'db-access-token', beds24_refresh_token: 'db-refresh-token' },
+      ],
+    })
+    mockBeds24({ postCalendarEcho: [{ from: '2026-07-12', to: '2026-07-12', numAvail: 0 }] })
+
+    const payload = [
+      { roomId: BEDS24_ROOM_ID, calendar: [{ from: '2026-07-12', to: '2026-07-12', numAvail: 0, override: 'blackout' }] },
+    ]
+    const response = await POST(postRequest(payload))
+    expect(response.status).toBe(200)
+
+    const beds24Calls = vi.mocked(fetchWithTokenRefresh).mock.calls
+    const postCall = beds24Calls.find((call) => call[1]?.method === 'POST')
+    expect(postCall).toBeDefined()
+    expect(postCall![2]).toEqual({
+      accessToken: 'db-access-token',
+      refreshToken: 'db-refresh-token',
+    })
   })
 })
 
@@ -144,6 +180,50 @@ describe('GET /api/dashboard/rooms — overlay', () => {
 
     const july13 = body.prices.find((p: { date: string }) => p.date === '2026-07-13')
     expect(july13).toMatchObject({ numAvail: 1 })
+  })
+
+  it('requests includeNumAvail and includeOverrides from Beds24', async () => {
+    mockBeds24({ calendarEntries: [{ from: '2026-07-11', to: '2026-07-15', price1: 600 }] })
+    await GET(getRequest())
+    const beds24Calls = vi.mocked(fetchWithTokenRefresh).mock.calls
+    const calCall = beds24Calls.find((call) => (call[0] as string).includes('/inventory/rooms/calendar'))
+    expect(calCall).toBeDefined()
+    const calUrl = new URL(calCall![0] as string)
+    expect(calUrl.searchParams.get('includeNumAvail')).toBe('1')
+    expect(calUrl.searchParams.get('includeOverrides')).toBe('1')
+  })
+
+  it('treats Beds24 calendar rows with override:blackout as numAvail:0', async () => {
+    vi.mocked(fetchWithTokenRefresh).mockImplementation(async (url) => {
+      if ((url as string).includes('/inventory/rooms/calendar')) {
+        return jsonResponse({
+          success: true,
+          type: 'calendar',
+          count: 1,
+          data: [
+            {
+              roomId: BEDS24_ROOM_ID,
+              calendar: [
+                { from: '2026-07-11', to: '2026-07-11', price1: 600, override: 'blackout' },
+                { from: '2026-07-12', to: '2026-07-12', price1: 600, override: 'none' },
+              ],
+            },
+          ],
+        })
+      }
+      if ((url as string).includes('/inventory/rooms')) {
+        return jsonResponse(beds24RoomsInfoResponse())
+      }
+      return jsonResponse({ success: false }, 404)
+    })
+
+    const response = await GET(getRequest())
+    expect(response.status).toBe(200)
+    const body = await response.json()
+    const july11 = body.prices.find((p: { date: string }) => p.date === '2026-07-11')
+    expect(july11).toMatchObject({ date: '2026-07-11', numAvail: 0 })
+    const july12 = body.prices.find((p: { date: string }) => p.date === '2026-07-12')
+    expect(july12).toMatchObject({ date: '2026-07-12', numAvail: 1 })
   })
 
   it('injects a synthetic blocked entry for a date with no Beds24 price at all', async () => {

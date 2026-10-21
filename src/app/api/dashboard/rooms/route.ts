@@ -5,6 +5,7 @@ import { fetchWithTokenRefresh } from '@/lib/beds24/tokenManager'
 import { overlayAvailabilityCache, writeCacheAvailability } from '@/lib/availability/blocking'
 import { detectAndMarkCreditError, isBeds24CreditError } from '@/lib/beds24/creditGuard'
 import { describeBeds24Failure, hasBeds24Failure } from '@/lib/beds24/responseFailure'
+import { resolveBeds24Tokens } from '@/lib/onboarding/tokens'
 
 export const dynamic = 'force-dynamic'
 
@@ -154,6 +155,8 @@ export async function GET(request: Request) {
     url.searchParams.set('startDate', queryStartDate)
     url.searchParams.set('endDate', queryEndDate)
     url.searchParams.set('includePrices', normalizeBooleanParam('true') ?? '1')
+    url.searchParams.set('includeNumAvail', '1')
+    url.searchParams.set('includeOverrides', '1')
     if (roomId) {
       url.searchParams.set('roomId', roomId)
     }
@@ -162,13 +165,14 @@ export async function GET(request: Request) {
     }
   }
 
-  // Prepare user-specific tokens if available
-  const userTokens = session?.user?.beds24Token && session?.user?.beds24RefreshToken
+  // Prepare user-specific tokens if available (with DB fallback)
+  const sessionTokens = session?.user?.beds24Token && session?.user?.beds24RefreshToken
     ? {
         accessToken: session.user.beds24Token,
         refreshToken: session.user.beds24RefreshToken,
       }
     : undefined
+  const userTokens = sessionTokens ?? (session?.user?.id ? await resolveBeds24Tokens(session.user.id) : undefined)
 
   // Also fetch room base price from /inventory/rooms (fallback when calendar has no overrides)
   // Note: /inventory/rooms does not support roomId filter — fetch all and filter in code
@@ -183,6 +187,8 @@ export async function GET(request: Request) {
     fallbackUrl.searchParams.set('startDate', queryStartDate)
     fallbackUrl.searchParams.set('endDate', queryEndDate)
     fallbackUrl.searchParams.set('includePrices', '1')
+    fallbackUrl.searchParams.set('includeNumAvail', '1')
+    fallbackUrl.searchParams.set('includeOverrides', '1')
   }
 
   try {
@@ -273,9 +279,12 @@ export async function GET(request: Request) {
           const date = getString(row, ['date', 'day', 'startDate'])
           const price = extractRowPrice(row)
           const numAvail = getNumber(row, ['numAvail', 'avail', 'available', 'availability', 'units'])
-          const isBlocked = numAvail === 0
+          const override = getString(row, ['override'])
+          const isBlackout = override === 'blackout'
+          const effectiveNumAvail = isBlackout ? 0 : (numAvail !== undefined ? numAvail : 1)
+          const isBlocked = isBlackout || numAvail === 0
 
-          // Skip entries with no date. Allow blocked entries (numAvail=0) even without a price.
+          // Skip entries with no date. Allow blocked entries (numAvail=0 or blackout) even without a price.
           if (!date || (price === undefined && !isBlocked)) {
             return []
           }
@@ -285,7 +294,7 @@ export async function GET(request: Request) {
               date,
               price: price ?? 0,
               roomId: roomId ?? calendarId ?? null,
-              numAvail: numAvail !== undefined ? numAvail : 1,
+              numAvail: effectiveNumAvail,
             },
           ]
         })
@@ -296,14 +305,17 @@ export async function GET(request: Request) {
       if (directDate) {
         const price = extractRowPrice(calendar)
         const numAvail = getNumber(calendar, ['numAvail', 'avail', 'available', 'availability', 'units'])
-        const isBlocked = numAvail === 0
+        const override = getString(calendar, ['override'])
+        const isBlackout = override === 'blackout'
+        const effectiveNumAvail = isBlackout ? 0 : (numAvail !== undefined ? numAvail : 1)
+        const isBlocked = isBlackout || numAvail === 0
         if (price === undefined && !isBlocked) return []
         return [
           {
             date: directDate,
             price: price ?? 0,
             roomId: roomId ?? calendarId ?? null,
-            numAvail: numAvail !== undefined ? numAvail : 1,
+            numAvail: effectiveNumAvail,
           },
         ]
       }
@@ -313,7 +325,10 @@ export async function GET(request: Request) {
       const to = getString(calendar, ['to', 'endDate'])
       const price = extractRowPrice(calendar)
       const numAvail = getNumber(calendar, ['numAvail', 'avail', 'available', 'availability', 'units'])
-      const isBlockedRange = numAvail === 0
+      const override = getString(calendar, ['override'])
+      const isBlackout = override === 'blackout'
+      const effectiveNumAvail = isBlackout ? 0 : (numAvail !== undefined ? numAvail : 1)
+      const isBlockedRange = isBlackout || numAvail === 0
 
       if (!from || !to || (price === undefined && !isBlockedRange)) {
         return []
@@ -333,7 +348,7 @@ export async function GET(request: Request) {
           date: formatLocalDate(cursor),
           price: price ?? 0,
           roomId: roomId ?? calendarId ?? null,
-          numAvail: numAvail !== undefined ? numAvail : 1,
+          numAvail: effectiveNumAvail,
         })
         cursor = addDays(cursor, 1)
       }
@@ -407,13 +422,14 @@ export async function POST(request: Request) {
   console.log('[rooms POST] sending to Beds24 URL:', url.toString())
   console.log('[rooms POST] payload:', JSON.stringify(normalizedPayload))
 
-  // Prepare user-specific tokens if available
-  const userTokens = session?.user?.beds24Token && session?.user?.beds24RefreshToken
+  // Prepare user-specific tokens if available (with DB fallback)
+  const sessionTokens = session?.user?.beds24Token && session?.user?.beds24RefreshToken
     ? {
         accessToken: session.user.beds24Token,
         refreshToken: session.user.beds24RefreshToken,
       }
     : undefined
+  const userTokens = sessionTokens ?? (session?.user?.id ? await resolveBeds24Tokens(session.user.id) : undefined)
 
   try {
     const response = await fetchWithTokenRefresh(url.toString(), {

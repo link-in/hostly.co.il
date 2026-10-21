@@ -12,6 +12,8 @@ export const PROPERTY_ROOM_SYNC_INTERVAL_MS = 60_000
 export interface PropertyRoom {
   propertyId: string
   roomId: string
+  beds24Token?: string
+  beds24RefreshToken?: string
 }
 
 export function isPropertyRoomSyncDue(
@@ -28,12 +30,22 @@ export async function loadPropertyRoom(userId: string): Promise<PropertyRoom | n
     const supabase = createServiceRoleClient()
     const { data, error } = await supabase
       .from('users')
-      .select('property_id, room_id')
+      .select('property_id, room_id, beds24_token, beds24_refresh_token')
       .eq('id', userId)
       .maybeSingle()
     if (error || !data) return null
-    const row = data as { property_id: string | null; room_id: string | null }
-    return { propertyId: row.property_id ?? '', roomId: row.room_id ?? '' }
+    const row = data as {
+      property_id: string | null
+      room_id: string | null
+      beds24_token: string | null
+      beds24_refresh_token: string | null
+    }
+    return {
+      propertyId: row.property_id ?? '',
+      roomId: row.room_id ?? '',
+      beds24Token: row.beds24_token ?? undefined,
+      beds24RefreshToken: row.beds24_refresh_token ?? undefined,
+    }
   } catch (err) {
     console.warn('[auth] property/room sync failed (non-fatal):', err)
     return null

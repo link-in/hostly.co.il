@@ -81,6 +81,31 @@ describe('buildCacheRowsFromPayload', () => {
     expect(byRoom['638851'][1].date).toBe('2026-07-13')
   })
 
+  it('treats override: "blackout" as num_avail: 0 and is_manual_block: true even if numAvail is omitted', () => {
+    const payload = [
+      { roomId: 638851, calendar: [{ from: '2026-07-20', to: '2026-07-20', override: 'blackout', price1: 500 }] },
+    ]
+    const byRoom = buildCacheRowsFromPayload(payload, 'user-1', undefined, undefined, NOW)
+    expect(byRoom['638851']).toHaveLength(1)
+    expect(byRoom['638851'][0]).toMatchObject({
+      num_avail: 0,
+      is_manual_block: true,
+      price: 500,
+    })
+  })
+
+  it('treats override: "none" as num_avail: 1 and is_manual_block: false', () => {
+    const payload = [
+      { roomId: 638851, calendar: [{ from: '2026-07-20', to: '2026-07-20', override: 'none', price1: 500 }] },
+    ]
+    const byRoom = buildCacheRowsFromPayload(payload, 'user-1', undefined, undefined, NOW)
+    expect(byRoom['638851']).toHaveLength(1)
+    expect(byRoom['638851'][0]).toMatchObject({
+      num_avail: 1,
+      is_manual_block: false,
+    })
+  })
+
   it('defaults price to 0 when price1 is absent (blocked with no price override)', () => {
     const payload = [{ roomId: 638851, calendar: [{ from: '2026-07-20', to: '2026-07-20', numAvail: 0 }] }]
     const byRoom = buildCacheRowsFromPayload(payload, 'user-1', undefined, undefined, NOW)
@@ -203,14 +228,31 @@ describe('writeCacheAvailability', () => {
     // a price that was previously set via a full block-with-price write.
     fakeClient = createFakeSupabaseClient({
       availability_cache: [
-        { user_id: 'user-1', room_id: '638851', date: '2026-07-12', num_avail: 0, price: 450, min_stay: 2, cached_at: 'x' },
+        { user_id: 'user-1', room_id: '638851', date: '2026-07-12', num_avail: 0, price: 450, min_stay: 2, cached_at: 'x', is_manual_block: true },
       ],
     })
-    const payload = [{ roomId: 638851, calendar: [{ from: '2026-07-12', to: '2026-07-12', numAvail: 1, price1: 450 }] }]
+    const payload = [{ roomId: 638851, calendar: [{ from: '2026-07-12', to: '2026-07-12', numAvail: 1, override: 'none', price1: 450 }] }]
     await writeCacheAvailability(payload, 'user-1', undefined, undefined)
     const rows = fakeClient.__table('availability_cache')
     expect(rows).toHaveLength(1)
-    expect(rows[0]).toMatchObject({ num_avail: 1, price: 450, min_stay: 2 })
+    expect(rows[0]).toMatchObject({ num_avail: 1, price: 450, min_stay: 2, is_manual_block: false })
+  })
+
+  it('updates is_manual_block to true when an existing row is manually blocked', async () => {
+    // Regression for HOS-31: updating an existing row to blocked must update is_manual_block: true
+    // so subsequent cache refreshes do not overwrite it back to num_avail: 1.
+    fakeClient = createFakeSupabaseClient({
+      availability_cache: [
+        { user_id: 'user-1', room_id: '638851', date: '2026-07-12', num_avail: 1, price: 500, min_stay: 1, cached_at: 'old', is_manual_block: false },
+      ],
+    })
+    const payload = [
+      { roomId: 638851, calendar: [{ from: '2026-07-12', to: '2026-07-12', numAvail: 0, override: 'blackout', price1: 500 }] },
+    ]
+    await writeCacheAvailability(payload, 'user-1', undefined, undefined)
+    const rows = fakeClient.__table('availability_cache')
+    expect(rows).toHaveLength(1)
+    expect(rows[0]).toMatchObject({ num_avail: 0, is_manual_block: true })
   })
 
   it('does not throw and leaves the cache untouched when the payload has no numAvail entries', async () => {
