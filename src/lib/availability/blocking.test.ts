@@ -199,6 +199,32 @@ describe('overlayAvailabilityCache', () => {
     expect(result).toHaveLength(basePrices.length)
   })
 
+  it('does NOT overwrite Beds24 blocked dates (numAvail: 0) with stale cached num_avail: 1', async () => {
+    // Regression for production bug: Beds24 has dates blocked (blackout or 0 units),
+    // but availability_cache has stale rows with num_avail: 1.
+    // Beds24 closures must NEVER be reopened by stale cache rows!
+    const beds24BlockedPrices = [
+      { date: '2026-10-22', price: 700, roomId: '638851', numAvail: 0 },
+      { date: '2026-10-23', price: 700, roomId: '638851', numAvail: 0 },
+      { date: '2026-10-25', price: 500, roomId: '638851', numAvail: 1 },
+    ]
+    fakeClient = createFakeSupabaseClient({
+      availability_cache: [
+        { user_id: 'user-1', room_id: '638851', date: '2026-10-22', num_avail: 1, is_manual_block: false },
+        { user_id: 'user-1', room_id: '638851', date: '2026-10-23', num_avail: 1, is_manual_block: false },
+        { user_id: 'user-1', room_id: '638851', date: '2026-10-25', num_avail: 1, is_manual_block: false },
+      ],
+    })
+    const result = await overlayAvailabilityCache(beds24BlockedPrices, 'user-1', '638851')
+    const oct22 = result.find((p) => p.date === '2026-10-22')
+    const oct23 = result.find((p) => p.date === '2026-10-23')
+    const oct25 = result.find((p) => p.date === '2026-10-25')
+
+    expect(oct22?.numAvail).toBe(0)
+    expect(oct23?.numAvail).toBe(0)
+    expect(oct25?.numAvail).toBe(1)
+  })
+
   it('falls back to the original prices if the Supabase call throws', async () => {
     fakeClient = {
       from: () => {

@@ -59,19 +59,33 @@ export async function overlayAvailabilityCache(
 
     if (!cacheRows?.length) return prices
 
-    const cacheMap: Record<string, number> = {}
-    cacheRows.forEach((row) => { cacheMap[row.date] = row.num_avail })
+    const cacheMap: Record<string, { numAvail: number; isManualBlock?: boolean }> = {}
+    cacheRows.forEach((row) => {
+      cacheMap[row.date] = {
+        numAvail: row.num_avail,
+        isManualBlock: (row as { is_manual_block?: boolean }).is_manual_block,
+      }
+    })
 
     // Apply cache numAvail to existing price entries
-    const overlaid = prices.map((p) => ({
-      ...p,
-      numAvail: cacheMap[p.date] !== undefined ? cacheMap[p.date] : p.numAvail,
-    }))
+    // CRITICAL: If Beds24 already reported the date as blocked (numAvail <= 0), NEVER unblock it!
+    // Real Beds24 closures (blackout, bookings, 0 units) take precedence over stale cache rows.
+    const overlaid = prices.map((p) => {
+      if (p.numAvail <= 0) {
+        return { ...p, numAvail: 0 }
+      }
+      const cached = cacheMap[p.date]
+      if (cached && (cached.numAvail <= 0 || cached.isManualBlock === true)) {
+        return { ...p, numAvail: 0 }
+      }
+      return p
+    })
 
     // Also inject blocked dates from cache that have no price entry in Beds24
     const pricesDates = new Set(overlaid.map((p) => p.date))
     cacheRows.forEach((row) => {
-      if (row.num_avail === 0 && !pricesDates.has(row.date)) {
+      const isBlocked = row.num_avail === 0 || (row as { is_manual_block?: boolean }).is_manual_block === true
+      if (isBlocked && !pricesDates.has(row.date)) {
         overlaid.push({ date: row.date, price: 0, roomId, numAvail: 0 })
       }
     })
