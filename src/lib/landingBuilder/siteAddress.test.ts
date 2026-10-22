@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   buildSiteHost,
+  buildSiteUrl,
   normalizeSiteAddress,
   suggestSiteAddress,
   transliterateHebrew,
@@ -65,5 +66,17 @@ describe('suggestSiteAddress', () => {
 describe('buildSiteHost', () => {
   it('puts the address under the Hostly domain', () => {
     expect(buildSiteHost('dafna')).toBe('dafna.hostly.co.il')
+  })
+})
+
+describe('buildSiteUrl', () => {
+  it('links to the subdomain outside local development', () => {
+    expect(buildSiteUrl('dafna')).toBe('https://dafna.hostly.co.il')
+    expect(buildSiteUrl('dafna', 'https://hostly.co.il')).toBe('https://dafna.hostly.co.il')
+  })
+
+  it('links to the path route on a local dev server', () => {
+    expect(buildSiteUrl('dafna', 'http://localhost:3005')).toBe('http://localhost:3005/dafna')
+    expect(buildSiteUrl('dafna', 'http://127.0.0.1:3000')).toBe('http://127.0.0.1:3000/dafna')
   })
 })

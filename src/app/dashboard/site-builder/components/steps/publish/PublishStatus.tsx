@@ -2,7 +2,8 @@
 
 import { AlertCircle, ExternalLink, Globe } from 'lucide-react'
 import { PUBLISH_BLOCKER_MESSAGES } from '@/lib/landingBuilder/publishing/publishBlockers'
-import { buildSiteHost } from '@/lib/landingBuilder/siteAddress'
+import { useSyncExternalStore } from 'react'
+import { buildSiteHost, buildSiteUrl } from '@/lib/landingBuilder/siteAddress'
 import { useSitePublishing } from '../../../state/SitePublishing'
 
 const dateFormatter = new Intl.DateTimeFormat('he-IL', { dateStyle: 'short', timeStyle: 'short' })
@@ -25,8 +26,13 @@ function Checklist() {
   )
 }
 
+const subscribeToNothing = () => () => {}
+const useBrowserOrigin = () =>
+  useSyncExternalStore(subscribeToNothing, () => window.location.origin, () => undefined)
+
 function LiveSite() {
   const { published, hasUnpublishedChanges } = useSitePublishing()
+  const origin = useBrowserOrigin()
   if (!published) return null
   const host = buildSiteHost(published.address)
   return (
@@ -36,7 +42,7 @@ function LiveSite() {
         האתר באוויר
       </p>
       <a
-        href={`https://${host}`}
+        href={buildSiteUrl(published.address, origin)}
         target="_blank"
         rel="noreferrer"
         dir="ltr"

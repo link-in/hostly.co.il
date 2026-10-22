@@ -47,6 +47,14 @@ export function buildSiteHost(address: string): string {
   return `${address}.${SITE_ROOT_DOMAIN}`
 }
 
+const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1'])
+
+/** The proxy maps subdomains only on hostly.co.il, so a local dev server serves the site at `/{address}`. */
+export function buildSiteUrl(address: string, currentOrigin?: string): string {
+  if (currentOrigin && LOCAL_HOSTS.has(new URL(currentOrigin).hostname)) return `${currentOrigin}/${address}`
+  return `https://${buildSiteHost(address)}`
+}
+
 const HEBREW_LETTERS: Record<string, string> = {
   א: 'a', ב: 'b', ג: 'g', ד: 'd', ה: 'h', ו: 'v', ז: 'z', ח: 'ch', ט: 't', י: 'y', כ: 'k', ך: 'ch',
   ל: 'l', מ: 'm', ם: 'm', נ: 'n', ן: 'n', ס: 's', ע: 'a', פ: 'p', ף: 'f', צ: 'tz', ץ: 'tz', ק: 'k',
