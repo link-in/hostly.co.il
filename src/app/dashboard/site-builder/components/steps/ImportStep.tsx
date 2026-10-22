@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import Image from 'next/image'
 import { CheckCircle2, DownloadCloud, ImageOff } from 'lucide-react'
 import { useSelectedRoomOptional } from '@/lib/rooms/RoomContext'
 import { useBuilderDispatch, useBuilderState } from '../../state/BuilderProvider'
@@ -10,12 +9,19 @@ import { BuilderButton } from '../ui/BuilderButton'
 
 const FALLBACK_ERROR = 'לא הצלחנו לייבא את נתוני הנכס. נסו שוב בעוד רגע.'
 
+const CHANNEL_LOGOS = [
+  { src: '/airbnb-logo.png', alt: 'Airbnb' },
+  { src: '/booking-logo.png', alt: 'Booking.com' },
+]
+
 function ChannelLogos() {
   return (
     <div className="flex items-center gap-2" aria-label="ערוצים מסונכרנים">
       <span className="rounded-lg bg-slate-900 px-2 py-1 text-[11px] font-bold tracking-wide text-white">Beds24</span>
-      <Image src="/airbnb-logo.png" alt="Airbnb" width={22} height={22} className="rounded-md" />
-      <Image src="/booking-logo.png" alt="Booking.com" width={22} height={22} className="rounded-md" />
+      {CHANNEL_LOGOS.map((logo) => (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img key={logo.src} src={logo.src} alt={logo.alt} width={22} height={22} className="size-[22px] rounded-md" />
+      ))}
     </div>
   )
 }
