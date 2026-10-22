@@ -20,10 +20,20 @@ interface BookingWidgetProps {
   theme: BookingTheme
 }
 
-function PriceHeading({ price, isFrom, currency, theme }: { price: number | null; isFrom: boolean; currency: string; theme: BookingTheme }) {
+interface PriceHeadingProps {
+  price: number | null
+  isFrom: boolean
+  isLoading: boolean
+  currency: string
+  theme: BookingTheme
+}
+
+function PriceHeading({ price, isFrom, isLoading, currency, theme }: PriceHeadingProps) {
   return (
     <div className="mb-3.5">
-      {price !== null ? (
+      {isLoading ? (
+        <div className="h-8 w-36 animate-pulse rounded-md bg-slate-100" aria-label="טוענים מחיר" />
+      ) : price !== null ? (
         <p className={`text-2xl ${theme.heading}`}>
           {isFrom && <span className="text-sm font-normal text-slate-400">החל מ-</span>}
           {formatMoney(price, currency)}
@@ -51,7 +61,9 @@ export function BookingWidget({ booking, contact, siteTitle, theme }: BookingWid
 
   return (
     <div className={`p-6 ${theme.card}`}>
-      <PriceHeading price={lowest ?? booking.basePrice} isFrom={lowest !== null} currency={booking.currency} theme={theme} />
+      <PriceHeading price={lowest ?? booking.basePrice} isFrom={lowest !== null}
+        isLoading={isLoading}
+        currency={booking.currency} theme={theme} />
       <div className="space-y-3.5">
         <BookingCalendar
           month={month}
