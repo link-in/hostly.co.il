@@ -2,10 +2,13 @@
 
 import { useState, useTransition } from 'react'
 import Image from 'next/image'
-import { CheckCircle2, DownloadCloud, FlaskConical } from 'lucide-react'
+import { CheckCircle2, DownloadCloud, ImageOff } from 'lucide-react'
+import { useSelectedRoomOptional } from '@/lib/rooms/RoomContext'
 import { useBuilderDispatch, useBuilderState } from '../../state/BuilderProvider'
 import { importPropertyContent } from '../../state/importPropertyContent'
 import { BuilderButton } from '../ui/BuilderButton'
+
+const FALLBACK_ERROR = 'לא הצלחנו לייבא את נתוני הנכס. נסו שוב בעוד רגע.'
 
 function ChannelLogos() {
   return (
@@ -22,11 +25,20 @@ function ImportSummary() {
   const importedImages = draft.images.filter((image) => image.source === 'import').length
 
   return (
-    <div className="mt-2.5 flex items-start gap-2 rounded-xl bg-emerald-50 px-2.5 py-2 text-sm text-emerald-800">
-      <CheckCircle2 className="mt-0.5 size-4 shrink-0" aria-hidden />
-      <span>
-        יובאו {importedImages} תמונות, {draft.content.amenities.length} מתקנים ותיאור הנכס.
-      </span>
+    <div className="mt-2.5 space-y-2">
+      <div className="flex items-start gap-2 rounded-xl bg-emerald-50 px-2.5 py-2 text-sm text-emerald-800">
+        <CheckCircle2 className="mt-0.5 size-4 shrink-0" aria-hidden />
+        <span>
+          יובאו שם הנכס, התיאור ו-{draft.content.amenities.length} מתקנים
+          {importedImages > 0 && `, יחד עם ${importedImages} תמונות`}.
+        </span>
+      </div>
+      {importedImages === 0 && (
+        <div className="flex items-start gap-2 rounded-xl bg-amber-50 px-2.5 py-2 text-xs leading-5 text-amber-800">
+          <ImageOff className="mt-0.5 size-3.5 shrink-0" aria-hidden />
+          <span>Beds24 לא מעביר תמונות. אפשר להעלות אותן בשלב ההתאמה האישית.</span>
+        </div>
+      )}
     </div>
   )
 }
@@ -34,6 +46,7 @@ function ImportSummary() {
 export default function ImportStep() {
   const { draft } = useBuilderState()
   const dispatch = useBuilderDispatch()
+  const selectedRoomId = useSelectedRoomOptional()?.selectedRoomId
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
   const imported = draft.propertyId !== null
@@ -41,11 +54,11 @@ export default function ImportStep() {
   const handleImport = () =>
     startTransition(async () => {
       try {
-        const property = await importPropertyContent()
+        const property = await importPropertyContent(selectedRoomId)
         dispatch({ type: 'property/imported', property })
         setError(null)
-      } catch {
-        setError('לא הצלחנו לייבא את נתוני הנכס. נסו שוב בעוד רגע.')
+      } catch (importError) {
+        setError(importError instanceof Error ? importError.message : FALLBACK_ERROR)
       }
     })
 
@@ -70,10 +83,6 @@ export default function ImportStep() {
           {error}
         </p>
       )}
-      <p className="mt-2.5 flex items-center gap-1.5 px-1 text-xs text-amber-700">
-        <FlaskConical className="size-3.5 shrink-0" aria-hidden />
-        מצב פיתוח: נטענים נתוני דמו עד לחיבור ל-Supabase.
-      </p>
     </div>
   )
 }

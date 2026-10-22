@@ -3,10 +3,7 @@ import type { PropertyContent } from './types'
 const unsplash = (photoId: string) =>
   `https://images.unsplash.com/${photoId}?auto=format&fit=crop&w=1600&q=80`
 
-/**
- * Stand-in for the Supabase/Beds24 import until the import server action lands
- * (see docs/landing-builder-wizard.md, phase 4). Keeps the live preview demoable.
- */
+/** Returned by the import for demo users (`isDemo`), and used as a fully populated test fixture. */
 export const DEMO_PROPERTY: PropertyContent = {
   propertyId: 'demo-306559',
   roomId: 'demo-638851',

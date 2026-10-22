@@ -1,10 +1,9 @@
-import { DEMO_PROPERTY } from '@/lib/landingBuilder/demoProperty'
-import { propertyContentSchema, type PropertyContent } from '@/lib/landingBuilder/types'
+import type { PropertyContent } from '@/lib/landingBuilder/types'
+import { importPropertyContentAction } from '../actions'
 
-/**
- * Phase 4 replaces the body with a server action that reads the user's synced
- * property from Supabase; callers already treat it as async and fallible.
- */
-export async function importPropertyContent(): Promise<PropertyContent> {
-  return propertyContentSchema.parse(DEMO_PROPERTY)
+/** Imports the signed-in user's property; throws with a user-facing Hebrew message on failure. */
+export async function importPropertyContent(roomId?: string): Promise<PropertyContent> {
+  const result = await importPropertyContentAction(roomId)
+  if (!result.ok) throw new Error(result.error)
+  return result.property
 }

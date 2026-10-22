@@ -4,10 +4,13 @@ A split-screen wizard that lets a property manager generate a standalone
 direct-booking website: controls on one side, a live browser-mockup preview on
 the other, updating on every change.
 
-- Route: `/dashboard/site-builder` (branch `feat/landing-builder-wizard`)
+- Route: `/dashboard/site-builder` (branch `feat/landing-builder-wizard`),
+  sidebar item "בונה אתר הזמנות".
 - Feature flag: `isSiteBuilderEnabled()` — on with `npm run dev`, otherwise only
   when `NEXT_PUBLIC_SITE_BUILDER_ENABLED=true` (e.g. a Vercel preview env).
-- Login locally via `/demo` (demo user), then open the route.
+  Gates the page, the sidebar item and the import server action.
+- Login locally via `/demo` (demo user), then open the route. Demo users import
+  `DEMO_PROPERTY`; real users import their Beds24 property.
 
 ## Status
 
@@ -16,11 +19,11 @@ the other, updating on every change.
 | 1 | Split-screen skeleton (wizard panel + live preview) | Done |
 | 2 | State management for the draft | Done |
 | 3 | Two mock templates rendered in the preview, incl. booking widget mock | Done |
-| 4 | "Import from Hostly" — real property data from Supabase | Todo (demo fixture wired) |
+| 4 | "Import from Hostly" — real property data (Beds24 texts/amenities + Supabase images) | Done |
 | 5 | "Generate with AI" | Todo (button + reducer action ready, disabled in UI) |
 | 6 | Persist draft, upload images to Storage, publish to subdomain | Todo |
 | 7 | Real booking engine on the published site (availability + Cardcom) | Todo |
-| 8 | E2E tests + nav entry + remove flag | Todo |
+| 8 | E2E tests + remove flag (nav entry done) | Todo |
 
 ## Architecture
 
@@ -34,16 +37,27 @@ src/lib/landingBuilder/            # framework-free domain logic, unit tested
   pricing.ts                       # stay total + ILS formatting (direct = no markup)
   previewZoom.ts                   # virtual viewport widths + zoom-to-fit
   amenities.ts                     # add/remove amenity rules
-  demoProperty.ts                  # fixture used until phase 4
+  demoProperty.ts                  # demo-user import result + test fixture
   mockAvailability.ts              # fake occupancy until phase 7
   featureFlag.ts
+  import/                          # phase 4 — property import
+    beds24Property.ts              # Zod schema for GET /properties + query params
+    localizedText.ts               # he > en > any language, HTML stripping
+    featureCodes.ts                # Beds24 featureCodes -> Hebrew amenity labels
+    mapBeds24Property.ts           # pure Beds24 -> PropertyContent mapper
+    importPropertyContent.ts       # orchestrator (deps injected), room ownership, demo users
+    fetchBeds24Property.ts         # I/O: Beds24 via fetchWithTokenRefresh
+    loadLandingImages.ts           # I/O: landing_images from Supabase
+    errors.ts                      # error codes -> Hebrew messages
+    beds24PropertyFixture.ts       # trimmed real Beds24 response for tests
 
 src/app/dashboard/site-builder/    # the wizard (client UI only)
   page.tsx                         # server: auth + flag gate
+  actions.ts                       # server actions: importPropertyContentAction
   SiteBuilderWizard.tsx            # provider + split layout
   site-builder.css                 # Tailwind-vs-Bootstrap cascade fix (see Gotchas)
   state/BuilderProvider.tsx        # Context + useReducer; useBuilderState / useBuilderDispatch
-  state/importPropertyContent.ts   # import adapter — swap body for a server action in phase 4
+  state/importPropertyContent.ts   # client adapter: calls the action, throws Hebrew errors
   state/uploadedImages.ts          # File -> blob: preview image
   components/wizard/*              # header (value prop), stepper (accordion), footer nav
   components/steps/*               # TemplateStep, ImportStep, CustomizeStep (+ customize/*)
@@ -105,6 +119,9 @@ Rules worth knowing:
   `ring-1`, `rounded-xl`, `shadow-xl`.
 - Don't use the shared `hostly-btn` `Button` inside the builder — the reset
   overrides it. Use `components/ui/BuilderButton.tsx`.
+- Client code must read env vars as direct `process.env.X` members — Next.js
+  only inlines those; `process.env` as an object is empty in the browser
+  (that's why `isSiteBuilderEnabled` takes `{ nodeEnv, flag }`).
 - `dashboard-surfaces.css` forces `background: transparent !important` on any
   `<main>` inside `.hostly-main-panel` — don't use `<main>` in templates.
 
@@ -123,22 +140,32 @@ Rules worth knowing:
 
 ## Next phases
 
-### Phase 4 — Import from Hostly
-Supabase does **not** currently store property content (texts, pictures,
-amenities); `/api/dashboard/properties` proxies Beds24 live.
-1. Add a cache table, e.g. `property_content_cache (user_id, property_id,
-   room_id, payload jsonb, synced_at)`, filled from Beds24 V2 `GET /properties`
-   with `includeAllRooms`, `includeTexts`, `includePictures` (confirm exact
-   parameter names in the Beds24 V2 docs). Refresh it during onboarding and from
-   the existing cron.
-2. Server action `importPropertyContent(roomId)` in
-   `src/app/dashboard/site-builder/actions.ts`: `getServerSession` -> read cache
-   by `user_id` -> map to `PropertyContent` -> `propertyContentSchema.parse`.
-   Fallback: live Beds24 fetch via `fetchWithTokenRefresh` if the cache is empty.
-3. Replace the body of `state/importPropertyContent.ts`; remove the "demo data"
-   note in `ImportStep`. Room selection: default to `RoomContext`'s selected room.
-4. Tests: mapper unit tests with a Beds24 fixture (pick highest-res picture,
-   strip HTML from descriptions, dedupe amenities).
+### Phase 4 — Import from Hostly (done)
+Flow: `ImportStep` -> `importPropertyContentAction(selectedRoomId)` ->
+`importPropertyContent` -> Beds24 `GET /properties?id=…&includeAllRooms&includeTexts=all&includeLanguages=all&includePictures`
++ `landing_images` -> `mapBeds24Property` -> `propertyContentSchema`.
+
+What the real Beds24 V2 response contains (checked against property 306559):
+- **Texts** per language. Room texts (`displayName`, `contentHeadline`,
+  `contentDescription`) are usually in Hebrew; property texts
+  (`propertyDescription1`) are often English HTML. The mapper prefers room ->
+  property and he -> en -> any language, and strips HTML.
+- **Amenities** as `featureCodes`, e.g. `[["AIR_CONDITIONING"], ["BEDROOM","BED_DOUBLE"]]`.
+  Mapped to Hebrew labels in `featureCodes.ts` (unknown codes are skipped);
+  bedroom/bathroom groups become "2 חדרי שינה" / "חדר רחצה".
+- **Price/guests**: `rackRate` (else `minPrice`) as the nightly price, `maxPeople`.
+- **No pictures** — `includePictures=true` returns no picture field at all. The
+  import uses images already uploaded in the old landing editor
+  (`landing_images`: hero first, then portfolio); otherwise the user uploads in
+  the Customize step. Airbnb listing photos via `/channels/airbnb/listings` are
+  a possible future source.
+
+Security: `propertyId`/`room_id` come from the session only; a room requested by
+the client is honored only if it is in the user's `room_id` field; non-numeric
+ids never reach Beds24; demo users get `DEMO_PROPERTY`.
+
+Not done (by choice): no cache table — import is one read-only Beds24 call per
+click. Add `property_content_cache` if this becomes hot or rate-limited.
 
 ### Phase 5 — Generate with AI
 1. Server action `generateLandingContent(draft)`; the model provider is TBD (no
@@ -175,7 +202,8 @@ amenities); `/api/dashboard/properties` proxies Beds24 live.
 ### Phase 8 — Hardening
 - Playwright `e2e/site-builder.spec.ts`: template switch, import, edit text ->
   preview updates, mobile toggle, date selection -> checkout.
-- Add the page to `dashboardNav.ts`, remove the feature flag.
+- Remove the feature flag (`featureFlag.ts`; the nav item in `dashboardNav.ts`
+  is filtered by `isDashboardNavPageVisible`).
 - a11y pass (keyboard nav in the calendar, focus management between steps).
 
 ## Open questions
