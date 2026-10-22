@@ -86,10 +86,10 @@ describe('getVisibleNavSections', () => {
     expect(extraItems.some((item) => item.page === 'landing')).toBe(false)
   })
 
-  it('hides the site builder outside development when its flag is unset', () => {
-    // Vitest runs with NODE_ENV=test and no NEXT_PUBLIC_SITE_BUILDER_ENABLED
-    const { mainItems, extraItems } = getVisibleNavSections()
-    expect([...mainItems, ...extraItems].some((item) => item.page === 'site-builder')).toBe(false)
+  it('shows the site builder when its flag is unset', () => {
+    // Vitest runs without NEXT_PUBLIC_SITE_BUILDER_ENABLED
+    const { mainItems } = getVisibleNavSections()
+    expect(mainItems.some((item) => item.page === 'site-builder')).toBe(true)
   })
 
   it('keeps the site builder entry pointing at the wizard route', () => {

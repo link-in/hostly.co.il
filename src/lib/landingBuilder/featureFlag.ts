@@ -1,19 +1,15 @@
 export interface SiteBuilderFlagEnv {
-  nodeEnv: string | undefined
   flag: string | undefined
 }
 
 /**
- * The site builder wizard is under development: on in local dev, and anywhere
- * `NEXT_PUBLIC_SITE_BUILDER_ENABLED=true` is set (e.g. a Vercel preview).
- * Env vars are read as direct `process.env.X` members so Next.js inlines them
- * into client bundles (the sidebar evaluates this in the browser).
+ * The site builder wizard is on everywhere (POC users test it in production);
+ * `NEXT_PUBLIC_SITE_BUILDER_ENABLED=false` is the kill switch. Read as a direct
+ * `process.env.X` member so Next.js inlines it into client bundles (the sidebar
+ * evaluates this in the browser) — changing it needs a redeploy.
  */
 export function isSiteBuilderEnabled(
-  env: SiteBuilderFlagEnv = {
-    nodeEnv: process.env.NODE_ENV,
-    flag: process.env.NEXT_PUBLIC_SITE_BUILDER_ENABLED,
-  },
+  env: SiteBuilderFlagEnv = { flag: process.env.NEXT_PUBLIC_SITE_BUILDER_ENABLED },
 ): boolean {
-  return env.nodeEnv === 'development' || env.flag === 'true'
+  return env.flag?.trim().toLowerCase() !== 'false'
 }

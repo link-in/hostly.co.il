@@ -6,9 +6,10 @@ the other, updating on every change.
 
 - Route: `/dashboard/site-builder` (branch `feat/landing-builder-wizard`),
   sidebar item "בונה אתר הזמנות".
-- Feature flag: `isSiteBuilderEnabled()` — on with `npm run dev`, otherwise only
-  when `NEXT_PUBLIC_SITE_BUILDER_ENABLED=true` (e.g. a Vercel preview env).
-  Gates the page, the sidebar item and the import server action.
+- Feature flag: `isSiteBuilderEnabled()` — on everywhere, production included
+  (POC users test it). Kill switch: `NEXT_PUBLIC_SITE_BUILDER_ENABLED=false`
+  (inlined at build time, so redeploy after changing it).
+  Gates the page, the sidebar item and the server actions.
 - Login locally via `/demo` (demo user), then open the route. Demo users import
   `DEMO_PROPERTY`; real users import their Beds24 property.
 
@@ -129,7 +130,7 @@ Rules worth knowing:
   overrides it. Use `components/ui/BuilderButton.tsx`.
 - Client code must read env vars as direct `process.env.X` members — Next.js
   only inlines those; `process.env` as an object is empty in the browser
-  (that's why `isSiteBuilderEnabled` takes `{ nodeEnv, flag }`).
+  (that's why `isSiteBuilderEnabled` takes `{ flag }` instead of `process.env`).
 - `dashboard-surfaces.css` forces `background: transparent !important` on any
   `<main>` inside `.hostly-main-panel` — don't use `<main>` in templates.
 
