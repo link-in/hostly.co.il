@@ -126,8 +126,20 @@ redirect URLs, links in booking confirmation emails, canonical URLs.
 - Playwright: publish -> open `{sub}.localhost`-style host header -> page shows
   the published title; unpublish -> 404.
 
-## Open questions
+## Decisions (2026-10-22)
 
-- Booking mode for the first publish: wait for phase 7 (A) or inquiry mode (B)?
-- Custom domain: included for everyone, or a paid add-on?
-- Migrate existing old-editor sites to the new templates, or leave them as-is?
+- **Booking mode: B — publish now in inquiry mode**, switch to checkout in
+  phase 7. Inquiry mode needs a contact block (WhatsApp / phone / email) in the
+  templates and contact fields in the wizard; the old `meta_settings`
+  (`whatsapp_number`, `phone`, `email`, `address`) are the import source.
+- **Custom domain: paid add-on.** Every site gets a free subdomain; P2 is gated
+  by plan/subscription (`subscriptions` table).
+- **Old sites: migrate to the new templates.** As of today there is one old site
+  (`dalit`, the Dafna property: hero, features, portfolio, contact, 6 images) —
+  its images already flow into the wizard import. Migration = publish the
+  wizard draft on the existing `landing_pages` row (same subdomain), mapping
+  `meta_settings` into the new contact block; then the old renderer and
+  `/dashboard/landing` editor can be removed.
+
+Build order: P1 (subdomain + inquiry mode + contact block + migrate `dalit`)
+-> phase 7 (real availability + Cardcom checkout) -> P2 (custom domain add-on).
