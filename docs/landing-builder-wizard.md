@@ -225,7 +225,7 @@ Done:
   width, desktop/mobile, Esc to close. Portaled to `<body>` because the sticky
   preview column is its own stacking context.
 
-Todo:
+Todo (full plan: [site-publishing.md](./site-publishing.md)):
 1. Publish — blocked on phase 7: the booking widget is still a mock, so a public
    page would take fake bookings. Then: subdomain picker, `published_at` /
    published snapshot, `/sites/[site]` renders `TemplateRenderer` (with the CSS
