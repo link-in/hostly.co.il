@@ -35,8 +35,9 @@ it and it is the canonical URL.
 
 ## Prerequisite: real booking (phase 7)
 
-The booking widget is still a mock (fake availability, fake checkout). A public
-page must not take fake bookings. Two ways forward:
+Resolved with option B (see Decisions): sites are live in inquiry mode with
+real availability and prices; checkout is the remaining part of phase 7.
+Original options:
 - **A. Wait for phase 7** (availability_cache + Cardcom) and publish with real booking.
 - **B. Publish earlier in "inquiry mode"**: the widget shows real prices/dates
   but the CTA sends a WhatsApp/phone/email inquiry instead of checkout; switch

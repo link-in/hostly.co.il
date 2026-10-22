@@ -4,8 +4,9 @@ A split-screen wizard that lets a property manager generate a standalone
 direct-booking website: controls on one side, a live browser-mockup preview on
 the other, updating on every change.
 
-- Route: `/dashboard/site-builder` (branch `feat/landing-builder-wizard`),
-  sidebar item "בונה אתר הזמנות".
+- Route: `/dashboard/site-builder`, sidebar item "בונה אתר הזמנות".
+  Merged to `main` and live in production (PRs #49–#51, 2026-10-22).
+  Example live site: https://nof-harim-dafna.hostly.co.il
 - Feature flag: `isSiteBuilderEnabled()` — on everywhere, production included
   (POC users test it). Kill switch: `NEXT_PUBLIC_SITE_BUILDER_ENABLED=false`
   (inlined at build time, so redeploy after changing it).
@@ -22,9 +23,38 @@ the other, updating on every change.
 | 3 | Two mock templates rendered in the preview, incl. booking widget mock | Done |
 | 4 | "Import from Hostly" — real property data (Beds24 texts/amenities + Supabase images) | Done |
 | 5 | "Generate with AI" | Todo (button + reducer action ready, disabled in UI) |
-| 6 | Persist draft, upload images to Storage, publish to subdomain | Partly done: save/resume + uploads + full-screen preview; publish blocked on phase 7 |
-| 7 | Real booking engine on the published site (availability + Cardcom) | Todo |
+| 6 | Persist draft, upload images to Storage, publish to subdomain | Done (inquiry mode) — details in [site-publishing.md](./site-publishing.md) |
+| 7 | Real booking engine on the published site (availability + Cardcom) | Half done: real availability + nightly prices; Cardcom checkout todo |
 | 8 | E2E tests + remove flag (nav entry done) | Todo |
+
+## Continuing on another machine
+
+1. `git clone` + `npm install`, copy `.env.example` -> `.env.local` and fill
+   in real values (Supabase, NextAuth, Beds24 V2 tokens; the site builder also
+   uses `BEDS24_API_KEY` / `BEDS24_PROP_KEY` for pictures). Never commit
+   `.env.local`; the per-property propKey lives in `users.beds24_prop_key`.
+2. `npx next dev -p 3005` (port used during development; any port works).
+   Local DB = the production Supabase project, so **publishing locally changes
+   the live site**. Published sites open locally at `localhost:3005/{address}`.
+3. Migrations 009–011 are already applied to that database.
+4. Checks before a PR: `npx tsc --noEmit`, `npm test` (vitest), `next build`.
+   CI also runs mocked Playwright E2E. Production deploys on merge to `main`.
+5. Next work, in order: Cardcom checkout (phase 7 step 3–4), then the
+   todos in "Open items" below.
+
+## Open items
+
+- Phase 7: real checkout — reuse `/api/public/booking` -> `booking_payments`
+  -> Cardcom -> webhook -> Beds24 booking; re-validate price/availability
+  server-side; replace `InquiryActions` with a "הזמנה ותשלום" CTA.
+- Beds24 prices for Dafna end 2027-02-23 -> later nights show as unavailable
+  until the host extends price rules in Beds24.
+- Per-guest pricing: only `price1` is used (`prices` column not in the DB).
+- Customer subdomains still reach `/dashboard`, `/admin`, private `/api`.
+- Dedicated public layout (no Bootstrap, no PWA banner); resized images
+  (`next/image`, Beds24 PNGs are ~3 MB); per-site robots/sitemap.
+- Dashboard: copy-link and unpublish buttons.
+- Phase 5 (AI content), P2 custom domain, Phase 8 hardening.
 
 ## Architecture
 
@@ -35,12 +65,16 @@ src/lib/landingBuilder/            # framework-free domain logic, unit tested
   selectors.ts                     # buildPreviewModel (placeholders), getCoverImage, isStepComplete
   templates.ts                     # template registry metadata (id, name, swatches)
   calendarGrid.ts / dateRange.ts   # booking calendar grid + stay-range selection rules
-  pricing.ts                       # stay total + ILS formatting (direct = no markup)
+  pricing.ts                       # ILS formatting: formatMoney, formatNightPrice (calendar cells)
   previewZoom.ts                   # virtual viewport widths + zoom-to-fit
   amenities.ts                     # add/remove amenity rules
   demoProperty.ts                  # demo-user import result + test fixture
-  mockAvailability.ts              # fake occupancy until phase 7
+  siteAddress.ts / contact.ts      # subdomain rules, contact block + inquiry links
   featureFlag.ts
+  availability/                    # nightly rates: schema, quote, cache-or-live loader, server I/O
+  publishing/                      # publish blockers, publishDraft orchestrator, site metadata
+  persistence/                     # drafts, published sites, image uploads (Supabase)
+  gallery/lightboxNavigation.ts    # pure RTL key/swipe/index rules for the gallery lightbox
   import/                          # phase 4 — property import
     beds24Property.ts              # Zod schema for GET /properties + query params
     localizedText.ts               # he > en > any language, HTML stripping
@@ -76,8 +110,12 @@ src/components/landing-templates/  # shared by the preview and (phase 6) the pub
   TemplateRenderer.tsx             # templateId -> component
   MinimalistModernTemplate.tsx
   CozyWarmTemplate.tsx
-  booking/*                        # BookingWidget (client island), calendar, summary, checkout mock
+  PublishedSite.tsx                # public page wrapper (availability source + reset)
+  siteFonts.ts                     # Rubik via next/font, mapped onto font-sans/font-serif
+  booking/*                        # BookingWidget (client island), calendar with nightly prices,
+                                   # summary, InquiryActions, availability source (TanStack Query)
   shared/TemplateImage.tsx
+  shared/gallery/*                 # GalleryLightbox / GalleryThumb, Lightbox (portal), controls hooks
 ```
 
 ### State
@@ -226,18 +264,27 @@ Done:
   width, desktop/mobile, Esc to close. Portaled to `<body>` because the sticky
   preview column is its own stacking context.
 
-Todo (full plan: [site-publishing.md](./site-publishing.md)):
-1. Publish — blocked on phase 7: the booking widget is still a mock, so a public
-   page would take fake bookings. Then: subdomain picker, `published_at` /
-   published snapshot, `/sites/[site]` renders `TemplateRenderer` (with the CSS
-   reset), serve resized images.
+- Publish (step 4 "כתובת ופרסום") in inquiry mode — see
+  [site-publishing.md](./site-publishing.md) P1.
+
+Guest-site UI (2026-10-22):
+- Typeface: Rubik (`siteFonts.ts`), separate from the dashboard's Heebo.
+- Gallery images open a full-screen lightbox: RTL arrows/keys, swipe,
+  thumbnails, Esc/backdrop close, neighbour preloading, scroll lock. Portaled
+  to `<body>` inside its own `.site-builder` wrapper so the reset still applies.
+- Booking calendar shows each bookable night's price; the "החל מ-" heading
+  shows a skeleton until availability loads (no flash of the base price).
+
+Todo:
+1. Serve resized images.
 2. Optional autosave (debounced) once saving is proven.
 3. Clean up Storage files of images removed from a saved draft.
 4. Decide the fate of the old `/dashboard/landing` editor (migrate or remove).
 
 ### Phase 7 — Real booking engine
-1. Replace `isMockBooked` with `availability_cache` rows (`num_avail = 0` ->
-   blocked), respect `min_stay`, nightly price per date.
+1. Done: `availability_cache` rows drive the calendar (booked / unpriced
+   nights blocked, `min_stay`, nightly prices, stay total) — see
+   "Availability & price sync" in [site-publishing.md](./site-publishing.md).
 2. Direct-booking price = cached price as-is. The 1.21 multiplier is for Airbnb
    pricing only and must not be applied here.
 3. Checkout: reuse the embed flow (`/api/public/booking` -> `booking_payments`
