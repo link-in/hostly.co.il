@@ -14,3 +14,10 @@
 .site-builder * {
   all: revert-layer;
 }
+
+/* Guest sites use their own typeface, not the dashboard's Heebo (see siteFonts.ts).
+ * `font-serif` maps to it too: browser serif fallbacks for Hebrew look dated. */
+.site-fonts {
+  --font-sans: var(--font-site), system-ui, sans-serif;
+  --font-serif: var(--font-site), system-ui, sans-serif;
+}

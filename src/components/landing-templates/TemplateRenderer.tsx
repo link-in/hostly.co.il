@@ -3,6 +3,7 @@ import type { PreviewModel } from '@/lib/landingBuilder/selectors'
 import type { TemplateId } from '@/lib/landingBuilder/types'
 import MinimalistModernTemplate from './MinimalistModernTemplate'
 import CozyWarmTemplate from './CozyWarmTemplate'
+import { SITE_FONT_CLASSES } from './siteFonts'
 
 const TEMPLATE_COMPONENTS: Record<TemplateId, ComponentType<{ model: PreviewModel }>> = {
   'minimalist-modern': MinimalistModernTemplate,
@@ -11,5 +12,9 @@ const TEMPLATE_COMPONENTS: Record<TemplateId, ComponentType<{ model: PreviewMode
 
 export default function TemplateRenderer({ model }: { model: PreviewModel }) {
   const Template = TEMPLATE_COMPONENTS[model.templateId]
-  return <Template model={model} />
+  return (
+    <div className={`${SITE_FONT_CLASSES} contents font-sans`}>
+      <Template model={model} />
+    </div>
+  )
 }
