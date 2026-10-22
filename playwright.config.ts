@@ -37,6 +37,10 @@ export default defineConfig({
     env: {
       NEXTAUTH_URL: baseURL,
       NEXTAUTH_SECRET: E2E_NEXTAUTH_SECRET,
+      // The chat endpoint is mocked in e2e/ai-assistant.spec.ts; the key only has to exist for the page to render.
+      AI_ASSISTANT_ENABLED: 'true',
+      AI_ASSISTANT_PROVIDER: 'anthropic',
+      ANTHROPIC_API_KEY: 'e2e-unused-key',
     },
   },
 })

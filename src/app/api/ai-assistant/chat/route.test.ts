@@ -44,7 +44,7 @@ describe('POST /api/ai-assistant/chat', () => {
     const context = { userId: 'user-1', displayName: '', channel: 'web' as const, properties: [] }
     vi.mocked(prepareWebChat).mockResolvedValue({
       ok: true,
-      config: { enabled: true, apiKey: 'sk', modelId: 'claude-sonnet-5-5', rateLimitPerHour: 30 },
+      config: { enabled: true, provider: 'anthropic', apiKey: 'sk', modelId: 'claude-sonnet-5-5', rateLimitPerHour: 30 },
       context,
       messages: [{ role: 'user', content: 'hi' }],
     })

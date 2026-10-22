@@ -10,7 +10,7 @@ const context: AssistantContext = {
   properties: [{ propertyId: 306559, rooms: [{ roomId: 638851, name: 'נוף הרים' }] }],
 }
 
-const enabledConfig: AssistantConfig = { enabled: true, apiKey: 'sk', modelId: 'm', rateLimitPerHour: 30 }
+const enabledConfig: AssistantConfig = { enabled: true, provider: 'anthropic', apiKey: 'sk', modelId: 'm', rateLimitPerHour: 30 }
 
 function userMessage(text: string, id = 'm1') {
   return { id, role: 'user', parts: [{ type: 'text', text }] }
