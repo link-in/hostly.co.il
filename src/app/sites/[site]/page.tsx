@@ -1,4 +1,6 @@
 import { notFound } from 'next/navigation'
+import PublishedSite from '@/components/landing-templates/PublishedSite'
+import { findPublishedDraft } from '@/lib/landingBuilder/persistence/findPublishedDraft'
 import { createServerClient } from '@/lib/supabase/server'
 import LandingPageClient from './LandingPageClient'
 
@@ -10,6 +12,9 @@ interface PageProps {
 
 export default async function SitePage({ params }: PageProps) {
   const { site } = await params
+  const publishedDraft = await findPublishedDraft(site)
+  if (publishedDraft) return <PublishedSite draft={publishedDraft} />
+
   const supabase = createServerClient()
   
   // קבל את הדף

@@ -47,7 +47,10 @@ export interface CachedAvailability {
 // Internal helpers
 // ---------------------------------------------------------------------------
 
-function buildDateRange(months = 3): { startDate: string; endDate: string } {
+/** How far ahead availability is cached (and bookable on published sites). */
+export const CACHE_HORIZON_MONTHS = 12
+
+function buildDateRange(months = CACHE_HORIZON_MONTHS): { startDate: string; endDate: string } {
   const start = new Date()
   start.setHours(0, 0, 0, 0)
   const end = new Date(start)
@@ -324,7 +327,7 @@ export async function refreshRoomCache(
   refreshToken: string,
 ): Promise<{ upserted: number; error?: string }> {
   try {
-    const { startDate, endDate } = buildDateRange(3)
+    const { startDate, endDate } = buildDateRange()
 
     const url = new URL(`${BEDS24_BASE_URL}/inventory/rooms/calendar`)
     url.searchParams.set('propertyId', propertyId)

@@ -15,6 +15,7 @@ import {
   UserCog,
   UserRound,
   Users,
+  Wand2,
   type LucideProps,
 } from 'lucide-react'
 
@@ -33,6 +34,7 @@ export type DashboardPage =
   | 'messages'
   | 'receipts'
   | 'arrival-message'
+  | 'site-builder'
 
 type IconComponent = ComponentType<LucideProps>
 
@@ -62,6 +64,8 @@ export const NAV_ITEMS: NavItem[] = [
   { href: '/dashboard/receipts', label: 'קבלות וחשבוניות', icon: FileText, page: 'receipts', section: 'main' },
   { href: '/dashboard/price-check', label: 'בדיקת מחיר', icon: CircleHelp, page: 'price-check', section: 'main' },
   { href: '/dashboard/pricing-demo', label: 'מחשבון מחירים', icon: Calculator, page: 'pricing-demo', section: 'main' },
+  // מוצג כל עוד isSiteBuilderEnabled() — כיבוי: NEXT_PUBLIC_SITE_BUILDER_ENABLED=false (מסונן ב-isDashboardNavPageVisible)
+  { href: '/dashboard/site-builder', label: 'בונה אתר הזמנות', icon: Wand2, page: 'site-builder', section: 'main' },
   { href: '/dashboard/profile', label: 'איזור אישי', icon: UserRound, page: 'profile', section: 'main' },
   { href: '/admin', label: 'לוח בקרה אדמין', icon: Shield, page: 'admin', adminOnly: true, section: 'admin' },
   { href: '/admin/users', label: 'ניהול משתמשים', icon: UserCog, adminOnly: true, section: 'admin' },

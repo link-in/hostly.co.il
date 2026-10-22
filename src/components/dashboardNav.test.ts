@@ -86,6 +86,18 @@ describe('getVisibleNavSections', () => {
     expect(extraItems.some((item) => item.page === 'landing')).toBe(false)
   })
 
+  it('shows the site builder when its flag is unset', () => {
+    // Vitest runs without NEXT_PUBLIC_SITE_BUILDER_ENABLED
+    const { mainItems } = getVisibleNavSections()
+    expect(mainItems.some((item) => item.page === 'site-builder')).toBe(true)
+  })
+
+  it('keeps the site builder entry pointing at the wizard route', () => {
+    const siteBuilderItem = NAV_ITEMS.find((item) => item.page === 'site-builder')
+    expect(siteBuilderItem?.href).toBe('/dashboard/site-builder')
+    expect(siteBuilderItem?.section).toBe('main')
+  })
+
   it('shows check-ins again when the hidden flag is removed', () => {
     const restored: NavItem[] = NAV_ITEMS.map((item) =>
       item.page === 'check-ins' ? { ...item, hidden: false } : item
