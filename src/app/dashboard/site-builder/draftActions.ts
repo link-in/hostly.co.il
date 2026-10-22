@@ -1,6 +1,9 @@
 'use server'
 
+import { after } from 'next/server'
 import { z } from 'zod'
+import type { NightlyRate } from '@/lib/landingBuilder/availability/nightlyRates'
+import { getRoomAvailability, refreshSiteRoomCache } from '@/lib/landingBuilder/availability/serverAvailability'
 import { saveDraft } from '@/lib/landingBuilder/persistence/draftRepository'
 import { imageUploadRequestSchema, MAX_UPLOAD_BYTES } from '@/lib/landingBuilder/persistence/imageUpload'
 import { publishSite, SiteAddressTakenError } from '@/lib/landingBuilder/persistence/publishedSiteRepository'
@@ -43,12 +46,27 @@ export async function publishSiteAction(input: unknown): Promise<PublishResult> 
   if ('error' in editor) return { ok: false, error: editor.error }
   const userId = editor.user.id
 
-  return publishDraft(input, editor.user.propertyId, {
+  const result = await publishDraft(input, editor.user.propertyId, {
     checkAddress: (address) => checkSiteAddress(address, userId, findSiteAddressOwner),
     saveDraft: (draft) => saveDraft(userId, draft),
     publishSite: (draft) => publishSite(userId, draft),
     isAddressTakenError: (error) => error instanceof SiteAddressTakenError,
   })
+  const roomId = storedDraftSchema.safeParse(input).data?.roomId
+  if (result.ok && roomId) {
+    after(() => refreshSiteRoomCache({ userId, roomId }).catch((error) => console.error('[landing-builder] Cache warm-up failed:', error)))
+  }
+  return result
+}
+
+const roomIdSchema = z.string().regex(/^\d{1,12}$/)
+
+/** Wizard preview: real nights for the imported room. Scoped to the session user's Beds24 account and cache. */
+export async function getPreviewAvailabilityAction(input: unknown): Promise<NightlyRate[] | null> {
+  const editor = await getEditor()
+  const parsed = roomIdSchema.safeParse(input)
+  if ('error' in editor || !parsed.success) return null
+  return getRoomAvailability({ userId: editor.user.id, roomId: parsed.data })
 }
 
 const siteAddressInputSchema = z.string().max(64)

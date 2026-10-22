@@ -109,6 +109,32 @@ ALTER TABLE landing_pages
    last publish time and "יש שינויים שעוד לא פורסמו"; the button reads
    פרסום האתר / עדכון האתר / האתר מעודכן. Todo: copy link, unpublish.
 
+## Availability & price sync (done 2026-10-22)
+
+The booking widget shows real Beds24 data (still inquiry mode, no checkout):
+- Source: `availability_cache` (per user/room/date), horizon raised to
+  `CACHE_HORIZON_MONTHS = 12`. Beds24 only returns nights that have a price —
+  nights past the last priced date show as unavailable (Dafna: prices end
+  2027-02-23, so prices must be extended in Beds24 for a full year).
+- Public: `GET /api/sites/{address}/availability` -> `{ nights: [{date, price,
+  available, minStay}] }`, edge-cached 5 min. Looks up `user_id` + `roomId`
+  from `published_draft`.
+- Wizard preview: `getPreviewAvailabilityAction(roomId)` (session user's cache /
+  tokens only).
+- Both go through `loadSiteAvailability`: fresh cache (< 30 min) -> else live
+  Beds24 + re-warm via `after()` -> else stale cache. Client side:
+  TanStack Query (`useNightlyRates`, `AvailabilitySourceProvider`); no source or
+  a failed load = open inquiry mode (only past nights blocked).
+- Widget: booked / unpriced nights blocked, total = sum of nightly prices
+  (direct booking, no 1.21 multiplier), check-in night's `minStay` enforced,
+  "החל מ-" = lowest available nightly price, the WhatsApp/email inquiry includes
+  the dates and the site price.
+- Freshness: booking webhooks refresh the room; publishing re-warms it; cron
+  `/api/cron/site-availability` (02:00 UTC) refreshes every published room to
+  catch price / min-stay changes, which Beds24 sends no webhook for.
+- Prices are `price1` (1-guest price) — per-guest pricing (`prices` column) is
+  not migrated in this DB yet.
+
 ## Phase P2 — Customer's own domain
 
 Flow for the customer (dashboard "דומיין אישי"):

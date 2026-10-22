@@ -4,9 +4,11 @@ import { useState } from 'react'
 import { createInitialDraft, withDefaultContact, withDefaultSiteAddress } from '@/lib/landingBuilder/draftReducer'
 import type { ExistingSite } from '@/lib/landingBuilder/persistence/siteAddressRepository'
 import type { LandingDraft } from '@/lib/landingBuilder/types'
+import { LandingQueryProvider } from '@/components/landing-templates/booking/availabilitySource'
 import '@/components/landing-templates/landing-reset.css'
 import { BuilderProvider } from './state/BuilderProvider'
 import { DraftPersistenceProvider } from './state/DraftPersistence'
+import PreviewAvailability from './state/PreviewAvailability'
 import { SitePublishingProvider } from './state/SitePublishing'
 import WizardPanel from './components/wizard/WizardPanel'
 import LivePreview from './components/preview/LivePreview'
@@ -33,12 +35,16 @@ export default function SiteBuilderWizard({ canSave, initialDraft, savedAt, exis
           initialPublishedDraft={existingSite?.publishedDraft ?? null}
           initialPublishedAt={existingSite?.publishedAt ?? null}
         >
-          <div className="site-builder min-h-dvh bg-slate-50 p-2 lg:p-6" dir="rtl">
-            <div className="mx-auto grid max-w-[1600px] gap-6 lg:grid-cols-[minmax(360px,440px)_minmax(0,1fr)]">
-              <WizardPanel />
-              <LivePreview />
-            </div>
-          </div>
+          <LandingQueryProvider>
+            <PreviewAvailability canLoad={canSave}>
+              <div className="site-builder min-h-dvh bg-slate-50 p-2 lg:p-6" dir="rtl">
+                <div className="mx-auto grid max-w-[1600px] gap-6 lg:grid-cols-[minmax(360px,440px)_minmax(0,1fr)]">
+                  <WizardPanel />
+                  <LivePreview />
+                </div>
+              </div>
+            </PreviewAvailability>
+          </LandingQueryProvider>
         </SitePublishingProvider>
       </DraftPersistenceProvider>
     </BuilderProvider>

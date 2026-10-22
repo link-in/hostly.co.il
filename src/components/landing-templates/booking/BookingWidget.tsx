@@ -2,10 +2,12 @@
 
 import { useState } from 'react'
 import { format, startOfMonth } from 'date-fns'
+import { isNightUnavailable, lowestAvailablePrice, quoteStay } from '@/lib/landingBuilder/availability/nightlyRates'
 import type { SiteContact } from '@/lib/landingBuilder/contact'
-import { countNights, EMPTY_RANGE, selectStayDate, type StayRange } from '@/lib/landingBuilder/dateRange'
+import { EMPTY_RANGE, selectStayDate, type StayRange } from '@/lib/landingBuilder/dateRange'
 import { formatMoney } from '@/lib/landingBuilder/pricing'
 import type { LandingDraft } from '@/lib/landingBuilder/types'
+import { useNightlyRates } from './availabilitySource'
 import { BookingCalendar } from './BookingCalendar'
 import { BookingSummary } from './BookingSummary'
 import type { BookingTheme } from './bookingTheme'
@@ -18,12 +20,13 @@ interface BookingWidgetProps {
   theme: BookingTheme
 }
 
-function PriceHeading({ booking, theme }: Pick<BookingWidgetProps, 'booking' | 'theme'>) {
+function PriceHeading({ price, isFrom, currency, theme }: { price: number | null; isFrom: boolean; currency: string; theme: BookingTheme }) {
   return (
     <div className="mb-3.5">
-      {booking.basePrice !== null ? (
+      {price !== null ? (
         <p className={`text-2xl ${theme.heading}`}>
-          {formatMoney(booking.basePrice, booking.currency)}
+          {isFrom && <span className="text-sm font-normal text-slate-400">החל מ-</span>}
+          {formatMoney(price, currency)}
           <span className="text-sm font-normal text-slate-400"> / לילה</span>
         </p>
       ) : (
@@ -34,34 +37,43 @@ function PriceHeading({ booking, theme }: Pick<BookingWidgetProps, 'booking' | '
   )
 }
 
-/** Real availability is not wired yet (phase 7), so only past nights are blocked and the host confirms. */
-const isNeverBooked = () => false
-
 export function BookingWidget({ booking, contact, siteTitle, theme }: BookingWidgetProps) {
   const today = format(new Date(), 'yyyy-MM-dd')
   const [month, setMonth] = useState(() => startOfMonth(new Date()))
   const [range, setRange] = useState<StayRange>(EMPTY_RANGE)
+  const { rates, isLoading } = useNightlyRates()
 
-  const isBlocked = (iso: string) => iso < today
+  const isBooked = (iso: string) => isNightUnavailable(rates, iso)
+  const isBlocked = (iso: string) => iso < today || isBooked(iso)
+  const quote = quoteStay(rates, range)
+  const lowest = lowestAvailablePrice(rates)
+  const hasStay = range.checkIn !== null && range.checkOut !== null && quote.meetsMinStay
 
   return (
     <div className={`p-6 ${theme.card}`}>
-      <PriceHeading booking={booking} theme={theme} />
+      <PriceHeading price={lowest ?? booking.basePrice} isFrom={lowest !== null} currency={booking.currency} theme={theme} />
       <div className="space-y-3.5">
         <BookingCalendar
           month={month}
           today={today}
           range={range}
           theme={theme}
-          isBooked={isNeverBooked}
+          isBooked={isBooked}
           onMonthChange={setMonth}
-          onSelectDay={(iso) => setRange((current) => selectStayDate(current, iso, isBlocked))}
+          onSelectDay={(iso) => !isLoading && setRange((current) => selectStayDate(current, iso, isBlocked))}
         />
-        <BookingSummary range={range} booking={booking} />
+        {isLoading && <p className="text-center text-xs text-slate-400">טוענים זמינות…</p>}
+        <BookingSummary range={range} quote={quote} currency={booking.currency} />
         <InquiryActions
           contact={contact}
           theme={theme}
-          details={{ siteTitle, checkIn: range.checkIn, checkOut: range.checkOut, nights: countNights(range) }}
+          details={{
+            siteTitle,
+            checkIn: hasStay ? range.checkIn : null,
+            checkOut: hasStay ? range.checkOut : null,
+            nights: quote.nights,
+            total: quote.total === null ? null : formatMoney(quote.total, booking.currency),
+          }}
         />
       </div>
     </div>

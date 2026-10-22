@@ -11,6 +11,10 @@
     {
       "path": "/api/cron/beds24-token-check",
       "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/cron/site-availability",
+      "schedule": "0 2 * * *"
     }
   ]
 }

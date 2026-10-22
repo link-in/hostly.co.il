@@ -33,6 +33,37 @@ export async function publishSite(userId: string, draft: LandingDraft): Promise<
   return publishedAt
 }
 
+export interface PublishedSiteRoom {
+  userId: string
+  roomId: string
+}
+
+function toSiteRoom(row: { user_id: unknown; published_draft: unknown }): PublishedSiteRoom | null {
+  const roomId = parseStoredDraft(row.published_draft)?.roomId
+  return roomId ? { userId: row.user_id as string, roomId } : null
+}
+
+/** Owner + Beds24 room behind a published site; null when unpublished or not linked to a room. */
+export async function findPublishedSiteRoom(address: string): Promise<PublishedSiteRoom | null> {
+  const { data, error } = await createServiceRoleClient()
+    .from('landing_pages')
+    .select('user_id, published_draft')
+    .eq('subdomain', address)
+    .not('published_draft', 'is', null)
+    .maybeSingle()
+  if (error) throw new Error(`Looking up the published site failed: ${error.message}`)
+  return data ? toSiteRoom(data) : null
+}
+
+export async function listPublishedSiteRooms(): Promise<PublishedSiteRoom[]> {
+  const { data, error } = await createServiceRoleClient()
+    .from('landing_pages')
+    .select('user_id, published_draft')
+    .not('published_draft', 'is', null)
+  if (error) throw new Error(`Listing published sites failed: ${error.message}`)
+  return (data ?? []).map(toSiteRoom).filter((room): room is PublishedSiteRoom => room !== null)
+}
+
 /** Public read: only the published snapshot, never the working draft or owner data. */
 export async function loadPublishedDraft(address: string): Promise<LandingDraft | null> {
   const { data, error } = await createServiceRoleClient()

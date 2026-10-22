@@ -1,8 +1,8 @@
 import { format, parseISO } from 'date-fns'
 import { he } from 'date-fns/locale'
-import { countNights, type StayRange } from '@/lib/landingBuilder/dateRange'
-import { calculateStayTotal, formatMoney } from '@/lib/landingBuilder/pricing'
-import type { LandingDraft } from '@/lib/landingBuilder/types'
+import type { StayQuote } from '@/lib/landingBuilder/availability/nightlyRates'
+import type { StayRange } from '@/lib/landingBuilder/dateRange'
+import { formatMoney } from '@/lib/landingBuilder/pricing'
 
 const formatDay = (iso: string | null) => (iso ? format(parseISO(iso), 'd בMMM', { locale: he }) : '—')
 
@@ -15,22 +15,22 @@ function DateBox({ label, iso }: { label: string; iso: string | null }) {
   )
 }
 
-export function BookingSummary({ range, booking }: { range: StayRange; booking: LandingDraft['booking'] }) {
-  const nights = countNights(range)
-  const total = calculateStayTotal(booking.basePrice, nights)
-
+export function BookingSummary({ range, quote, currency }: { range: StayRange; quote: StayQuote; currency: string }) {
   return (
     <div className="space-y-2.5">
       <div className="grid grid-cols-2 gap-2">
         <DateBox label="צ׳ק-אין" iso={range.checkIn} />
         <DateBox label="צ׳ק-אאוט" iso={range.checkOut} />
       </div>
-      {total !== null && booking.basePrice !== null && (
+      {!quote.meetsMinStay && (
+        <p role="status" className="text-center text-xs text-amber-700">
+          מינימום {quote.minStay} לילות בתאריכים האלה.
+        </p>
+      )}
+      {quote.meetsMinStay && quote.total !== null && (
         <div className="flex items-center justify-between border-t border-slate-100 pt-2.5 text-sm">
-          <span className="text-slate-500">
-            {formatMoney(booking.basePrice, booking.currency)} × {nights} לילות
-          </span>
-          <span className="font-semibold text-slate-900">{formatMoney(total, booking.currency)}</span>
+          <span className="text-slate-500">{quote.nights} לילות</span>
+          <span className="font-semibold text-slate-900">{formatMoney(quote.total, currency)}</span>
         </div>
       )}
     </div>

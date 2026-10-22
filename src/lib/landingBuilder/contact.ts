@@ -65,14 +65,17 @@ export interface InquiryDetails {
   checkIn: string | null
   checkOut: string | null
   nights: number
+  /** Formatted quote from the site's nightly prices, when known. */
+  total?: string | null
 }
 
 const formatIsoDay = (iso: string) => iso.split('-').reverse().join('/')
 
-export function buildInquiryMessage({ siteTitle, checkIn, checkOut, nights }: InquiryDetails): string {
+export function buildInquiryMessage({ siteTitle, checkIn, checkOut, nights, total }: InquiryDetails): string {
   const greeting = `שלום, אשמח לבדוק זמינות ב${siteTitle}`
   if (!checkIn || !checkOut) return `${greeting}.`
-  return `${greeting} מ-${formatIsoDay(checkIn)} עד ${formatIsoDay(checkOut)} (${nights} לילות).`
+  const stay = `${greeting} מ-${formatIsoDay(checkIn)} עד ${formatIsoDay(checkOut)} (${nights} לילות)`
+  return total ? `${stay}, מחיר באתר: ${total}.` : `${stay}.`
 }
 
 export function buildWhatsAppHref(number: string, message: string): string | null {
