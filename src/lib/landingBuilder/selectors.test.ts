@@ -62,10 +62,12 @@ describe('isStepComplete', () => {
     expect(isStepComplete({ ...draft, content: { ...draft.content, heroTitle: '   ' } }, 'customize')).toBe(false)
   })
 
-  it('completes the publish step only with a valid address', () => {
+  it('completes the publish step only with a valid address and a way to reach the host', () => {
+    const contact = { whatsapp: '', phone: '050-1234567', email: '' }
     expect(isStepComplete(createInitialDraft(), 'publish')).toBe(false)
-    expect(isStepComplete({ ...createInitialDraft(), siteAddress: 'ab' }, 'publish')).toBe(false)
-    expect(isStepComplete({ ...createInitialDraft(), siteAddress: 'dalit' }, 'publish')).toBe(true)
+    expect(isStepComplete({ ...createInitialDraft(), siteAddress: 'ab', contact }, 'publish')).toBe(false)
+    expect(isStepComplete({ ...createInitialDraft(), siteAddress: 'dalit' }, 'publish')).toBe(false)
+    expect(isStepComplete({ ...createInitialDraft(), siteAddress: 'dalit', contact }, 'publish')).toBe(true)
   })
 
   it('completes the template step once a template is chosen', () => {

@@ -1,6 +1,6 @@
 # Publishing the booking site (subdomain + custom domain)
 
-Status: plan (not implemented). Part of phase 6 in
+Status: P1 implemented (subdomain publish in inquiry mode); P2 planned. Part of phase 6 in
 [landing-builder-wizard.md](./landing-builder-wizard.md). Last updated 2026-10-22.
 
 ## Where each site lives — options
@@ -42,15 +42,15 @@ page must not take fake bookings. Two ways forward:
   but the CTA sends a WhatsApp/phone/email inquiry instead of checkout; switch
   to checkout when phase 7 lands.
 
-## Data model (migration 011)
+## Data model
 
 Reuse `landing_pages` (already one-per-user with a unique subdomain) so the old
-and new systems share one address space:
+and new systems share one address space. Migration 011 (P1, done) adds
+`published_draft JSONB` (snapshot, `storedDraftSchema`) and `published_at`.
+P2 will add, in its own migration:
 
 ```sql
 ALTER TABLE landing_pages
-  ADD COLUMN published_draft  JSONB,        -- snapshot of the wizard draft (storedDraftSchema)
-  ADD COLUMN published_at     TIMESTAMPTZ,
   ADD COLUMN custom_domain    TEXT UNIQUE,  -- lowercase hostname, no scheme/path
   ADD COLUMN domain_status    TEXT NOT NULL DEFAULT 'none'
     CHECK (domain_status IN ('none', 'pending', 'active', 'error'));
@@ -75,23 +75,39 @@ ALTER TABLE landing_pages
      name). Beds24 has no Airbnb listing name for us (empty in V1 `airbnb.name`).
    - Live availability (`checkSiteAddressAction`, 400 ms debounce): available /
      yours / taken. The address is reserved only at publish time.
-2. **Pre-publish checks** (pure, unit-tested `getPublishBlockers(draft)`):
-   template chosen, title, at least one hosted image, nightly price, property
-   connected, no `blob:` images (save first), booking mode ready (A or B above).
-3. **`publishSiteAction`**: session + flag, not demo, validate with
-   `storedDraftSchema`, property ownership, upsert `landing_pages`
-   (`subdomain`, `published_draft`, `published_at`), then
-   `revalidatePath` for the site.
-4. **Public renderer**: `/sites/[site]` reads `published_draft` with the anon
-   client (only published columns), renders `TemplateRenderer`, applies the
-   Tailwind-vs-Bootstrap reset (public layout must not load Bootstrap/globals at
-   all — cleaner than the `revert-layer` workaround).
-5. **SEO/sharing**: `generateMetadata` (title, description, OG image = cover),
-   `robots`/`sitemap` per site, canonical URL.
-6. **Images**: serve resized copies (Beds24 PNGs are ~3 MB) — `next/image` with
+2. **Pre-publish checks** — done: `publishing/publishBlockers.ts`
+   (`getPublishBlockers`): template, hero title, cover image, valid address,
+   at least one contact detail, contact details well-formed, no `blob:` images.
+   Shown as a checklist in step 4 and as the publish button's tooltip.
+3. **Contact block (inquiry mode)** — done: `draft.contact` {whatsapp, phone,
+   email} (`contact.ts`), edited in step 4, seeded from the old
+   `meta_settings`. Stored leniently so half-typed values still save;
+   `getInvalidContactFields` gates publishing. The booking widget no longer
+   shows mock availability or mock checkout: after picking dates the guest gets
+   "שליחת בקשה בוואטסאפ" (wa.me with the dates) or email, plus call/mail links
+   (`InquiryActions`).
+4. **`publishSiteAction`** — done (`draftActions.ts` -> `publishing/publishDraft.ts`,
+   dependencies injected, unit-tested): session + flag, not demo,
+   `storedDraftSchema`, property ownership, blockers, address availability,
+   save the draft, upsert `landing_pages` on `user_id` (`subdomain`,
+   `site_title`, `site_subtitle`, `published_draft`, `published_at`). A unique
+   violation on `subdomain` (race) maps to "taken". The client saves first
+   (uploads `blob:` images), then publishes the hosted draft
+   (`state/SitePublishing.tsx`). Changing the address on an existing row moves
+   the site: the old subdomain stops working.
+5. **Public renderer** — done: `/[site]` and `/sites/[site]` render
+   `PublishedSite` (TemplateRenderer in `.site-builder @container`) when
+   `published_draft` exists, else the old `LandingPageClient`. Loading errors
+   fall back to the old renderer (`findPublishedDraft`). Still on the root
+   layout (Bootstrap + PWA banner) — a dedicated public layout is a todo.
+6. **SEO/sharing** — partly done: `buildPublishedSiteMetadata` (title,
+   description, canonical subdomain URL, OG image = cover). Todo: per-site
+   `robots`/`sitemap`.
+7. **Images** (todo): serve resized copies (Beds24 PNGs are ~3 MB) — `next/image` with
    `remotePatterns` for `media.xmlcal.com` and the Supabase bucket.
-7. **Dashboard**: after publishing show the live URL, "copy link", "view site",
-   "unpublish", and "unpublished changes" when the draft differs from the snapshot.
+8. **Dashboard** — partly done: step 4 shows "האתר באוויר" with the live link,
+   last publish time and "יש שינויים שעוד לא פורסמו"; the button reads
+   פרסום האתר / עדכון האתר / האתר מעודכן. Todo: copy link, unpublish.
 
 ## Phase P2 — Customer's own domain
 

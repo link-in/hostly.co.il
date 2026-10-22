@@ -18,16 +18,31 @@ function FieldLabel({ htmlFor, label, hint }: { htmlFor: string; label: string; 
 interface TextFieldProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'onChange'> {
   label: string
   hint?: string
+  error?: string
   value: string
   onValueChange: (value: string) => void
 }
 
-export function TextField({ label, hint, value, onValueChange, ...props }: TextFieldProps) {
+export function TextField({ label, hint, error, value, onValueChange, ...props }: TextFieldProps) {
   const id = useId()
+  const errorId = useId()
   return (
     <div>
       <FieldLabel htmlFor={id} label={label} hint={hint} />
-      <input id={id} value={value} onChange={(e) => onValueChange(e.target.value)} className={CONTROL_CLASSES} {...props} />
+      <input
+        id={id}
+        value={value}
+        onChange={(e) => onValueChange(e.target.value)}
+        aria-invalid={error ? true : undefined}
+        aria-describedby={error ? errorId : undefined}
+        className={`${CONTROL_CLASSES} ${error ? 'border-red-300' : ''}`}
+        {...props}
+      />
+      {error && (
+        <p id={errorId} className="mt-1 text-xs text-red-600">
+          {error}
+        </p>
+      )}
     </div>
   )
 }

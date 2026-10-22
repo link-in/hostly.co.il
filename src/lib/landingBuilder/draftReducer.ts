@@ -8,6 +8,7 @@ import type {
   PropertyContent,
   TemplateId,
 } from './types'
+import { EMPTY_CONTACT, hasContact, type SiteContact } from './contact'
 import { replaceImageUrls } from './persistence/storedDraft'
 import { normalizeSiteAddress, suggestSiteAddress } from './siteAddress'
 
@@ -29,6 +30,7 @@ export type BuilderAction =
   | { type: 'images/coverSelected'; imageId: string }
   | { type: 'images/persisted'; urls: Record<string, string> }
   | { type: 'site/addressChanged'; address: string }
+  | { type: 'contact/edited'; patch: Partial<SiteContact> }
   | { type: 'draft/reset' }
 
 export const EMPTY_CONTENT: DraftContent = {
@@ -51,7 +53,13 @@ export function createInitialDraft(): LandingDraft {
     booking: { basePrice: null, currency: 'ILS', maxGuests: null },
     contentOrigin: 'empty',
     siteAddress: '',
+    contact: { ...EMPTY_CONTACT },
   }
+}
+
+/** Seeds contact details (e.g. from the old landing editor) only while none were entered. */
+export function withDefaultContact(draft: LandingDraft, contact: SiteContact | null | undefined): LandingDraft {
+  return hasContact(draft.contact) || !contact ? draft : { ...draft, contact: { ...contact } }
 }
 
 /** Fills an empty address (e.g. with the user's existing subdomain); never overrides a chosen one. */
@@ -152,6 +160,8 @@ function reduceDraft(draft: LandingDraft, action: BuilderAction): LandingDraft {
       return replaceImageUrls(draft, action.urls)
     case 'site/addressChanged':
       return { ...draft, siteAddress: normalizeSiteAddress(action.address) }
+    case 'contact/edited':
+      return { ...draft, contact: { ...draft.contact, ...action.patch } }
     default:
       return draft
   }

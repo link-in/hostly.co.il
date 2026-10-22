@@ -63,7 +63,7 @@ src/app/dashboard/site-builder/    # the wizard (client UI only)
   state/DraftPersistence.tsx       # save state (dirty / saving / savedAt), leave-page warning
   state/persistDraft.ts            # upload blob: images via signed URLs, then save the draft
   SiteBuilderWizard.tsx            # provider + split layout
-  site-builder.css                 # Tailwind-vs-Bootstrap cascade fix (see Gotchas)
+  (reset: src/components/landing-templates/landing-reset.css — Tailwind-vs-Bootstrap fix, see Gotchas)
   state/BuilderProvider.tsx        # Context + useReducer; useBuilderState / useBuilderDispatch
   state/importPropertyContent.ts   # client adapter: calls the action, throws Hebrew errors
   state/uploadedImages.ts          # File -> blob: preview image
@@ -118,7 +118,7 @@ Rules worth knowing:
 - `bootstrap.min.css` and `globals.css` (`* { padding: 0; margin: 0 }`) are
   **unlayered**, so they beat every Tailwind v4 utility (which lives in
   `@layer utilities`). Inside `.site-builder` this is undone with
-  `all: revert-layer` (`site-builder.css`). Any new Tailwind surface outside the
+  `all: revert-layer` (`src/components/landing-templates/landing-reset.css`). Any new Tailwind surface outside the
   builder (e.g. the public site in phase 6) needs the same treatment.
 - Inside `.site-builder`, avoid class names Bootstrap also defines with
   `!important`: `p-3..5`, `m-3..5`, `gap-3..5`, bare `border`, bare `rounded`,

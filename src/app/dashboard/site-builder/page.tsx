@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation'
 import { authOptions } from '@/lib/auth/authOptions'
 import { isSiteBuilderEnabled } from '@/lib/landingBuilder/featureFlag'
 import { loadDraft } from '@/lib/landingBuilder/persistence/draftRepository'
-import { loadUserSiteAddress } from '@/lib/landingBuilder/persistence/siteAddressRepository'
+import { loadExistingSite } from '@/lib/landingBuilder/persistence/siteAddressRepository'
 import SiteBuilderWizard from './SiteBuilderWizard'
 
 export const dynamic = 'force-dynamic'
@@ -29,10 +29,10 @@ export default async function SiteBuilderPage() {
 
   const canSave = !session.user.isDemo
   const userId = session.user.id
-  const [saved, existingSiteAddress] = canSave
+  const [saved, existingSite] = canSave
     ? await Promise.all([
         loadSafely('the saved draft', () => loadDraft(userId)),
-        loadSafely('the site address', () => loadUserSiteAddress(userId)),
+        loadSafely('the existing site', () => loadExistingSite(userId)),
       ])
     : [null, null]
 
@@ -41,7 +41,7 @@ export default async function SiteBuilderPage() {
       canSave={canSave}
       initialDraft={saved?.draft}
       savedAt={saved?.updatedAt ?? null}
-      existingSiteAddress={existingSiteAddress}
+      existingSite={existingSite}
     />
   )
 }

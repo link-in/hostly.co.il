@@ -1,14 +1,18 @@
 'use client'
 
-import { ChevronLeft, ChevronRight, Rocket } from 'lucide-react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { BUILDER_STEPS } from '@/lib/landingBuilder/types'
 import { useBuilderDispatch, useBuilderState } from '../../state/BuilderProvider'
 import { useDraftPersistence } from '../../state/DraftPersistence'
+import { useSitePublishing } from '../../state/SitePublishing'
 import { BuilderButton } from '../ui/BuilderButton'
+import PublishButton from './PublishButton'
 import SaveDraftButton from './SaveDraftButton'
 
-function SaveError() {
-  const { error } = useDraftPersistence()
+function FooterError() {
+  const { error: saveError } = useDraftPersistence()
+  const { error: publishError } = useSitePublishing()
+  const error = saveError ?? publishError
   if (!error) return null
   return (
     <p role="alert" className="border-t border-red-100 bg-red-50 px-6 py-2 text-xs text-red-700">
@@ -28,21 +32,14 @@ export default function WizardFooter() {
 
   return (
     <div>
-      <SaveError />
+      <FooterError />
       <footer className="flex items-center justify-between gap-2 border-t border-slate-100 bg-white px-6 py-3.5">
         <BuilderButton variant="ghost" disabled={isFirst} onClick={() => goTo(-1)} icon={<ChevronRight className="size-4" aria-hidden />}>
           הקודם
         </BuilderButton>
         <SaveDraftButton />
         {isLast ? (
-          <BuilderButton
-            variant="primary"
-            disabled
-            title="הפרסום יתאפשר אחרי חיבור מנוע ההזמנות האמיתי"
-            icon={<Rocket className="size-4" aria-hidden />}
-          >
-            פרסום האתר
-          </BuilderButton>
+          <PublishButton />
         ) : (
           <BuilderButton variant="primary" onClick={() => goTo(1)}>
             הבא

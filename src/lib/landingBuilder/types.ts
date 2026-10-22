@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { EMPTY_CONTACT, siteContactSchema } from './contact'
 
 export const TEMPLATE_IDS = ['minimalist-modern', 'cozy-warm'] as const
 export const templateIdSchema = z.enum(TEMPLATE_IDS)
@@ -76,6 +77,8 @@ export const landingDraftSchema = z.object({
     .max(30)
     .regex(/^[a-z0-9-]*$/)
     .default(''),
+  /** Inquiry mode: guests reach the host through these until real checkout (phase 7). */
+  contact: siteContactSchema.default({ ...EMPTY_CONTACT }),
 })
 export type LandingDraft = z.infer<typeof landingDraftSchema>
 

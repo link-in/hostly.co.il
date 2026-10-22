@@ -36,6 +36,11 @@ describe('parseStoredDraft', () => {
     expect(parseStoredDraft(legacy)?.siteAddress).toBe('')
   })
 
+  it('loads drafts saved before contact details existed', () => {
+    const { contact: _omitted, ...legacy } = draftWith([hosted])
+    expect(parseStoredDraft(legacy)?.contact).toEqual({ whatsapp: '', phone: '', email: '' })
+  })
+
   it('returns null for JSON that no longer matches the schema', () => {
     expect(parseStoredDraft({ templateId: 'unknown' })).toBeNull()
     expect(parseStoredDraft(draftWith([hosted]))?.images).toEqual([hosted])

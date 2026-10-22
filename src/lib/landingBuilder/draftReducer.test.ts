@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { builderReducer, createInitialState, withDefaultSiteAddress, type BuilderState } from './draftReducer'
+import { builderReducer, createInitialState, withDefaultContact, withDefaultSiteAddress, type BuilderState } from './draftReducer'
 import { DEMO_PROPERTY } from './demoProperty'
 import type { DraftImage } from './types'
 
@@ -50,6 +50,23 @@ describe('builderReducer — site address', () => {
     expect(withDefaultSiteAddress(draft, 'dalit').siteAddress).toBe('dalit')
     expect(withDefaultSiteAddress({ ...draft, siteAddress: 'mine' }, 'dalit').siteAddress).toBe('mine')
     expect(withDefaultSiteAddress(draft, null)).toBe(draft)
+  })
+})
+
+describe('builderReducer — contact', () => {
+  const legacy = { whatsapp: '050-1234567', phone: '', email: 'host@example.com' }
+
+  it('edits one contact field at a time', () => {
+    const state = builderReducer(createInitialState(), { type: 'contact/edited', patch: { phone: '04-6901234' } })
+    expect(state.draft.contact).toEqual({ whatsapp: '', phone: '04-6901234', email: '' })
+  })
+
+  it('seeds contact details only while none were entered', () => {
+    const draft = createInitialState().draft
+    expect(withDefaultContact(draft, legacy).contact).toEqual(legacy)
+    const own = { ...draft, contact: { whatsapp: '', phone: '04-6901234', email: '' } }
+    expect(withDefaultContact(own, legacy)).toBe(own)
+    expect(withDefaultContact(draft, null)).toBe(draft)
   })
 })
 

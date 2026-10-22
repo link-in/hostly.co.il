@@ -2,22 +2,23 @@
 
 import { useState } from 'react'
 import { format, startOfMonth } from 'date-fns'
-import { CreditCard } from 'lucide-react'
-import { EMPTY_RANGE, selectStayDate, type StayRange } from '@/lib/landingBuilder/dateRange'
-import { isMockBooked } from '@/lib/landingBuilder/mockAvailability'
+import type { SiteContact } from '@/lib/landingBuilder/contact'
+import { countNights, EMPTY_RANGE, selectStayDate, type StayRange } from '@/lib/landingBuilder/dateRange'
 import { formatMoney } from '@/lib/landingBuilder/pricing'
 import type { LandingDraft } from '@/lib/landingBuilder/types'
 import { BookingCalendar } from './BookingCalendar'
 import { BookingSummary } from './BookingSummary'
-import { CheckoutMock } from './CheckoutMock'
 import type { BookingTheme } from './bookingTheme'
+import { InquiryActions } from './InquiryActions'
 
 interface BookingWidgetProps {
   booking: LandingDraft['booking']
+  contact: SiteContact
+  siteTitle: string
   theme: BookingTheme
 }
 
-function PriceHeading({ booking, theme }: BookingWidgetProps) {
+function PriceHeading({ booking, theme }: Pick<BookingWidgetProps, 'booking' | 'theme'>) {
   return (
     <div className="mb-3.5">
       {booking.basePrice !== null ? (
@@ -33,43 +34,36 @@ function PriceHeading({ booking, theme }: BookingWidgetProps) {
   )
 }
 
-export function BookingWidget({ booking, theme }: BookingWidgetProps) {
+/** Real availability is not wired yet (phase 7), so only past nights are blocked and the host confirms. */
+const isNeverBooked = () => false
+
+export function BookingWidget({ booking, contact, siteTitle, theme }: BookingWidgetProps) {
   const today = format(new Date(), 'yyyy-MM-dd')
   const [month, setMonth] = useState(() => startOfMonth(new Date()))
   const [range, setRange] = useState<StayRange>(EMPTY_RANGE)
-  const [stage, setStage] = useState<'dates' | 'checkout'>('dates')
 
-  const isBlocked = (iso: string) => iso < today || isMockBooked(iso)
-  const canCheckout = range.checkIn !== null && range.checkOut !== null
+  const isBlocked = (iso: string) => iso < today
 
   return (
     <div className={`p-6 ${theme.card}`}>
       <PriceHeading booking={booking} theme={theme} />
-      {stage === 'checkout' ? (
-        <CheckoutMock theme={theme} onBack={() => setStage('dates')} />
-      ) : (
-        <div className="space-y-3.5">
-          <BookingCalendar
-            month={month}
-            today={today}
-            range={range}
-            theme={theme}
-            isBooked={isMockBooked}
-            onMonthChange={setMonth}
-            onSelectDay={(iso) => setRange((current) => selectStayDate(current, iso, isBlocked))}
-          />
-          <BookingSummary range={range} booking={booking} />
-          <button
-            type="button"
-            disabled={!canCheckout}
-            onClick={() => setStage('checkout')}
-            className={`flex w-full cursor-pointer items-center justify-center gap-2 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-40 ${theme.primaryButton}`}
-          >
-            <CreditCard className="size-4" aria-hidden />
-            {canCheckout ? 'להזמנה ותשלום' : 'בחרו תאריכים'}
-          </button>
-        </div>
-      )}
+      <div className="space-y-3.5">
+        <BookingCalendar
+          month={month}
+          today={today}
+          range={range}
+          theme={theme}
+          isBooked={isNeverBooked}
+          onMonthChange={setMonth}
+          onSelectDay={(iso) => setRange((current) => selectStayDate(current, iso, isBlocked))}
+        />
+        <BookingSummary range={range} booking={booking} />
+        <InquiryActions
+          contact={contact}
+          theme={theme}
+          details={{ siteTitle, checkIn: range.checkIn, checkOut: range.checkOut, nights: countNights(range) }}
+        />
+      </div>
     </div>
   )
 }

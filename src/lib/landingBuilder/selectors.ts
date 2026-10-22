@@ -1,3 +1,4 @@
+import { hasContact, type SiteContact } from './contact'
 import { validateSiteAddress } from './siteAddress'
 import { DEFAULT_TEMPLATE_ID } from './templates'
 import type { BuilderStep, DraftImage, LandingDraft, TemplateId } from './types'
@@ -13,6 +14,7 @@ export interface PreviewModel {
   coverImage: DraftImage | null
   galleryImages: DraftImage[]
   booking: LandingDraft['booking']
+  contact: SiteContact
   isPlaceholder: boolean
 }
 
@@ -48,6 +50,7 @@ export function buildPreviewModel(draft: LandingDraft): PreviewModel {
     coverImage,
     galleryImages: draft.images.filter((image) => image.id !== coverImage?.id),
     booking: draft.booking,
+    contact: draft.contact,
     isPlaceholder: isDraftEmpty(draft),
   }
 }
@@ -61,6 +64,6 @@ export function isStepComplete(draft: LandingDraft, step: BuilderStep): boolean 
     case 'customize':
       return draft.content.heroTitle.trim().length > 0 && getCoverImage(draft) !== null
     case 'publish':
-      return validateSiteAddress(draft.siteAddress) === null
+      return validateSiteAddress(draft.siteAddress) === null && hasContact(draft.contact)
   }
 }

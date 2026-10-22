@@ -67,7 +67,7 @@ export default function SiteAddressField() {
       <AddressStatus id={statusId} address={draft.siteAddress} check={check} />
       <p className="mt-1.5 text-xs leading-5 text-slate-500">
         אותיות באנגלית, ספרות ומקף. לדוגמה:{' '}
-        <span dir="ltr" className="font-medium text-slate-600">
+        <span dir="ltr" className="inline-block whitespace-nowrap font-medium text-slate-600">
           {EXAMPLE_ADDRESS}.{SITE_ROOT_DOMAIN}
         </span>
       </p>

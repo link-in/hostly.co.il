@@ -50,7 +50,7 @@ function Details({ model }: { model: PreviewModel }) {
         </ul>
       </div>
       <div className="self-start @3xl:sticky @3xl:top-6">
-        <BookingWidget booking={model.booking} theme={BOOKING_THEMES['minimalist-modern']} />
+        <BookingWidget booking={model.booking} contact={model.contact} siteTitle={model.siteTitle} theme={BOOKING_THEMES['minimalist-modern']} />
       </div>
     </section>
   )
