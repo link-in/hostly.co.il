@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { formatMoney } from './pricing'
+import { formatMoney, formatNightPrice } from './pricing'
+
+describe('formatNightPrice', () => {
+  it('is symbol plus digits, without RTL marks or spaces', () => {
+    expect(formatNightPrice(400, 'ILS')).toBe('₪400')
+    expect(formatNightPrice(1250, 'ILS')).toBe('₪1,250')
+  })
+})
 
 describe('formatMoney', () => {
   it('formats ILS without decimals', () => {

@@ -54,6 +54,12 @@ export function quoteStay(rates: NightlyRates, range: StayRange): StayQuote {
   return { nights: nights.length, total, minStay, meetsMinStay: nights.length === 0 || nights.length >= minStay }
 }
 
+/** Price to show on a calendar day: only bookable nights with a real price. */
+export function bookableNightPrice(rates: NightlyRates, iso: string): number | null {
+  const night = rates?.get(iso)
+  return night && night.available && night.price > 0 ? night.price : null
+}
+
 export function lowestAvailablePrice(rates: NightlyRates): number | null {
   if (!rates) return null
   const prices = [...rates.values()].filter((night) => night.available && night.price > 0).map((night) => night.price)

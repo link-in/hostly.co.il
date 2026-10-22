@@ -13,6 +13,8 @@ interface BookingCalendarProps {
   range: StayRange
   theme: BookingTheme
   isBooked: (iso: string) => boolean
+  /** Short nightly price for a day, or null to show the date alone. */
+  priceLabel: (iso: string) => string | null
   onMonthChange: (month: Date) => void
   onSelectDay: (iso: string) => void
 }
@@ -28,8 +30,21 @@ function dayClasses(day: CalendarDay, props: BookingCalendarProps): string {
   return 'cursor-pointer rounded-lg text-slate-700 hover:bg-slate-100'
 }
 
+function DayContent({ day, price }: { day: CalendarDay; price: string | null }) {
+  return (
+    <>
+      <span className="leading-none">{day.dayOfMonth}</span>
+      {price && (
+        <span className="text-[10px] leading-none font-normal tabular-nums opacity-60" dir="ltr">
+          {price}
+        </span>
+      )}
+    </>
+  )
+}
+
 export function BookingCalendar(props: BookingCalendarProps) {
-  const { month, today, onMonthChange, onSelectDay } = props
+  const { month, today, priceLabel, onMonthChange, onSelectDay } = props
   const canGoBack = isBefore(startOfMonth(parseISO(today)), startOfMonth(month))
 
   return (
@@ -69,9 +84,9 @@ export function BookingCalendar(props: BookingCalendarProps) {
               type="button"
               disabled={day.iso < today}
               onClick={() => onSelectDay(day.iso)}
-              className={`aspect-square text-sm transition ${dayClasses(day, props)}`}
+              className={`flex aspect-square flex-col items-center justify-center gap-1 text-sm transition ${dayClasses(day, props)}`}
             >
-              {day.dayOfMonth}
+              <DayContent day={day} price={day.iso < today ? null : priceLabel(day.iso)} />
             </button>
           ) : (
             <span key={day.iso} aria-hidden />

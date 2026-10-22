@@ -2,10 +2,10 @@
 
 import { useState } from 'react'
 import { format, startOfMonth } from 'date-fns'
-import { isNightUnavailable, lowestAvailablePrice, quoteStay } from '@/lib/landingBuilder/availability/nightlyRates'
+import { bookableNightPrice, isNightUnavailable, lowestAvailablePrice, quoteStay } from '@/lib/landingBuilder/availability/nightlyRates'
 import type { SiteContact } from '@/lib/landingBuilder/contact'
 import { EMPTY_RANGE, selectStayDate, type StayRange } from '@/lib/landingBuilder/dateRange'
-import { formatMoney } from '@/lib/landingBuilder/pricing'
+import { formatMoney, formatNightPrice } from '@/lib/landingBuilder/pricing'
 import type { LandingDraft } from '@/lib/landingBuilder/types'
 import { useNightlyRates } from './availabilitySource'
 import { BookingCalendar } from './BookingCalendar'
@@ -59,6 +59,10 @@ export function BookingWidget({ booking, contact, siteTitle, theme }: BookingWid
           range={range}
           theme={theme}
           isBooked={isBooked}
+          priceLabel={(iso) => {
+            const price = bookableNightPrice(rates, iso)
+            return price === null ? null : formatNightPrice(price, booking.currency)
+          }}
           onMonthChange={setMonth}
           onSelectDay={(iso) => !isLoading && setRange((current) => selectStayDate(current, iso, isBlocked))}
         />
