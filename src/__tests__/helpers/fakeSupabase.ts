@@ -38,8 +38,13 @@ class FakeQueryBuilder implements PromiseLike<FakeResult> {
 
   constructor(private rows: FakeRow[]) {}
 
+  /** After update/insert/upsert this only asks for the affected rows back, like supabase-js. */
   select(_columns?: string): this {
-    this.mode = 'select'
+    return this
+  }
+
+  gt(key: string, value: unknown): this {
+    this.filters.push((row) => (row[key] as string | number) > (value as string | number))
     return this
   }
 
@@ -150,6 +155,7 @@ class FakeQueryBuilder implements PromiseLike<FakeResult> {
 
     if (this.mode === 'update') {
       matched.forEach((row) => Object.assign(row, this.updatePatch))
+      if (this.singleMode !== 'none') return { data: matched[0] ? { ...matched[0] } : null, error: null }
       return { data: matched, error: null }
     }
 
