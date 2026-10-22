@@ -10,6 +10,7 @@ function deps(overrides: Partial<ImportDeps> = {}): ImportDeps {
   return {
     fetchProperty: vi.fn(async () => buildBeds24Property()),
     loadImages: vi.fn(async () => [IMAGE]),
+    findBeds24Pictures: vi.fn(async () => []),
     ...overrides,
   }
 }
@@ -61,6 +62,7 @@ describe('importPropertyContent', () => {
     expect(content).toEqual(DEMO_PROPERTY)
     expect(d.fetchProperty).not.toHaveBeenCalled()
     expect(d.loadImages).not.toHaveBeenCalled()
+    expect(d.findBeds24Pictures).not.toHaveBeenCalled()
   })
 
   it('fails with not_found when Beds24 does not return the property', async () => {
@@ -74,6 +76,21 @@ describe('importPropertyContent', () => {
     const content = await importPropertyContent(request, d)
     expect(content.images).toEqual([])
     expect(content.name).toBe('נוף הרים בדפנה')
+  })
+
+  it('appends Beds24 pictures after landing images, without duplicates', async () => {
+    const picture = { url: 'https://media.xmlcal.com/pic/p0030/6559/01.png', alt: 'נוף הרים בדפנה' }
+    const d = deps({ findBeds24Pictures: vi.fn(async () => [IMAGE, picture]) })
+    const content = await importPropertyContent(request, d)
+
+    expect(d.findBeds24Pictures).toHaveBeenCalledWith('306559', '638851', 'נוף הרים בדפנה')
+    expect(content.images).toEqual([IMAGE, picture])
+  })
+
+  it('keeps landing images when probing Beds24 pictures fails', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const d = deps({ findBeds24Pictures: vi.fn(async () => Promise.reject(new Error('offline'))) })
+    expect((await importPropertyContent(request, d)).images).toEqual([IMAGE])
   })
 
   it('rejects images that are not valid URLs', async () => {

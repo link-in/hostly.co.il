@@ -48,6 +48,11 @@ src/lib/landingBuilder/            # framework-free domain logic, unit tested
     importPropertyContent.ts       # orchestrator (deps injected), room ownership, demo users
     fetchBeds24Property.ts         # I/O: Beds24 via fetchWithTokenRefresh
     loadLandingImages.ts           # I/O: landing_images from Supabase
+    findBeds24Pictures.ts          # picture strategy: V1 API with propKey, else public URLs
+    beds24V1Pictures.ts            # Zod schema + pure picture selection for V1 getPropertyContent
+    fetchBeds24V1Pictures.ts       # I/O: V1 JSON API
+    beds24PropKey.ts               # per-property propKey (users.beds24_prop_key / env)
+    beds24PublicPictures.ts        # fallback: probe media.xmlcal.com URL pattern
     errors.ts                      # error codes -> Hebrew messages
     beds24PropertyFixture.ts       # trimmed real Beds24 response for tests
 
@@ -154,11 +159,32 @@ What the real Beds24 V2 response contains (checked against property 306559):
   Mapped to Hebrew labels in `featureCodes.ts` (unknown codes are skipped);
   bedroom/bathroom groups become "2 חדרי שינה" / "חדר רחצה".
 - **Price/guests**: `rackRate` (else `minPrice`) as the nightly price, `maxPeople`.
-- **No pictures** — `includePictures=true` returns no picture field at all. The
-  import uses images already uploaded in the old landing editor
-  (`landing_images`: hero first, then portfolio); otherwise the user uploads in
-  the Customize step. Airbnb listing photos via `/channels/airbnb/listings` are
-  a possible future source.
+- **No pictures in V2** — `includePictures=true` returns no picture field at all
+  (documented: "API V2 does not return property or room pictures yet").
+
+Pictures (`findBeds24Pictures.ts`), merged after `landing_images` (old editor
+uploads, hero first) and de-duplicated by URL:
+1. **V1 JSON API** `POST https://api.beds24.com/json/getPropertyContent`
+   `{ authentication: { apiKey, propKey }, images: true }`. Returns
+   `images.hosted` / `images.external` slots with `url` and
+   `map: [{ propId, roomId?, position }]`. Room-assigned pictures win (room
+   order), then property pictures, then unassigned ones. The response `propId`
+   must match the session property.
+   - `apiKey` = `BEDS24_API_KEY` (account-wide). `propKey` is per property:
+     `users.beds24_prop_key` (migration 009, service-role read only, never in
+     the session), falling back to `BEDS24_PROP_KEY` only when
+     `BEDS24_PROPERTY_ID` is the same property.
+2. **Fallback** when there is no propKey or V1 fails: probe the undocumented
+   public pattern `https://media.xmlcal.com/pic/p{id[0..4]}/{id[4..8]}/{NN}.png`
+   (id zero-padded to 8 digits) with HEAD requests for slots 01–24. Order is
+   file number, not the Beds24 position; duplicates can't be detected (no
+   size/ETag/Range support), so the user removes them in Customize.
+
+Onboarding (manual, per customer): import the Airbnb listing in Beds24
+(CHANNEL MANAGER > AIRBNB > View listings > Import — pictures come without
+captions), set SETTINGS > PROPERTIES > LINK > propKey (16+ chars), store it in
+`users.beds24_prop_key`. Uploaded pictures are ~3 MB PNGs; the public site
+(phase 6) must serve resized copies.
 
 Security: `propertyId`/`room_id` come from the session only; a room requested by
 the client is honored only if it is in the user's `room_id` field; non-numeric

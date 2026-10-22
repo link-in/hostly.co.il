@@ -36,7 +36,7 @@ function ImportSummary() {
       {importedImages === 0 && (
         <div className="flex items-start gap-2 rounded-xl bg-amber-50 px-2.5 py-2 text-xs leading-5 text-amber-800">
           <ImageOff className="mt-0.5 size-3.5 shrink-0" aria-hidden />
-          <span>Beds24 לא מעביר תמונות. אפשר להעלות אותן בשלב ההתאמה האישית.</span>
+          <span>לא נמצאו תמונות בנכס. אפשר להעלות אותן בשלב ההתאמה האישית.</span>
         </div>
       )}
     </div>

@@ -28,10 +28,7 @@ export function toPropertyImages(rows: unknown[], alt: string): PropertyImage[] 
   return [...new Set(sorted.map((row) => row.public_url))].map((url) => ({ url, alt }))
 }
 
-/**
- * Beds24 V2 doesn't expose property pictures, so the only images already in
- * Supabase are the ones uploaded through the landing editor (`landing_images`).
- */
+/** Images uploaded through the landing editor (`landing_images`). */
 export async function loadLandingImages(userId: string, alt: string): Promise<PropertyImage[]> {
   const supabase = createServerClient()
   const { data: page } = await supabase.from('landing_pages').select('id').eq('user_id', userId).maybeSingle()

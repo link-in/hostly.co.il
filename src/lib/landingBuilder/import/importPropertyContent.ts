@@ -20,6 +20,7 @@ export interface ImportRequest {
 export interface ImportDeps {
   fetchProperty: (propertyId: string) => Promise<Beds24Property | null>
   loadImages: (userId: string, alt: string) => Promise<PropertyImage[]>
+  findBeds24Pictures: (propertyId: string, roomId: string | null, alt: string) => Promise<PropertyImage[]>
 }
 
 const BEDS24_ID_PATTERN = /^\d+$/
@@ -30,13 +31,34 @@ export function resolveRoomId(roomField: string | null | undefined, requestedRoo
   return roomIds[0] ?? null
 }
 
-async function loadImagesSafely(deps: ImportDeps, userId: string, alt: string): Promise<PropertyImage[]> {
+async function loadSafely(source: string, load: () => Promise<PropertyImage[]>): Promise<PropertyImage[]> {
   try {
-    return await deps.loadImages(userId, alt)
+    return await load()
   } catch (error) {
-    console.warn('[landing-builder] Failed to load landing images, importing without them:', error)
+    console.warn(`[landing-builder] Failed to load ${source}, importing without them:`, error)
     return []
   }
+}
+
+/** Images the user curated in the landing editor come first, then the Beds24 pictures. */
+export function mergeImages(...sources: PropertyImage[][]): PropertyImage[] {
+  const seen = new Set<string>()
+  return sources.flat().filter((image) => !seen.has(image.url) && seen.add(image.url))
+}
+
+interface ImageLookup {
+  userId: string
+  propertyId: string
+  roomId: string | null
+  alt: string
+}
+
+async function loadAllImages(deps: ImportDeps, { userId, propertyId, roomId, alt }: ImageLookup) {
+  const [landingImages, beds24Pictures] = await Promise.all([
+    loadSafely('landing images', () => deps.loadImages(userId, alt)),
+    loadSafely('Beds24 pictures', () => deps.findBeds24Pictures(propertyId, roomId, alt)),
+  ])
+  return mergeImages(landingImages, beds24Pictures)
 }
 
 export async function importPropertyContent(request: ImportRequest, deps: ImportDeps): Promise<PropertyContent> {
@@ -50,7 +72,7 @@ export async function importPropertyContent(request: ImportRequest, deps: Import
 
   const roomId = resolveRoomId(request.roomField, request.requestedRoomId)
   const alt = selectRoom(property, roomId)?.name ?? property.name ?? ''
-  const images = await loadImagesSafely(deps, request.userId, alt)
+  const images = await loadAllImages(deps, { userId: request.userId, propertyId, roomId, alt })
 
   const parsed = propertyContentSchema.safeParse(mapBeds24Property({ property, roomId, images }))
   if (!parsed.success) throw new PropertyImportError('invalid_content', parsed.error.message)

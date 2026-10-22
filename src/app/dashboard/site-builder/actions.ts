@@ -3,6 +3,10 @@
 import { getServerSession } from 'next-auth'
 import { z } from 'zod'
 import { authOptions } from '@/lib/auth/authOptions'
+import { findPublicPictures } from '@/lib/landingBuilder/import/beds24PublicPictures'
+import { loadBeds24PropKey } from '@/lib/landingBuilder/import/beds24PropKey'
+import { fetchBeds24V1Pictures } from '@/lib/landingBuilder/import/fetchBeds24V1Pictures'
+import { findBeds24Pictures } from '@/lib/landingBuilder/import/findBeds24Pictures'
 import { fetchBeds24Property } from '@/lib/landingBuilder/import/fetchBeds24Property'
 import { importPropertyContent } from '@/lib/landingBuilder/import/importPropertyContent'
 import { toImportErrorMessage } from '@/lib/landingBuilder/import/errors'
@@ -13,6 +17,15 @@ import type { PropertyContent } from '@/lib/landingBuilder/types'
 export type ImportPropertyResult = { ok: true; property: PropertyContent } | { ok: false; error: string }
 
 const requestedRoomIdSchema = z.string().regex(/^\d+$/).optional()
+
+function findPicturesForUser(userId: string, lookup: { propertyId: string; roomId: string | null; alt: string }) {
+  const apiKey = process.env.BEDS24_API_KEY
+  return findBeds24Pictures({
+    loadPropKey: async () => (apiKey ? loadBeds24PropKey(userId, lookup.propertyId) : null),
+    fetchWithPropKey: (propKey) => fetchBeds24V1Pictures({ ...lookup, apiKey: apiKey ?? '', propKey }),
+    probePublicUrls: () => findPublicPictures(lookup.propertyId, lookup.alt),
+  })
+}
 
 export async function importPropertyContentAction(requestedRoomId?: string): Promise<ImportPropertyResult> {
   const session = await getServerSession(authOptions)
@@ -37,6 +50,7 @@ export async function importPropertyContentAction(requestedRoomId?: string): Pro
       {
         fetchProperty: (propertyId) => fetchBeds24Property(propertyId, user.id, sessionTokens),
         loadImages: loadLandingImages,
+        findBeds24Pictures: (propertyId, roomId, alt) => findPicturesForUser(user.id, { propertyId, roomId, alt }),
       },
     )
     return { ok: true, property }
