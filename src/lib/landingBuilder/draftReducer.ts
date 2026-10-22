@@ -8,6 +8,7 @@ import type {
   PropertyContent,
   TemplateId,
 } from './types'
+import { replaceImageUrls } from './persistence/storedDraft'
 
 export interface BuilderState {
   draft: LandingDraft
@@ -25,6 +26,7 @@ export type BuilderAction =
   | { type: 'images/added'; images: DraftImage[] }
   | { type: 'images/removed'; imageId: string }
   | { type: 'images/coverSelected'; imageId: string }
+  | { type: 'images/persisted'; urls: Record<string, string> }
   | { type: 'draft/reset' }
 
 export const EMPTY_CONTENT: DraftContent = {
@@ -137,6 +139,8 @@ function reduceDraft(draft: LandingDraft, action: BuilderAction): LandingDraft {
       return draft.images.some((image) => image.id === action.imageId)
         ? { ...draft, coverImageId: action.imageId }
         : draft
+    case 'images/persisted':
+      return replaceImageUrls(draft, action.urls)
     default:
       return draft
   }

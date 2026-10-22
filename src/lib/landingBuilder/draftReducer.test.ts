@@ -108,6 +108,15 @@ describe('builderReducer — manual edits', () => {
     ).toBe(before.draft)
   })
 
+  it('swaps persisted image URLs without touching ids or the cover', () => {
+    const before = importedState()
+    const [first] = before.draft.images
+    const url = 'https://x.supabase.co/storage/v1/object/public/landing-images/u/site-builder/a.jpg'
+    const state = builderReducer(before, { type: 'images/persisted', urls: { [first.id]: url } })
+    expect(state.draft.images[0]).toEqual({ ...first, url })
+    expect(state.draft.coverImageId).toBe(before.draft.coverImageId)
+  })
+
   it('falls back to the next image when the cover is removed', () => {
     const before = importedState()
     const [cover, next] = before.draft.images

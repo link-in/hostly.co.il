@@ -1,6 +1,6 @@
 import type { DraftImage } from '@/lib/landingBuilder/types'
 
-/** Local, preview-only images. Persisting them to Supabase Storage is phase 6. */
+/** Local previews; `persistDraft` uploads them to Storage when the draft is saved. */
 export function toUploadedImages(files: FileList | null): DraftImage[] {
   return Array.from(files ?? [])
     .filter((file) => file.type.startsWith('image/'))

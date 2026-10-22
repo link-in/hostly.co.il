@@ -21,7 +21,7 @@ the other, updating on every change.
 | 3 | Two mock templates rendered in the preview, incl. booking widget mock | Done |
 | 4 | "Import from Hostly" — real property data (Beds24 texts/amenities + Supabase images) | Done |
 | 5 | "Generate with AI" | Todo (button + reducer action ready, disabled in UI) |
-| 6 | Persist draft, upload images to Storage, publish to subdomain | Todo |
+| 6 | Persist draft, upload images to Storage, publish to subdomain | Partly done: save/resume + uploads + full-screen preview; publish blocked on phase 7 |
 | 7 | Real booking engine on the published site (availability + Cardcom) | Todo |
 | 8 | E2E tests + remove flag (nav entry done) | Todo |
 
@@ -59,6 +59,9 @@ src/lib/landingBuilder/            # framework-free domain logic, unit tested
 src/app/dashboard/site-builder/    # the wizard (client UI only)
   page.tsx                         # server: auth + flag gate
   actions.ts                       # server actions: importPropertyContentAction
+  draftActions.ts                  # server actions: saveDraftAction, signImageUploadAction
+  state/DraftPersistence.tsx       # save state (dirty / saving / savedAt), leave-page warning
+  state/persistDraft.ts            # upload blob: images via signed URLs, then save the draft
   SiteBuilderWizard.tsx            # provider + split layout
   site-builder.css                 # Tailwind-vs-Bootstrap cascade fix (see Gotchas)
   state/BuilderProvider.tsx        # Context + useReducer; useBuilderState / useBuilderDispatch
@@ -66,7 +69,7 @@ src/app/dashboard/site-builder/    # the wizard (client UI only)
   state/uploadedImages.ts          # File -> blob: preview image
   components/wizard/*              # header (value prop), stepper (accordion), footer nav
   components/steps/*               # TemplateStep, ImportStep, CustomizeStep (+ customize/*)
-  components/preview/*             # LivePreview, PreviewToolbar, BrowserFrame, ScaledViewport
+  components/preview/*             # LivePreview, PreviewToolbar, BrowserFrame, ScaledViewport, FullScreenPreview
 
 src/components/landing-templates/  # shared by the preview and (phase 6) the public site
   TemplateRenderer.tsx             # templateId -> component
@@ -205,15 +208,31 @@ click. Add `property_content_cache` if this becomes hot or rate-limited.
    via `useTransition`, rate-limit per user.
 
 ### Phase 6 — Persist & publish
-1. Schema: add `template_id` + `draft jsonb` + `published_at` to `landing_pages`
-   (or a new `landing_drafts` table); validate with `landingDraftSchema` on save.
-2. Autosave (debounced) via server action; load the draft into
-   `BuilderProvider initialDraft`.
-3. Upload `source: 'upload'` images to bucket `landing-images` (reuse
-   `/api/landing/upload` logic), replace `blob:` URLs with public URLs.
-4. Subdomain picker + publish; `/sites/[site]` renders `TemplateRenderer` from
-   the published draft (apply the CSS reset there too).
-5. Decide the fate of the old `/dashboard/landing` editor (migrate or remove).
+Done:
+- Table `landing_builder_drafts` (migration 010; `user_id` PK, `draft jsonb`,
+  `updated_at`, service-role only). `page.tsx` loads it into
+  `BuilderProvider initialDraft`; a draft that no longer validates is ignored.
+- Manual save (footer button: שמירה / שומר… / נשמר, last-save time in the
+  tooltip) and a `beforeunload` warning while there are unsaved changes.
+  "Dirty" = `draftFingerprint(draft)` differs from the last saved one.
+- Uploads: on save, every `blob:` image is uploaded straight to bucket
+  `landing-images` at `{userId}/site-builder/{uuid}.{ext}` through a signed
+  upload URL (no function body limit), then `images/persisted` swaps the URL.
+  Types: JPG/PNG/WebP/GIF/AVIF, up to 10 MB; the server picks the path.
+- `saveDraftAction` validates with `storedDraftSchema` (https images only, ≤ 60),
+  rejects a draft for another property, and is disabled for demo users.
+- Full-screen preview ("תצוגה מקדימה") of the unsaved draft at real browser
+  width, desktop/mobile, Esc to close. Portaled to `<body>` because the sticky
+  preview column is its own stacking context.
+
+Todo:
+1. Publish — blocked on phase 7: the booking widget is still a mock, so a public
+   page would take fake bookings. Then: subdomain picker, `published_at` /
+   published snapshot, `/sites/[site]` renders `TemplateRenderer` (with the CSS
+   reset), serve resized images.
+2. Optional autosave (debounced) once saving is proven.
+3. Clean up Storage files of images removed from a saved draft.
+4. Decide the fate of the old `/dashboard/landing` editor (migrate or remove).
 
 ### Phase 7 — Real booking engine
 1. Replace `isMockBooked` with `availability_cache` rows (`num_avail = 0` ->
