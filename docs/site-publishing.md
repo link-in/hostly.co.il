@@ -17,8 +17,12 @@ it and it is the canonical URL.
 
 ## What already exists (checked 2026-10-22)
 
-- `hostly.co.il` uses Vercel DNS and the wildcard `*.hostly.co.il` already
-  resolves to the Vercel project (an unknown subdomain gets the app's 404).
+- `hostly.co.il` uses Vercel DNS; `*.hostly.co.il` resolves to Vercel and a
+  wildcard SSL certificate (`*.hostly.co.il`) is already issued. **But the
+  wildcard is not attached to the project**: any subdomain (including the old
+  `dalit`) returns Vercel's `DEPLOYMENT_NOT_FOUND`. One-time fix: Vercel ->
+  project -> Settings -> Domains -> add `*.hostly.co.il`. No per-customer DNS
+  records are ever needed after that.
 - `src/proxy.ts` rewrites `{sub}.hostly.co.il/*` -> `/{sub}/*` (reserved names:
   www, api, admin, dashboard, app, mail, ftp, webmail, test, dev, staging).
 - Routes `/[site]` and `/sites/[site]` render the **old** landing system from
