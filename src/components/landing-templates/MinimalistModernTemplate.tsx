@@ -2,6 +2,7 @@ import { Check } from 'lucide-react'
 import type { PreviewModel } from '@/lib/landingBuilder/selectors'
 import { BookingWidget } from './booking/BookingWidget'
 import { BOOKING_THEMES } from './booking/bookingTheme'
+import { GalleryLightbox, GalleryThumb } from './shared/gallery/GalleryLightbox'
 import { TemplateImage } from './shared/TemplateImage'
 
 const NAV_LINKS = ['הנכס', 'מתקנים', 'גלריה', 'מיקום']
@@ -61,11 +62,13 @@ function Gallery({ model }: { model: PreviewModel }) {
   return (
     <section className="px-6 pb-16 @3xl:px-12">
       <h2 className="text-2xl font-semibold tracking-tight">גלריה</h2>
-      <div className="mt-6 grid grid-cols-2 gap-2 @3xl:grid-cols-3">
-        {model.galleryImages.map((image) => (
-          <TemplateImage key={image.id} image={image} className="aspect-[4/3] rounded-xl" />
-        ))}
-      </div>
+      <GalleryLightbox images={model.galleryImages}>
+        <div className="mt-6 grid grid-cols-2 gap-2 @3xl:grid-cols-3">
+          {model.galleryImages.map((image, index) => (
+            <GalleryThumb key={image.id} image={image} index={index} className="aspect-[4/3] rounded-xl" />
+          ))}
+        </div>
+      </GalleryLightbox>
     </section>
   )
 }

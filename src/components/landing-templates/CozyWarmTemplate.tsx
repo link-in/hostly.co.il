@@ -2,6 +2,7 @@ import { Leaf } from 'lucide-react'
 import type { PreviewModel } from '@/lib/landingBuilder/selectors'
 import { BookingWidget } from './booking/BookingWidget'
 import { BOOKING_THEMES } from './booking/bookingTheme'
+import { GalleryLightbox, GalleryThumb } from './shared/gallery/GalleryLightbox'
 import { TemplateImage } from './shared/TemplateImage'
 
 function Hero({ model }: { model: PreviewModel }) {
@@ -52,15 +53,18 @@ function Gallery({ model }: { model: PreviewModel }) {
   if (model.galleryImages.length === 0) return null
   return (
     <section className="px-6 pb-16 @3xl:px-12">
-      <div className="mx-auto grid max-w-6xl grid-cols-2 gap-2.5 @3xl:grid-cols-4">
-        {model.galleryImages.map((image, index) => (
-          <TemplateImage
-            key={image.id}
-            image={image}
-            className={`rounded-3xl ${index === 0 ? 'col-span-2 row-span-2 aspect-square' : 'aspect-square'}`}
-          />
-        ))}
-      </div>
+      <GalleryLightbox images={model.galleryImages}>
+        <div className="mx-auto grid max-w-6xl grid-cols-2 gap-2.5 @3xl:grid-cols-4">
+          {model.galleryImages.map((image, index) => (
+            <GalleryThumb
+              key={image.id}
+              image={image}
+              index={index}
+              className={`rounded-3xl ${index === 0 ? 'col-span-2 row-span-2 aspect-square' : 'aspect-square'}`}
+            />
+          ))}
+        </div>
+      </GalleryLightbox>
     </section>
   )
 }
