@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { indexRates, isNightUnavailable, lowestAvailablePrice, quoteStay, type NightlyRate } from './nightlyRates'
+import { bookableNightPrice, indexRates, isNightUnavailable, lowestAvailablePrice, quoteStay, type NightlyRate } from './nightlyRates'
 
 const night = (date: string, price: number, available = true, minStay = 1): NightlyRate => ({ date, price, available, minStay })
 
@@ -19,6 +19,16 @@ describe('isNightUnavailable', () => {
 
   it('blocks nothing without an availability source', () => {
     expect(isNightUnavailable(null, '2026-11-07')).toBe(false)
+  })
+})
+
+describe('bookableNightPrice', () => {
+  it('shows prices only on bookable nights', () => {
+    expect(bookableNightPrice(rates, '2026-11-06')).toBe(900)
+    expect(bookableNightPrice(rates, '2026-11-07')).toBeNull()
+    expect(bookableNightPrice(rates, '2027-12-01')).toBeNull()
+    expect(bookableNightPrice(indexRates([night('2026-11-09', 0)]), '2026-11-09')).toBeNull()
+    expect(bookableNightPrice(null, '2026-11-06')).toBeNull()
   })
 })
 
