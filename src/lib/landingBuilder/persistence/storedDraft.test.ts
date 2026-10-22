@@ -31,6 +31,11 @@ describe('storedDraftSchema', () => {
 })
 
 describe('parseStoredDraft', () => {
+  it('loads drafts saved before the site address existed', () => {
+    const { siteAddress: _omitted, ...legacy } = draftWith([hosted])
+    expect(parseStoredDraft(legacy)?.siteAddress).toBe('')
+  })
+
   it('returns null for JSON that no longer matches the schema', () => {
     expect(parseStoredDraft({ templateId: 'unknown' })).toBeNull()
     expect(parseStoredDraft(draftWith([hosted]))?.images).toEqual([hosted])

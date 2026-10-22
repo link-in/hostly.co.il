@@ -1,3 +1,4 @@
+import { validateSiteAddress } from './siteAddress'
 import { DEFAULT_TEMPLATE_ID } from './templates'
 import type { BuilderStep, DraftImage, LandingDraft, TemplateId } from './types'
 
@@ -59,5 +60,7 @@ export function isStepComplete(draft: LandingDraft, step: BuilderStep): boolean 
       return draft.propertyId !== null || draft.images.length > 0
     case 'customize':
       return draft.content.heroTitle.trim().length > 0 && getCoverImage(draft) !== null
+    case 'publish':
+      return validateSiteAddress(draft.siteAddress) === null
   }
 }

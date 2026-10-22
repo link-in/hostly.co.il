@@ -15,7 +15,7 @@ export default function WizardHeader() {
       </span>
       <h1 className="mt-2.5 text-2xl font-bold tracking-tight text-slate-900">אתר משלכם, בלי עמלות ערוצים</h1>
       <p className="mt-1.5 text-sm leading-6 text-slate-500">
-        שלושה צעדים לאתר הזמנות מעוצב עם יומן זמינות ותשלום מובנים. כל שינוי מופיע מיד בתצוגה החיה.
+        ארבעה צעדים לאתר הזמנות מעוצב עם יומן זמינות ותשלום מובנים. כל שינוי מופיע מיד בתצוגה החיה.
       </p>
       <ul className="mt-6 grid grid-cols-3 gap-2">
         {VALUE_POINTS.map(({ icon: Icon, label }) => (

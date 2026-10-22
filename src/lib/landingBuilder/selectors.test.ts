@@ -62,6 +62,12 @@ describe('isStepComplete', () => {
     expect(isStepComplete({ ...draft, content: { ...draft.content, heroTitle: '   ' } }, 'customize')).toBe(false)
   })
 
+  it('completes the publish step only with a valid address', () => {
+    expect(isStepComplete(createInitialDraft(), 'publish')).toBe(false)
+    expect(isStepComplete({ ...createInitialDraft(), siteAddress: 'ab' }, 'publish')).toBe(false)
+    expect(isStepComplete({ ...createInitialDraft(), siteAddress: 'dalit' }, 'publish')).toBe(true)
+  })
+
   it('completes the template step once a template is chosen', () => {
     expect(isStepComplete({ ...createInitialDraft(), templateId: 'cozy-warm' }, 'template')).toBe(true)
   })

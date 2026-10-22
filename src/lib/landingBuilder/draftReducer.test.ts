@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { builderReducer, createInitialState, type BuilderState } from './draftReducer'
+import { builderReducer, createInitialState, withDefaultSiteAddress, type BuilderState } from './draftReducer'
 import { DEMO_PROPERTY } from './demoProperty'
 import type { DraftImage } from './types'
 
@@ -28,6 +28,28 @@ describe('builderReducer — navigation & preview', () => {
   it('resets everything back to the initial state', () => {
     const state = builderReducer(importedState(), { type: 'draft/reset' })
     expect(state).toEqual(createInitialState())
+  })
+})
+
+describe('builderReducer — site address', () => {
+  it('normalizes what the user types', () => {
+    const state = builderReducer(createInitialState(), { type: 'site/addressChanged', address: 'Nof Harim_Dafna' })
+    expect(state.draft.siteAddress).toBe('nof-harim-dafna')
+  })
+
+  it('suggests an address on import only when none is chosen', () => {
+    expect(importedState().draft.siteAddress).not.toBe('')
+
+    let state = builderReducer(createInitialState(), { type: 'site/addressChanged', address: 'dalit' })
+    state = builderReducer(state, { type: 'property/imported', property: DEMO_PROPERTY })
+    expect(state.draft.siteAddress).toBe('dalit')
+  })
+
+  it('fills a default address without overriding a chosen one', () => {
+    const draft = createInitialState().draft
+    expect(withDefaultSiteAddress(draft, 'dalit').siteAddress).toBe('dalit')
+    expect(withDefaultSiteAddress({ ...draft, siteAddress: 'mine' }, 'dalit').siteAddress).toBe('mine')
+    expect(withDefaultSiteAddress(draft, null)).toBe(draft)
   })
 })
 

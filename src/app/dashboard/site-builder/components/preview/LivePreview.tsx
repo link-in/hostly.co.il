@@ -3,6 +3,7 @@
 import { useCallback, useMemo, useState } from 'react'
 import TemplateRenderer from '@/components/landing-templates/TemplateRenderer'
 import { buildPreviewModel } from '@/lib/landingBuilder/selectors'
+import { buildSiteHost } from '@/lib/landingBuilder/siteAddress'
 import { getTemplateMeta } from '@/lib/landingBuilder/templates'
 import type { PreviewDevice } from '@/lib/landingBuilder/types'
 import { useBuilderDispatch, useBuilderState } from '../../state/BuilderProvider'
@@ -10,7 +11,7 @@ import { BrowserFrame } from './BrowserFrame'
 import FullScreenPreview from './FullScreenPreview'
 import { PreviewToolbar } from './PreviewToolbar'
 
-const PREVIEW_HOST = 'your-site.hostly.co.il'
+const PLACEHOLDER_ADDRESS = 'your-site'
 
 export default function LivePreview() {
   const { draft, previewDevice } = useBuilderState()
@@ -33,7 +34,7 @@ export default function LivePreview() {
         onOpenFullScreen={() => setIsFullScreen(true)}
       />
       <div className="flex min-h-0 grow justify-center">
-        <BrowserFrame device={previewDevice} host={PREVIEW_HOST}>
+        <BrowserFrame device={previewDevice} host={buildSiteHost(draft.siteAddress || PLACEHOLDER_ADDRESS)}>
           <TemplateRenderer model={model} />
         </BrowserFrame>
       </div>

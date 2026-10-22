@@ -22,7 +22,10 @@ it and it is the canonical URL.
   wildcard is not attached to the project**: any subdomain (including the old
   `dalit`) returns Vercel's `DEPLOYMENT_NOT_FOUND`. One-time fix: Vercel ->
   project -> Settings -> Domains -> add `*.hostly.co.il`. No per-customer DNS
-  records are ever needed after that.
+  records are ever needed after that. **Done 2026-10-22**: unknown subdomains
+  now hit the app's `/[site]` 404 and `dalit.hostly.co.il` serves the old site.
+- Todo: on customer subdomains, `/dashboard`, `/admin` and private `/api` routes
+  are still reachable (the proxy skips them) — redirect them to `hostly.co.il`.
 - `src/proxy.ts` rewrites `{sub}.hostly.co.il/*` -> `/{sub}/*` (reserved names:
   www, api, admin, dashboard, app, mail, ftp, webmail, test, dev, staging).
 - Routes `/[site]` and `/sites/[site]` render the **old** landing system from
@@ -61,11 +64,17 @@ ALTER TABLE landing_pages
 
 ## Phase P1 — Publish to a subdomain
 
-1. **Subdomain picker** in a publish dialog (opened from "פרסום האתר"):
-   - Rules: `^[a-z0-9](?:[a-z0-9-]{1,28}[a-z0-9])$`, not reserved, not taken by
-     another user. Suggest one from the Beds24 name (transliteration) — Hebrew
-     names can't be used as-is.
-   - Live availability check via a server action (debounced).
+1. **Subdomain picker** — done: wizard step 4 "כתובת ופרסום"
+   (`SiteAddressField`), stored as `draft.siteAddress`.
+   - Rules in `src/lib/landingBuilder/siteAddress.ts`: 3–30 chars,
+     `[a-z0-9-]`, no leading/trailing hyphen, not in `RESERVED_SITE_ADDRESSES`
+     (shared with `src/proxy.ts`). Input is normalized as you type
+     (`Your_Domain` -> `your-domain`).
+   - Default: the user's existing `landing_pages.subdomain`; otherwise on import
+     `suggestSiteAddress` (English name > English city > transliterated Hebrew
+     name). Beds24 has no Airbnb listing name for us (empty in V1 `airbnb.name`).
+   - Live availability (`checkSiteAddressAction`, 400 ms debounce): available /
+     yours / taken. The address is reserved only at publish time.
 2. **Pre-publish checks** (pure, unit-tested `getPublishBlockers(draft)`):
    template chosen, title, at least one hosted image, nightly price, property
    connected, no `blob:` images (save first), booking mode ready (A or B above).

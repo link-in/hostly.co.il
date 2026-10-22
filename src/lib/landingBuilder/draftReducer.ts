@@ -9,6 +9,7 @@ import type {
   TemplateId,
 } from './types'
 import { replaceImageUrls } from './persistence/storedDraft'
+import { normalizeSiteAddress, suggestSiteAddress } from './siteAddress'
 
 export interface BuilderState {
   draft: LandingDraft
@@ -27,6 +28,7 @@ export type BuilderAction =
   | { type: 'images/removed'; imageId: string }
   | { type: 'images/coverSelected'; imageId: string }
   | { type: 'images/persisted'; urls: Record<string, string> }
+  | { type: 'site/addressChanged'; address: string }
   | { type: 'draft/reset' }
 
 export const EMPTY_CONTENT: DraftContent = {
@@ -48,7 +50,13 @@ export function createInitialDraft(): LandingDraft {
     coverImageId: null,
     booking: { basePrice: null, currency: 'ILS', maxGuests: null },
     contentOrigin: 'empty',
+    siteAddress: '',
   }
+}
+
+/** Fills an empty address (e.g. with the user's existing subdomain); never overrides a chosen one. */
+export function withDefaultSiteAddress(draft: LandingDraft, address: string | null | undefined): LandingDraft {
+  return draft.siteAddress || !address ? draft : { ...draft, siteAddress: normalizeSiteAddress(address) }
 }
 
 export function createInitialState(draft: LandingDraft = createInitialDraft()): BuilderState {
@@ -89,6 +97,7 @@ function applyImportedProperty(draft: LandingDraft, property: PropertyContent): 
       maxGuests: property.maxGuests,
     },
     contentOrigin: 'import',
+    siteAddress: draft.siteAddress || suggestSiteAddress({ name: property.name, city: property.city }),
   }
 }
 
@@ -141,6 +150,8 @@ function reduceDraft(draft: LandingDraft, action: BuilderAction): LandingDraft {
         : draft
     case 'images/persisted':
       return replaceImageUrls(draft, action.urls)
+    case 'site/addressChanged':
+      return { ...draft, siteAddress: normalizeSiteAddress(action.address) }
     default:
       return draft
   }

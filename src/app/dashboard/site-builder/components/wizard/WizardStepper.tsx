@@ -9,11 +9,13 @@ import { STEP_META } from './stepMeta'
 import TemplateStep from '../steps/TemplateStep'
 import ImportStep from '../steps/ImportStep'
 import CustomizeStep from '../steps/CustomizeStep'
+import PublishStep from '../steps/PublishStep'
 
 const STEP_CONTENT: Record<BuilderStep, ComponentType> = {
   template: TemplateStep,
   import: ImportStep,
   customize: CustomizeStep,
+  publish: PublishStep,
 }
 
 function StepBadge({ index, active, complete }: { index: number; active: boolean; complete: boolean }) {

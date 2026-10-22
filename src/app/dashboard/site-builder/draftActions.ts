@@ -1,12 +1,15 @@
 'use server'
 
 import { getServerSession, type Session } from 'next-auth'
+import { z } from 'zod'
 import { authOptions } from '@/lib/auth/authOptions'
 import { isSiteBuilderEnabled } from '@/lib/landingBuilder/featureFlag'
 import { saveDraft } from '@/lib/landingBuilder/persistence/draftRepository'
 import { imageUploadRequestSchema, MAX_UPLOAD_BYTES } from '@/lib/landingBuilder/persistence/imageUpload'
 import { signImageUpload, type SignedImageUpload } from '@/lib/landingBuilder/persistence/signImageUpload'
+import { findSiteAddressOwner } from '@/lib/landingBuilder/persistence/siteAddressRepository'
 import { belongsToProperty, storedDraftSchema } from '@/lib/landingBuilder/persistence/storedDraft'
+import { checkSiteAddress, type SiteAddressCheck } from '@/lib/landingBuilder/siteAddressAvailability'
 
 export type SaveDraftResult = { ok: true; savedAt: string } | { ok: false; error: string }
 export type SignUploadResult = ({ ok: true } & SignedImageUpload) | { ok: false; error: string }
@@ -43,6 +46,21 @@ export async function saveDraftAction(input: unknown): Promise<SaveDraftResult> 
   } catch (error) {
     console.error('[landing-builder] Saving draft failed:', error)
     return { ok: false, error: ERRORS.saveFailed }
+  }
+}
+
+const siteAddressInputSchema = z.string().max(64)
+
+export async function checkSiteAddressAction(input: unknown): Promise<SiteAddressCheck | null> {
+  const editor = await getEditor()
+  const parsed = siteAddressInputSchema.safeParse(input)
+  if ('error' in editor || !parsed.success) return null
+
+  try {
+    return await checkSiteAddress(parsed.data, editor.user.id, findSiteAddressOwner)
+  } catch (error) {
+    console.error('[landing-builder] Site address check failed:', error)
+    return null
   }
 }
 

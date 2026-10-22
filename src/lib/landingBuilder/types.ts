@@ -4,7 +4,7 @@ export const TEMPLATE_IDS = ['minimalist-modern', 'cozy-warm'] as const
 export const templateIdSchema = z.enum(TEMPLATE_IDS)
 export type TemplateId = z.infer<typeof templateIdSchema>
 
-export const BUILDER_STEPS = ['template', 'import', 'customize'] as const
+export const BUILDER_STEPS = ['template', 'import', 'customize', 'publish'] as const
 export type BuilderStep = (typeof BUILDER_STEPS)[number]
 
 export type PreviewDevice = 'desktop' | 'mobile'
@@ -70,6 +70,12 @@ export const landingDraftSchema = z.object({
     maxGuests: z.number().int().positive().nullable(),
   }),
   contentOrigin: contentOriginSchema,
+  /** Subdomain under hostly.co.il; '' until chosen. Defaulted so drafts saved before it existed still load. */
+  siteAddress: z
+    .string()
+    .max(30)
+    .regex(/^[a-z0-9-]*$/)
+    .default(''),
 })
 export type LandingDraft = z.infer<typeof landingDraftSchema>
 

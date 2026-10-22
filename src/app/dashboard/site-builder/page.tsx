@@ -3,7 +3,8 @@ import { getServerSession } from 'next-auth'
 import { redirect } from 'next/navigation'
 import { authOptions } from '@/lib/auth/authOptions'
 import { isSiteBuilderEnabled } from '@/lib/landingBuilder/featureFlag'
-import { loadDraft, type SavedDraft } from '@/lib/landingBuilder/persistence/draftRepository'
+import { loadDraft } from '@/lib/landingBuilder/persistence/draftRepository'
+import { loadUserSiteAddress } from '@/lib/landingBuilder/persistence/siteAddressRepository'
 import SiteBuilderWizard from './SiteBuilderWizard'
 
 export const dynamic = 'force-dynamic'
@@ -12,11 +13,11 @@ export const metadata: Metadata = {
   title: 'בונה אתר הזמנות | Hostly',
 }
 
-async function loadDraftSafely(userId: string): Promise<SavedDraft | null> {
+async function loadSafely<T>(label: string, load: () => Promise<T | null>): Promise<T | null> {
   try {
-    return await loadDraft(userId)
+    return await load()
   } catch (error) {
-    console.warn('[landing-builder] Loading the saved draft failed, starting fresh:', error)
+    console.warn(`[landing-builder] Loading ${label} failed:`, error)
     return null
   }
 }
@@ -27,7 +28,20 @@ export default async function SiteBuilderPage() {
   if (!isSiteBuilderEnabled()) redirect('/dashboard')
 
   const canSave = !session.user.isDemo
-  const saved = canSave ? await loadDraftSafely(session.user.id) : null
+  const userId = session.user.id
+  const [saved, existingSiteAddress] = canSave
+    ? await Promise.all([
+        loadSafely('the saved draft', () => loadDraft(userId)),
+        loadSafely('the site address', () => loadUserSiteAddress(userId)),
+      ])
+    : [null, null]
 
-  return <SiteBuilderWizard canSave={canSave} initialDraft={saved?.draft} savedAt={saved?.updatedAt ?? null} />
+  return (
+    <SiteBuilderWizard
+      canSave={canSave}
+      initialDraft={saved?.draft}
+      savedAt={saved?.updatedAt ?? null}
+      existingSiteAddress={existingSiteAddress}
+    />
+  )
 }
