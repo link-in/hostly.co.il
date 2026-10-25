@@ -120,13 +120,29 @@ describe('calculateReservationStats', () => {
     expect(stats.totalNights).toBe(5)
     expect(stats.totalRevenue).toBe(1500)
     expect(stats.totalCommission).toBe(150)
+    expect(stats.totalCleaningCost).toBe(0)
     expect(stats.netRevenue).toBe(1350)
     expect(stats.avgNightlyRate).toBe(300)
     expect(stats.avgBookingValue).toBe(750)
   })
 
+  it('deducts cleaning costs from net revenue', () => {
+    const stats = calculateReservationStats(
+      [
+        makeReservation({ total: 1000, source: 'Booking.com', cleaningCost: 200, checkIn: '2026-03-01', checkOut: '2026-03-04' }),
+        makeReservation({ id: 'R2', total: 800, source: 'Direct', cleaningCost: 150, checkIn: '2026-04-01', checkOut: '2026-04-03' }),
+      ],
+      { booking: 0.15, direct: 0 },
+    )
+    expect(stats.totalRevenue).toBe(1800)
+    expect(stats.totalCommission).toBe(150)
+    expect(stats.totalCleaningCost).toBe(350)
+    expect(stats.netRevenue).toBe(1800 - 150 - 350) // 1300
+  })
+
   it('returns zeros for an empty list', () => {
     const stats = calculateReservationStats([], { booking: 0.15 })
+    expect(stats.totalCleaningCost).toBe(0)
     expect(stats.avgNightlyRate).toBe(0)
     expect(stats.avgBookingValue).toBe(0)
     expect(stats.netRevenue).toBe(0)

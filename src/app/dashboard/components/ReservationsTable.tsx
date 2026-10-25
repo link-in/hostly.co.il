@@ -558,6 +558,15 @@ const ReservationsTable = ({
                   </span>
                 </div>
                 
+                <div className="reservation-detail-row">
+                  <span className="reservation-detail-label">עלות ניקיון (מנקה)</span>
+                  <span className="reservation-detail-value">
+                    {reservation.cleaningCost && reservation.cleaningCost > 0
+                      ? `${formatCurrency(reservation.cleaningCost)}${reservation.cleanerName ? ` (${reservation.cleanerName})` : ''}`
+                      : 'ללא עלות ניקיון'}
+                  </span>
+                </div>
+                
                 {reservation.notes && (
                   <div className="mt-3 pt-3" style={{ borderTop: '1px solid #F2F6FA' }}>
                     <div className="reservation-detail-label mb-2">הערות</div>
@@ -713,6 +722,7 @@ const ReservationsTable = ({
             <th>לילות</th>
             <th>מקור</th>
             <th>סה״כ</th>
+            <th>ניקיון</th>
             <th>סטטוס</th>
           </tr>
         </thead>
@@ -765,6 +775,15 @@ const ReservationsTable = ({
                   </div>
                 </td>
                 <td className="fw-semibold">{formatCurrency(reservation.total)}</td>
+                <td className="small">
+                  {reservation.cleaningCost && reservation.cleaningCost > 0 ? (
+                    <span style={{ fontWeight: 600, color: 'var(--htxt-2, #374151)' }}>
+                      {formatCurrency(reservation.cleaningCost)}
+                    </span>
+                  ) : (
+                    <span className="text-muted">—</span>
+                  )}
+                </td>
                 <td>
                   <span
                     className={`badge ${getStatusClass(reservation.status)}`}
@@ -780,7 +799,7 @@ const ReservationsTable = ({
               </tr>
               {expandedId === reservation.id ? (
                 <tr>
-                  <td colSpan={7} style={{ 
+                  <td colSpan={8} style={{ 
                     background: '#F8FAFB',
                     borderTop: '1px solid #E4EAF0',
                   }}>
@@ -853,6 +872,19 @@ const ReservationsTable = ({
                             <div className="col-md-6">
                               <div className="small mb-1" style={{ color: '#6C7884' }}>סכום כולל</div>
                               <div className="fw-bold" style={{ color: '#7133D9' }}>{formatCurrency(reservation.total)}</div>
+                            </div>
+                            <div className="col-md-6">
+                              <div className="small mb-1" style={{ color: '#6C7884' }}>עלות ניקיון (מנקה)</div>
+                              <div style={{ color: '#2F3133', fontWeight: 600 }}>
+                                {reservation.cleaningCost && reservation.cleaningCost > 0 ? (
+                                  <>
+                                    {formatCurrency(reservation.cleaningCost)}
+                                    {reservation.cleanerName ? ` (${reservation.cleanerName})` : ''}
+                                  </>
+                                ) : (
+                                  'ללא עלות ניקיון'
+                                )}
+                              </div>
                             </div>
                             {reservation.notes ? (
                               <div className="col-12">

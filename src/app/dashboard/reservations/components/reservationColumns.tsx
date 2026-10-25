@@ -47,6 +47,20 @@ export function buildReservationColumns(isUnseenNew: (r: Reservation) => boolean
       cell: (r) => <span style={{ fontWeight: 700, color: 'var(--hb)' }}>{formatCurrency(r.total)}</span>,
       align: 'end',
     },
+    {
+      header: 'עלות ניקיון',
+      cell: (r) => (
+        r.cleaningCost && r.cleaningCost > 0 ? (
+          <span style={{ fontWeight: 600, color: 'var(--htxt-2)' }}>
+            {formatCurrency(r.cleaningCost)}
+          </span>
+        ) : (
+          <span style={{ color: 'var(--htxt-4)' }}>—</span>
+        )
+      ),
+      align: 'end',
+      hideOnMobile: true,
+    },
     { header: 'מקור', cell: (r) => <ReservationSourceBadge source={r.source} /> },
     { header: 'סטטוס', cell: (r) => <ReservationStatusBadge status={r.status} /> },
   ]

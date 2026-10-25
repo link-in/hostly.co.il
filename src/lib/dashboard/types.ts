@@ -24,6 +24,9 @@ export interface Reservation {
   isNew?: boolean // Flag for new demo reservations
   roomId?: string // Beds24 room ID (required for updates)
   propertyId?: string // Beds24 property ID (required for updates)
+  hasCleaning?: boolean // Whether cleaning is scheduled/included
+  cleaningCost?: number // Cost paid to the cleaner
+  cleanerName?: string // Optional name of the cleaner
 }
 
 export interface PriceRule {

@@ -114,7 +114,7 @@ const extractRoomPrices = (payload: unknown): RoomPrice[] => {
   return []
 }
 
-const mapBookingToReservation = (booking: Record<string, unknown>, index: number): Reservation => {
+export const mapBookingToReservation = (booking: Record<string, unknown>, index: number = 0): Reservation => {
   const firstName =
     (typeof booking.firstName === 'string' && booking.firstName) ||
     (typeof booking.guestFirstName === 'string' && booking.guestFirstName) ||
@@ -167,6 +167,56 @@ const mapBookingToReservation = (booking: Record<string, unknown>, index: number
     (typeof booking.reference === 'string' && booking.reference.trim()) ||
     (typeof booking.voucher === 'string' && booking.voucher.trim()) ||
     undefined
+
+  const cleaningCost = (() => {
+    if (typeof booking.cleaningCost === 'number' && Number.isFinite(booking.cleaningCost)) {
+      return booking.cleaningCost
+    }
+    if (typeof booking.cleaningCost === 'string' && !isNaN(Number(booking.cleaningCost))) {
+      return Number(booking.cleaningCost)
+    }
+    if (typeof booking.cleanerCost === 'number' && Number.isFinite(booking.cleanerCost)) {
+      return booking.cleanerCost
+    }
+    const invoice = booking.invoice
+    const invoiceItems = Array.isArray(invoice)
+      ? invoice
+      : (invoice && typeof invoice === 'object' && Array.isArray((invoice as { items?: unknown }).items)
+          ? (invoice as { items: unknown[] }).items
+          : [])
+    for (const item of invoiceItems) {
+      if (item && typeof item === 'object') {
+        const desc = String((item as Record<string, unknown>).description || '').toLowerCase()
+        if (desc.includes('ניקיון') || desc.includes('clean') || desc.includes('מנקה')) {
+          const amt = Number((item as Record<string, unknown>).amount ?? (item as Record<string, unknown>).total)
+          if (!isNaN(amt) && amt > 0) return amt
+        }
+      }
+    }
+    const notesStr = String(booking.notes || '')
+    const match = notesStr.match(/\[?(?:עלות\s*ניקיון|עלות\s*מנקה|ניקיון|cleanerCost|cleaningCost)[:=]?\s*₪?\s*(\d+)\]?/i)
+    if (match && match[1]) {
+      const val = Number(match[1])
+      if (!isNaN(val) && val > 0) return val
+    }
+    return undefined
+  })()
+
+  const cleanerName = (() => {
+    if (typeof booking.cleanerName === 'string' && booking.cleanerName.trim()) {
+      return booking.cleanerName.trim()
+    }
+    const notesStr = String(booking.notes || '')
+    const match = notesStr.match(/\[?(?:שם\s*מנקה|מנקה)[:=]?\s*([^\]\n,]+)\]?/i)
+    if (match && match[1]) {
+      return match[1].trim()
+    }
+    return undefined
+  })()
+
+  const hasCleaning = typeof booking.hasCleaning === 'boolean'
+    ? booking.hasCleaning
+    : (cleaningCost !== undefined && cleaningCost > 0 ? true : undefined)
 
   return {
     id: String(booking.id ?? booking.bookingId ?? booking.reservationId ?? `booking_${index}`),
@@ -226,6 +276,9 @@ const mapBookingToReservation = (booking: Record<string, unknown>, index: number
       (typeof booking.notes === 'string' && booking.notes) ||
       (typeof booking.infoItems === 'string' && booking.infoItems) ||
       undefined,
+    hasCleaning,
+    cleaningCost,
+    cleanerName,
   }
 }
 
