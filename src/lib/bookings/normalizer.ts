@@ -96,6 +96,30 @@ export function normalizeBookingItem(
     booking.notes = item.notes || ''
   }
 
+  const cleaningCost =
+    (typeof item.cleaningCost === 'number' && item.cleaningCost) ||
+    (typeof item.cleaningCost === 'string' && Number.parseFloat(item.cleaningCost)) ||
+    (typeof item.cleanerCost === 'number' && item.cleanerCost) ||
+    (typeof item.cleanerCost === 'string' && Number.parseFloat(item.cleanerCost)) ||
+    0
+
+  if (cleaningCost > 0) {
+    booking.cleaningCost = cleaningCost
+    booking.hasCleaning = true
+    if (item.cleanerName) {
+      booking.cleanerName = String(item.cleanerName).trim()
+    }
+    const currentNotes = typeof booking.notes === 'string' ? booking.notes : ''
+    const hasTag = /\[?(?:עלות\s*ניקיון|עלות\s*מנקה|ניקיון|cleanerCost|cleaningCost)/i.test(currentNotes)
+    if (!hasTag) {
+      const cleanerPart = item.cleanerName ? `, מנקה: ${String(item.cleanerName).trim()}` : ''
+      const tag = `[עלות ניקיון: ₪${cleaningCost}${cleanerPart}]`
+      booking.notes = currentNotes ? `${currentNotes}\n${tag}` : tag
+    }
+  } else if (item.hasCleaning !== undefined) {
+    booking.hasCleaning = Boolean(item.hasCleaning)
+  }
+
   return booking
 }
 

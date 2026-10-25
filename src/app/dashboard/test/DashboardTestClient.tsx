@@ -154,6 +154,9 @@ const DashboardTestClient = () => {
     departure: '',
     guests: 2,
     total: '',
+    hasCleaning: false,
+    cleaningCost: '',
+    cleanerName: '',
     notes: '',
   })
   const [sendWhatsApp, setSendWhatsApp] = useState(true) // Default: send WhatsApp
@@ -165,7 +168,7 @@ const DashboardTestClient = () => {
     airbnb: 0.16,  // Default fallback
   })
 
-  const updateReservationField = (field: keyof typeof newReservation, value: string | number) => {
+  const updateReservationField = (field: keyof typeof newReservation, value: string | number | boolean) => {
     setNewReservation((prev) => {
       const updated = { ...prev, [field]: value }
       
@@ -196,6 +199,9 @@ const DashboardTestClient = () => {
       departure: '',
       guests: 2,
       total: '',
+      hasCleaning: false,
+      cleaningCost: '',
+      cleanerName: '',
       notes: '',
     })
     setSendWhatsApp(true) // Reset to default: send WhatsApp
@@ -288,9 +294,17 @@ const DashboardTestClient = () => {
       return
     }
 
+    if (newReservation.hasCleaning && (!newReservation.cleaningCost || isNaN(Number(newReservation.cleaningCost)) || Number(newReservation.cleaningCost) < 0)) {
+      setSaveReservationError('יש להזין עלות תקינה עבור המנקה.')
+      return
+    }
+
     // Contact is always phone, email is optional separate field
     const phone = newReservation.contact.trim()
     const email = newReservation.email.trim()
+    const cleaningCostNumber = newReservation.hasCleaning && newReservation.cleaningCost
+      ? Number(newReservation.cleaningCost)
+      : 0
     
     const payload = [
       {
@@ -303,6 +317,9 @@ const DashboardTestClient = () => {
         numAdult: newReservation.guests || 1,
         mobile: phone, // Phone is required
         ...(email ? { email } : {}), // Email is optional
+        cleaningCost: cleaningCostNumber,
+        hasCleaning: newReservation.hasCleaning,
+        cleanerName: newReservation.cleanerName?.trim() || undefined,
         invoice: [
           {
             description: 'Total Room Price',
@@ -345,6 +362,9 @@ const DashboardTestClient = () => {
           ),
           guests: newReservation.guests,
           total: Number(newReservation.total),
+          hasCleaning: newReservation.hasCleaning,
+          cleaningCost: cleaningCostNumber,
+          cleanerName: newReservation.cleanerName?.trim() || undefined,
           status: 'confirmed',
           source: 'Demo (הזמנה ידנית)',
           phone,
@@ -499,6 +519,7 @@ const DashboardTestClient = () => {
   const stats = useMemo(() => {
     let totalRevenue = 0
     let totalCommission = 0
+    let totalCleaningCost = 0
 
     reservations.forEach((reservation) => {
       totalRevenue += reservation.total
@@ -517,9 +538,10 @@ const DashboardTestClient = () => {
       }
       
       totalCommission += reservation.total * commissionRate
+      totalCleaningCost += reservation.cleaningCost || 0
     })
 
-    const netRevenue = totalRevenue - totalCommission
+    const netRevenue = totalRevenue - totalCommission - totalCleaningCost
     const confirmedCount = reservations.filter((reservation) => reservation.status === 'confirmed').length
     const upcomingCount = reservations.filter((reservation) => {
       const checkIn = new Date(reservation.checkIn)
@@ -532,6 +554,7 @@ const DashboardTestClient = () => {
     return {
       totalRevenue,
       totalCommission,
+      totalCleaningCost,
       netRevenue,
       confirmedCount,
       upcomingCount,
@@ -591,6 +614,7 @@ const DashboardTestClient = () => {
     const bookedDates = new Set<string>()
     let monthRevenue = 0
     let monthCommission = 0
+    let monthCleaningCost = 0
 
     reservations.forEach((reservation) => {
       if (!reservation.checkIn || !reservation.checkOut) {
@@ -619,6 +643,7 @@ const DashboardTestClient = () => {
         }
         
         monthCommission += reservation.total * commissionRate
+        monthCleaningCost += reservation.cleaningCost || 0
       }
 
       let cursor = checkIn
@@ -633,13 +658,14 @@ const DashboardTestClient = () => {
 
     const bookedDays = bookedDates.size
     const availableDays = Math.max(0, monthRange.daysInMonth - bookedDays)
-    const netRevenue = monthRevenue - monthCommission
+    const netRevenue = monthRevenue - monthCommission - monthCleaningCost
 
     return {
       bookedDays,
       availableDays,
       monthRevenue,
       monthCommission,
+      monthCleaningCost,
       netRevenue,
     }
   }, [reservations, monthRange, commissionRates])
@@ -763,25 +789,32 @@ const DashboardTestClient = () => {
         ) : null}
 
         <div className="row g-3 mb-4">
-          <div className="col-4 col-md-4">
+          <div className="col-6 col-md-3">
             <StatCard 
               title="שנה נוכחית" 
               value={new Date().getFullYear().toString()} 
               helper="נתוני ההזמנות בשנה זו"
             />
           </div>
-          <div className="col-4 col-md-4">
+          <div className="col-6 col-md-3">
             <StatCard 
               title="הכנסות ברוטו" 
               value={formatCurrency(stats.totalRevenue)} 
               helper="סה״כ כל ההזמנות בשנה" 
             />
           </div>
-          <div className="col-4 col-md-4">
+          <div className="col-6 col-md-3">
             <StatCard 
-              title="תשלום צפוי" 
+              title="עלויות ניקיון" 
+              value={formatCurrency(stats.totalCleaningCost)} 
+              helper="סה״כ עלויות מנקה בשנה" 
+            />
+          </div>
+          <div className="col-6 col-md-3">
+            <StatCard 
+              title="רווח נקי (תשלום צפוי)" 
               value={formatCurrency(stats.netRevenue)} 
-              helper="סה״כ כל ההזמנות בשנה (אחרי עמלות)" 
+              helper="אחרי ניכוי עמלות ועלויות ניקיון" 
             />
           </div>
         </div>
@@ -1366,6 +1399,77 @@ const DashboardTestClient = () => {
                     />
                   </div>
                   <div className="col-12">
+                    <div 
+                      className="p-3 rounded-2" 
+                      style={{ 
+                        background: 'rgba(0, 0, 0, 0.25)', 
+                        border: newReservation.hasCleaning ? '1px solid #f093fb' : '1px solid rgba(249, 147, 251, 0.2)',
+                        transition: 'all 0.2s ease',
+                      }}
+                    >
+                      <div className="form-check form-switch d-flex align-items-center gap-2 mb-0" dir="rtl">
+                        <input
+                          className="form-check-input ms-0 me-2"
+                          type="checkbox"
+                          id="hasCleaningTestCheckbox"
+                          checked={newReservation.hasCleaning}
+                          onChange={(e) => {
+                            const checked = e.target.checked
+                            updateReservationField('hasCleaning', checked)
+                            if (!checked) {
+                              updateReservationField('cleaningCost', '')
+                            }
+                          }}
+                          style={{ cursor: 'pointer', width: '2.2em', height: '1.2em' }}
+                        />
+                        <label 
+                          className="form-check-label fw-semibold small mb-0" 
+                          htmlFor="hasCleaningTestCheckbox"
+                          style={{ cursor: 'pointer', color: 'white' }}
+                        >
+                          הזמנת ניקיון (מנקה)
+                        </label>
+                      </div>
+
+                      {newReservation.hasCleaning && (
+                        <div className="row g-2 mt-2 pt-2" style={{ borderTop: '1px solid rgba(249, 147, 251, 0.2)' }}>
+                          <div className="col-12 col-sm-6">
+                            <label className="form-label small fw-semibold">
+                              כמה עולה המנקה (עלות ניקיון) <span className="text-danger">*</span>
+                            </label>
+                            <div className="input-group input-group-sm">
+                              <span className="input-group-text" style={{ background: 'rgba(0,0,0,0.3)', color: 'white', borderColor: 'rgba(249, 147, 251, 0.2)' }}>₪</span>
+                              <input
+                                type="number"
+                                min={0}
+                                className="form-control"
+                                placeholder="לדוגמה: 250"
+                                value={newReservation.cleaningCost}
+                                onChange={(e) => updateReservationField('cleaningCost', e.target.value)}
+                                required={newReservation.hasCleaning}
+                              />
+                            </div>
+                            <small style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '11px' }}>
+                              עלות הניקיון תקוזז מהרווח הנקי של ההזמנה
+                            </small>
+                          </div>
+                          <div className="col-12 col-sm-6">
+                            <label className="form-label small fw-semibold">
+                              שם המנקה (אופציונלי)
+                            </label>
+                            <input
+                              type="text"
+                              className="form-control form-control-sm"
+                              placeholder="לדוגמה: מרים"
+                              value={newReservation.cleanerName}
+                              onChange={(e) => updateReservationField('cleanerName', e.target.value)}
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="col-12">
                     <label className="form-label small fw-semibold">הערות</label>
                     <textarea
                       className="form-control"
@@ -1537,7 +1641,7 @@ const DashboardTestClient = () => {
                   <StatCard 
                     title="הכנסות נטו" 
                     value={formatCurrency(stats.netRevenue)} 
-                    helper="אחרי ניכוי עמלות"
+                    helper="אחרי ניכוי עמלות וניקיון"
                   />
                 </div>
                 <div className="col-4 col-md-4">
@@ -1548,9 +1652,9 @@ const DashboardTestClient = () => {
                 </div>
                 <div className="col-4 col-md-4">
                   <StatCard 
-                    title="הכנסות חודשיות" 
-                    value={formatCurrency(bookingSummary?.monthRevenue ?? 0)} 
-                    helper="סה״כ החודש"
+                    title="עלויות ניקיון החודש" 
+                    value={formatCurrency(bookingSummary?.monthCleaningCost ?? 0)} 
+                    helper="סה״כ מנקה בחודש זה"
                   />
                 </div>
                 <div className="col-4 col-md-4">

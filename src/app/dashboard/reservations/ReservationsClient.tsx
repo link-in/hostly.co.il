@@ -1,9 +1,10 @@
 'use client'
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import Link from 'next/link'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { ClipboardList } from 'lucide-react'
+import { ClipboardList, Plus } from 'lucide-react'
 import type { Reservation } from '@/lib/dashboard/types'
 import { getDashboardProvider } from '@/lib/dashboard/getDashboardProvider'
 import {
@@ -139,7 +140,21 @@ export default function ReservationsClient() {
       <DashboardHeader session={session} currentPage="reservations" />
 
       <div className="container-fluid py-3 py-md-4 px-3 px-md-4">
-        <PageHeader title="כל ההזמנות" subtitle="צפייה בהזמנות עם סטטיסטיקות מתקדמות" icon={<ClipboardList size={20} />} />
+        <PageHeader
+          title="כל ההזמנות"
+          subtitle="צפייה בהזמנות עם סטטיסטיקות מתקדמות"
+          icon={<ClipboardList size={20} />}
+          actions={
+            <Link
+              href="/dashboard"
+              className="hostly-btn hostly-btn-primary d-inline-flex align-items-center gap-1"
+              style={{ textDecoration: 'none', fontSize: 14 }}
+            >
+              <Plus size={16} />
+              הזמנה חדשה
+            </Link>
+          }
+        />
 
         <RoomTabs />
 

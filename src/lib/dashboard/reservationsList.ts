@@ -29,6 +29,7 @@ export interface ReservationStats {
   totalNights: number
   totalRevenue: number
   totalCommission: number
+  totalCleaningCost: number
   netRevenue: number
   avgNightlyRate: number
   avgBookingValue: number
@@ -127,12 +128,14 @@ export function calculateReservationStats(
 ): ReservationStats {
   let totalRevenue = 0
   let totalCommission = 0
+  let totalCleaningCost = 0
   let totalNights = 0
 
   for (const reservation of reservations) {
     const total = reservation.total || 0
     totalRevenue += total
     totalCommission += total * getCommissionRate(reservation.source, rates)
+    totalCleaningCost += reservation.cleaningCost || 0
     totalNights += calculateNights(reservation.checkIn, reservation.checkOut)
   }
 
@@ -141,7 +144,8 @@ export function calculateReservationStats(
     totalNights,
     totalRevenue,
     totalCommission,
-    netRevenue: totalRevenue - totalCommission,
+    totalCleaningCost,
+    netRevenue: totalRevenue - totalCommission - totalCleaningCost,
     avgNightlyRate: totalNights > 0 ? totalRevenue / totalNights : 0,
     avgBookingValue: reservations.length > 0 ? totalRevenue / reservations.length : 0,
   }

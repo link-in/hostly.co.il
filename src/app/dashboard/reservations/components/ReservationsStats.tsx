@@ -23,14 +23,17 @@ export default function ReservationsStats({ stats }: { stats: ReservationStats }
       </div>
 
       <div className="row g-2 g-md-3 mb-4">
-        <div className="col-4">
+        <div className="col-6 col-md-3">
           <StatCard label="הכנסות ברוטו" value={formatCurrency(stats.totalRevenue)} />
         </div>
-        <div className="col-4">
+        <div className="col-6 col-md-3">
           <StatCard label="סה״כ עמלות" value={formatCurrency(stats.totalCommission)} />
         </div>
-        <div className="col-4">
-          <StatCard label="תשלום צפוי (נטו)" value={formatCurrency(stats.netRevenue)} />
+        <div className="col-6 col-md-3">
+          <StatCard label="עלויות ניקיון" value={formatCurrency(stats.totalCleaningCost)} />
+        </div>
+        <div className="col-6 col-md-3">
+          <StatCard label="רווח נקי (תשלום צפוי)" value={formatCurrency(stats.netRevenue)} />
         </div>
       </div>
     </>

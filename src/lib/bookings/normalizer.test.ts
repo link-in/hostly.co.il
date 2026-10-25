@@ -202,6 +202,16 @@ describe('normalizeBookingItem', () => {
     expect(result.email).toBeUndefined()
     expect(result.notes).toBeUndefined()
   })
+
+  it('normalizes cleaningCost and appends tag to notes', () => {
+    const item = { ...base, cleaningCost: 250, cleanerName: 'מרים' }
+    const result = normalizeBookingItem(item, 1, 2)
+    expect(result.cleaningCost).toBe(250)
+    expect(result.hasCleaning).toBe(true)
+    expect(result.cleanerName).toBe('מרים')
+    expect(result.notes).toContain('250')
+    expect(result.notes).toContain('מרים')
+  })
 })
 
 // ─── extractUserTokens ────────────────────────────────────────────────────────

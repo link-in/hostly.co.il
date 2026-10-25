@@ -486,6 +486,23 @@ export async function PATCH(request: Request) {
     console.log('📝 Notes update:', updates.notes || '(empty)')
   }
   if (updates.status) booking.status = updates.status
+
+  if (updates.cleaningCost !== undefined) {
+    const cost = Number(updates.cleaningCost) || 0
+    booking.cleaningCost = cost
+    booking.hasCleaning = updates.hasCleaning !== undefined ? Boolean(updates.hasCleaning) : cost > 0
+    if (updates.cleanerName) {
+      booking.cleanerName = String(updates.cleanerName).trim()
+    }
+    if (cost > 0) {
+      const currentNotes = typeof booking.notes === 'string' ? booking.notes : (typeof updates.notes === 'string' ? updates.notes : '')
+      const hasTag = /\[?(?:עלות\s*ניקיון|עלות\s*מנקה|ניקיון|cleanerCost|cleaningCost)/i.test(currentNotes)
+      if (!hasTag) {
+        const cleanerPart = updates.cleanerName ? `, מנקה: ${String(updates.cleanerName).trim()}` : ''
+        booking.notes = currentNotes ? `${currentNotes}\n[עלות ניקיון: ₪${cost}${cleanerPart}]` : `[עלות ניקיון: ₪${cost}${cleanerPart}]`
+      }
+    }
+  }
   
   // Handle price update - send as direct field (not invoice)
   // Note: For updates, Beds24 accepts direct 'price' field
