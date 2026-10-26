@@ -8,6 +8,7 @@ import { getUserByEmail } from '@/lib/auth/getUsersDb'
 import { normalizePhoneNumber } from '@/lib/utils/phoneFormatter'
 import { addOrUpdateCustomer } from '@/lib/customers/addOrUpdateCustomer'
 import { normalizeBookingItem, extractBookingId, extractUserTokens } from '@/lib/bookings/normalizer'
+import { updateNotesWithCleaning } from '@/lib/bookings/cleaningNotes'
 import { buildBookingsListUrl } from '@/lib/beds24/bookingsQuery'
 import { notifyOwnersOfBookingCancellation } from '@/lib/notifications/bookingAlerts'
 import { buildOwnerPhoneList } from '@/lib/notifications/ownerPhones'
@@ -487,21 +488,23 @@ export async function PATCH(request: Request) {
   }
   if (updates.status) booking.status = updates.status
 
-  if (updates.cleaningCost !== undefined) {
+  if (updates.cleaningCost !== undefined || updates.hasCleaning !== undefined) {
     const cost = Number(updates.cleaningCost) || 0
+    const hasCleaning = updates.hasCleaning !== undefined ? Boolean(updates.hasCleaning) : cost > 0
     booking.cleaningCost = cost
-    booking.hasCleaning = updates.hasCleaning !== undefined ? Boolean(updates.hasCleaning) : cost > 0
-    if (updates.cleanerName) {
-      booking.cleanerName = String(updates.cleanerName).trim()
+    booking.hasCleaning = hasCleaning
+    if (updates.cleanerName !== undefined) {
+      booking.cleanerName = updates.cleanerName ? String(updates.cleanerName).trim() : ''
     }
-    if (cost > 0) {
-      const currentNotes = typeof booking.notes === 'string' ? booking.notes : (typeof updates.notes === 'string' ? updates.notes : '')
-      const hasTag = /\[?(?:עלות\s*ניקיון|עלות\s*מנקה|ניקיון|cleanerCost|cleaningCost)/i.test(currentNotes)
-      if (!hasTag) {
-        const cleanerPart = updates.cleanerName ? `, מנקה: ${String(updates.cleanerName).trim()}` : ''
-        booking.notes = currentNotes ? `${currentNotes}\n[עלות ניקיון: ₪${cost}${cleanerPart}]` : `[עלות ניקיון: ₪${cost}${cleanerPart}]`
-      }
-    }
+    const currentNotes = typeof booking.notes === 'string'
+      ? booking.notes
+      : (typeof updates.notes === 'string' ? updates.notes : '')
+    booking.notes = updateNotesWithCleaning(
+      currentNotes,
+      cost,
+      updates.cleanerName ? String(updates.cleanerName).trim() : undefined,
+      hasCleaning
+    )
   }
   
   // Handle price update - send as direct field (not invoice)
