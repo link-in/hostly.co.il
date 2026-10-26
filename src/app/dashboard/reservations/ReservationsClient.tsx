@@ -28,6 +28,8 @@ import ReservationsStats from './components/ReservationsStats'
 import ReservationsFilters from './components/ReservationsFilters'
 import { NewReservationBadge } from './components/ReservationBadges'
 import { buildReservationColumns } from './components/reservationColumns'
+import CleaningCostModal from './components/CleaningCostModal'
+import { Toaster } from 'sonner'
 
 const INITIAL_FILTERS: Filters = { search: '', status: 'all', source: 'all' }
 
@@ -44,6 +46,7 @@ export default function ReservationsClient() {
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc')
   const [commissionRates, setCommissionRates] = useState<CommissionRates>(DEFAULT_COMMISSION_RATES)
   const [viewedIds, setViewedIds] = useState<Set<string>>(new Set())
+  const [cleaningReservation, setCleaningReservation] = useState<Reservation | null>(null)
 
   const { provider, meta } = useMemo(
     () => getDashboardProvider(session?.user, selectedRoomId || session?.user?.roomId),
@@ -118,7 +121,15 @@ export default function ReservationsClient() {
     setSortDirection('desc')
   }
 
-  const columns = useMemo(() => buildReservationColumns(isUnseenNew), [isUnseenNew])
+  const columns = useMemo(
+    () => buildReservationColumns(isUnseenNew, setCleaningReservation),
+    [isUnseenNew],
+  )
+
+  const handleCleaningSaved = (updated: Reservation) => {
+    setReservations((prev) => prev.map((r) => (r.id === updated.id ? updated : r)))
+    setCleaningReservation(null)
+  }
 
   // ── Render ──
   if (status === 'unauthenticated') return null
@@ -217,6 +228,15 @@ export default function ReservationsClient() {
           mobileSubtitle="id"
         />
       </div>
+
+      {cleaningReservation && (
+        <CleaningCostModal
+          reservation={cleaningReservation}
+          onClose={() => setCleaningReservation(null)}
+          onSaved={handleCleaningSaved}
+        />
+      )}
+      <Toaster position="top-center" richColors closeButton dir="rtl" />
     </main>
   )
 }
