@@ -169,14 +169,18 @@ export const mapBookingToReservation = (booking: Record<string, unknown>, index:
     undefined
 
   const cleaningCost = (() => {
+    if (booking.hasCleaning === false) {
+      return undefined
+    }
     if (typeof booking.cleaningCost === 'number' && Number.isFinite(booking.cleaningCost)) {
-      return booking.cleaningCost
+      return booking.cleaningCost > 0 ? booking.cleaningCost : undefined
     }
     if (typeof booking.cleaningCost === 'string' && !isNaN(Number(booking.cleaningCost))) {
-      return Number(booking.cleaningCost)
+      const val = Number(booking.cleaningCost)
+      return val > 0 ? val : undefined
     }
     if (typeof booking.cleanerCost === 'number' && Number.isFinite(booking.cleanerCost)) {
-      return booking.cleanerCost
+      return booking.cleanerCost > 0 ? booking.cleanerCost : undefined
     }
     const invoice = booking.invoice
     const invoiceItems = Array.isArray(invoice)
@@ -203,6 +207,9 @@ export const mapBookingToReservation = (booking: Record<string, unknown>, index:
   })()
 
   const cleanerName = (() => {
+    if (booking.hasCleaning === false || cleaningCost === undefined) {
+      return undefined
+    }
     if (typeof booking.cleanerName === 'string' && booking.cleanerName.trim()) {
       return booking.cleanerName.trim()
     }

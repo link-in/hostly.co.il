@@ -140,6 +140,29 @@ describe('calculateReservationStats', () => {
     expect(stats.netRevenue).toBe(1800 - 150 - 350) // 1300
   })
 
+  it('updates profit summary when Airbnb or Booking reservation has cleaning cost added at the last minute', () => {
+    const airbnbBooking = makeReservation({
+      id: 'A1',
+      total: 2000,
+      source: 'Airbnb',
+      checkIn: '2026-05-01',
+      checkOut: '2026-05-04',
+      // initially no cleaning
+    })
+
+    const initialStats = calculateReservationStats([airbnbBooking], { airbnb: 0.16 })
+    expect(initialStats.totalCleaningCost).toBe(0)
+    expect(initialStats.totalCommission).toBe(320)
+    expect(initialStats.netRevenue).toBe(1680)
+
+    // Last minute cleaner added for 250 NIS:
+    const updatedAirbnbBooking = { ...airbnbBooking, hasCleaning: true, cleaningCost: 250, cleanerName: 'מרים' }
+    const updatedStats = calculateReservationStats([updatedAirbnbBooking], { airbnb: 0.16 })
+    expect(updatedStats.totalCleaningCost).toBe(250)
+    expect(updatedStats.totalCommission).toBe(320)
+    expect(updatedStats.netRevenue).toBe(1680 - 250) // 1430
+  })
+
   it('returns zeros for an empty list', () => {
     const stats = calculateReservationStats([], { booking: 0.15 })
     expect(stats.totalCleaningCost).toBe(0)

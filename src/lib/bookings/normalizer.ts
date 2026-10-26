@@ -3,6 +3,8 @@
  * No HTTP, no DB, no side-effects — fully unit-testable.
  */
 
+import { updateNotesWithCleaning } from './cleaningNotes'
+
 /** Sum all invoice item amounts from a Beds24 invoice array. */
 export function extractInvoiceTotal(items: unknown[]): number {
   return items.reduce<number>((sum, entry) => {
@@ -110,14 +112,18 @@ export function normalizeBookingItem(
       booking.cleanerName = String(item.cleanerName).trim()
     }
     const currentNotes = typeof booking.notes === 'string' ? booking.notes : ''
-    const hasTag = /\[?(?:עלות\s*ניקיון|עלות\s*מנקה|ניקיון|cleanerCost|cleaningCost)/i.test(currentNotes)
-    if (!hasTag) {
-      const cleanerPart = item.cleanerName ? `, מנקה: ${String(item.cleanerName).trim()}` : ''
-      const tag = `[עלות ניקיון: ₪${cleaningCost}${cleanerPart}]`
-      booking.notes = currentNotes ? `${currentNotes}\n${tag}` : tag
-    }
+    booking.notes = updateNotesWithCleaning(
+      currentNotes,
+      cleaningCost,
+      item.cleanerName ? String(item.cleanerName).trim() : undefined,
+      true
+    )
   } else if (item.hasCleaning !== undefined) {
     booking.hasCleaning = Boolean(item.hasCleaning)
+    if (!item.hasCleaning) {
+      const currentNotes = typeof booking.notes === 'string' ? booking.notes : ''
+      booking.notes = updateNotesWithCleaning(currentNotes, 0, undefined, false)
+    }
   }
 
   return booking

@@ -631,10 +631,8 @@ const ReservationsTable = ({
                   </div>
                 )}
 
-                {/* Action Buttons for Direct bookings */}
-                {(onEditReservation || onDeleteReservation) &&
-                  reservation.source &&
-                  reservation.source.toLowerCase().includes('direct') && (
+                {/* Action Buttons: Direct bookings allow edit + cancel; Channel bookings (Airbnb/Booking) allow editing cleaning cost */}
+                {(onEditReservation || (onDeleteReservation && reservation.source && reservation.source.toLowerCase().includes('direct'))) && (
                   <div className="mt-3 pt-3 d-flex gap-2 flex-wrap" style={{ borderTop: '1px solid #F2F6FA' }}>
                     {onEditReservation && (
                       <button
@@ -646,7 +644,7 @@ const ReservationsTable = ({
                         }}
                       >
                         <Pencil size={14} />
-                        ערוך
+                        {reservation.source && reservation.source.toLowerCase().includes('direct') ? 'ערוך' : 'ערוך ניקיון'}
                       </button>
                     )}
                     {onDeleteReservation && (
@@ -944,9 +942,7 @@ const ReservationsTable = ({
                                 הופקה קבלה להזמנה זו
                               </div>
                             )}
-                            {onEditReservation &&
-                              reservation.source &&
-                              reservation.source.toLowerCase().includes('direct') && (
+                            {onEditReservation && (
                               <button
                                 type="button"
                                 className="hostly-btn hostly-btn-sm hostly-btn-ghost w-100"
@@ -956,7 +952,9 @@ const ReservationsTable = ({
                                 }}
                               >
                                 <Pencil size={14} />
-                                ערוך הזמנה
+                                {reservation.source && reservation.source.toLowerCase().includes('direct')
+                                  ? 'ערוך הזמנה'
+                                  : 'ערוך מחיר מנקה'}
                               </button>
                             )}
                             {onDeleteReservation &&
@@ -975,10 +973,11 @@ const ReservationsTable = ({
                               </button>
                             )}
                             {reservation.source &&
-                              reservation.source.toLowerCase().includes('direct') &&
                               (onEditReservation || onDeleteReservation) && (
                               <p className="small mb-0 mt-1" style={{ color: '#9CA3AF' }}>
-                                עריכה/ביטול להזמנות ישירות בלבד
+                                {reservation.source.toLowerCase().includes('direct')
+                                  ? 'עריכה/ביטול להזמנות ישירות בלבד'
+                                  : `הזמנת ${reservation.source} — עריכת עלות ניקיון בלבד`}
                               </p>
                             )}
                             {/* Arrival-message skip toggle */}

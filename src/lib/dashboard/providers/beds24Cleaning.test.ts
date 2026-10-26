@@ -72,4 +72,60 @@ describe('mapBookingToReservation cleaning cost extraction', () => {
     expect(res.hasCleaning).toBeUndefined()
     expect(res.cleanerName).toBeUndefined()
   })
+
+  it('correctly handles Airbnb channel reservations with cleaning cost and cleaner name', () => {
+    const res = mapBookingToReservation({
+      id: 129,
+      firstName: 'John',
+      lastName: 'Smith',
+      price: 2500,
+      referer: 'Airbnb',
+      notes: 'Guest requested early check-in\n[עלות ניקיון: ₪300, מנקה: מרים]',
+    })
+
+    expect(res.source).toBe('Airbnb')
+    expect(res.cleaningCost).toBe(300)
+    expect(res.hasCleaning).toBe(true)
+    expect(res.cleanerName).toBe('מרים')
+  })
+
+  it('correctly handles Booking.com channel reservations with direct cleaning fields', () => {
+    const res = mapBookingToReservation({
+      id: 130,
+      firstName: 'Anna',
+      lastName: 'Müller',
+      price: 1800,
+      channel: 'Booking.com',
+      cleaningCost: 220,
+      cleanerName: 'יוסי',
+    })
+
+    expect(res.source).toBe('Booking.com')
+    expect(res.cleaningCost).toBe(220)
+    expect(res.hasCleaning).toBe(true)
+    expect(res.cleanerName).toBe('יוסי')
+  })
+
+  it('respects explicit hasCleaning: false and ignores any stale notes tag', () => {
+    const res = mapBookingToReservation({
+      id: 131,
+      hasCleaning: false,
+      notes: 'Old stay notes\n[עלות ניקיון: ₪250, מנקה: מרים]',
+    })
+
+    expect(res.hasCleaning).toBe(false)
+    expect(res.cleaningCost).toBeUndefined()
+    expect(res.cleanerName).toBeUndefined()
+  })
+
+  it('respects cleaningCost: 0 and ignores any stale notes tag', () => {
+    const res = mapBookingToReservation({
+      id: 132,
+      cleaningCost: 0,
+      notes: 'Old stay notes\n[עלות ניקיון: ₪250, מנקה: מרים]',
+    })
+
+    expect(res.cleaningCost).toBeUndefined()
+    expect(res.cleanerName).toBeUndefined()
+  })
 })

@@ -1019,6 +1019,12 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated, onApproveReque
                   ) : null}
                   <div className="small" style={{ color: '#5B6670' }}><span className="fw-semibold">לילות:</span> {selectedReservation.nights}</div>
                   <div className="small" style={{ color: '#5B6670' }}><span className="fw-semibold">סה״כ:</span> {formatCurrency(selectedReservation.total)}</div>
+                  {selectedReservation.cleaningCost && selectedReservation.cleaningCost > 0 ? (
+                    <div className="small" style={{ color: '#5B6670' }}>
+                      <span className="fw-semibold">עלות ניקיון:</span> {formatCurrency(selectedReservation.cleaningCost)}
+                      {selectedReservation.cleanerName ? ` (${selectedReservation.cleanerName})` : ''}
+                    </div>
+                  ) : null}
                   {selectedReservation.source ? (
                     <div className="small" style={{ color: '#5B6670' }}><span className="fw-semibold">מקור:</span> {selectedReservation.source}</div>
                   ) : null}
