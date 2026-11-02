@@ -11,6 +11,8 @@ import { useSelectedRoom } from '@/lib/rooms/RoomContext'
 import { toast } from 'sonner'
 import { normalizeDate, toKey, isSameDay, addDays, buildDateRanges } from '@/lib/dashboard/calendarDates'
 import { buildBookingMap, isBookedOn, buildBookingSegments } from '@/lib/dashboard/bookingSegments'
+import { getUnsyncedBlockedDates, dateFromKey } from '@/lib/dashboard/unsyncedBlocks'
+import UnsyncedBlocksBanner from './UnsyncedBlocksBanner'
 import {
   isAwaitingApprovalStatus,
   canConfirmViaBeds24Api,
@@ -140,6 +142,8 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated, onApproveReque
     })
     return map
   }, [prices])
+
+  const unsyncedBlockedDates = useMemo(() => getUnsyncedBlockedDates(prices, todayKey), [prices, todayKey])
 
   const availabilityMap = useMemo(() => {
     const map: Record<string, number> = {}
@@ -310,8 +314,8 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated, onApproveReque
     }
   }
 
-  const blockDates = async () => {
-    if (!selectedDates.length || saving) return
+  const blockDates = async (datesToBlock: Date[] = selectedDates) => {
+    if (!datesToBlock.length || saving) return
     setSaveError(null)
     setSaveSuccess(null)
     setSaving(true)
@@ -325,7 +329,7 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated, onApproveReque
     // Beds24 only returns calendar records in GET when a price override exists;
     // including price1 ensures the blocked entry appears in future GET calls.
     // override: 'blackout' instructs Beds24 to mark the date as blackout and propagate the closure to Airbnb/OTAs.
-    const calendarEntries = selectedDates.map((date) => {
+    const calendarEntries = datesToBlock.map((date) => {
       const key = toKey(date)
       const currentPrice = priceOverrides[key] ?? priceMap[key]
       return {
@@ -355,7 +359,7 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated, onApproveReque
       }
 
       // Optimistic update — block dates in local state immediately for instant feedback
-      const blockedKeys = selectedDates.map(toKey)
+      const blockedKeys = datesToBlock.map(toKey)
       setManuallyBlockedDates((prev) => {
         const next = new Set(prev)
         blockedKeys.forEach((k) => next.add(k))
@@ -474,6 +478,12 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated, onApproveReque
   return (
     <div className="row g-4">
       <div className="col-lg-8">
+        <UnsyncedBlocksBanner
+          dates={unsyncedBlockedDates}
+          onResync={() => blockDates(unsyncedBlockedDates.map(dateFromKey))}
+          busy={saving}
+          disabled={disabled}
+        />
         <div className="d-flex align-items-center justify-content-between mb-3">
           {/* Month label — click to open picker */}
           <div style={{ position: 'relative' }}>
@@ -899,7 +909,7 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated, onApproveReque
                   color: selectedDates.length && !selectedHasBooked && selectedFreeDates.length > 0 ? 'white' : '#EF4444',
                   padding: '8px 4px', fontSize: '11px', lineHeight: 1.2, borderRadius: '6px',
                 }}
-                onClick={blockDates}
+                onClick={() => blockDates()}
                 disabled={!selectedFreeDates.length || selectedHasBooked || saving || disabled}
                 title={disabled ? 'לא ניתן לבצע פעולות — הקרדיט ב-Beds24 אזל' : selectedHasBooked ? 'לא ניתן לסגור תאריכים עם הזמנות קיימות' : 'סגור תאריכים חופשיים נבחרים להזמנות'}
                 aria-label="סגור להזמנות"
