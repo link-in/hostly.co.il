@@ -15,6 +15,10 @@
     {
       "path": "/api/cron/site-availability",
       "schedule": "0 2 * * *"
+    },
+    {
+      "path": "/api/cron/block-sync",
+      "schedule": "0 3 * * *"
     }
   ]
 }

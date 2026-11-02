@@ -377,3 +377,66 @@ describe('Full round-trip — block then unblock', () => {
     })
   })
 })
+
+describe('POST /api/dashboard/rooms — block verification', () => {
+  const blockPayload = [
+    { roomId: BEDS24_ROOM_ID, calendar: [{ from: '2026-10-24', to: '2026-10-24', numAvail: 0, override: 'blackout', price1: 700 }] },
+  ]
+
+  it('fails (and skips availability_cache) when Beds24 accepts the block but still reports the date bookable', async () => {
+    mockBeds24({ availability: { '2026-10-24': true } })
+
+    const response = await POST(postRequest(blockPayload))
+
+    expect(response.status).toBe(502)
+    const body = await response.json()
+    expect(body.error).toContain('24/10')
+    expect(body.unappliedBlocks).toEqual({ [String(BEDS24_ROOM_ID)]: ['2026-10-24'] })
+    expect(fakeClient.__table('availability_cache')).toHaveLength(0)
+  })
+
+  it('succeeds and caches the block once Beds24 reports the date closed', async () => {
+    mockBeds24({ availability: { '2026-10-24': false } })
+
+    const response = await POST(postRequest(blockPayload))
+
+    expect(response.status).toBe(200)
+    expect(fakeClient.__table('availability_cache')[0]).toMatchObject({ date: '2026-10-24', num_avail: 0, is_manual_block: true })
+  })
+
+  it('does not verify pure price updates', async () => {
+    mockBeds24({ availability: { '2026-10-24': true } })
+
+    const response = await POST(postRequest([
+      { roomId: BEDS24_ROOM_ID, calendar: [{ from: '2026-10-24', to: '2026-10-24', numAvail: 1, override: 'none', price1: 700 }] },
+    ]))
+
+    expect(response.status).toBe(200)
+    const getCalls = vi.mocked(fetchWithTokenRefresh).mock.calls.filter((call) => (call[1]?.method ?? 'GET') === 'GET')
+    expect(getCalls).toHaveLength(0)
+  })
+})
+
+describe('GET /api/dashboard/rooms — unsynced blocks', () => {
+  it('flags a Hostly manual block that Beds24 still reports as bookable', async () => {
+    mockBeds24({
+      calendarEntries: [{ from: '2026-10-22', to: '2026-10-24', price1: 700 }],
+      availability: { '2026-10-22': true, '2026-10-23': true, '2026-10-24': false },
+    })
+    fakeClient = createFakeSupabaseClient({
+      availability_cache: [
+        { user_id: 'user-1', room_id: String(BEDS24_ROOM_ID), date: '2026-10-22', num_avail: 0, is_manual_block: true },
+        { user_id: 'user-1', room_id: String(BEDS24_ROOM_ID), date: '2026-10-24', num_avail: 0, is_manual_block: true },
+      ],
+    })
+
+    const body = await (await GET(getRequest())).json()
+    const byDate = (date: string) => body.prices.find((p: { date: string }) => p.date === date)
+
+    expect(byDate('2026-10-22')).toMatchObject({ numAvail: 0, unsynced: true })
+    expect(byDate('2026-10-23')).toMatchObject({ numAvail: 1 })
+    expect(byDate('2026-10-23')).not.toHaveProperty('unsynced')
+    expect(byDate('2026-10-24')).toMatchObject({ numAvail: 0 })
+    expect(byDate('2026-10-24')).not.toHaveProperty('unsynced')
+  })
+})
