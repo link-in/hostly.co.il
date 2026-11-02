@@ -51,7 +51,7 @@ export default function SiteAddressField() {
         dir="ltr"
         className="flex items-center overflow-hidden rounded-xl border-[1px] border-slate-200 bg-white transition focus-within:border-(--hb) focus-within:ring-[3px] focus-within:ring-(--hb)/15"
       >
-        <span className="pl-3.5 text-sm text-slate-400">https://</span>
+        <span className="shrink-0 pl-2 text-xs text-slate-400 sm:pl-3.5 sm:text-sm">https://</span>
         <input
           id={inputId}
           value={draft.siteAddress}
@@ -60,9 +60,9 @@ export default function SiteAddressField() {
           aria-describedby={statusId}
           autoComplete="off"
           spellCheck={false}
-          className="min-w-0 grow bg-transparent px-1 py-2.5 text-sm font-medium text-slate-900 outline-none placeholder:font-normal placeholder:text-slate-400"
+          className="min-w-0 grow bg-transparent px-1.5 py-2 text-xs font-medium text-slate-900 outline-none placeholder:font-normal placeholder:text-slate-400 sm:py-2.5 sm:text-sm"
         />
-        <span className="bg-slate-50 px-3 py-2.5 text-sm text-slate-500">.{SITE_ROOT_DOMAIN}</span>
+        <span className="shrink-0 bg-slate-50 px-2 py-2 text-xs text-slate-500 sm:px-3 sm:py-2.5 sm:text-sm">.{SITE_ROOT_DOMAIN}</span>
       </div>
       <AddressStatus id={statusId} address={draft.siteAddress} check={check} />
       <p className="mt-1.5 text-xs leading-5 text-slate-500">

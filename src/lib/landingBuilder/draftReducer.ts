@@ -12,16 +12,20 @@ import { EMPTY_CONTACT, hasContact, type SiteContact } from './contact'
 import { replaceImageUrls } from './persistence/storedDraft'
 import { normalizeSiteAddress, suggestSiteAddress } from './siteAddress'
 
+export type MobileTab = 'edit' | 'preview'
+
 export interface BuilderState {
   draft: LandingDraft
   activeStep: BuilderStep
   previewDevice: PreviewDevice
+  mobileTab: MobileTab
 }
 
 export type BuilderAction =
   | { type: 'template/selected'; templateId: TemplateId }
   | { type: 'step/activated'; step: BuilderStep }
   | { type: 'preview/deviceChanged'; device: PreviewDevice }
+  | { type: 'mobile/tabChanged'; tab: MobileTab }
   | { type: 'property/imported'; property: PropertyContent }
   | { type: 'content/edited'; patch: Partial<DraftContent> }
   | { type: 'content/generated'; generated: GeneratedContent }
@@ -68,7 +72,7 @@ export function withDefaultSiteAddress(draft: LandingDraft, address: string | nu
 }
 
 export function createInitialState(draft: LandingDraft = createInitialDraft()): BuilderState {
-  return { draft, activeStep: 'template', previewDevice: 'desktop' }
+  return { draft, activeStep: 'template', previewDevice: 'desktop', mobileTab: 'edit' }
 }
 
 function toImportedImages(property: PropertyContent): DraftImage[] {
@@ -173,6 +177,8 @@ export function builderReducer(state: BuilderState, action: BuilderAction): Buil
       return { ...state, activeStep: action.step }
     case 'preview/deviceChanged':
       return { ...state, previewDevice: action.device }
+    case 'mobile/tabChanged':
+      return { ...state, mobileTab: action.tab }
     case 'draft/reset':
       return createInitialState()
     default:

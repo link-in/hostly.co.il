@@ -14,7 +14,7 @@ export function ScaledViewport({ virtualWidth, children }: { virtualWidth: numbe
   const zoom = computePreviewZoom(availableWidth, virtualWidth)
 
   return (
-    <div ref={ref} className="min-h-0 grow overflow-y-auto overflow-x-hidden [scrollbar-width:thin]">
+    <div ref={ref} className="min-h-0 w-full min-w-0 max-w-full grow overflow-y-auto overflow-x-hidden [scrollbar-width:thin]">
       <div
         dir="rtl"
         className="@container"

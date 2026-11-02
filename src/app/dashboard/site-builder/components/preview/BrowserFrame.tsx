@@ -6,7 +6,7 @@ import { ScaledViewport } from './ScaledViewport'
 
 const FRAME_CLASSES: Record<PreviewDevice, string> = {
   desktop: 'w-full rounded-2xl',
-  mobile: 'w-[390px] max-w-full rounded-[2rem] ring-[6px] ring-slate-900',
+  mobile: 'w-full max-w-[390px] rounded-2xl ring-1 ring-slate-900 sm:rounded-[2rem] sm:ring-[6px]',
 }
 
 function AddressBar({ host }: { host: string }) {
@@ -29,7 +29,7 @@ function AddressBar({ host }: { host: string }) {
 export function BrowserFrame({ device, host, children }: { device: PreviewDevice; host: string; children: ReactNode }) {
   return (
     <div
-      className={`flex min-h-0 flex-col overflow-hidden bg-white shadow-2xl shadow-slate-900/10 transition-[width] duration-300 ${FRAME_CLASSES[device]}`}
+      className={`flex min-h-0 w-full min-w-0 max-w-full flex-col overflow-hidden bg-white shadow-2xl shadow-slate-900/10 transition-[width] duration-300 ${FRAME_CLASSES[device]}`}
     >
       <AddressBar host={host} />
       <ScaledViewport virtualWidth={PREVIEW_VIEWPORT_WIDTH[device]}>{children}</ScaledViewport>

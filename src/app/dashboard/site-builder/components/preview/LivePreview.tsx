@@ -25,7 +25,7 @@ export default function LivePreview() {
   return (
     <section
       aria-label="תצוגה חיה"
-      className="flex min-h-[640px] flex-col gap-2.5 rounded-3xl bg-slate-200/50 p-2 ring-1 ring-slate-200/70 lg:sticky lg:top-6 lg:h-[calc(100dvh-3rem)] lg:p-6"
+      className="flex h-[calc(100dvh-9rem)] min-h-[500px] w-full min-w-0 max-w-full flex-col gap-2.5 rounded-2xl bg-slate-200/50 p-2 ring-1 ring-slate-200/70 sm:h-[calc(100dvh-8rem)] sm:rounded-3xl lg:sticky lg:top-6 lg:h-[calc(100dvh-3rem)] lg:p-6"
     >
       <PreviewToolbar
         templateName={getTemplateMeta(model.templateId).name}
@@ -33,7 +33,7 @@ export default function LivePreview() {
         onDeviceChange={changeDevice}
         onOpenFullScreen={() => setIsFullScreen(true)}
       />
-      <div className="flex min-h-0 grow justify-center">
+      <div className="flex min-h-0 w-full min-w-0 max-w-full grow justify-center overflow-hidden">
         <BrowserFrame device={previewDevice} host={buildSiteHost(draft.siteAddress || PLACEHOLDER_ADDRESS)}>
           <TemplateRenderer model={model} />
         </BrowserFrame>

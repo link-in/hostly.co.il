@@ -38,6 +38,7 @@ export default async function SiteBuilderPage() {
 
   return (
     <SiteBuilderWizard
+      session={session}
       canSave={canSave}
       initialDraft={saved?.draft}
       savedAt={saved?.updatedAt ?? null}

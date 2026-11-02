@@ -37,7 +37,7 @@ function ImageTile({ image, isCover }: { image: DraftImage; isCover: boolean }) 
         type="button"
         onClick={remove}
         aria-label="הסרת תמונה"
-        className="absolute left-1 top-1 grid size-6 cursor-pointer place-items-center rounded-full bg-slate-900/60 text-white opacity-0 transition group-hover:opacity-100 focus-visible:opacity-100"
+        className="absolute left-1 top-1 grid size-6 cursor-pointer place-items-center rounded-full bg-slate-900/70 text-white opacity-90 transition sm:opacity-0 sm:group-hover:opacity-100 focus-visible:opacity-100"
       >
         <X className="size-3.5" aria-hidden />
       </button>
@@ -75,7 +75,7 @@ export default function ImageManager() {
         <span className="text-sm font-medium text-slate-700">תמונות</span>
         <span className="text-xs text-slate-400">לחיצה על תמונה = תמונת שער</span>
       </span>
-      <ul className="grid grid-cols-3 gap-2">
+      <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3">
         {draft.images.map((image) => (
           <ImageTile key={image.id} image={image} isCover={image.id === coverId} />
         ))}

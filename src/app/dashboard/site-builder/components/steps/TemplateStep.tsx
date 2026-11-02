@@ -29,7 +29,7 @@ export default function TemplateStep() {
   const dispatch = useBuilderDispatch()
 
   return (
-    <div className="grid grid-cols-2 gap-2.5" role="radiogroup" aria-label="תבנית עיצוב">
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5" role="radiogroup" aria-label="תבנית עיצוב">
       {TEMPLATES.map((template) => {
         const selected = draft.templateId === template.id
         return (

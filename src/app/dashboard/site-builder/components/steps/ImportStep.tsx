@@ -70,8 +70,8 @@ export default function ImportStep() {
 
   return (
     <div className="rounded-2xl bg-slate-50 p-2.5 ring-1 ring-slate-100">
-      <div className="flex items-center justify-between gap-2 px-1 pb-2.5 pt-1">
-        <span className="text-sm font-medium text-slate-700">נתונים שכבר מסונכרנים ב-Hostly</span>
+      <div className="flex flex-wrap items-center justify-between gap-2 px-1 pb-2.5 pt-1">
+        <span className="text-xs sm:text-sm font-medium text-slate-700">נתונים שכבר מסונכרנים ב-Hostly</span>
         <ChannelLogos />
       </div>
       <BuilderButton
