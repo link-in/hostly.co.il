@@ -6,6 +6,7 @@ import { overlayAvailabilityCache, writeCacheAvailability, type PriceEntry } fro
 import { detectAndMarkCreditError, isBeds24CreditError } from '@/lib/beds24/creditGuard'
 import { describeBeds24Failure, hasBeds24Failure } from '@/lib/beds24/responseFailure'
 import { resolveBeds24Tokens } from '@/lib/onboarding/tokens'
+import { bookableInBeds24, extractAvailabilityMap, findUnappliedBlocks, formatShortDate, markUnsyncedBlocks } from '@/lib/availability/sync'
 
 export const dynamic = 'force-dynamic'
 
@@ -123,48 +124,6 @@ const extractRowPrice = (row: unknown) => {
   }
 
   return undefined
-}
-
-export function extractAvailabilityMap(data: unknown, targetRoomId?: string): Record<string, boolean> {
-  const map: Record<string, boolean> = {}
-  if (!data || typeof data !== 'object') return map
-
-  const rooms = Array.isArray((data as { data?: unknown }).data)
-    ? ((data as { data?: unknown[] }).data as Record<string, unknown>[])
-    : Array.isArray(data)
-    ? (data as Record<string, unknown>[])
-    : []
-
-  for (const item of rooms) {
-    if (!item || typeof item !== 'object') continue
-    const itemRoomId = String(item.roomId ?? item.id ?? '')
-    if (targetRoomId && itemRoomId && itemRoomId !== String(targetRoomId)) {
-      continue
-    }
-
-    // Shape 1: item has `availability` map { "YYYY-MM-DD": boolean } (Beds24 /inventory/rooms/availability)
-    if (item.availability && typeof item.availability === 'object') {
-      for (const [date, isAvail] of Object.entries(item.availability as Record<string, unknown>)) {
-        if (typeof isAvail === 'boolean') {
-          map[date] = isAvail
-        } else if (typeof isAvail === 'number') {
-          map[date] = isAvail > 0
-        }
-      }
-    }
-
-    // Shape 2: item is an AvailabilityDay { date: string, available?: boolean, numAvail?: number }
-    if (typeof item.date === 'string') {
-      const isAvail = typeof item.available === 'boolean'
-        ? item.available
-        : typeof item.numAvail === 'number'
-        ? item.numAvail > 0
-        : true
-      map[item.date] = isAvail
-    }
-  }
-
-  return map
 }
 
 export async function GET(request: Request) {
@@ -458,14 +417,20 @@ export async function GET(request: Request) {
         })
         cursor = addDays(cursor, 1)
       }
-      const overlaidFilled = await overlayAvailabilityCache(filled, session?.user?.id, roomId)
+      const overlaidFilled = markUnsyncedBlocks(
+        await overlayAvailabilityCache(filled, session?.user?.id, roomId),
+        bookableInBeds24(filled, availMap),
+      )
       overlaidFilled.sort((a, b) => a.date.localeCompare(b.date))
       return NextResponse.json({ prices: overlaidFilled, raw: data, basePriceUsed: true })
     }
 
     // Overlay numAvail from availability_cache so manually-blocked dates appear correctly.
     // Beds24 closures (blackouts, bookings, 0 units) are always preserved.
-    const overlaidPrices = await overlayAvailabilityCache(prices, session?.user?.id, roomId)
+    const overlaidPrices = markUnsyncedBlocks(
+      await overlayAvailabilityCache(prices, session?.user?.id, roomId),
+      bookableInBeds24(prices, availMap),
+    )
     overlaidPrices.sort((a, b) => a.date.localeCompare(b.date))
     return NextResponse.json({ prices: overlaidPrices, raw: data })
   } catch (error) {
@@ -552,6 +517,25 @@ export async function POST(request: Request) {
           requestUrl: url.toString(),
         },
         { status: isBeds24CreditError(response.status, data) ? 402 : 502 }
+      )
+    }
+
+    // Beds24 can accept the POST and still leave dates open on the channels.
+    // Never report a block as done (or cache it) until Beds24 shows it closed.
+    const unappliedBlocks = await findUnappliedBlocks(normalizedPayload, {
+      userId: session?.user?.id,
+      defaultRoomId,
+      propertyId: propertyId ?? undefined,
+    })
+    const unappliedDates = Object.values(unappliedBlocks).flat().sort()
+    if (unappliedDates.length) {
+      console.error('[rooms POST] Beds24 accepted the block but dates are still open:', unappliedBlocks)
+      return NextResponse.json(
+        {
+          error: `Beds24 לא סגרה את התאריכים ${unappliedDates.map(formatShortDate).join(', ')} — הם עדיין פתוחים להזמנה בערוצים. נסו שוב.`,
+          unappliedBlocks,
+        },
+        { status: 502 }
       )
     }
 

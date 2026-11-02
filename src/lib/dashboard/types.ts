@@ -46,6 +46,8 @@ export interface RoomPrice {
   price: number
   roomId?: string | null
   numAvail?: number // 0 = blocked, >0 = available
+  /** Blocked in Hostly but still bookable in Beds24 (and therefore on the channels). */
+  unsynced?: boolean
 }
 
 export interface DashboardProvider {
