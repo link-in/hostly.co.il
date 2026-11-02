@@ -1,7 +1,7 @@
 import { useId, type InputHTMLAttributes, type TextareaHTMLAttributes } from 'react'
 
 const CONTROL_CLASSES =
-  'block w-full rounded-xl border-[1px] border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 ' +
+  'block w-full rounded-xl border-[1px] border-slate-200 bg-white px-3.5 py-2.5 text-base sm:text-sm text-slate-900 ' +
   'outline-none transition placeholder:text-slate-400 focus:border-(--hb) focus:ring-[3px] focus:ring-(--hb)/15'
 
 function FieldLabel({ htmlFor, label, hint }: { htmlFor: string; label: string; hint?: string }) {

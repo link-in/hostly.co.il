@@ -1,7 +1,8 @@
 'use client'
 
-import { Expand, Monitor, Smartphone, type LucideIcon } from 'lucide-react'
+import { Expand, Monitor, SlidersHorizontal, Smartphone, type LucideIcon } from 'lucide-react'
 import type { PreviewDevice } from '@/lib/landingBuilder/types'
+import { useBuilderDispatch } from '../../state/BuilderProvider'
 
 const DEVICES: readonly { id: PreviewDevice; label: string; icon: LucideIcon }[] = [
   { id: 'desktop', label: 'מחשב', icon: Monitor },
@@ -25,11 +26,11 @@ export function DeviceToggle({ device, onDeviceChange }: DeviceToggleProps) {
           aria-label={label}
           title={label}
           onClick={() => onDeviceChange(id)}
-          className={`grid size-8 cursor-pointer place-items-center rounded-lg transition ${
+          className={`grid size-7 sm:size-8 cursor-pointer place-items-center rounded-lg transition ${
             device === id ? 'bg-slate-900 text-white' : 'text-slate-500 hover:bg-slate-100'
           }`}
         >
-          <Icon className="size-4" aria-hidden />
+          <Icon className="size-3.5 sm:size-4" aria-hidden />
         </button>
       ))}
     </div>
@@ -42,24 +43,35 @@ interface PreviewToolbarProps extends DeviceToggleProps {
 }
 
 export function PreviewToolbar({ templateName, device, onDeviceChange, onOpenFullScreen }: PreviewToolbarProps) {
+  const dispatch = useBuilderDispatch()
+
   return (
-    <div className="flex items-center justify-between gap-2 px-1">
-      <span className="flex items-center gap-2 text-sm font-semibold text-slate-800">
-        <span className="relative flex size-2">
+    <div className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 px-1">
+      <div className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-slate-800 min-w-0">
+        <span className="relative flex size-2 shrink-0">
           <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-75" />
           <span className="relative inline-flex size-2 rounded-full bg-emerald-500" />
         </span>
-        תצוגה חיה
-        <span className="font-normal text-slate-400">· {templateName}</span>
-      </span>
-      <div className="flex items-center gap-2">
+        <span className="truncate">תצוגה חיה</span>
+        <span className="hidden sm:inline font-normal text-slate-400 truncate">· {templateName}</span>
+      </div>
+      <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+        <button
+          type="button"
+          onClick={() => dispatch({ type: 'mobile/tabChanged', tab: 'edit' })}
+          className="flex lg:hidden h-8 sm:h-9 cursor-pointer items-center gap-1 rounded-xl bg-(--hb) px-2.5 text-xs font-medium text-white transition hover:bg-(--hb-hover)"
+        >
+          <SlidersHorizontal className="size-3.5" aria-hidden />
+          <span>עריכת שלבים</span>
+        </button>
         <button
           type="button"
           onClick={onOpenFullScreen}
-          className="flex h-10 cursor-pointer items-center gap-1.5 rounded-xl bg-white px-3 text-sm font-medium text-slate-700 ring-1 ring-slate-200 transition hover:bg-slate-50"
+          className="flex h-8 sm:h-9 cursor-pointer items-center gap-1.5 rounded-xl bg-white px-2 sm:px-3 text-xs sm:text-sm font-medium text-slate-700 ring-1 ring-slate-200 transition hover:bg-slate-50"
         >
-          <Expand className="size-4" aria-hidden />
-          תצוגה מקדימה
+          <Expand className="size-3.5 sm:size-4" aria-hidden />
+          <span className="hidden sm:inline">תצוגה מקדימה</span>
+          <span className="sm:hidden">מסך מלא</span>
         </button>
         <DeviceToggle device={device} onDeviceChange={onDeviceChange} />
       </div>

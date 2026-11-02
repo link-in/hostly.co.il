@@ -65,7 +65,7 @@ export default function WizardStepper() {
               />
             </button>
             {active && (
-              <div className="pb-6 pl-1 pr-12 pt-2">
+              <div className="pb-6 pl-0 pr-2 pt-2 sm:pl-1 sm:pr-8 lg:pr-12">
                 <Content />
               </div>
             )}

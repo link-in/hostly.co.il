@@ -25,6 +25,15 @@ describe('builderReducer — navigation & preview', () => {
     expect(state.previewDevice).toBe('mobile')
   })
 
+  it('switches mobile tab between edit and preview', () => {
+    let state = createInitialState()
+    expect(state.mobileTab).toBe('edit')
+    state = builderReducer(state, { type: 'mobile/tabChanged', tab: 'preview' })
+    expect(state.mobileTab).toBe('preview')
+    state = builderReducer(state, { type: 'mobile/tabChanged', tab: 'edit' })
+    expect(state.mobileTab).toBe('edit')
+  })
+
   it('resets everything back to the initial state', () => {
     const state = builderReducer(importedState(), { type: 'draft/reset' })
     expect(state).toEqual(createInitialState())
