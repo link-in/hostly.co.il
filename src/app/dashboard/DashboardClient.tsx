@@ -18,7 +18,7 @@ import DashboardHeader from '@/components/DashboardHeader'
 import DashboardLoader from '@/components/DashboardLoader'
 import { useSelectedRoom } from '@/lib/rooms/RoomContext'
 import { useBeds24Status } from '@/lib/beds24/Beds24StatusContext'
-import { Trash2, Plus, X, Info } from 'lucide-react'
+import { Trash2, Plus, X, Info, RefreshCw } from 'lucide-react'
 
 const toLocalKey = (value: Date) => {
   const year = value.getFullYear()
@@ -196,6 +196,7 @@ const DashboardClient = () => {
   const [reservations, setReservations] = useState<Reservation[]>([])
   const [roomPrices, setRoomPrices] = useState<RoomPrice[]>([])
   const [loadingReservations, setLoadingReservations] = useState(true)
+  const [isSyncingReservations, setIsSyncingReservations] = useState(false)
   const [loadingRoomPrices, setLoadingRoomPrices] = useState(true)
   const [initialRoomPricesLoaded, setInitialRoomPricesLoaded] = useState(false)
   const [reservationsError, setReservationsError] = useState<string | null>(null)
@@ -348,6 +349,26 @@ const DashboardClient = () => {
       setReservationsError(error instanceof Error ? error.message : 'טעינת הזמנות נכשלה')
     } finally {
       setLoadingReservations(false)
+    }
+  }
+
+  const handleSyncReservations = async () => {
+    setIsSyncingReservations(true)
+    try {
+      await refreshReservations()
+      const roomId = selectedRoomId || session?.user?.roomId?.split(',')[0].split(':')[0].trim()
+      if (roomId) {
+        fetch('/api/dashboard/cache/refresh', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ roomId }),
+        }).catch(() => {})
+      }
+      toast.success('סנכרון ההזמנות הושלם בהצלחה')
+    } catch {
+      toast.error('סנכרון ההזמנות נכשל')
+    } finally {
+      setIsSyncingReservations(false)
     }
   }
 
@@ -787,18 +808,10 @@ const DashboardClient = () => {
   }
 
   /**
-   * Cancel a Direct booking in Beds24 (sets status to 0/cancelled)
-   * Only allows cancelling bookings created directly in our system
+   * Cancel a booking in Beds24 (sets status to cancelled)
+   * Supports Direct bookings as well as Channel bookings (e.g. Airbnb/Booking when cancelled on OTA)
    */
   const handleDeleteReservation = async (reservation: Reservation) => {
-    // Validate it's a Direct booking
-    if (!reservation.source || !reservation.source.toLowerCase().includes('direct')) {
-      toast.warning('ניתן לבטל רק הזמנות שנוצרו ישירות במערכת', {
-        duration: 3000,
-      })
-      return
-    }
-
     // Check if already cancelled
     if (reservation.status === 'cancelled') {
       toast.info('ההזמנה כבר מבוטלת', {
@@ -807,22 +820,26 @@ const DashboardClient = () => {
       return
     }
 
-    // Show elegant confirmation toast with action buttons
+    const isDirect = Boolean(reservation.source && reservation.source.toLowerCase().includes('direct'))
     const guestName = reservation.guestName || 'אורח'
     const checkInDate = new Date(reservation.checkIn).toLocaleDateString('he-IL')
     const checkOutDate = new Date(reservation.checkOut).toLocaleDateString('he-IL')
     
     toast.warning(
-      `בטל הזמנה של ${guestName}?`,
+      isDirect
+        ? `בטל הזמנה של ${guestName}?`
+        : `בטל הזמנת ${reservation.source || 'ערוץ'} של ${guestName}?`,
       {
-        description: `${checkInDate} - ${checkOutDate}`,
+        description: isDirect
+          ? `${checkInDate} - ${checkOutDate}`
+          : `${checkInDate} - ${checkOutDate} (ההזמנה תסומן כמבוטלת ב-Beds24 והתאריכים ישתחררו)`,
         duration: 10000,
         action: {
-          label: '✓ אישור',
+          label: '✓ אישור ביטול',
           onClick: () => performCancellation(reservation),
         },
         cancel: {
-          label: '✕ ביטול',
+          label: '✕ חזור',
           onClick: () => {},
         },
       }
@@ -1648,6 +1665,38 @@ const DashboardClient = () => {
                   <option value="oldest" style={{ background: '#fff', color: 'var(--htxt-1)' }}>קרובות תחילה</option>
                   <option value="newest" style={{ background: '#fff', color: 'var(--htxt-1)' }}>רחוקות תחילה</option>
                 </select>
+                <button
+                  type="button"
+                  className="hostly-btn hostly-btn-sm"
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '8px 14px',
+                    borderRadius: '8px',
+                    fontSize: '0.875rem',
+                    fontWeight: 600,
+                    border: '1px solid #CED7E0',
+                    background: '#fff',
+                    color: '#7133D9',
+                    cursor: isSyncingReservations ? 'wait' : 'pointer',
+                    transition: 'all 0.15s ease',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = '#F2F6FA'
+                    e.currentTarget.style.borderColor = '#7133D9'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = '#fff'
+                    e.currentTarget.style.borderColor = '#CED7E0'
+                  }}
+                  onClick={handleSyncReservations}
+                  disabled={isSyncingReservations || loadingReservations}
+                  title="סנכרון הזמנות מ-Beds24"
+                >
+                  <RefreshCw size={14} style={{ animation: isSyncingReservations ? 'spin 1s linear infinite' : 'none' }} />
+                  {isSyncingReservations ? 'מסנכרן…' : 'סנכרן'}
+                </button>
                 <button
                   type="button"
                   className="hostly-btn hostly-btn-sm hostly-btn-primary"
