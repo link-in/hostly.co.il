@@ -655,10 +655,10 @@ export async function PATCH(request: Request) {
 }
 
 /**
- * DELETE endpoint - Cancel a booking in Beds24 (sets status to 0/cancelled)
- * Only allows cancelling Direct bookings (created in our system)
+ * DELETE endpoint - Cancel a booking in Beds24 (sets status to cancelled)
+ * Allows cancelling Direct bookings as well as channel bookings (when cancelled on OTA and out of sync)
  * 
- * Note: We use POST with status=0 instead of DELETE because:
+ * Note: We use POST with status='cancelled' instead of HTTP DELETE because:
  * - The global token may not have delete:bookings scope
  * - Cancelling preserves booking history in Beds24
  * - Works reliably with write:bookings scope
@@ -698,14 +698,8 @@ export async function DELETE(request: Request) {
     guestPhone,
   } = requestBody as Record<string, unknown>
 
-  // Validate that it's a Direct booking
-  if (!source || typeof source !== 'string' || !source.toLowerCase().includes('direct')) {
-    console.error('❌ Attempted to cancel non-Direct booking:', bookingId, source)
-    return NextResponse.json(
-      { error: 'ניתן לבטל רק הזמנות שנוצרו ישירות במערכת' },
-      { status: 403 }
-    )
-  }
+  // Log booking source for audit
+  console.log(`🗑️ Cancelling booking: ${bookingId} (source: ${source || 'unknown'})`)
   
   // Validate required fields
   if (!propertyId || !roomId) {
