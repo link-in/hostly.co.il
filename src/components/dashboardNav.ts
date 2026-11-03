@@ -12,6 +12,7 @@ import {
   LayoutTemplate,
   MessageSquare,
   Shield,
+  Sparkles,
   UserCog,
   UserRound,
   Users,
@@ -35,6 +36,7 @@ export type DashboardPage =
   | 'receipts'
   | 'arrival-message'
   | 'site-builder'
+  | 'ai-assistant'
 
 type IconComponent = ComponentType<LucideProps>
 
@@ -66,6 +68,8 @@ export const NAV_ITEMS: NavItem[] = [
   { href: '/dashboard/pricing-demo', label: 'מחשבון מחירים', icon: Calculator, page: 'pricing-demo', section: 'main' },
   // מוצג כל עוד isSiteBuilderEnabled() — כיבוי: NEXT_PUBLIC_SITE_BUILDER_ENABLED=false (מסונן ב-isDashboardNavPageVisible)
   { href: '/dashboard/site-builder', label: 'בונה אתר הזמנות', icon: Wand2, page: 'site-builder', section: 'main' },
+  // העוזר החכם — מוסתר מהתפריט עד הפתיחה לכלל המשתמשים. הגישה עצמה נשלטת ב-AI_ASSISTANT_ENABLED בצד השרת.
+  { href: '/dashboard/ai-assistant', label: 'העוזר החכם', icon: Sparkles, page: 'ai-assistant', section: 'main', hidden: true },
   { href: '/dashboard/profile', label: 'איזור אישי', icon: UserRound, page: 'profile', section: 'main' },
   { href: '/admin', label: 'לוח בקרה אדמין', icon: Shield, page: 'admin', adminOnly: true, section: 'admin' },
   { href: '/admin/users', label: 'ניהול משתמשים', icon: UserCog, adminOnly: true, section: 'admin' },
