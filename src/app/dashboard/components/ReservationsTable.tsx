@@ -1,9 +1,10 @@
 'use client'
 
 import React, { useState, useCallback } from 'react'
-import { Phone, Pencil, X, Sparkles, Map, Plane, Home, Hotel, Globe, Bird, FileText, BellRing, BellOff } from 'lucide-react'
+import { Phone, Pencil, X, Map, Plane, Home, Hotel, Globe, Bird, FileText, BellRing, BellOff } from 'lucide-react'
 import { Icon } from '@iconify/react'
 import type { Reservation } from '@/lib/dashboard/types'
+import { NewReservationBadge } from '../reservations/components/ReservationBadges'
 import { formatCurrency, formatDate, formatStatus } from '@/lib/dashboard/utils'
 import { isAwaitingApprovalStatus, countsTowardRevenue } from '@/lib/dashboard/reservationStatus'
 import { normalizePhoneNumber, formatPhoneForDisplay } from '@/lib/utils/phoneFormatter'
@@ -426,19 +427,7 @@ const ReservationsTable = ({
               {/* New Badge and Chevron Icon */}
               <div className="d-flex align-items-center gap-2">
                 {reservation.isNew && !isReservationViewed(reservation.id) && (
-                  <span 
-                    className="badge d-inline-flex align-items-center gap-1" 
-                    style={{
-                      background: 'linear-gradient(135deg, #a855f7 0%, #f093fb 100%)',
-                      color: 'white',
-                      fontSize: '0.7rem',
-                      padding: '2px 6px',
-                      boxShadow: '0 2px 8px rgba(168, 85, 247, 0.3)',
-                    }}
-                  >
-                    חדש
-                    <Sparkles size={11} />
-                  </span>
+                  <NewReservationBadge />
                 )}
                 
                 {/* Chevron Icon */}
@@ -569,6 +558,15 @@ const ReservationsTable = ({
                   </span>
                 </div>
                 
+                <div className="reservation-detail-row">
+                  <span className="reservation-detail-label">עלות ניקיון (מנקה)</span>
+                  <span className="reservation-detail-value">
+                    {reservation.cleaningCost && reservation.cleaningCost > 0
+                      ? `${formatCurrency(reservation.cleaningCost)}${reservation.cleanerName ? ` (${reservation.cleanerName})` : ''}`
+                      : 'ללא עלות ניקיון'}
+                  </span>
+                </div>
+                
                 {reservation.notes && (
                   <div className="mt-3 pt-3" style={{ borderTop: '1px solid #F2F6FA' }}>
                     <div className="reservation-detail-label mb-2">הערות</div>
@@ -633,10 +631,8 @@ const ReservationsTable = ({
                   </div>
                 )}
 
-                {/* Action Buttons for Direct bookings */}
-                {(onEditReservation || onDeleteReservation) &&
-                  reservation.source &&
-                  reservation.source.toLowerCase().includes('direct') && (
+                {/* Action Buttons: Direct bookings allow edit + cancel; Channel bookings (Airbnb/Booking) allow editing cleaning cost and cancellation */}
+                {(onEditReservation || (onDeleteReservation && reservation.status !== 'cancelled')) && (
                   <div className="mt-3 pt-3 d-flex gap-2 flex-wrap" style={{ borderTop: '1px solid #F2F6FA' }}>
                     {onEditReservation && (
                       <button
@@ -648,10 +644,10 @@ const ReservationsTable = ({
                         }}
                       >
                         <Pencil size={14} />
-                        ערוך
+                        {reservation.source && reservation.source.toLowerCase().includes('direct') ? 'ערוך' : 'ערוך ניקיון'}
                       </button>
                     )}
-                    {onDeleteReservation && (
+                    {onDeleteReservation && reservation.status !== 'cancelled' && (
                       <button
                         type="button"
                         className="hostly-btn hostly-btn-sm hostly-btn-danger flex-grow-1"
@@ -724,6 +720,7 @@ const ReservationsTable = ({
             <th>לילות</th>
             <th>מקור</th>
             <th>סה״כ</th>
+            <th>ניקיון</th>
             <th>סטטוס</th>
           </tr>
         </thead>
@@ -738,19 +735,7 @@ const ReservationsTable = ({
                 <td>
                   <div className="d-flex align-items-center gap-2">
                     {reservation.isNew && !isReservationViewed(reservation.id) && (
-                      <span 
-                        className="badge d-inline-flex align-items-center gap-1" 
-                        style={{
-                          background: 'linear-gradient(135deg, #a855f7 0%, #f093fb 100%)',
-                          color: 'white',
-                          fontSize: '0.7rem',
-                          padding: '2px 6px',
-                          boxShadow: '0 2px 8px rgba(168, 85, 247, 0.3)',
-                        }}
-                      >
-                        חדש
-                        <Sparkles size={11} />
-                      </span>
+                      <NewReservationBadge />
                     )}
                     <svg 
                       xmlns="http://www.w3.org/2000/svg" 
@@ -788,6 +773,15 @@ const ReservationsTable = ({
                   </div>
                 </td>
                 <td className="fw-semibold">{formatCurrency(reservation.total)}</td>
+                <td className="small">
+                  {reservation.cleaningCost && reservation.cleaningCost > 0 ? (
+                    <span style={{ fontWeight: 600, color: 'var(--htxt-2, #374151)' }}>
+                      {formatCurrency(reservation.cleaningCost)}
+                    </span>
+                  ) : (
+                    <span className="text-muted">—</span>
+                  )}
+                </td>
                 <td>
                   <span
                     className={`badge ${getStatusClass(reservation.status)}`}
@@ -803,7 +797,7 @@ const ReservationsTable = ({
               </tr>
               {expandedId === reservation.id ? (
                 <tr>
-                  <td colSpan={7} style={{ 
+                  <td colSpan={8} style={{ 
                     background: '#F8FAFB',
                     borderTop: '1px solid #E4EAF0',
                   }}>
@@ -877,6 +871,19 @@ const ReservationsTable = ({
                               <div className="small mb-1" style={{ color: '#6C7884' }}>סכום כולל</div>
                               <div className="fw-bold" style={{ color: '#7133D9' }}>{formatCurrency(reservation.total)}</div>
                             </div>
+                            <div className="col-md-6">
+                              <div className="small mb-1" style={{ color: '#6C7884' }}>עלות ניקיון (מנקה)</div>
+                              <div style={{ color: '#2F3133', fontWeight: 600 }}>
+                                {reservation.cleaningCost && reservation.cleaningCost > 0 ? (
+                                  <>
+                                    {formatCurrency(reservation.cleaningCost)}
+                                    {reservation.cleanerName ? ` (${reservation.cleanerName})` : ''}
+                                  </>
+                                ) : (
+                                  'ללא עלות ניקיון'
+                                )}
+                              </div>
+                            </div>
                             {reservation.notes ? (
                               <div className="col-12">
                                 <div className="small mb-1" style={{ color: '#6C7884' }}>הערות</div>
@@ -935,9 +942,7 @@ const ReservationsTable = ({
                                 הופקה קבלה להזמנה זו
                               </div>
                             )}
-                            {onEditReservation &&
-                              reservation.source &&
-                              reservation.source.toLowerCase().includes('direct') && (
+                            {onEditReservation && (
                               <button
                                 type="button"
                                 className="hostly-btn hostly-btn-sm hostly-btn-ghost w-100"
@@ -947,12 +952,12 @@ const ReservationsTable = ({
                                 }}
                               >
                                 <Pencil size={14} />
-                                ערוך הזמנה
+                                {reservation.source && reservation.source.toLowerCase().includes('direct')
+                                  ? 'ערוך הזמנה'
+                                  : 'ערוך מחיר מנקה'}
                               </button>
                             )}
-                            {onDeleteReservation &&
-                              reservation.source &&
-                              reservation.source.toLowerCase().includes('direct') && (
+                            {onDeleteReservation && reservation.status !== 'cancelled' && (
                               <button
                                 type="button"
                                 className="hostly-btn hostly-btn-sm hostly-btn-danger w-100"
@@ -966,10 +971,11 @@ const ReservationsTable = ({
                               </button>
                             )}
                             {reservation.source &&
-                              reservation.source.toLowerCase().includes('direct') &&
                               (onEditReservation || onDeleteReservation) && (
                               <p className="small mb-0 mt-1" style={{ color: '#9CA3AF' }}>
-                                עריכה/ביטול להזמנות ישירות בלבד
+                                {reservation.source.toLowerCase().includes('direct')
+                                  ? 'עריכה וביטול להזמנות ישירות'
+                                  : `הזמנת ${reservation.source} — עריכת ניקיון, או ביטול לסנכרון`}
                               </p>
                             )}
                             {/* Arrival-message skip toggle */}

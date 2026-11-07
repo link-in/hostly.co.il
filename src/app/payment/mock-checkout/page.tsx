@@ -68,7 +68,7 @@ function MockCheckoutContent() {
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
             <span style={{ color: '#6b7280', fontSize: '14px' }}>סכום</span>
-            <span style={{ fontWeight: '700', fontSize: '18px', color: '#667eea' }}>
+            <span style={{ fontWeight: '700', fontSize: '18px', color: 'var(--hb)' }}>
               ₪{amount}
             </span>
           </div>
@@ -111,7 +111,7 @@ function MockCheckoutContent() {
           onClick={handlePay}
           disabled={loading}
           style={{
-            width: '100%', background: 'linear-gradient(135deg,#667eea,#764ba2)',
+            width: '100%', background: 'var(--hb)',
             color: 'white', border: 'none', borderRadius: '10px',
             padding: '14px', fontSize: '15px', fontWeight: '700',
             cursor: loading ? 'default' : 'pointer', marginBottom: '10px',

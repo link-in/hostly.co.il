@@ -18,7 +18,7 @@ import DashboardHeader from '@/components/DashboardHeader'
 import DashboardLoader from '@/components/DashboardLoader'
 import { useSelectedRoom } from '@/lib/rooms/RoomContext'
 import { useBeds24Status } from '@/lib/beds24/Beds24StatusContext'
-import { Trash2, Plus, X } from 'lucide-react'
+import { Trash2, Plus, X, Info, RefreshCw } from 'lucide-react'
 
 const toLocalKey = (value: Date) => {
   const year = value.getFullYear()
@@ -196,6 +196,7 @@ const DashboardClient = () => {
   const [reservations, setReservations] = useState<Reservation[]>([])
   const [roomPrices, setRoomPrices] = useState<RoomPrice[]>([])
   const [loadingReservations, setLoadingReservations] = useState(true)
+  const [isSyncingReservations, setIsSyncingReservations] = useState(false)
   const [loadingRoomPrices, setLoadingRoomPrices] = useState(true)
   const [initialRoomPricesLoaded, setInitialRoomPricesLoaded] = useState(false)
   const [reservationsError, setReservationsError] = useState<string | null>(null)
@@ -220,6 +221,9 @@ const DashboardClient = () => {
     adults: 2,
     children: 0,
     total: '',
+    hasCleaning: false,
+    cleaningCost: '',
+    cleanerName: '',
     notes: '',
   })
   const [sendWhatsApp, setSendWhatsApp] = useState(true) // Default: send WhatsApp
@@ -231,7 +235,9 @@ const DashboardClient = () => {
     airbnb: 0.16,  // Default fallback
   })
 
-  const updateReservationField = (field: keyof typeof newReservation, value: string | number) => {
+  const isEditingChannelBooking = isEditing && Boolean(editingReservation?.source && !editingReservation.source.toLowerCase().includes('direct'))
+
+  const updateReservationField = (field: keyof typeof newReservation, value: string | number | boolean) => {
     setNewReservation((prev) => {
       const updated = { ...prev, [field]: value }
       
@@ -263,6 +269,9 @@ const DashboardClient = () => {
       adults: 2,
       children: 0,
       total: '',
+      hasCleaning: false,
+      cleaningCost: '',
+      cleanerName: '',
       notes: '',
     })
     setSendWhatsApp(true) // Reset to default: send WhatsApp
@@ -271,14 +280,6 @@ const DashboardClient = () => {
   }
 
   const startEditReservation = (reservation: Reservation) => {
-    // Only allow editing Direct bookings (created in our system)
-    if (!reservation.source || !reservation.source.toLowerCase().includes('direct')) {
-      toast.warning('ניתן לערוך רק הזמנות שנוצרו ישירות במערכת', {
-        duration: 3000,
-      })
-      return
-    }
-
     // Parse guest name
     const [firstName = '', ...lastNameParts] = (reservation.guestName || '').split(' ')
     const lastName = lastNameParts.join(' ')
@@ -286,15 +287,18 @@ const DashboardClient = () => {
     setEditingReservation(reservation)
     setIsEditing(true)
     setNewReservation({
-      firstName,
+      firstName: firstName || reservation.guestName || '',
       lastName,
       contact: reservation.phone || '',
       email: reservation.email || '',
       arrival: reservation.checkIn,
       departure: reservation.checkOut,
-      adults: reservation.adults || 2,
+      adults: reservation.adults || reservation.guests || 2,
       children: reservation.children || 0,
-      total: String(reservation.total),
+      total: String(reservation.total ?? ''),
+      hasCleaning: reservation.hasCleaning ?? Boolean(reservation.cleaningCost && reservation.cleaningCost > 0),
+      cleaningCost: reservation.cleaningCost ? String(reservation.cleaningCost) : '',
+      cleanerName: reservation.cleanerName || '',
       notes: reservation.notes || '',
     })
     setShowNewReservation(true)
@@ -325,11 +329,15 @@ const DashboardClient = () => {
     try {
       const reservationsResult = await provider.getReservations()
       
-      // If demo mode, merge with session storage reservations
+      // If demo mode, merge with session storage reservations (overriding mock items with updated demo items)
       if (meta.isMock && session?.user?.isDemo) {
         const demoReservations = loadDemoReservations()
-        const combined = [...demoReservations, ...reservationsResult]
-        console.log(`🎭 Demo mode: ${demoReservations.length} new + ${reservationsResult.length} mock = ${combined.length} total`)
+        const demoMap = new Map(demoReservations.map(r => [r.id, r]))
+        const combined = [
+          ...demoReservations.filter(r => !reservationsResult.some(mock => mock.id === r.id)),
+          ...reservationsResult.map(r => demoMap.get(r.id) || r),
+        ]
+        console.log(`🎭 Demo mode: ${demoReservations.length} demo storage + ${reservationsResult.length} mock = ${combined.length} total`)
         setReservations(markNewReservations(combined))
       } else {
         // Mark new reservations (created in last 7 days)
@@ -341,6 +349,26 @@ const DashboardClient = () => {
       setReservationsError(error instanceof Error ? error.message : 'טעינת הזמנות נכשלה')
     } finally {
       setLoadingReservations(false)
+    }
+  }
+
+  const handleSyncReservations = async () => {
+    setIsSyncingReservations(true)
+    try {
+      await refreshReservations()
+      const roomId = selectedRoomId || session?.user?.roomId?.split(',')[0].split(':')[0].trim()
+      if (roomId) {
+        fetch('/api/dashboard/cache/refresh', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ roomId }),
+        }).catch(() => {})
+      }
+      toast.success('סנכרון ההזמנות הושלם בהצלחה')
+    } catch {
+      toast.error('סנכרון ההזמנות נכשל')
+    } finally {
+      setIsSyncingReservations(false)
     }
   }
 
@@ -490,10 +518,19 @@ const DashboardClient = () => {
       return
     }
 
+    if (newReservation.hasCleaning && (!newReservation.cleaningCost || isNaN(Number(newReservation.cleaningCost)) || Number(newReservation.cleaningCost) < 0)) {
+      setSaveReservationError('יש להזין עלות תקינה עבור המנקה.')
+      return
+    }
+
     // Contact is always phone, email is optional separate field
     const phone = newReservation.contact.trim()
     const email = newReservation.email.trim()
     
+    const cleaningCostNumber = newReservation.hasCleaning && newReservation.cleaningCost
+      ? Number(newReservation.cleaningCost)
+      : 0
+
     const payload = [
       {
         arrival: newReservation.arrival,
@@ -506,6 +543,9 @@ const DashboardClient = () => {
         numChild: newReservation.children || 0,
         mobile: phone, // Phone is required
         ...(email ? { email } : {}), // Email is optional
+        cleaningCost: cleaningCostNumber,
+        hasCleaning: newReservation.hasCleaning,
+        cleanerName: newReservation.cleanerName?.trim() || undefined,
         invoice: [
           {
             description: 'Total Room Price',
@@ -551,6 +591,9 @@ const DashboardClient = () => {
           children: newReservation.children,
           guests: (newReservation.adults || 0) + (newReservation.children || 0),
           total: Number(newReservation.total),
+          hasCleaning: newReservation.hasCleaning,
+          cleaningCost: cleaningCostNumber,
+          cleanerName: newReservation.cleanerName?.trim() || undefined,
           status: 'confirmed',
           source: 'Demo (הזמנה ידנית)',
           phone,
@@ -583,95 +626,122 @@ const DashboardClient = () => {
     setSaveReservationError(null)
     setSaveReservationSuccess(null)
 
-    if (!newReservation.firstName.trim() || !newReservation.lastName.trim()) {
-      setSaveReservationError('יש להזין שם מלא.')
-      setSavingReservation(false)
-      return
-    }
-    if (!newReservation.contact.trim()) {
-      setSaveReservationError('יש להזין מספר טלפון.')
-      setSavingReservation(false)
-      return
-    }
-    if (!newReservation.arrival || !newReservation.departure) {
-      setSaveReservationError('יש לבחור תאריכי כניסה ויציאה.')
-      setSavingReservation(false)
-      return
-    }
-    const arrivalDate = normalizeDate(new Date(newReservation.arrival))
-    const departureDate = normalizeDate(new Date(newReservation.departure))
-    if (Number.isNaN(arrivalDate.getTime()) || Number.isNaN(departureDate.getTime())) {
-      setSaveReservationError('תאריכים לא תקינים.')
-      setSavingReservation(false)
-      return
-    }
-    if (departureDate <= arrivalDate) {
-      setSaveReservationError('תאריך היציאה חייב להיות אחרי תאריך הכניסה.')
-      setSavingReservation(false)
-      return
+    const isDirect = Boolean(editingReservation.source?.toLowerCase().includes('direct'))
+
+    if (isDirect) {
+      if (!newReservation.firstName.trim() || !newReservation.lastName.trim()) {
+        setSaveReservationError('יש להזין שם מלא.')
+        setSavingReservation(false)
+        return
+      }
+      if (!newReservation.contact.trim()) {
+        setSaveReservationError('יש להזין מספר טלפון.')
+        setSavingReservation(false)
+        return
+      }
+      if (!newReservation.arrival || !newReservation.departure) {
+        setSaveReservationError('יש לבחור תאריכי כניסה ויציאה.')
+        setSavingReservation(false)
+        return
+      }
+      const arrivalDate = normalizeDate(new Date(newReservation.arrival))
+      const departureDate = normalizeDate(new Date(newReservation.departure))
+      if (Number.isNaN(arrivalDate.getTime()) || Number.isNaN(departureDate.getTime())) {
+        setSaveReservationError('תאריכים לא תקינים.')
+        setSavingReservation(false)
+        return
+      }
+      if (departureDate <= arrivalDate) {
+        setSaveReservationError('תאריך היציאה חייב להיות אחרי תאריך הכניסה.')
+        setSavingReservation(false)
+        return
+      }
+
+      // Check conflicts (excluding the current reservation being edited)
+      const conflictingReservations: Reservation[] = []
+      const hasConflict = reservations.some((reservation) => {
+        // Skip the current reservation being edited
+        if (reservation.id === editingReservation.id) {
+          return false
+        }
+        
+        if (reservation.status === 'cancelled' || !occupiesCalendarNight(reservation.status) || !reservation.checkIn || !reservation.checkOut) {
+          return false
+        }
+        const checkIn = normalizeDate(new Date(reservation.checkIn))
+        const checkOut = normalizeDate(new Date(reservation.checkOut))
+        if (Number.isNaN(checkIn.getTime()) || Number.isNaN(checkOut.getTime())) {
+          return false
+        }
+        
+        const hasOverlap = arrivalDate < checkOut && departureDate > checkIn
+        const isSameDayTurnover = arrivalDate.getTime() === checkOut.getTime() || departureDate.getTime() === checkIn.getTime()
+        const isConflict = hasOverlap && !isSameDayTurnover
+        
+        if (isConflict) {
+          conflictingReservations.push(reservation)
+        }
+        
+        return isConflict
+      })
+
+      if (hasConflict) {
+        const conflictDetails = conflictingReservations
+          .map((r) => `${r.guestName || 'אורח'} (${new Date(r.checkIn!).toLocaleDateString('he-IL')} - ${new Date(r.checkOut!).toLocaleDateString('he-IL')})`)
+          .join(', ')
+        setSaveReservationError(`קיימת הזמנה בתאריכים שנבחרו: ${conflictDetails}`)
+        setSavingReservation(false)
+        return
+      }
+
+      if (!newReservation.total) {
+        setSaveReservationError('יש להזין סכום לתשלום.')
+        setSavingReservation(false)
+        return
+      }
     }
 
-    // Check conflicts (excluding the current reservation being edited)
-    const conflictingReservations: Reservation[] = []
-    const hasConflict = reservations.some((reservation) => {
-      // Skip the current reservation being edited
-      if (reservation.id === editingReservation.id) {
-        return false
-      }
-      
-      if (reservation.status === 'cancelled' || !occupiesCalendarNight(reservation.status) || !reservation.checkIn || !reservation.checkOut) {
-        return false
-      }
-      const checkIn = normalizeDate(new Date(reservation.checkIn))
-      const checkOut = normalizeDate(new Date(reservation.checkOut))
-      if (Number.isNaN(checkIn.getTime()) || Number.isNaN(checkOut.getTime())) {
-        return false
-      }
-      
-      const hasOverlap = arrivalDate < checkOut && departureDate > checkIn
-      const isSameDayTurnover = arrivalDate.getTime() === checkOut.getTime() || departureDate.getTime() === checkIn.getTime()
-      const isConflict = hasOverlap && !isSameDayTurnover
-      
-      if (isConflict) {
-        conflictingReservations.push(reservation)
-      }
-      
-      return isConflict
-    })
-
-    if (hasConflict) {
-      const conflictDetails = conflictingReservations
-        .map((r) => `${r.guestName || 'אורח'} (${new Date(r.checkIn!).toLocaleDateString('he-IL')} - ${new Date(r.checkOut!).toLocaleDateString('he-IL')})`)
-        .join(', ')
-      setSaveReservationError(`קיימת הזמנה בתאריכים שנבחרו: ${conflictDetails}`)
-      setSavingReservation(false)
-      return
-    }
-
-    if (!newReservation.total) {
-      setSaveReservationError('יש להזין סכום לתשלום.')
+    if (newReservation.hasCleaning && (!newReservation.cleaningCost || isNaN(Number(newReservation.cleaningCost)) || Number(newReservation.cleaningCost) < 0)) {
+      setSaveReservationError('יש להזין עלות תקינה עבור המנקה.')
       setSavingReservation(false)
       return
     }
 
     const phone = newReservation.contact.trim()
     const email = newReservation.email.trim()
+    const cleaningCostNumber = newReservation.hasCleaning && newReservation.cleaningCost
+      ? Number(newReservation.cleaningCost)
+      : 0
     
-    const payload = {
-      bookingId: editingReservation.id,
-      propertyId: editingReservation.propertyId, // Required by Beds24 for updates
-      roomId: editingReservation.roomId, // Required by Beds24 for updates
-      arrival: newReservation.arrival,
-      departure: newReservation.departure,
-      firstName: newReservation.firstName.trim(),
-      lastName: newReservation.lastName.trim(),
-      notes: newReservation.notes.trim() || undefined,
-      numAdult: newReservation.adults || 1,
-      numChild: newReservation.children || 0,
-      mobile: phone,
-      ...(email ? { email } : {}),
-      price: Number(newReservation.total),
-    }
+    const payload = isDirect
+      ? {
+          bookingId: editingReservation.id,
+          propertyId: editingReservation.propertyId, // Required by Beds24 for updates
+          roomId: editingReservation.roomId, // Required by Beds24 for updates
+          arrival: newReservation.arrival,
+          departure: newReservation.departure,
+          firstName: newReservation.firstName.trim(),
+          lastName: newReservation.lastName.trim(),
+          notes: newReservation.notes.trim() || undefined,
+          numAdult: newReservation.adults || 1,
+          numChild: newReservation.children || 0,
+          mobile: phone,
+          ...(email ? { email } : {}),
+          price: Number(newReservation.total),
+          cleaningCost: cleaningCostNumber,
+          hasCleaning: newReservation.hasCleaning,
+          cleanerName: newReservation.cleanerName?.trim() || undefined,
+        }
+      : {
+          bookingId: editingReservation.id,
+          propertyId: editingReservation.propertyId,
+          roomId: editingReservation.roomId,
+          cleaningCost: cleaningCostNumber,
+          hasCleaning: newReservation.hasCleaning,
+          cleanerName: newReservation.cleanerName?.trim() || undefined,
+          notes: newReservation.notes.trim() || undefined,
+          isChannelBooking: true,
+        }
 
     try {
       const response = await fetch('/api/dashboard/bookings', {
@@ -689,10 +759,10 @@ const DashboardClient = () => {
       if (result.demo) {
         // Update demo reservation in session storage
         const demoReservations = loadDemoReservations()
-        const updated = demoReservations.map(r => 
-          r.id === editingReservation.id 
+        const updatedReservation: Reservation = {
+          ...editingReservation,
+          ...(isDirect
             ? {
-                ...r,
                 guestName: `${newReservation.firstName} ${newReservation.lastName}`,
                 checkIn: newReservation.arrival,
                 checkOut: newReservation.departure,
@@ -702,16 +772,29 @@ const DashboardClient = () => {
                 total: Number(newReservation.total),
                 phone,
                 email: email || undefined,
-                notes: newReservation.notes.trim() || undefined,
               }
-            : r
-        )
+            : {}),
+          hasCleaning: newReservation.hasCleaning,
+          cleaningCost: cleaningCostNumber,
+          cleanerName: newReservation.cleanerName?.trim() || undefined,
+          notes: newReservation.notes.trim() || undefined,
+        }
+
+        const existsInDemo = demoReservations.some(r => r.id === editingReservation.id)
+        const updated = existsInDemo
+          ? demoReservations.map(r => r.id === editingReservation.id ? updatedReservation : r)
+          : [updatedReservation, ...demoReservations]
+
         if (typeof window !== 'undefined') {
           sessionStorage.setItem(DEMO_RESERVATIONS_KEY, JSON.stringify(updated))
         }
-        setSaveReservationSuccess('🎭 מצב דמו: ההזמנה עודכנה בהצלחה!')
+        setSaveReservationSuccess(
+          isDirect ? '🎭 מצב דמו: ההזמנה עודכנה בהצלחה!' : '🎭 מצב דמו: עלות הניקיון עודכנה בהצלחה!'
+        )
       } else {
-        setSaveReservationSuccess('ההזמנה עודכנה בהצלחה.')
+        setSaveReservationSuccess(
+          isDirect ? 'ההזמנה עודכנה בהצלחה.' : 'עלות הניקיון עודכנה בהצלחה.'
+        )
       }
       
       await refreshReservations()
@@ -725,18 +808,10 @@ const DashboardClient = () => {
   }
 
   /**
-   * Cancel a Direct booking in Beds24 (sets status to 0/cancelled)
-   * Only allows cancelling bookings created directly in our system
+   * Cancel a booking in Beds24 (sets status to cancelled)
+   * Supports Direct bookings as well as Channel bookings (e.g. Airbnb/Booking when cancelled on OTA)
    */
   const handleDeleteReservation = async (reservation: Reservation) => {
-    // Validate it's a Direct booking
-    if (!reservation.source || !reservation.source.toLowerCase().includes('direct')) {
-      toast.warning('ניתן לבטל רק הזמנות שנוצרו ישירות במערכת', {
-        duration: 3000,
-      })
-      return
-    }
-
     // Check if already cancelled
     if (reservation.status === 'cancelled') {
       toast.info('ההזמנה כבר מבוטלת', {
@@ -745,22 +820,26 @@ const DashboardClient = () => {
       return
     }
 
-    // Show elegant confirmation toast with action buttons
+    const isDirect = Boolean(reservation.source && reservation.source.toLowerCase().includes('direct'))
     const guestName = reservation.guestName || 'אורח'
     const checkInDate = new Date(reservation.checkIn).toLocaleDateString('he-IL')
     const checkOutDate = new Date(reservation.checkOut).toLocaleDateString('he-IL')
     
     toast.warning(
-      `בטל הזמנה של ${guestName}?`,
+      isDirect
+        ? `בטל הזמנה של ${guestName}?`
+        : `בטל הזמנת ${reservation.source || 'ערוץ'} של ${guestName}?`,
       {
-        description: `${checkInDate} - ${checkOutDate}`,
+        description: isDirect
+          ? `${checkInDate} - ${checkOutDate}`
+          : `${checkInDate} - ${checkOutDate} (ההזמנה תסומן כמבוטלת ב-Beds24 והתאריכים ישתחררו)`,
         duration: 10000,
         action: {
-          label: '✓ אישור',
+          label: '✓ אישור ביטול',
           onClick: () => performCancellation(reservation),
         },
         cancel: {
-          label: '✕ ביטול',
+          label: '✕ חזור',
           onClick: () => {},
         },
       }
@@ -1040,6 +1119,7 @@ const DashboardClient = () => {
   const stats = useMemo(() => {
     let totalRevenue = 0
     let totalCommission = 0
+    let totalCleaningCost = 0
 
     reservations.forEach((reservation) => {
       if (!countsTowardRevenue(reservation.status)) {
@@ -1061,9 +1141,10 @@ const DashboardClient = () => {
       }
       
       totalCommission += reservation.total * commissionRate
+      totalCleaningCost += reservation.cleaningCost || 0
     })
 
-    const netRevenue = totalRevenue - totalCommission
+    const netRevenue = totalRevenue - totalCommission - totalCleaningCost
     const confirmedCount = reservations.filter((reservation) => reservation.status === 'confirmed').length
     const upcomingCount = reservations.filter((reservation) => {
       const checkIn = new Date(reservation.checkIn)
@@ -1076,6 +1157,7 @@ const DashboardClient = () => {
     return {
       totalRevenue,
       totalCommission,
+      totalCleaningCost,
       netRevenue,
       confirmedCount,
       upcomingCount,
@@ -1139,9 +1221,10 @@ const DashboardClient = () => {
     const blockedDates = new Set<string>()
     let monthRevenue = 0
     let monthCommission = 0
+    let monthCleaningCost = 0
 
     roomPrices.forEach((entry) => {
-      if (entry.numAvail !== 0) return
+      if ((entry.numAvail ?? 1) > 0) return
       if (entry.date < availableFromKey || entry.date > monthRange.endKey) return
       blockedDates.add(entry.date)
     })
@@ -1177,6 +1260,7 @@ const DashboardClient = () => {
         }
         
         monthCommission += reservation.total * commissionRate
+        monthCleaningCost += reservation.cleaningCost || 0
       }
 
       let cursor = checkIn
@@ -1198,13 +1282,14 @@ const DashboardClient = () => {
     }
 
     const bookedDays = bookedDates.size
-    const netRevenue = monthRevenue - monthCommission
+    const netRevenue = monthRevenue - monthCommission - monthCleaningCost
 
     return {
       bookedDays,
       availableDays,
       monthRevenue,
       monthCommission,
+      monthCleaningCost,
       netRevenue,
     }
   }, [reservations, monthRange, commissionRates, roomPrices])
@@ -1274,25 +1359,32 @@ const DashboardClient = () => {
         ) : null}
 
         <div className="row g-3 mb-4">
-          <div className="col-4 col-md-4">
+          <div className="col-6 col-md-3">
             <StatCard 
               title="שנה נוכחית" 
               value={new Date().getFullYear().toString()} 
               helper="נתוני ההזמנות בשנה זו"
             />
           </div>
-          <div className="col-4 col-md-4">
+          <div className="col-6 col-md-3">
             <StatCard 
               title="הכנסות ברוטו" 
               value={formatCurrency(stats.totalRevenue)} 
               helper="סה״כ כל ההזמנות בשנה" 
             />
           </div>
-          <div className="col-4 col-md-4">
+          <div className="col-6 col-md-3">
             <StatCard 
-              title="תשלום צפוי" 
+              title="עלויות ניקיון" 
+              value={formatCurrency(stats.totalCleaningCost)} 
+              helper="סה״כ עלויות מנקה בשנה" 
+            />
+          </div>
+          <div className="col-6 col-md-3">
+            <StatCard 
+              title="רווח נקי (תשלום צפוי)" 
               value={formatCurrency(stats.netRevenue)} 
-              helper="סה״כ כל ההזמנות בשנה (אחרי עמלות)" 
+              helper="אחרי ניכוי עמלות ועלויות ניקיון" 
             />
           </div>
         </div>
@@ -1551,14 +1643,14 @@ const DashboardClient = () => {
                   value={selectedMonth}
                   onChange={(e) => setSelectedMonth(e.target.value)}
                 >
-                  <option value="all" style={{ background: '#1e293b', color: 'white' }}>כל החודשים</option>
+                  <option value="all" style={{ background: '#fff', color: 'var(--htxt-1)' }}>כל החודשים</option>
                   {availableMonths.map((monthKey) => {
                     const [year, month] = monthKey.split('-')
                     const monthName = new Intl.DateTimeFormat('he-IL', { month: 'long', year: 'numeric' }).format(
                       new Date(parseInt(year), parseInt(month) - 1)
                     )
                     return (
-                      <option key={monthKey} value={monthKey} style={{ background: '#1e293b', color: 'white' }}>
+                      <option key={monthKey} value={monthKey} style={{ background: '#fff', color: 'var(--htxt-1)' }}>
                         {monthName}
                       </option>
                     )
@@ -1570,9 +1662,41 @@ const DashboardClient = () => {
                   value={sortOrder}
                   onChange={(e) => setSortOrder(e.target.value as 'newest' | 'oldest')}
                 >
-                  <option value="oldest" style={{ background: '#1e293b', color: 'white' }}>קרובות תחילה</option>
-                  <option value="newest" style={{ background: '#1e293b', color: 'white' }}>רחוקות תחילה</option>
+                  <option value="oldest" style={{ background: '#fff', color: 'var(--htxt-1)' }}>קרובות תחילה</option>
+                  <option value="newest" style={{ background: '#fff', color: 'var(--htxt-1)' }}>רחוקות תחילה</option>
                 </select>
+                <button
+                  type="button"
+                  className="hostly-btn hostly-btn-sm"
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '8px 14px',
+                    borderRadius: '8px',
+                    fontSize: '0.875rem',
+                    fontWeight: 600,
+                    border: '1px solid #CED7E0',
+                    background: '#fff',
+                    color: '#7133D9',
+                    cursor: isSyncingReservations ? 'wait' : 'pointer',
+                    transition: 'all 0.15s ease',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = '#F2F6FA'
+                    e.currentTarget.style.borderColor = '#7133D9'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = '#fff'
+                    e.currentTarget.style.borderColor = '#CED7E0'
+                  }}
+                  onClick={handleSyncReservations}
+                  disabled={isSyncingReservations || loadingReservations}
+                  title="סנכרון הזמנות מ-Beds24"
+                >
+                  <RefreshCw size={14} style={{ animation: isSyncingReservations ? 'spin 1s linear infinite' : 'none' }} />
+                  {isSyncingReservations ? 'מסנכרן…' : 'סנכרן'}
+                </button>
                 <button
                   type="button"
                   className="hostly-btn hostly-btn-sm hostly-btn-primary"
@@ -1593,7 +1717,12 @@ const DashboardClient = () => {
                       toast.error('הקרדיט ב-Beds24 אזל — טען קרדיט כדי ליצור הזמנות')
                       return
                     }
-                    setShowNewReservation((prev) => !prev)
+                    if (showNewReservation) {
+                      resetReservationForm()
+                      setShowNewReservation(false)
+                    } else {
+                      setShowNewReservation(true)
+                    }
                   }}
                   title={isBeds24Suspended ? 'לא ניתן לבצע פעולות — הקרדיט ב-Beds24 אזל' : undefined}
                 >
@@ -1685,9 +1814,27 @@ const DashboardClient = () => {
                   }
                 `}</style>
                 <div className="row g-2">
+                  {isEditingChannelBooking && (
+                    <div className="col-12 mb-1">
+                      <div
+                        className="p-3 rounded-2 d-flex align-items-center gap-2"
+                        style={{
+                          background: '#EFF6FF',
+                          border: '1px solid #BFDBFE',
+                          color: '#1E40AF',
+                        }}
+                      >
+                        <Info size={18} className="flex-shrink-0" />
+                        <div style={{ fontSize: '0.85rem' }}>
+                          <strong>הזמנה מ-{editingReservation?.source || 'ערוץ חיצוני'}</strong>
+                          <div>פרטי ההזמנה, התאריכים והסכום מסונכרנים מהערוץ ולא ניתנים לשינוי כאן. ניתן לעדכן את שירות הניקיון, עלות המנקה והערות.</div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                   <div className="col-12 col-md-6">
                     <label className="form-label small fw-semibold">
-                      שם אורח <span className="text-danger">*</span>
+                      שם אורח {!isEditingChannelBooking && <span className="text-danger">*</span>}
                     </label>
                     <div className="row g-2">
                       <div className="col-12 col-sm-6">
@@ -1697,7 +1844,9 @@ const DashboardClient = () => {
                           placeholder="שם פרטי"
                           value={newReservation.firstName}
                           onChange={(event) => updateReservationField('firstName', event.target.value)}
-                          required
+                          disabled={isEditingChannelBooking}
+                          style={isEditingChannelBooking ? { background: '#F1F5F9', cursor: 'not-allowed', color: '#64748B' } : undefined}
+                          required={!isEditingChannelBooking}
                         />
                       </div>
                       <div className="col-12 col-sm-6">
@@ -1707,14 +1856,16 @@ const DashboardClient = () => {
                           placeholder="שם משפחה"
                           value={newReservation.lastName}
                           onChange={(event) => updateReservationField('lastName', event.target.value)}
-                          required
+                          disabled={isEditingChannelBooking}
+                          style={isEditingChannelBooking ? { background: '#F1F5F9', cursor: 'not-allowed', color: '#64748B' } : undefined}
+                          required={!isEditingChannelBooking}
                         />
                       </div>
                     </div>
                   </div>
                   <div className="col-12 col-md-3">
                     <label className="form-label small fw-semibold">
-                      טלפון נייד <span className="text-danger">*</span>
+                      טלפון נייד {!isEditingChannelBooking && <span className="text-danger">*</span>}
                     </label>
                     <input
                       type="tel"
@@ -1724,7 +1875,9 @@ const DashboardClient = () => {
                       onChange={(event) => updateReservationField('contact', event.target.value)}
                       pattern="^(0[2-9]\d{7,8}|(\+?972)?[2-9]\d{7,8})$"
                       title="מספר טלפון נייד (לדוגמה: 052-1234567)"
-                      required
+                      disabled={isEditingChannelBooking}
+                      style={isEditingChannelBooking ? { background: '#F1F5F9', cursor: 'not-allowed', color: '#64748B' } : undefined}
+                      required={!isEditingChannelBooking}
                     />
                     <small className="text-muted">052-1234567</small>
                   </div>
@@ -1738,12 +1891,14 @@ const DashboardClient = () => {
                       placeholder="guest@example.com"
                       value={newReservation.email}
                       onChange={(event) => updateReservationField('email', event.target.value)}
+                      disabled={isEditingChannelBooking}
+                      style={isEditingChannelBooking ? { background: '#F1F5F9', cursor: 'not-allowed', color: '#64748B' } : undefined}
                     />
                     <small className="text-muted">אופציונלי</small>
                   </div>
                   <div className="col-6 col-md-3">
                     <label className="form-label small fw-semibold">
-                      תאריך כניסה <span className="text-danger">*</span>
+                      תאריך כניסה {!isEditingChannelBooking && <span className="text-danger">*</span>}
                     </label>
                     <input
                       type="date"
@@ -1751,12 +1906,14 @@ const DashboardClient = () => {
                       value={newReservation.arrival}
                       min={new Date().toISOString().split('T')[0]}
                       onChange={(event) => updateReservationField('arrival', event.target.value)}
-                      required
+                      disabled={isEditingChannelBooking}
+                      style={isEditingChannelBooking ? { background: '#F1F5F9', cursor: 'not-allowed', color: '#64748B' } : undefined}
+                      required={!isEditingChannelBooking}
                     />
                   </div>
                   <div className="col-6 col-md-3">
                     <label className="form-label small fw-semibold">
-                      תאריך יציאה <span className="text-danger">*</span>
+                      תאריך יציאה {!isEditingChannelBooking && <span className="text-danger">*</span>}
                     </label>
                     <input
                       type="date"
@@ -1764,12 +1921,14 @@ const DashboardClient = () => {
                       value={newReservation.departure}
                       min={newReservation.arrival ? new Date(new Date(newReservation.arrival).getTime() + 86400000).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]}
                       onChange={(event) => updateReservationField('departure', event.target.value)}
-                      required
+                      disabled={isEditingChannelBooking}
+                      style={isEditingChannelBooking ? { background: '#F1F5F9', cursor: 'not-allowed', color: '#64748B' } : undefined}
+                      required={!isEditingChannelBooking}
                     />
                   </div>
                   <div className="col-6 col-md-3">
                     <label className="form-label small fw-semibold">
-                      מבוגרים <span className="text-danger">*</span>
+                      מבוגרים {!isEditingChannelBooking && <span className="text-danger">*</span>}
                     </label>
                     <input
                       type="number"
@@ -1777,7 +1936,9 @@ const DashboardClient = () => {
                       className="form-control"
                       value={newReservation.adults}
                       onChange={(event) => updateReservationField('adults', Number(event.target.value))}
-                      required
+                      disabled={isEditingChannelBooking}
+                      style={isEditingChannelBooking ? { background: '#F1F5F9', cursor: 'not-allowed', color: '#64748B' } : undefined}
+                      required={!isEditingChannelBooking}
                     />
                   </div>
                   <div className="col-6 col-md-3">
@@ -1790,11 +1951,13 @@ const DashboardClient = () => {
                       className="form-control"
                       value={newReservation.children}
                       onChange={(event) => updateReservationField('children', Number(event.target.value))}
+                      disabled={isEditingChannelBooking}
+                      style={isEditingChannelBooking ? { background: '#F1F5F9', cursor: 'not-allowed', color: '#64748B' } : undefined}
                     />
                   </div>
                   <div className="col-6 col-md-3">
                     <label className="form-label small fw-semibold">
-                      סה״כ לתשלום <span className="text-danger">*</span>
+                      סה״כ לתשלום {!isEditingChannelBooking && <span className="text-danger">*</span>}
                     </label>
                     <input
                       type="number"
@@ -1803,8 +1966,81 @@ const DashboardClient = () => {
                       placeholder="₪"
                       value={newReservation.total}
                       onChange={(event) => updateReservationField('total', event.target.value)}
-                      required
+                      disabled={isEditingChannelBooking}
+                      style={isEditingChannelBooking ? { background: '#F1F5F9', cursor: 'not-allowed', color: '#64748B' } : undefined}
+                      required={!isEditingChannelBooking}
                     />
+                  </div>
+                  <div className="col-12">
+                    <div 
+                      className="p-3 rounded-2" 
+                      style={{ 
+                        background: newReservation.hasCleaning ? 'rgba(113, 51, 217, 0.05)' : '#F8FAFC', 
+                        border: newReservation.hasCleaning ? '1px solid #C4B5FD' : '1px solid #E2E8F0',
+                        transition: 'all 0.2s ease',
+                      }}
+                    >
+                      <div className="form-check form-switch d-flex align-items-center gap-2 mb-0" dir="rtl">
+                        <input
+                          className="form-check-input ms-0 me-2"
+                          type="checkbox"
+                          id="hasCleaningCheckbox"
+                          checked={newReservation.hasCleaning}
+                          onChange={(e) => {
+                            const checked = e.target.checked
+                            updateReservationField('hasCleaning', checked)
+                            if (!checked) {
+                              updateReservationField('cleaningCost', '')
+                            }
+                          }}
+                          style={{ cursor: 'pointer', width: '2.2em', height: '1.2em' }}
+                        />
+                        <label 
+                          className="form-check-label fw-semibold small mb-0" 
+                          htmlFor="hasCleaningCheckbox"
+                          style={{ cursor: 'pointer', color: '#1E293B' }}
+                        >
+                          הזמנת ניקיון (מנקה)
+                        </label>
+                      </div>
+
+                      {newReservation.hasCleaning && (
+                        <div className="row g-2 mt-2 pt-2 border-top">
+                          <div className="col-12 col-sm-6">
+                            <label className="form-label small fw-semibold text-muted">
+                              כמה עולה המנקה (עלות ניקיון) <span className="text-danger">*</span>
+                            </label>
+                            <div className="input-group input-group-sm">
+                              <span className="input-group-text bg-white">₪</span>
+                              <input
+                                type="number"
+                                min={0}
+                                className="form-control"
+                                placeholder="לדוגמה: 250"
+                                value={newReservation.cleaningCost}
+                                onChange={(e) => updateReservationField('cleaningCost', e.target.value)}
+                                required={newReservation.hasCleaning}
+                              />
+                            </div>
+                            <small className="text-muted" style={{ fontSize: '11px' }}>
+                              עלות הניקיון תקוזז מהרווח הנקי של ההזמנה
+                            </small>
+                          </div>
+                          <div className="col-12 col-sm-6">
+                            <label className="form-label small fw-semibold text-muted">
+                              שם המנקה (אופציונלי)
+                            </label>
+                            <input
+                              type="text"
+                              className="form-control form-control-sm"
+                              placeholder="לדוגמה: מרים"
+                              value={newReservation.cleanerName}
+                              onChange={(e) => updateReservationField('cleanerName', e.target.value)}
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <div className="col-12">
                     <label className="form-label small fw-semibold">הערות</label>
@@ -1859,8 +2095,12 @@ const DashboardClient = () => {
                       disabled={savingReservation}
                     >
                       {savingReservation 
-                        ? (isEditing ? 'מעדכן הזמנה...' : 'שומר הזמנה...') 
-                        : (isEditing ? 'עדכן הזמנה' : 'שמירת הזמנה')
+                        ? (isEditing 
+                            ? (isEditingChannelBooking ? 'מעדכן עלות ניקיון...' : 'מעדכן הזמנה...') 
+                            : 'שומר הזמנה...') 
+                        : (isEditing 
+                            ? (isEditingChannelBooking ? 'עדכן עלות ניקיון' : 'עדכן הזמנה') 
+                            : 'שמירת הזמנה')
                       }
                     </button>
                     <button
@@ -1956,7 +2196,7 @@ const DashboardClient = () => {
                   <StatCard 
                     title="הכנסות נטו" 
                     value={formatCurrency(stats.netRevenue)} 
-                    helper="אחרי ניכוי עמלות"
+                    helper="אחרי ניכוי עמלות וניקיון"
                   />
                 </div>
                 <div className="col-4 col-md-4">
@@ -1967,9 +2207,9 @@ const DashboardClient = () => {
                 </div>
                 <div className="col-4 col-md-4">
                   <StatCard 
-                    title="הכנסות חודשיות" 
-                    value={formatCurrency(bookingSummary?.monthRevenue ?? 0)} 
-                    helper="סה״כ החודש"
+                    title="עלויות ניקיון החודש" 
+                    value={formatCurrency(bookingSummary?.monthCleaningCost ?? 0)} 
+                    helper="סה״כ מנקה בחודש זה"
                   />
                 </div>
                 <div className="col-4 col-md-4">

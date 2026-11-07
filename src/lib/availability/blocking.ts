@@ -21,6 +21,7 @@ interface CalendarPayloadEntry {
   to?: string
   numAvail?: number
   price1?: number
+  override?: string
 }
 
 interface RoomsPostItem {
@@ -58,19 +59,33 @@ export async function overlayAvailabilityCache(
 
     if (!cacheRows?.length) return prices
 
-    const cacheMap: Record<string, number> = {}
-    cacheRows.forEach((row) => { cacheMap[row.date] = row.num_avail })
+    const cacheMap: Record<string, { numAvail: number; isManualBlock?: boolean }> = {}
+    cacheRows.forEach((row) => {
+      cacheMap[row.date] = {
+        numAvail: row.num_avail,
+        isManualBlock: (row as { is_manual_block?: boolean }).is_manual_block,
+      }
+    })
 
     // Apply cache numAvail to existing price entries
-    const overlaid = prices.map((p) => ({
-      ...p,
-      numAvail: cacheMap[p.date] !== undefined ? cacheMap[p.date] : p.numAvail,
-    }))
+    // CRITICAL: If Beds24 already reported the date as blocked (numAvail <= 0), NEVER unblock it!
+    // Real Beds24 closures (blackout, bookings, 0 units) take precedence over stale cache rows.
+    const overlaid = prices.map((p) => {
+      if (p.numAvail <= 0) {
+        return { ...p, numAvail: 0 }
+      }
+      const cached = cacheMap[p.date]
+      if (cached && (cached.numAvail <= 0 || cached.isManualBlock === true)) {
+        return { ...p, numAvail: 0 }
+      }
+      return p
+    })
 
     // Also inject blocked dates from cache that have no price entry in Beds24
     const pricesDates = new Set(overlaid.map((p) => p.date))
     cacheRows.forEach((row) => {
-      if (row.num_avail === 0 && !pricesDates.has(row.date)) {
+      const isBlocked = row.num_avail === 0 || (row as { is_manual_block?: boolean }).is_manual_block === true
+      if (isBlocked && !pricesDates.has(row.date)) {
         overlaid.push({ date: row.date, price: 0, roomId, numAvail: 0 })
       }
     })
@@ -130,7 +145,10 @@ export function buildCacheRowsFromPayload(
 
     for (const entry of it.calendar) {
       const e = entry as CalendarPayloadEntry
-      if (e.numAvail === undefined || !e.from) continue
+      if (!e.from || (e.numAvail === undefined && !e.override)) continue
+
+      const isManualBlock = e.override === 'blackout' || e.numAvail === 0
+      const effectiveNumAvail = isManualBlock ? 0 : (e.numAvail ?? 1)
 
       const dates = expandDateRangeLocal(e.from, e.to ?? e.from)
       for (const date of dates) {
@@ -139,11 +157,11 @@ export function buildCacheRowsFromPayload(
           room_id: itemRoomId,
           property_id: itemPropId,
           date,
-          num_avail: e.numAvail,
+          num_avail: effectiveNumAvail,
           price: e.price1 ?? 0,
           min_stay: 1,
           cached_at: now,
-          is_manual_block: e.numAvail === 0,
+          is_manual_block: isManualBlock,
         })
       }
     }
@@ -169,15 +187,20 @@ export async function writeCacheAvailability(
 
     for (const rows of Object.values(byRoom)) {
       if (!rows.length) continue
-      // Upsert — on conflict update only num_avail and cached_at to preserve existing price/min_stay.
+      // Upsert — on conflict update num_avail, is_manual_block, and cached_at to preserve existing price/min_stay.
       // We do this by first trying UPDATE, then INSERT for any missing rows.
       const dates = rows.map((r) => r.date)
       const numAvail = rows[0].num_avail // same per batch (blockDates/unblockDates send uniform value)
+      const isManualBlock = rows[0].is_manual_block
       const roomIdStr = rows[0].room_id
 
       await supabase
         .from('availability_cache')
-        .update({ num_avail: numAvail, cached_at: now })
+        .update({
+          num_avail: numAvail,
+          is_manual_block: isManualBlock,
+          cached_at: now,
+        })
         .eq('user_id', userId)
         .eq('room_id', roomIdStr)
         .in('date', dates)

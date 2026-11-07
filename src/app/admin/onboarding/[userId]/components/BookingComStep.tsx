@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { Button } from '@/components/ui'
 import { StepPanel } from './StepPanel'
 import { useStepAction } from './useStepAction'
 import { readData, type StepProps } from './stepProps'
@@ -44,13 +45,13 @@ export function BookingComStep({ api, record, status, onChanged }: StepProps) {
         <input id="booking-hotel-id" className="form-control form-control-sm" inputMode="numeric" value={hotelId} onChange={(e) => setHotelId(e.target.value)} />
       </div>
       <div className="d-flex gap-2 align-items-center">
-        <button type="button" className="btn btn-primary" disabled={running || !allChecked} onClick={() => run(() => api.confirmBookingCom(hotelId || undefined))}>
+        <Button type="button" variant="primary" loading={running} disabled={!allChecked} onClick={() => run(() => api.confirmBookingCom(hotelId || undefined))}>
           {status === 'done' ? 'עדכן' : 'אשר שהחיבור הושלם'}
-        </button>
+        </Button>
         {status !== 'done' && status !== 'skipped' && (
-          <button type="button" className="btn btn-link btn-sm text-muted" disabled={running} onClick={() => run(() => api.skip('bookingCom'))}>
+          <Button type="button" variant="ghost" size="sm" disabled={running} onClick={() => run(() => api.skip('bookingCom'))}>
             ללקוח אין Booking.com – דלג
-          </button>
+          </Button>
         )}
       </div>
     </StepPanel>

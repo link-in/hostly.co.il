@@ -2,9 +2,11 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth/authOptions'
 import { fetchWithTokenRefresh } from '@/lib/beds24/tokenManager'
-import { overlayAvailabilityCache, writeCacheAvailability } from '@/lib/availability/blocking'
+import { overlayAvailabilityCache, writeCacheAvailability, type PriceEntry } from '@/lib/availability/blocking'
 import { detectAndMarkCreditError, isBeds24CreditError } from '@/lib/beds24/creditGuard'
 import { describeBeds24Failure, hasBeds24Failure } from '@/lib/beds24/responseFailure'
+import { resolveBeds24Tokens } from '@/lib/onboarding/tokens'
+import { bookableInBeds24, extractAvailabilityMap, findUnappliedBlocks, formatShortDate, markUnsyncedBlocks } from '@/lib/availability/sync'
 
 export const dynamic = 'force-dynamic'
 
@@ -154,6 +156,8 @@ export async function GET(request: Request) {
     url.searchParams.set('startDate', queryStartDate)
     url.searchParams.set('endDate', queryEndDate)
     url.searchParams.set('includePrices', normalizeBooleanParam('true') ?? '1')
+    url.searchParams.set('includeNumAvail', '1')
+    url.searchParams.set('includeOverrides', '1')
     if (roomId) {
       url.searchParams.set('roomId', roomId)
     }
@@ -162,13 +166,14 @@ export async function GET(request: Request) {
     }
   }
 
-  // Prepare user-specific tokens if available
-  const userTokens = session?.user?.beds24Token && session?.user?.beds24RefreshToken
+  // Prepare user-specific tokens if available (with DB fallback)
+  const sessionTokens = session?.user?.beds24Token && session?.user?.beds24RefreshToken
     ? {
         accessToken: session.user.beds24Token,
         refreshToken: session.user.beds24RefreshToken,
       }
     : undefined
+  const userTokens = sessionTokens ?? (session?.user?.id ? await resolveBeds24Tokens(session.user.id) : undefined)
 
   // Also fetch room base price from /inventory/rooms (fallback when calendar has no overrides)
   // Note: /inventory/rooms does not support roomId filter — fetch all and filter in code
@@ -183,14 +188,24 @@ export async function GET(request: Request) {
     fallbackUrl.searchParams.set('startDate', queryStartDate)
     fallbackUrl.searchParams.set('endDate', queryEndDate)
     fallbackUrl.searchParams.set('includePrices', '1')
+    fallbackUrl.searchParams.set('includeNumAvail', '1')
+    fallbackUrl.searchParams.set('includeOverrides', '1')
   }
 
+  // Also query Beds24 ground-truth availability endpoint /inventory/rooms/availability
+  const availUrl = new URL(`${getBaseUrl()}/inventory/rooms/availability`)
+  if (roomId) availUrl.searchParams.set('roomId', roomId)
+  if (propertyId) availUrl.searchParams.set('propertyId', propertyId)
+  availUrl.searchParams.set('startDate', queryStartDate)
+  availUrl.searchParams.set('endDate', queryEndDate)
+
   try {
-    const [response, roomsInfoRes] = await Promise.all([
+    const [response, roomsInfoRes, availRes] = await Promise.all([
       fetchWithTokenRefresh(url.toString(), {
         headers: { 'content-type': 'application/json' },
       }, userTokens, session?.user?.id),
       fetchWithTokenRefresh(roomsInfoUrl.toString(), {}, userTokens, session?.user?.id),
+      fetchWithTokenRefresh(availUrl.toString(), {}, userTokens, session?.user?.id).catch(() => null),
     ])
 
     if (!response.ok) {
@@ -203,6 +218,15 @@ export async function GET(request: Request) {
     }
 
     let data = await response.json()
+    let availMap: Record<string, boolean> = {}
+    if (availRes && availRes.ok) {
+      try {
+        const availData = await availRes.json()
+        availMap = extractAvailabilityMap(availData, roomId)
+      } catch {
+        // Non-fatal availability parse failure
+      }
+    }
 
     // If primary query returned empty and we have a fallback, retry without propertyId
     const primaryEmpty = Array.isArray(data?.data) ? data.data.length === 0 : !data?.data
@@ -255,10 +279,13 @@ export async function GET(request: Request) {
     const rooms = Array.isArray(data?.data) ? data.data : []
   const calendarOnly = !rooms.length && data?.calendar ? [{ calendar: data.calendar }] : []
   const sourceRooms = rooms.length ? rooms : calendarOnly
-  const prices = sourceRooms.flatMap((room: unknown) => {
+  let prices: PriceEntry[] = sourceRooms.flatMap((room: unknown): PriceEntry[] => {
     const roomId = getString(room, ['roomId', 'id'])
-    const calendars = Array.isArray((room as Record<string, unknown>)?.calendar)
-      ? ((room as Record<string, unknown>).calendar as unknown[])
+    const rawCalendars = (room as Record<string, unknown>)?.calendar
+    const calendars = Array.isArray(rawCalendars)
+      ? (rawCalendars as unknown[])
+      : (room && typeof room === 'object' && ('date' in room || 'day' in room || 'from' in room || 'startDate' in room || 'rows' in room))
+      ? [room]
       : []
 
     return calendars.flatMap((calendar: unknown) => {
@@ -273,9 +300,12 @@ export async function GET(request: Request) {
           const date = getString(row, ['date', 'day', 'startDate'])
           const price = extractRowPrice(row)
           const numAvail = getNumber(row, ['numAvail', 'avail', 'available', 'availability', 'units'])
-          const isBlocked = numAvail === 0
+          const override = getString(row, ['override'])
+          const isBlackout = String(override ?? '').toLowerCase() === 'blackout'
+          const isBlocked = isBlackout || (numAvail !== undefined && numAvail <= 0)
+          const effectiveNumAvail = isBlocked ? 0 : (numAvail !== undefined ? numAvail : 1)
 
-          // Skip entries with no date. Allow blocked entries (numAvail=0) even without a price.
+          // Skip entries with no date. Allow blocked entries (numAvail<=0 or blackout) even without a price.
           if (!date || (price === undefined && !isBlocked)) {
             return []
           }
@@ -285,7 +315,7 @@ export async function GET(request: Request) {
               date,
               price: price ?? 0,
               roomId: roomId ?? calendarId ?? null,
-              numAvail: numAvail !== undefined ? numAvail : 1,
+              numAvail: effectiveNumAvail,
             },
           ]
         })
@@ -296,14 +326,17 @@ export async function GET(request: Request) {
       if (directDate) {
         const price = extractRowPrice(calendar)
         const numAvail = getNumber(calendar, ['numAvail', 'avail', 'available', 'availability', 'units'])
-        const isBlocked = numAvail === 0
+        const override = getString(calendar, ['override'])
+        const isBlackout = String(override ?? '').toLowerCase() === 'blackout'
+        const isBlocked = isBlackout || (numAvail !== undefined && numAvail <= 0)
+        const effectiveNumAvail = isBlocked ? 0 : (numAvail !== undefined ? numAvail : 1)
         if (price === undefined && !isBlocked) return []
         return [
           {
             date: directDate,
             price: price ?? 0,
             roomId: roomId ?? calendarId ?? null,
-            numAvail: numAvail !== undefined ? numAvail : 1,
+            numAvail: effectiveNumAvail,
           },
         ]
       }
@@ -313,7 +346,10 @@ export async function GET(request: Request) {
       const to = getString(calendar, ['to', 'endDate'])
       const price = extractRowPrice(calendar)
       const numAvail = getNumber(calendar, ['numAvail', 'avail', 'available', 'availability', 'units'])
-      const isBlockedRange = numAvail === 0
+      const override = getString(calendar, ['override'])
+      const isBlackout = String(override ?? '').toLowerCase() === 'blackout'
+      const isBlockedRange = isBlackout || (numAvail !== undefined && numAvail <= 0)
+      const effectiveNumAvail = isBlockedRange ? 0 : (numAvail !== undefined ? numAvail : 1)
 
       if (!from || !to || (price === undefined && !isBlockedRange)) {
         return []
@@ -333,7 +369,7 @@ export async function GET(request: Request) {
           date: formatLocalDate(cursor),
           price: price ?? 0,
           roomId: roomId ?? calendarId ?? null,
-          numAvail: numAvail !== undefined ? numAvail : 1,
+          numAvail: effectiveNumAvail,
         })
         cursor = addDays(cursor, 1)
       }
@@ -342,6 +378,28 @@ export async function GET(request: Request) {
     })
   })
 
+    // Merge Beds24 /inventory/rooms/availability ground-truth availability
+    if (Object.keys(availMap).length > 0) {
+      prices = prices.map((p) => {
+        if (availMap[p.date] === false) {
+          return { ...p, numAvail: 0 }
+        }
+        return p
+      })
+
+      const datesInPrices = new Set(prices.map((p) => p.date))
+      for (const [date, isAvail] of Object.entries(availMap)) {
+        if (isAvail === false && !datesInPrices.has(date)) {
+          prices.push({
+            date,
+            price: basePrice ?? 0,
+            roomId: roomId ?? null,
+            numAvail: 0,
+          })
+        }
+      }
+    }
+
     // If no calendar overrides exist but we have a base price, fill the date range with it
     if (!prices.length && basePrice !== undefined && roomId) {
       const start = normalizeDate(new Date(queryStartDate))
@@ -349,20 +407,31 @@ export async function GET(request: Request) {
       const filled: typeof prices = []
       let cursor = start
       while (cursor <= end) {
+        const dStr = formatLocalDate(cursor)
+        const isAvail = availMap[dStr] !== false
         filled.push({
-          date: formatLocalDate(cursor),
+          date: dStr,
           price: basePrice,
           roomId,
-          numAvail: 1,
+          numAvail: isAvail ? 1 : 0,
         })
         cursor = addDays(cursor, 1)
       }
-      return NextResponse.json({ prices: filled, raw: data, basePriceUsed: true })
+      const overlaidFilled = markUnsyncedBlocks(
+        await overlayAvailabilityCache(filled, session?.user?.id, roomId),
+        bookableInBeds24(filled, availMap),
+      )
+      overlaidFilled.sort((a, b) => a.date.localeCompare(b.date))
+      return NextResponse.json({ prices: overlaidFilled, raw: data, basePriceUsed: true })
     }
 
     // Overlay numAvail from availability_cache so manually-blocked dates appear correctly.
-    // Beds24 calendar GET never returns numAvail — we track it in Supabase instead.
-    const overlaidPrices = await overlayAvailabilityCache(prices, session?.user?.id, roomId)
+    // Beds24 closures (blackouts, bookings, 0 units) are always preserved.
+    const overlaidPrices = markUnsyncedBlocks(
+      await overlayAvailabilityCache(prices, session?.user?.id, roomId),
+      bookableInBeds24(prices, availMap),
+    )
+    overlaidPrices.sort((a, b) => a.date.localeCompare(b.date))
     return NextResponse.json({ prices: overlaidPrices, raw: data })
   } catch (error) {
     return NextResponse.json(
@@ -407,13 +476,14 @@ export async function POST(request: Request) {
   console.log('[rooms POST] sending to Beds24 URL:', url.toString())
   console.log('[rooms POST] payload:', JSON.stringify(normalizedPayload))
 
-  // Prepare user-specific tokens if available
-  const userTokens = session?.user?.beds24Token && session?.user?.beds24RefreshToken
+  // Prepare user-specific tokens if available (with DB fallback)
+  const sessionTokens = session?.user?.beds24Token && session?.user?.beds24RefreshToken
     ? {
         accessToken: session.user.beds24Token,
         refreshToken: session.user.beds24RefreshToken,
       }
     : undefined
+  const userTokens = sessionTokens ?? (session?.user?.id ? await resolveBeds24Tokens(session.user.id) : undefined)
 
   try {
     const response = await fetchWithTokenRefresh(url.toString(), {
@@ -447,6 +517,25 @@ export async function POST(request: Request) {
           requestUrl: url.toString(),
         },
         { status: isBeds24CreditError(response.status, data) ? 402 : 502 }
+      )
+    }
+
+    // Beds24 can accept the POST and still leave dates open on the channels.
+    // Never report a block as done (or cache it) until Beds24 shows it closed.
+    const unappliedBlocks = await findUnappliedBlocks(normalizedPayload, {
+      userId: session?.user?.id,
+      defaultRoomId,
+      propertyId: propertyId ?? undefined,
+    })
+    const unappliedDates = Object.values(unappliedBlocks).flat().sort()
+    if (unappliedDates.length) {
+      console.error('[rooms POST] Beds24 accepted the block but dates are still open:', unappliedBlocks)
+      return NextResponse.json(
+        {
+          error: `Beds24 לא סגרה את התאריכים ${unappliedDates.map(formatShortDate).join(', ')} — הם עדיין פתוחים להזמנה בערוצים. נסו שוב.`,
+          unappliedBlocks,
+        },
+        { status: 502 }
       )
     }
 

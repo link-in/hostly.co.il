@@ -20,7 +20,7 @@ async function openArrivalMessagePage(page: Page, context: BrowserContext, baseU
   })
 
   await page.goto(`${baseURL}/dashboard/arrival-message`)
-  await page.waitForLoadState('networkidle')
+  await page.waitForLoadState('domcontentloaded')
 }
 
 test.describe('Arrival Message Page Buttons (HOS-14)', () => {

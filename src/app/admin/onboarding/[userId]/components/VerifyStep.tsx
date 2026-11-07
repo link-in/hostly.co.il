@@ -1,5 +1,6 @@
 'use client'
 
+import { Button } from '@/components/ui'
 import type { AccountChannelLinks, AirbnbRoomStatus } from '@/lib/onboarding/steps/channels'
 import { StepPanel } from './StepPanel'
 import { useStepAction } from './useStepAction'
@@ -49,9 +50,9 @@ export function VerifyStep({ api, overview, record, status, onChanged }: StepPro
           )}
         </ul>
       )}
-      <button type="button" className="btn btn-primary" disabled={running} onClick={() => run(() => api.verify())}>
+      <Button type="button" variant="primary" loading={running} onClick={() => run(() => api.verify())}>
         {running ? 'בודק...' : status === 'done' ? 'בדוק שוב' : 'הרץ בדיקה'}
-      </button>
+      </Button>
     </StepPanel>
   )
 }

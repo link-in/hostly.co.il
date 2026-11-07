@@ -168,6 +168,9 @@ export function OnboardingWizard({ userId }: { userId: string }) {
         <div className="row g-0">
           <div className="col-lg-4 border-start p-3 p-md-4" style={{ background: 'var(--hn-50)' }}>
             <ProgressList stepOrder={overview.stepOrder} statusOf={statusOf} activeStep={activeStep} onSelect={setActiveStep} />
+            <p className="small mt-3 mb-0" style={{ color: 'var(--htxt-2)' }} data-testid="beds24-account-mode">
+              {overview.usesOwnBeds24Account ? 'עובד מול חשבון המשנה של הלקוח ב-Beds24' : 'עובד מול חשבון המאסטר ב-Beds24'}
+            </p>
           </div>
           <div className="col-lg-8 p-4 p-md-5">
             <ActiveComponent

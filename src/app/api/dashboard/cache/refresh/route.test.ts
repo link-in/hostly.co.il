@@ -55,7 +55,7 @@ describe('POST /api/dashboard/cache/refresh', () => {
     expect(refreshRoomCache).not.toHaveBeenCalled()
   })
 
-  it('refreshes every room of the user when no roomId is given, for 12 months', async () => {
+  it('refreshes every room of the user when no roomId is given', async () => {
     const res = await POST(postRequest())
     const json = await res.json()
 
@@ -63,7 +63,6 @@ describe('POST /api/dashboard/cache/refresh', () => {
     expect(json.success).toBe(true)
     expect(json.totalDays).toBe(730)
     expect(vi.mocked(refreshRoomCache).mock.calls.map((c) => c[2])).toEqual(['111', '222'])
-    expect(vi.mocked(refreshRoomCache).mock.calls[0][5]).toEqual({ months: 12 })
   })
 
   it('refreshes only the requested room when it belongs to the user', async () => {

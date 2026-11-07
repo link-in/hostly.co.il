@@ -84,6 +84,11 @@ export const propertyStepInputSchema = z.discriminatedUnion('mode', [
     airbnbListingId: beds24Id,
     listingName: z.string().trim().max(200).optional(),
   }),
+  z.object({
+    mode: z.literal('existing'),
+    propertyId: beds24Id,
+    roomId: beds24Id,
+  }),
 ])
 export type PropertyStepInput = z.infer<typeof propertyStepInputSchema>
 

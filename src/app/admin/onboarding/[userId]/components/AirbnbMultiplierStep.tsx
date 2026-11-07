@@ -1,5 +1,6 @@
 'use client'
 
+import { Button } from '@/components/ui'
 import { StepPanel } from './StepPanel'
 import { useStepAction } from './useStepAction'
 import type { StepProps } from './stepProps'
@@ -16,14 +17,15 @@ export function AirbnbMultiplierStep({ api, overview, record, status, onChanged 
       </p>
       {status === 'skipped' && <div className="alert alert-secondary small">דולג כי הלקוח לא מחובר ל-Airbnb.</div>}
       {status !== 'skipped' && (
-        <button
+        <Button
           type="button"
-          className="btn btn-primary"
-          disabled={running || !airbnbConnected}
+          variant="primary"
+          loading={running}
+          disabled={!airbnbConnected}
           onClick={() => run(() => api.applyAirbnbMultiplier())}
         >
           {running ? 'שומר...' : status === 'done' ? 'החל שוב' : `החל מכפיל ${overview.airbnbMultiplier}`}
-        </button>
+        </Button>
       )}
       {!airbnbConnected && status !== 'skipped' && (
         <p className="text-muted small mt-2 mb-0">יש לחבר מודעת Airbnb קודם.</p>

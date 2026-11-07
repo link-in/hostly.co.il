@@ -1,15 +1,29 @@
 'use client'
 
 import { useState } from 'react'
-import { Copy, ExternalLink } from 'lucide-react'
+import { Button } from '@/components/ui'
 import { PROPERTY_TYPES } from '@/lib/onboarding/schemas'
 import type { PropertyStepData } from '@/lib/onboarding/service'
 import { StepPanel } from './StepPanel'
+import { AirbnbAuthLink } from './AirbnbAuthLink'
 import { AirbnbListingPicker } from './AirbnbListingPicker'
+import { ExistingPropertyPicker } from './ExistingPropertyPicker'
 import { useStepAction } from './useStepAction'
 import { readData, type StepProps } from './stepProps'
 
-type Mode = 'create' | 'importAirbnb'
+type Mode = 'create' | 'importAirbnb' | 'existing'
+
+const MODE_LABELS: Record<Mode, string> = {
+  create: 'יצירת נכס חדש',
+  importAirbnb: 'ייבוא ממודעת Airbnb קיימת',
+  existing: 'נכס קיים ב-Beds24',
+}
+
+const DONE_MESSAGES: Record<PropertyStepData['source'], string> = {
+  created: 'הנכס והחדר נוצרו בקריאה אחת.',
+  airbnbImport: 'הנכס יובא ממודעת Airbnb, והמודעה כבר מחוברת.',
+  existing: 'חובר נכס קיים מחשבון ה-Beds24 של הלקוח.',
+}
 
 const PROPERTY_TYPE_LABELS: Record<(typeof PROPERTY_TYPES)[number], string> = {
   apartment: 'דירה',
@@ -23,16 +37,10 @@ const PROPERTY_TYPE_LABELS: Record<(typeof PROPERTY_TYPES)[number], string> = {
 export function PropertyStep({ api, overview, record, status, onChanged }: StepProps) {
   const { running, error, run } = useStepAction(onChanged)
   const done = readData<PropertyStepData>(record)
-  const [mode, setMode] = useState<Mode>('create')
+  const [mode, setMode] = useState<Mode>(overview.usesOwnBeds24Account ? 'existing' : 'create')
   const [name, setName] = useState(overview.client.displayName)
   const [propertyType, setPropertyType] = useState<(typeof PROPERTY_TYPES)[number]>('apartment')
   const [maxPeople, setMaxPeople] = useState(2)
-  const [authCopied, setAuthCopied] = useState(false)
-
-  async function copyAuthLink() {
-    await navigator.clipboard.writeText(overview.airbnbAuthUrl)
-    setAuthCopied(true)
-  }
 
   if (status === 'done') {
     return (
@@ -42,7 +50,7 @@ export function PropertyStep({ api, overview, record, status, onChanged }: StepP
           <div className="col-6"><div className="text-muted small">מזהה חדר</div><code data-testid="room-id">{done.roomId}</code></div>
         </div>
         <p className="text-muted small mt-3 mb-0">
-          {done.source === 'airbnbImport' ? 'הנכס יובא ממודעת Airbnb, והמודעה כבר מחוברת.' : 'הנכס והחדר נוצרו בקריאה אחת.'}
+          {DONE_MESSAGES[done.source ?? 'created']}
         </p>
       </StepPanel>
     )
@@ -56,37 +64,43 @@ export function PropertyStep({ api, overview, record, status, onChanged }: StepP
         aria-label="בחירת אופן יצירת הנכס"
         style={{ background: 'var(--hn-50)', border: '1px solid var(--hborder-light)' }}
       >
-        <button
-          type="button"
-          className="btn btn-sm border-0 flex-fill fw-semibold"
-          style={{
-            minHeight: 40,
-            borderRadius: 12,
-            background: mode === 'create' ? 'var(--hb)' : 'transparent',
-            color: mode === 'create' ? '#fff' : 'var(--hb)',
-            boxShadow: mode === 'create' ? '0 8px 18px rgba(113, 51, 217, 0.18)' : 'none',
-          }}
-          onClick={() => setMode('create')}
-        >
-          יצירת נכס חדש
-        </button>
-        <button
-          type="button"
-          className="btn btn-sm border-0 flex-fill fw-semibold"
-          style={{
-            minHeight: 40,
-            borderRadius: 12,
-            background: mode === 'importAirbnb' ? 'var(--hb)' : 'transparent',
-            color: mode === 'importAirbnb' ? '#fff' : 'var(--hb)',
-            boxShadow: mode === 'importAirbnb' ? '0 8px 18px rgba(113, 51, 217, 0.18)' : 'none',
-          }}
-          onClick={() => setMode('importAirbnb')}
-        >
-          ייבוא ממודעת Airbnb קיימת
-        </button>
+        {(Object.keys(MODE_LABELS) as Mode[]).map((m) => (
+          <button
+            key={m}
+            type="button"
+            className="btn btn-sm border-0 flex-fill fw-semibold"
+            aria-pressed={mode === m}
+            style={{
+              minHeight: 40,
+              borderRadius: 12,
+              background: mode === m ? 'var(--hb)' : 'transparent',
+              color: mode === m ? '#fff' : 'var(--hb)',
+              boxShadow: mode === m ? '0 8px 18px rgba(113, 51, 217, 0.18)' : 'none',
+            }}
+            onClick={() => setMode(m)}
+          >
+            {MODE_LABELS[m]}
+          </button>
+        ))}
       </div>
 
-      {mode === 'create' ? (
+      {mode === 'existing' ? (
+        <>
+          <p className="text-muted small">
+            מתאים ללקוח שיש לו חשבון משנה ב-Beds24 עם נכס קיים. אם המודעה כבר מסונכרנת עם Airbnb, החיבור יזוהה אוטומטית.
+          </p>
+          {!overview.usesOwnBeds24Account && (
+            <div className="alert alert-warning small">
+              ללקוח אין טוקנים של חשבון משנה. הרשימה תציג את נכסי חשבון המאסטר.
+            </div>
+          )}
+          <ExistingPropertyPicker
+            api={api}
+            disabled={running}
+            onPick={(room) => run(() => api.createProperty({ mode: 'existing', ...room }))}
+          />
+        </>
+      ) : mode === 'create' ? (
         <form
           onSubmit={(e) => {
             e.preventDefault()
@@ -109,9 +123,9 @@ export function PropertyStep({ api, overview, record, status, onChanged }: StepP
               <input id="max-people" type="number" className="form-control" min={1} max={30} value={maxPeople} onChange={(e) => setMaxPeople(Number(e.target.value))} />
             </div>
           </div>
-          <button type="submit" className="btn btn-primary" disabled={running || name.trim().length < 2}>
+          <Button type="submit" variant="primary" loading={running} disabled={name.trim().length < 2}>
             {running ? 'יוצר...' : 'צור נכס וחדר'}
-          </button>
+          </Button>
         </form>
       ) : (
         <>
@@ -120,21 +134,11 @@ export function PropertyStep({ api, overview, record, status, onChanged }: StepP
             style={{ background: 'var(--hb-50)', border: '1px solid var(--hb-200)' }}
           >
             <div className="fw-semibold mb-1" style={{ color: 'var(--htxt-1)' }}>ייבוא מחשבון Airbnb מחובר</div>
-            <p className="mb-3 small" style={{ color: 'var(--htxt-3)' }}>
-              אם החשבון עדיין לא מופיע, שלח ללקוח את קישור ההרשאה או פתח אותו בדפדפן. אחרי האישור טען את חשבונות Airbnb ובחר מודעה.
+            <p className="mb-2 small" style={{ color: 'var(--htxt-3)' }}>
+              Beds24 תיצור את הנכס והחדר מתוך המודעה ותחבר אותה מיד. אחרי אישור ההרשאה טען את חשבונות Airbnb ובחר מודעה.
             </p>
-            <div className="d-flex flex-wrap gap-2">
-              <button type="button" className="btn btn-outline-primary btn-sm d-inline-flex align-items-center gap-1" onClick={copyAuthLink}>
-                <Copy size={14} />
-                {authCopied ? 'הקישור הועתק' : 'העתק קישור הרשאה'}
-              </button>
-              <a className="btn btn-outline-primary btn-sm d-inline-flex align-items-center gap-1" href={overview.airbnbAuthUrl} target="_blank" rel="noreferrer">
-                <ExternalLink size={14} />
-                פתח הרשאת Airbnb
-              </a>
-            </div>
-          </div>
-          <AirbnbListingPicker
+            <AirbnbAuthLink authUrl={overview.airbnbAuthUrl} />
+          </div>          <AirbnbListingPicker
             api={api}
             disabled={running}
             onPick={(listing) => run(() => api.createProperty({ mode: 'importAirbnb', ...listing }))}

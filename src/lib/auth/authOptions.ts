@@ -177,12 +177,14 @@ export const authOptions: NextAuthOptions = {
         }
       }
 
-      // רענון הנכס/החדר מה-DB (למשל אחרי שאדמין סיים onboarding כשהמשתמש כבר מחובר)
+      // רענון הנכס/החדר/טוקנים מה-DB (למשל אחרי שאדמין סיים onboarding כשהמשתמש כבר מחובר)
       if (token.id && isPropertyRoomSyncDue(token.propertyRoomSyncedAt)) {
         const fresh = await loadPropertyRoom(token.id)
         if (fresh) {
           token.propertyId = fresh.propertyId
           token.roomId = fresh.roomId
+          if (fresh.beds24Token) token.beds24Token = fresh.beds24Token
+          if (fresh.beds24RefreshToken) token.beds24RefreshToken = fresh.beds24RefreshToken
         }
         token.propertyRoomSyncedAt = Date.now()
       }

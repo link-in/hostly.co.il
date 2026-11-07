@@ -1,8 +1,5 @@
 import { refreshRoomCache } from '@/lib/availability/cache'
 
-/** ידני = שנה קדימה (כמו תצוגת היומן). webhook ממשיך לרענן 3 חודשים. */
-export const MANUAL_REFRESH_MONTHS = 12
-
 export interface RoomRefreshResult {
   roomId: string
   upserted: number
@@ -15,7 +12,6 @@ export interface RefreshRoomsInput {
   roomIds: string[]
   accessToken: string
   refreshToken: string
-  months?: number
 }
 
 /**
@@ -31,7 +27,6 @@ export async function refreshRooms(input: RefreshRoomsInput): Promise<RoomRefres
       roomId,
       input.accessToken,
       input.refreshToken,
-      { months: input.months ?? MANUAL_REFRESH_MONTHS },
     )
     results.push({ roomId, upserted, ...(error ? { error } : {}) })
   }

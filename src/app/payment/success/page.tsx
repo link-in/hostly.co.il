@@ -51,14 +51,14 @@ function SuccessContent() {
   return (
     <main style={{
       minHeight: '100vh',
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
+      background: 'var(--hn-50)',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       padding: '20px', direction: 'rtl',
     }}>
       <div style={{
-        background: 'white', borderRadius: '24px',
+        background: 'white', borderRadius: '12px',
         padding: '48px 40px', maxWidth: '440px', width: '100%',
-        textAlign: 'center', boxShadow: '0 30px 80px rgba(0,0,0,0.2)',
+        textAlign: 'center', boxShadow: '0 4px 16px rgba(0,0,0,0.08)', border: '1px solid var(--hborder)',
       }}>
         {status === 'checking' && (
           <>
@@ -71,7 +71,7 @@ function SuccessContent() {
             </p>
             <div style={{
               width: '40px', height: '40px', border: '4px solid #e5e7eb',
-              borderTopColor: '#667eea', borderRadius: '50%',
+              borderTopColor: 'var(--hb)', borderRadius: '50%',
               margin: '24px auto 0',
               animation: 'spin 0.9s linear infinite',
             }} />
@@ -92,7 +92,7 @@ function SuccessContent() {
             <button
               onClick={() => router.push('/dashboard')}
               style={{
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                background: 'var(--hb)',
                 color: 'white', border: 'none', borderRadius: '12px',
                 padding: '13px 32px', fontSize: '15px', fontWeight: '700',
                 cursor: 'pointer', width: '100%',
@@ -118,7 +118,7 @@ function SuccessContent() {
               <button
                 onClick={() => router.push('/dashboard/pricing')}
                 style={{
-                  background: 'linear-gradient(135deg,#667eea,#764ba2)',
+                  background: 'var(--hb)',
                   color: 'white', border: 'none', borderRadius: '12px',
                   padding: '12px 0', fontSize: '14px', fontWeight: '700',
                   cursor: 'pointer', flex: 1,
@@ -129,8 +129,8 @@ function SuccessContent() {
               <button
                 onClick={() => router.push('/dashboard')}
                 style={{
-                  background: 'white', color: '#667eea',
-                  border: '1px solid #667eea', borderRadius: '12px',
+                  background: 'white', color: 'var(--hb)',
+                  border: '1px solid var(--hb)', borderRadius: '12px',
                   padding: '12px 0', fontSize: '14px', fontWeight: '600',
                   cursor: 'pointer', flex: 1,
                 }}

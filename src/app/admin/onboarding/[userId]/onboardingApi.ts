@@ -1,9 +1,10 @@
 import type { OnboardingOverview } from '@/lib/onboarding/service'
 import type { AirbnbListingSummary, AirbnbUserSummary } from '@/lib/onboarding/steps/airbnb'
+import type { PropertySummary } from '@/lib/onboarding/steps/property'
 import type { SkippableStepId } from '@/lib/onboarding/state'
 import type { BasePriceStepInput, PropertyStepInput } from '@/lib/onboarding/schemas'
 
-export type { OnboardingOverview, AirbnbListingSummary, AirbnbUserSummary }
+export type { OnboardingOverview, AirbnbListingSummary, AirbnbUserSummary, PropertySummary }
 
 export interface FinalizeResponse {
   data: { cachedDays: number; cacheWarning: string | null }
@@ -34,6 +35,7 @@ export function createOnboardingApi(userId: string) {
 
   return {
     getOverview: () => call<OnboardingOverview>(''),
+    listAccountProperties: () => call<{ properties: PropertySummary[] }>('/property'),
     createProperty: (input: PropertyStepInput) => call('/property', { method: 'POST', body: input }),
     setBasePrice: (input: Pick<BasePriceStepInput, 'price'> & Partial<BasePriceStepInput>) =>
       call('/base-price', { method: 'POST', body: input }),

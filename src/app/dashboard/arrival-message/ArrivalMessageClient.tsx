@@ -3,8 +3,10 @@
 import React, { useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
+import { MessageSquare } from 'lucide-react'
 import DashboardHeader from '@/components/DashboardHeader'
 import DashboardLoader from '@/components/DashboardLoader'
+import { PageHeader } from '@/components/ui'
 import ArrivalMessageSection from '../messages/components/ArrivalMessageSection'
 
 export default function ArrivalMessageClient() {
@@ -20,10 +22,14 @@ export default function ArrivalMessageClient() {
 
   return (
     <main dir="rtl" style={{ minHeight: '100vh', background: 'var(--hn-50)' }}>
-      <div className="container py-3 py-md-4">
-        <div className="mb-3 mb-md-4">
-          <DashboardHeader session={session} currentPage="messages" />
-        </div>
+      <DashboardHeader session={session} currentPage="messages" />
+
+      <div className="container-fluid py-3 py-md-4 px-3 px-md-4">
+        <PageHeader
+          title="הודעת הגעה"
+          subtitle="הודעת WhatsApp אוטומטית שנשלחת לאורחים לפני ההגעה"
+          icon={<MessageSquare size={20} />}
+        />
 
         <div className="row justify-content-center">
           <div className="col-12 col-lg-8">

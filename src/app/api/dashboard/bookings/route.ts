@@ -8,6 +8,7 @@ import { getUserByEmail } from '@/lib/auth/getUsersDb'
 import { normalizePhoneNumber } from '@/lib/utils/phoneFormatter'
 import { addOrUpdateCustomer } from '@/lib/customers/addOrUpdateCustomer'
 import { normalizeBookingItem, extractBookingId, extractUserTokens } from '@/lib/bookings/normalizer'
+import { updateNotesWithCleaning } from '@/lib/bookings/cleaningNotes'
 import { buildBookingsListUrl } from '@/lib/beds24/bookingsQuery'
 import { notifyOwnersOfBookingCancellation } from '@/lib/notifications/bookingAlerts'
 import { buildOwnerPhoneList } from '@/lib/notifications/ownerPhones'
@@ -486,6 +487,25 @@ export async function PATCH(request: Request) {
     console.log('📝 Notes update:', updates.notes || '(empty)')
   }
   if (updates.status) booking.status = updates.status
+
+  if (updates.cleaningCost !== undefined || updates.hasCleaning !== undefined) {
+    const cost = Number(updates.cleaningCost) || 0
+    const hasCleaning = updates.hasCleaning !== undefined ? Boolean(updates.hasCleaning) : cost > 0
+    booking.cleaningCost = cost
+    booking.hasCleaning = hasCleaning
+    if (updates.cleanerName !== undefined) {
+      booking.cleanerName = updates.cleanerName ? String(updates.cleanerName).trim() : ''
+    }
+    const currentNotes = typeof booking.notes === 'string'
+      ? booking.notes
+      : (typeof updates.notes === 'string' ? updates.notes : '')
+    booking.notes = updateNotesWithCleaning(
+      currentNotes,
+      cost,
+      updates.cleanerName ? String(updates.cleanerName).trim() : undefined,
+      hasCleaning
+    )
+  }
   
   // Handle price update - send as direct field (not invoice)
   // Note: For updates, Beds24 accepts direct 'price' field
@@ -635,10 +655,10 @@ export async function PATCH(request: Request) {
 }
 
 /**
- * DELETE endpoint - Cancel a booking in Beds24 (sets status to 0/cancelled)
- * Only allows cancelling Direct bookings (created in our system)
+ * DELETE endpoint - Cancel a booking in Beds24 (sets status to cancelled)
+ * Allows cancelling Direct bookings as well as channel bookings (when cancelled on OTA and out of sync)
  * 
- * Note: We use POST with status=0 instead of DELETE because:
+ * Note: We use POST with status='cancelled' instead of HTTP DELETE because:
  * - The global token may not have delete:bookings scope
  * - Cancelling preserves booking history in Beds24
  * - Works reliably with write:bookings scope
@@ -678,14 +698,8 @@ export async function DELETE(request: Request) {
     guestPhone,
   } = requestBody as Record<string, unknown>
 
-  // Validate that it's a Direct booking
-  if (!source || typeof source !== 'string' || !source.toLowerCase().includes('direct')) {
-    console.error('❌ Attempted to cancel non-Direct booking:', bookingId, source)
-    return NextResponse.json(
-      { error: 'ניתן לבטל רק הזמנות שנוצרו ישירות במערכת' },
-      { status: 403 }
-    )
-  }
+  // Log booking source for audit
+  console.log(`🗑️ Cancelling booking: ${bookingId} (source: ${source || 'unknown'})`)
   
   // Validate required fields
   if (!propertyId || !roomId) {

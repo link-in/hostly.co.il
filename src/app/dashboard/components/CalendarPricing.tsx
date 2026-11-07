@@ -12,6 +12,8 @@ import { CalendarSyncButton } from './CalendarSyncButton'
 import { toast } from 'sonner'
 import { normalizeDate, toKey, isSameDay, addDays, buildDateRanges } from '@/lib/dashboard/calendarDates'
 import { buildBookingMap, isBookedOn, buildBookingSegments } from '@/lib/dashboard/bookingSegments'
+import { getUnsyncedBlockedDates, dateFromKey } from '@/lib/dashboard/unsyncedBlocks'
+import UnsyncedBlocksBanner from './UnsyncedBlocksBanner'
 import {
   isAwaitingApprovalStatus,
   canConfirmViaBeds24Api,
@@ -142,6 +144,8 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated, onApproveReque
     return map
   }, [prices])
 
+  const unsyncedBlockedDates = useMemo(() => getUnsyncedBlockedDates(prices, todayKey), [prices, todayKey])
+
   const availabilityMap = useMemo(() => {
     const map: Record<string, number> = {}
     prices.forEach((entry) => {
@@ -255,6 +259,7 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated, onApproveReque
           minStay: minStayInput,
           price1: Number(priceInput),
           numAvail: 1,
+          override: 'none',
         })),
       },
     ]
@@ -310,8 +315,8 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated, onApproveReque
     }
   }
 
-  const blockDates = async () => {
-    if (!selectedDates.length || saving) return
+  const blockDates = async (datesToBlock: Date[] = selectedDates) => {
+    if (!datesToBlock.length || saving) return
     setSaveError(null)
     setSaveSuccess(null)
     setSaving(true)
@@ -324,13 +329,15 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated, onApproveReque
     // Send one entry per date so each can carry its current price1.
     // Beds24 only returns calendar records in GET when a price override exists;
     // including price1 ensures the blocked entry appears in future GET calls.
-    const calendarEntries = selectedDates.map((date) => {
+    // override: 'blackout' instructs Beds24 to mark the date as blackout and propagate the closure to Airbnb/OTAs.
+    const calendarEntries = datesToBlock.map((date) => {
       const key = toKey(date)
       const currentPrice = priceOverrides[key] ?? priceMap[key]
       return {
         from: key,
         to: key,
         numAvail: 0,
+        override: 'blackout',
         ...(currentPrice !== undefined && currentPrice > 0 ? { price1: currentPrice } : {}),
       }
     })
@@ -353,7 +360,7 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated, onApproveReque
       }
 
       // Optimistic update — block dates in local state immediately for instant feedback
-      const blockedKeys = selectedDates.map(toKey)
+      const blockedKeys = datesToBlock.map(toKey)
       setManuallyBlockedDates((prev) => {
         const next = new Set(prev)
         blockedKeys.forEach((k) => next.add(k))
@@ -394,7 +401,8 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated, onApproveReque
       prices.find((entry) => entry.roomId)?.roomId ||
       null
 
-    // Send numAvail: 1 per date, preserving current price so the calendar record stays in Beds24
+    // Send numAvail: 1 per date with override: 'none', preserving current price so the calendar record stays in Beds24
+    // and clears the blackout so Airbnb/OTAs reopen.
     const calendarEntries = selectedBlockedDates.map((date) => {
       const key = toKey(date)
       const currentPrice = priceOverrides[key] ?? priceMap[key]
@@ -402,6 +410,7 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated, onApproveReque
         from: key,
         to: key,
         numAvail: 1,
+        override: 'none',
         ...(currentPrice !== undefined && currentPrice > 0 ? { price1: currentPrice } : {}),
       }
     })
@@ -460,8 +469,8 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated, onApproveReque
 
   // Derived selection state for sidebar logic
   const selectedHasBooked = selectedDates.some((d) => bookingMap.has(toKey(d)))
-  const selectedBlockedDates = selectedDates.filter((d) => (availabilityMap[toKey(d)] ?? 1) === 0)
-  const selectedFreeDates = selectedDates.filter((d) => (availabilityMap[toKey(d)] ?? 1) !== 0)
+  const selectedBlockedDates = selectedDates.filter((d) => (availabilityMap[toKey(d)] ?? 1) <= 0)
+  const selectedFreeDates = selectedDates.filter((d) => (availabilityMap[toKey(d)] ?? 1) > 0)
   const allSelectedAreBlocked = selectedDates.length > 0 && selectedBlockedDates.length === selectedDates.length
 
   const monthLabel = new Intl.DateTimeFormat('he-IL', { month: 'long', year: 'numeric' }).format(currentMonth)
@@ -470,6 +479,12 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated, onApproveReque
   return (
     <div className="row g-4">
       <div className="col-lg-8">
+        <UnsyncedBlocksBanner
+          dates={unsyncedBlockedDates}
+          onResync={() => blockDates(unsyncedBlockedDates.map(dateFromKey))}
+          busy={saving}
+          disabled={disabled}
+        />
         <div className="d-flex align-items-center justify-content-between mb-3">
           {/* Month label — click to open picker */}
           <div style={{ position: 'relative' }}>
@@ -584,11 +599,11 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated, onApproveReque
                 height: '32px',
                 border: 'none',
                 backgroundColor: 'transparent',
-                color: '#667eea',
+                color: 'var(--hb)',
                 padding: 0,
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = 'rgba(102, 126, 234, 0.1)'
+                e.currentTarget.style.backgroundColor = 'var(--hb-100)'
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.backgroundColor = 'transparent'
@@ -619,11 +634,11 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated, onApproveReque
                 height: '32px',
                 border: 'none',
                 backgroundColor: 'transparent',
-                color: '#667eea',
+                color: 'var(--hb)',
                 padding: 0,
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = 'rgba(102, 126, 234, 0.1)'
+                e.currentTarget.style.backgroundColor = 'var(--hb-100)'
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.backgroundColor = 'transparent'
@@ -677,7 +692,7 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated, onApproveReque
                 const key = toKey(date)
                 const isBooked = bookingMap.has(key)
                 const numAvail = availabilityMap[key] ?? 1
-                const isBlocked = numAvail === 0 && !isBooked
+                const isBlocked = numAvail <= 0 && !isBooked
                 const isSelected = selectedDates.some((item) => isSameDay(item, date))
                 const isBlockedSelected = isBlocked && isSelected
                 const price = priceOverrides[key] ?? priceMap[key] ?? DEFAULT_PRICE
@@ -902,7 +917,7 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated, onApproveReque
                   color: selectedDates.length && !selectedHasBooked && selectedFreeDates.length > 0 ? 'white' : '#EF4444',
                   padding: '8px 4px', fontSize: '11px', lineHeight: 1.2, borderRadius: '6px',
                 }}
-                onClick={blockDates}
+                onClick={() => blockDates()}
                 disabled={!selectedFreeDates.length || selectedHasBooked || saving || disabled}
                 title={disabled ? 'לא ניתן לבצע פעולות — הקרדיט ב-Beds24 אזל' : selectedHasBooked ? 'לא ניתן לסגור תאריכים עם הזמנות קיימות' : 'סגור תאריכים חופשיים נבחרים להזמנות'}
                 aria-label="סגור להזמנות"
@@ -1022,6 +1037,12 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated, onApproveReque
                   ) : null}
                   <div className="small" style={{ color: '#5B6670' }}><span className="fw-semibold">לילות:</span> {selectedReservation.nights}</div>
                   <div className="small" style={{ color: '#5B6670' }}><span className="fw-semibold">סה״כ:</span> {formatCurrency(selectedReservation.total)}</div>
+                  {selectedReservation.cleaningCost && selectedReservation.cleaningCost > 0 ? (
+                    <div className="small" style={{ color: '#5B6670' }}>
+                      <span className="fw-semibold">עלות ניקיון:</span> {formatCurrency(selectedReservation.cleaningCost)}
+                      {selectedReservation.cleanerName ? ` (${selectedReservation.cleanerName})` : ''}
+                    </div>
+                  ) : null}
                   {selectedReservation.source ? (
                     <div className="small" style={{ color: '#5B6670' }}><span className="fw-semibold">מקור:</span> {selectedReservation.source}</div>
                   ) : null}

@@ -34,7 +34,7 @@ function Beds24TokenCard() {
 
   return (
     <div
-      className="card border-0 shadow-sm"
+      className="card hostly-dark-card"
       style={{ borderRadius: 12, borderRight: '4px solid #f59e0b' }}
       dir="rtl"
     >
@@ -66,7 +66,7 @@ function Beds24TokenCard() {
             style={{
               background: status === 'success'
                 ? '#16a34a'
-                : 'linear-gradient(135deg, #f59e0b, #f97316)',
+                : '#f59e0b',
               color: 'white',
               border: 'none',
               minWidth: 130,
@@ -154,10 +154,7 @@ export default function AdminDashboardPage() {
         <h1 
           className="mb-2"
           style={{
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text',
+            color: 'var(--htxt-1)',
             fontWeight: 'bold',
           }}
         >
@@ -173,7 +170,7 @@ export default function AdminDashboardPage() {
         <div className="col-md-6">
           <Link href="/admin/users" className="text-decoration-none">
             <div 
-              className="card h-100 border-0 shadow-sm hover-shadow" 
+              className="card h-100 hostly-dark-card hover-shadow" 
               style={{ 
                 cursor: 'pointer', 
                 transition: 'all 0.3s',
@@ -185,10 +182,7 @@ export default function AdminDashboardPage() {
                 <div 
                   className="display-1 mb-3"
                   style={{
-                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    backgroundClip: 'text',
+                    color: 'var(--htxt-1)',
                   }}
                 >
                   👥
@@ -200,7 +194,7 @@ export default function AdminDashboardPage() {
                 <button 
                   className="btn mt-3"
                   style={{
-                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    background: 'var(--hb)',
                     border: 'none',
                     color: 'white',
                   }}
@@ -216,7 +210,7 @@ export default function AdminDashboardPage() {
         <div className="col-md-6">
           <Link href="/admin/subscriptions" className="text-decoration-none">
             <div 
-              className="card h-100 border-0 shadow-sm hover-shadow" 
+              className="card h-100 hostly-dark-card hover-shadow" 
               style={{ 
                 cursor: 'pointer', 
                 transition: 'all 0.3s',
@@ -228,10 +222,7 @@ export default function AdminDashboardPage() {
                 <div 
                   className="display-1 mb-3"
                   style={{
-                    background: 'linear-gradient(135deg, #764ba2 0%, #f093fb 100%)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    backgroundClip: 'text',
+                    color: 'var(--htxt-1)',
                   }}
                 >
                   💰
@@ -243,7 +234,7 @@ export default function AdminDashboardPage() {
                 <button 
                   className="btn mt-3"
                   style={{
-                    background: 'linear-gradient(135deg, #764ba2 0%, #f093fb 100%)',
+                    background: 'var(--hb)',
                     border: 'none',
                     color: 'white',
                   }}
@@ -262,7 +253,7 @@ export default function AdminDashboardPage() {
             className="text-decoration-none"
           >
             <div 
-              className="card h-100 border-0 shadow-sm" 
+              className="card h-100 hostly-dark-card" 
               style={{ 
                 borderRadius: '12px',
                 background: 'white',
@@ -282,10 +273,7 @@ export default function AdminDashboardPage() {
                 <div 
                   className="display-1 mb-3"
                   style={{
-                    background: 'linear-gradient(135deg, #667eea 0%, #f093fb 100%)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    backgroundClip: 'text',
+                    color: 'var(--htxt-1)',
                   }}
                 >
                   ⚙️
@@ -297,7 +285,7 @@ export default function AdminDashboardPage() {
                 <span 
                   className="btn mt-3"
                   style={{
-                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    background: 'var(--hb)',
                     color: 'white',
                     border: 'none',
                   }}
@@ -317,7 +305,7 @@ export default function AdminDashboardPage() {
         {/* Analytics Card */}
         <div className="col-md-6">
           <div 
-            className="card h-100 border-0 shadow-sm" 
+            className="card h-100 hostly-dark-card" 
             style={{ 
               opacity: 0.7,
               borderRadius: '12px',
@@ -328,10 +316,7 @@ export default function AdminDashboardPage() {
               <div 
                 className="display-1 mb-3"
                 style={{
-                  background: 'linear-gradient(135deg, #667eea 0%, #f093fb 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
+                  color: 'var(--htxt-1)',
                 }}
               >
                 📊
@@ -363,9 +348,9 @@ export default function AdminDashboardPage() {
             href="/dashboard" 
             className="btn"
             style={{
-              border: '1px solid white',
-              color: 'white',
-              backgroundColor: 'rgba(255, 255, 255, 0.1)',
+              border: '1px solid var(--hborder)',
+              color: 'var(--htxt-2)',
+              backgroundColor: 'var(--hsurf)',
             }}
           >
             ← חזור לדשבורד רגיל

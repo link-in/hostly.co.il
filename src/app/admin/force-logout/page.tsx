@@ -37,8 +37,8 @@ export default function ForceLogoutPage() {
       alignItems: 'center', 
       justifyContent: 'center', 
       minHeight: '100vh',
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
-      color: 'white',
+      background: 'var(--hn-50)',
+      color: 'var(--htxt-2)',
       fontFamily: 'var(--font-heebo), Heebo, sans-serif'
     }}>
       <div style={{ textAlign: 'center' }}>

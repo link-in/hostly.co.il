@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { getToken } from 'next-auth/jwt'
+import { isReservedSiteAddress } from '@/lib/landingBuilder/siteAddress'
 
 export async function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname
@@ -105,21 +106,7 @@ function extractSubdomain(hostname: string): string | null {
 }
 
 function isReservedSubdomain(subdomain: string): boolean {
-  const reserved = [
-    'www',
-    'api',
-    'admin',
-    'dashboard',
-    'app',
-    'mail',
-    'ftp',
-    'webmail',
-    'test',
-    'dev',
-    'staging'
-  ]
-  
-  return reserved.includes(subdomain.toLowerCase())
+  return isReservedSiteAddress(subdomain)
 }
 
 export const config = {

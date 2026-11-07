@@ -16,6 +16,16 @@ describe('isDashboardNavPageVisible', () => {
     expect(isDashboardNavPageVisible('landing', true)).toBe(true)
   })
 
+  it('shows the site builder only when its flag is on', () => {
+    expect(isDashboardNavPageVisible('site-builder', false, true)).toBe(true)
+    expect(isDashboardNavPageVisible('site-builder', false, false)).toBe(false)
+  })
+
+  it('keeps the site builder and landing flags independent', () => {
+    expect(isDashboardNavPageVisible('landing', false, true)).toBe(false)
+    expect(isDashboardNavPageVisible('site-builder', true, false)).toBe(false)
+  })
+
   it('leaves every other dashboard page visible', () => {
     expect(isDashboardNavPageVisible('api-keys', false)).toBe(true)
     expect(isDashboardNavPageVisible('dashboard', false)).toBe(true)

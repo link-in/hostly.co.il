@@ -1,19 +1,35 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { Eye, Send, Download, CheckCircle, Clock, XCircle, ExternalLink } from 'lucide-react'
+import { Eye, Send, Download, ExternalLink, UserCheck } from 'lucide-react'
 import type { CheckIn } from '@/lib/check-in/types'
 import DashboardHeader from '@/components/DashboardHeader'
 import DashboardLoader from '@/components/DashboardLoader'
+import { PageHeader, StatCard, DataTable, Button } from '@/components/ui'
+import type { ColumnDef } from '@/components/ui'
+import CheckInStatusBadge from './components/CheckInStatusBadge'
+
+type CheckInFilter = 'all' | 'pending' | 'completed' | 'expired'
+
+const FILTER_LABELS: Record<CheckInFilter, string> = {
+  all: 'הכל',
+  pending: 'ממתינים',
+  completed: 'הושלמו',
+  expired: 'פג תוקף',
+}
+
+function formatDate(iso?: string | null): string {
+  return iso ? new Date(iso).toLocaleDateString('he-IL') : '—'
+}
 
 function CheckInsPageContent() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const [checkIns, setCheckIns] = useState<CheckIn[]>([])
   const [loading, setLoading] = useState(true)
-  const [filter, setFilter] = useState<'all' | 'pending' | 'completed' | 'expired'>('all')
+  const [filter, setFilter] = useState<CheckInFilter>('all')
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -26,8 +42,7 @@ function CheckInsPageContent() {
       try {
         const res = await fetch('/api/dashboard/check-ins')
         if (res.ok) {
-          const data = await res.json()
-          setCheckIns(data)
+          setCheckIns(await res.json())
         }
       } catch (error) {
         console.error('Error fetching check-ins:', error)
@@ -41,277 +56,173 @@ function CheckInsPageContent() {
     }
   }, [status])
 
-  const filteredCheckIns = checkIns.filter(checkIn => {
-    if (filter === 'all') return true
-    return checkIn.status === filter
-  })
+  const filteredCheckIns = useMemo(
+    () => checkIns.filter((c) => filter === 'all' || c.status === filter),
+    [checkIns, filter],
+  )
 
-  const stats = {
-    pending: checkIns.filter(c => c.status === 'pending').length,
-    completed: checkIns.filter(c => c.status === 'completed').length,
-    total: checkIns.length,
-    completionRate: checkIns.length > 0 
-      ? Math.round((checkIns.filter(c => c.status === 'completed').length / checkIns.length) * 100)
-      : 0,
-  }
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return <span className="badge bg-success"><CheckCircle size={14} /> הושלם</span>
-      case 'pending':
-        return <span className="badge bg-warning text-dark"><Clock size={14} /> ממתין</span>
-      case 'expired':
-        return <span className="badge bg-danger"><XCircle size={14} /> פג תוקף</span>
-      default:
-        return <span className="badge bg-secondary">{status}</span>
+  const stats = useMemo(() => {
+    const completed = checkIns.filter((c) => c.status === 'completed').length
+    return {
+      pending: checkIns.filter((c) => c.status === 'pending').length,
+      completed,
+      total: checkIns.length,
+      completionRate: checkIns.length > 0 ? Math.round((completed / checkIns.length) * 100) : 0,
     }
+  }, [checkIns])
+
+  const counts: Record<CheckInFilter, number> = {
+    all: stats.total,
+    pending: stats.pending,
+    completed: stats.completed,
+    expired: checkIns.filter((c) => c.status === 'expired').length,
   }
 
-  const resendLink = async (checkIn: CheckIn) => {
+  const resendLink = (checkIn: CheckIn) => {
     if (confirm(`לשלוח שוב קישור צ'ק-אין ל-${checkIn.guest_name}?`)) {
       // TODO: Implement resend functionality
       alert('הקישור נשלח בהצלחה!')
     }
   }
 
+  const columns: ColumnDef<CheckIn>[] = [
+    {
+      header: 'אורח',
+      cell: (c) => (
+        <div>
+          <div style={{ fontWeight: 600 }}>{c.guest_name}</div>
+          <div style={{ fontSize: 12, color: 'var(--htxt-3)', marginTop: 1 }}>{c.guest_phone}</div>
+        </div>
+      ),
+      hideOnMobile: true,
+    },
+    { header: 'תאריך כניסה', cell: (c) => formatDate(c.check_in_date) },
+    { header: 'סטטוס', cell: (c) => <CheckInStatusBadge status={c.status} /> },
+    { header: 'תאריך השלמה', cell: (c) => formatDate(c.completed_at), hideOnMobile: true },
+    {
+      header: 'פעולות',
+      cell: (c) => (
+        <div className="d-flex gap-2" onClick={(e) => e.stopPropagation()}>
+          {c.status === 'pending' && c.token && (
+            <Button
+              variant="ghost"
+              size="sm"
+              iconOnly
+              title="פתח קישור צ'ק-אין"
+              aria-label="פתח קישור צ'ק-אין"
+              onClick={() => window.open(`${window.location.origin}/check-in/${c.token}`, '_blank')}
+            >
+              <ExternalLink size={16} />
+            </Button>
+          )}
+          <Button
+            variant="primary"
+            size="sm"
+            iconOnly
+            title="צפה בפרטים"
+            aria-label="צפה בפרטים"
+            onClick={() => router.push(`/dashboard/check-ins/${c.id}`)}
+          >
+            <Eye size={16} />
+          </Button>
+          {c.status === 'pending' && (
+            <Button variant="ghost" size="sm" iconOnly title="שלח שוב" aria-label="שלח שוב" onClick={() => resendLink(c)}>
+              <Send size={16} />
+            </Button>
+          )}
+          {c.status === 'completed' && (
+            <Button
+              variant="success"
+              size="sm"
+              iconOnly
+              title="הורד PDF"
+              aria-label="הורד PDF"
+              onClick={() => {
+                /* TODO: Download PDF */
+              }}
+            >
+              <Download size={16} />
+            </Button>
+          )}
+        </div>
+      ),
+    },
+  ]
+
   if (loading) {
-    return <DashboardLoader variant="fullscreen" label="טוען צ'ק-אינים…" />
+    return (
+      <main dir="rtl" style={{ minHeight: '100vh', background: 'var(--hn-50)' }}>
+        <DashboardHeader session={session} currentPage="check-ins" />
+        <div className="container-fluid py-3 py-md-4">
+          <DashboardLoader variant="section" label="טוען צ'ק-אינים…" minHeight={280} />
+        </div>
+      </main>
+    )
   }
 
   return (
-    <main 
-      style={{ 
-        minHeight: '100vh',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
-      }} 
-      dir="rtl"
-    >
-      <div className="container py-3 py-md-5">
-        <div className="row justify-content-center">
-          <div className="col-lg-11 col-xl-10">
-            <div className="mb-3 mb-md-4">
-              <DashboardHeader 
-                session={session}
-                title="ניהול צ'ק-אין דיגיטלי"
-                showLandingPageButton={true}
-                currentPage="check-ins"
-              />
-            </div>
+    <main dir="rtl" style={{ minHeight: '100vh', background: 'var(--hn-50)' }}>
+      <DashboardHeader session={session} currentPage="check-ins" />
+
+      <div className="container-fluid py-3 py-md-4 px-3 px-md-4">
+        <PageHeader
+          title="צ'ק-אין דיגיטלי"
+          subtitle="ניהול צ'ק-אינים של אורחים"
+          icon={<UserCheck size={20} />}
+        />
+
+        <div className="row g-2 g-md-3 mb-4">
+          <div className="col-6 col-md-3">
+            <StatCard label="ממתינים" value={String(stats.pending)} />
+          </div>
+          <div className="col-6 col-md-3">
+            <StatCard label="הושלמו" value={String(stats.completed)} />
+          </div>
+          <div className="col-6 col-md-3">
+            <StatCard label="סה״כ" value={String(stats.total)} />
+          </div>
+          <div className="col-6 col-md-3">
+            <StatCard label="אחוז השלמה" value={`${stats.completionRate}%`} />
           </div>
         </div>
 
-        <div className="row justify-content-center">
-          <div className="col-lg-11 col-xl-10">
-            <div 
-              className="card border-0 shadow-lg hostly-dark-card"
-              style={{ borderRadius: '16px' }}
+        <div className="mb-3 d-flex align-items-center flex-wrap gap-2">
+          {(Object.keys(FILTER_LABELS) as CheckInFilter[]).map((f) => (
+            <button
+              key={f}
+              type="button"
+              onClick={() => setFilter(f)}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                padding: '5px 14px',
+                borderRadius: 9999,
+                fontSize: 13,
+                fontWeight: filter === f ? 600 : 400,
+                cursor: 'pointer',
+                border: '1px solid',
+                borderColor: filter === f ? 'rgba(113,51,217,0.4)' : 'var(--hborder)',
+                background: filter === f ? 'rgba(113,51,217,0.1)' : 'transparent',
+                color: filter === f ? 'var(--hb)' : 'var(--htxt-2)',
+                transition: 'all 0.15s',
+              }}
             >
-              <div className="card-body p-3 p-md-4" style={{ direction: 'rtl' }}>
-
-                {/* Stats Cards */}
-                <div className="row g-2 g-md-3 mb-4">
-                  <div className="col-3">
-                    <div className="card text-center border-0 shadow-sm hostly-dark-stat" style={{ borderRadius: '12px' }}>
-                      <div className="card-body p-2 p-md-3">
-                        <h3 className="mb-1" style={{ color: '#fbbf24', fontSize: 'clamp(1rem, 4vw, 2rem)' }}>{stats.pending}</h3>
-                        <p className="mb-0 text-muted" style={{ fontSize: 'clamp(0.65rem, 2.5vw, 0.9rem)' }}>ממתינים</p>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="col-3">
-                    <div className="card text-center border-0 shadow-sm hostly-dark-stat" style={{ borderRadius: '12px' }}>
-                      <div className="card-body p-2 p-md-3">
-                        <h3 className="mb-1" style={{ color: '#34d399', fontSize: 'clamp(1rem, 4vw, 2rem)' }}>{stats.completed}</h3>
-                        <p className="mb-0 text-muted" style={{ fontSize: 'clamp(0.65rem, 2.5vw, 0.9rem)' }}>הושלמו</p>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="col-3">
-                    <div className="card text-center border-0 shadow-sm hostly-dark-stat" style={{ borderRadius: '12px' }}>
-                      <div className="card-body p-2 p-md-3">
-                        <h3 className="mb-1 stat-value" style={{ fontSize: 'clamp(1rem, 4vw, 2rem)' }}>{stats.total}</h3>
-                        <p className="mb-0 text-muted" style={{ fontSize: 'clamp(0.65rem, 2.5vw, 0.9rem)' }}>סה"כ</p>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="col-3">
-                    <div className="card text-center border-0 shadow-sm hostly-dark-stat" style={{ borderRadius: '12px' }}>
-                      <div className="card-body p-2 p-md-3">
-                        <h3 className="mb-1" style={{ color: '#22d3ee', fontSize: 'clamp(1rem, 4vw, 2rem)' }}>{stats.completionRate}%</h3>
-                        <p className="mb-0 text-muted" style={{ fontSize: 'clamp(0.65rem, 2.5vw, 0.9rem)' }}>אחוז</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Filters */}
-                <div style={{ marginBottom: '1.5rem' }}>
-                  <div 
-                    style={{ 
-                      display: 'flex',
-                      gap: '0',
-                      flexWrap: 'wrap',
-                    }}
-                    role="group"
-                  >
-                    <button
-                      type="button"
-                      className={`btn ${filter === 'all' ? 'btn-primary' : 'btn-outline-primary'}`}
-                      onClick={() => setFilter('all')}
-                      style={{
-                        ...(filter === 'all' ? {
-                          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                          border: 'none',
-                          color: 'white'
-                        } : {}),
-                        borderTopRightRadius: '8px',
-                        borderBottomRightRadius: '8px',
-                        borderTopLeftRadius: '0',
-                        borderBottomLeftRadius: '0',
-                      }}
-                    >
-                      הכל ({checkIns.length})
-                    </button>
-                    <button
-                      type="button"
-                      className={`btn ${filter === 'pending' ? 'btn-warning' : 'btn-outline-warning'}`}
-                      onClick={() => setFilter('pending')}
-                      style={{
-                        borderRadius: '0',
-                      }}
-                    >
-                      ממתינים ({stats.pending})
-                    </button>
-                    <button
-                      type="button"
-                      className={`btn ${filter === 'completed' ? 'btn-success' : 'btn-outline-success'}`}
-                      onClick={() => setFilter('completed')}
-                      style={{
-                        borderRadius: '0',
-                      }}
-                    >
-                      הושלמו ({stats.completed})
-                    </button>
-                    <button
-                      type="button"
-                      className={`btn ${filter === 'expired' ? 'btn-danger' : 'btn-outline-danger'}`}
-                      onClick={() => setFilter('expired')}
-                      style={{
-                        borderTopLeftRadius: '8px',
-                        borderBottomLeftRadius: '8px',
-                        borderTopRightRadius: '0',
-                        borderBottomRightRadius: '0',
-                      }}
-                    >
-                      פג תוקף
-                    </button>
-                  </div>
-                </div>
-
-                {/* Table */}
-                {filteredCheckIns.length === 0 ? (
-                  <div className="card border-0 shadow-sm hostly-dark-card">
-                    <div className="card-body text-center py-5">
-                      <p className="text-muted mb-0">אין צ'ק-אינים להצגה</p>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="card border-0 shadow-sm hostly-dark-card">
-                    <div className="table-responsive dashboard-table-scroll-container">
-            <table className="table table-hover mb-0 hostly-dark-table">
-              <thead>
-                <tr>
-                  <th>אורח</th>
-                  <th>תאריך כניסה</th>
-                  <th>סטטוס</th>
-                  <th>תאריך השלמה</th>
-                  <th>פעולות</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredCheckIns.map((checkIn) => (
-                  <tr key={checkIn.id}>
-                    <td>
-                      <div>
-                        <strong>{checkIn.guest_name}</strong>
-                        <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.65)' }}>
-                          {checkIn.guest_phone}
-                        </div>
-                      </div>
-                    </td>
-                    <td>
-                      {new Date(checkIn.check_in_date).toLocaleDateString('he-IL')}
-                    </td>
-                    <td>{getStatusBadge(checkIn.status)}</td>
-                    <td>
-                      {checkIn.completed_at 
-                        ? new Date(checkIn.completed_at).toLocaleDateString('he-IL')
-                        : '-'
-                      }
-                    </td>
-                    <td>
-                      <div style={{ display: 'flex', gap: '0.5rem' }}>
-                        {/* כפתור פתיחת קישור צ'ק-אין */}
-                        {checkIn.status === 'pending' && checkIn.token && (
-                          <button
-                            type="button"
-                            className="hostly-btn hostly-btn-sm hostly-btn-ghost hostly-btn-icon"
-                            onClick={() => window.open(`${window.location.origin}/check-in/${checkIn.token}`, '_blank')}
-                            title="פתח קישור צ'ק-אין"
-                          >
-                            <ExternalLink size={16} />
-                          </button>
-                        )}
-                        
-                        {/* כפתור צפייה בפרטים */}
-                        <button
-                          type="button"
-                          className="hostly-btn hostly-btn-sm hostly-btn-primary hostly-btn-icon"
-                          onClick={() => router.push(`/dashboard/check-ins/${checkIn.id}`)}
-                          title="צפה בפרטים"
-                        >
-                          <Eye size={16} />
-                        </button>
-                        
-                        {/* כפתור שליחה מחדש */}
-                        {checkIn.status === 'pending' && (
-                          <button
-                            type="button"
-                            className="hostly-btn hostly-btn-sm hostly-btn-ghost hostly-btn-icon"
-                            onClick={() => resendLink(checkIn)}
-                            title="שלח שוב"
-                          >
-                            <Send size={16} />
-                          </button>
-                        )}
-                        
-                        {/* כפתור הורדת PDF */}
-                        {checkIn.status === 'completed' && (
-                          <button
-                            type="button"
-                            className="hostly-btn hostly-btn-sm hostly-btn-success hostly-btn-icon"
-                            onClick={() => {/* TODO: Download PDF */}}
-                            title="הורד PDF"
-                          >
-                            <Download size={16} />
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+              {FILTER_LABELS[f]} ({counts[f]})
+            </button>
+          ))}
         </div>
-      )}
-            </div>
-          </div>
-        </div>
+
+        <DataTable
+          data={filteredCheckIns}
+          columns={columns}
+          keyField="id"
+          emptyMessage="אין צ'ק-אינים להצגה"
+          onRowClick={(c) => router.push(`/dashboard/check-ins/${c.id}`)}
+          mobileTitle="guest_name"
+          mobileSubtitle="guest_phone"
+        />
       </div>
-    </div>
-  </main>
+    </main>
   )
 }
 

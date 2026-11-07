@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { Loader2 } from 'lucide-react'
+import { Button } from '@/components/ui'
 import type { AirbnbListingSummary, AirbnbUserSummary, OnboardingApi } from '../onboardingApi'
 
 export interface PickedListing {
@@ -52,13 +53,13 @@ export function AirbnbListingPicker({ api, disabled, onPick }: AirbnbListingPick
   return (
     <div className="d-flex flex-column gap-2">
       {users === null ? (
-        <button type="button" className="btn btn-outline-primary btn-sm align-self-start" onClick={loadUsers} disabled={disabled || loading}>
+        <Button type="button" variant="outline" size="sm" className="align-self-start" onClick={loadUsers} disabled={disabled || loading}>
           טען חשבונות Airbnb מחוברים
-        </button>
+        </Button>
       ) : users.length === 0 ? (
         <div className="alert alert-warning small mb-0">
           לא נמצאו חשבונות Airbnb מחוברים. ודא שהלקוח השלים את ההרשאה, ואז טען שוב.
-          <button type="button" className="btn btn-link btn-sm p-0 ms-2" onClick={loadUsers}>טען שוב</button>
+          <Button type="button" variant="ghost" size="sm" className="ms-2" onClick={loadUsers}>טען שוב</Button>
         </div>
       ) : (
         <select
@@ -87,7 +88,8 @@ export function AirbnbListingPicker({ api, disabled, onPick }: AirbnbListingPick
             <button
               key={listing.airbnbListingId}
               type="button"
-              className="btn btn-outline-secondary text-start btn-sm"
+              className="text-start rounded-3 p-2"
+              style={{ background: 'var(--hsurf)', border: '1px solid var(--hborder)', color: 'var(--htxt-1)' }}
               disabled={disabled}
               onClick={() => onPick({
                 airbnbUserId: selectedUser,

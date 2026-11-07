@@ -372,6 +372,15 @@ const ReservationsTable = ({ reservations, onReservationViewed }: ReservationsTa
                     {formatCurrency(reservation.total)}
                   </span>
                 </div>
+
+                <div className="reservation-detail-row">
+                  <span className="reservation-detail-label">עלות ניקיון (מנקה)</span>
+                  <span className="reservation-detail-value">
+                    {reservation.cleaningCost && reservation.cleaningCost > 0
+                      ? `${formatCurrency(reservation.cleaningCost)}${reservation.cleanerName ? ` (${reservation.cleanerName})` : ''}`
+                      : 'ללא עלות ניקיון'}
+                  </span>
+                </div>
                 
                 {reservation.notes && (
                   <div className="mt-3 pt-3" style={{ borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
@@ -414,6 +423,7 @@ const ReservationsTable = ({ reservations, onReservationViewed }: ReservationsTa
             <th>לילות</th>
             <th>מקור</th>
             <th>סה״כ</th>
+            <th>ניקיון</th>
             <th>סטטוס</th>
           </tr>
         </thead>
@@ -468,6 +478,15 @@ const ReservationsTable = ({ reservations, onReservationViewed }: ReservationsTa
                 <td>{reservation.nights}</td>
                 <td className="small">{reservation.source ?? '—'}</td>
                 <td className="fw-semibold">{formatCurrency(reservation.total)}</td>
+                <td className="small">
+                  {reservation.cleaningCost && reservation.cleaningCost > 0 ? (
+                    <span className="text-success fw-semibold">
+                      {formatCurrency(reservation.cleaningCost)}
+                    </span>
+                  ) : (
+                    <span className="text-muted">—</span>
+                  )}
+                </td>
                 <td>
                   <span className={`badge ${getStatusClass(reservation.status)}`}>
                     {formatStatus(reservation.status)}
@@ -476,7 +495,7 @@ const ReservationsTable = ({ reservations, onReservationViewed }: ReservationsTa
               </tr>
               {expandedId === reservation.id ? (
                 <tr>
-                  <td colSpan={7} style={{ backgroundColor: '#f8f9fa' }}>
+                  <td colSpan={8} style={{ backgroundColor: '#f8f9fa' }}>
                     <div className="p-3">
                       <div className="row g-3">
                         <div className="col-md-6">
@@ -540,6 +559,19 @@ const ReservationsTable = ({ reservations, onReservationViewed }: ReservationsTa
                         <div className="col-md-6">
                           <div className="small text-muted mb-1">סכום כולל</div>
                           <div className="fw-bold">{formatCurrency(reservation.total)}</div>
+                        </div>
+                        <div className="col-md-6">
+                          <div className="small text-muted mb-1">עלות ניקיון (מנקה)</div>
+                          <div className="fw-semibold">
+                            {reservation.cleaningCost && reservation.cleaningCost > 0 ? (
+                              <>
+                                {formatCurrency(reservation.cleaningCost)}
+                                {reservation.cleanerName ? ` (${reservation.cleanerName})` : ''}
+                              </>
+                            ) : (
+                              'ללא עלות ניקיון'
+                            )}
+                          </div>
                         </div>
                         {reservation.notes ? (
                           <div className="col-12">

@@ -18,10 +18,3 @@ export const STATUS_LABELS: Record<StepStatus, string> = {
   skipped: 'דולג',
   pending: 'ממתין',
 }
-
-export const STATUS_BADGE_CLASS: Record<StepStatus, string> = {
-  done: 'bg-success',
-  failed: 'bg-danger',
-  skipped: 'bg-secondary',
-  pending: 'bg-light text-dark border',
-}

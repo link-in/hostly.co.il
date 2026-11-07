@@ -15,6 +15,7 @@ import {
   beds24CalendarResponse,
   beds24RoomsInfoResponse,
   beds24PostSuccessResponse,
+  beds24AvailabilityResponse,
   BEDS24_ROOM_ID,
   BEDS24_PROPERTY_ID,
 } from '@/__tests__/fixtures/beds24'
@@ -49,9 +50,11 @@ function jsonResponse(body: unknown, status = 200): Response {
 function mockBeds24({
   calendarEntries,
   postCalendarEcho,
+  availability,
 }: {
   calendarEntries?: { from: string; to: string; price1: number }[]
   postCalendarEcho?: { from: string; to: string; numAvail?: number }[]
+  availability?: Record<string, boolean>
 } = {}) {
   vi.mocked(fetchWithTokenRefresh).mockImplementation(async (url, init) => {
     const method = init?.method ?? 'GET'
@@ -60,6 +63,9 @@ function mockBeds24({
     }
     if (url.includes('/inventory/rooms/calendar')) {
       return jsonResponse(beds24CalendarResponse(calendarEntries))
+    }
+    if (url.includes('/inventory/rooms/availability')) {
+      return jsonResponse(beds24AvailabilityResponse(availability ?? {}))
     }
     if (url.includes('/inventory/rooms')) {
       return jsonResponse(beds24RoomsInfoResponse())
@@ -87,19 +93,55 @@ beforeEach(() => {
 })
 
 describe('POST /api/dashboard/rooms — blocking', () => {
-  it('forwards numAvail:0 to Beds24 and writes it to availability_cache', async () => {
+  it('forwards numAvail:0 and override:blackout to Beds24 and writes it to availability_cache', async () => {
     mockBeds24({ postCalendarEcho: [{ from: '2026-07-12', to: '2026-07-12', numAvail: 0 }] })
 
     const payload = [
-      { roomId: BEDS24_ROOM_ID, calendar: [{ from: '2026-07-12', to: '2026-07-12', numAvail: 0, price1: 600 }] },
+      { roomId: BEDS24_ROOM_ID, calendar: [{ from: '2026-07-12', to: '2026-07-12', numAvail: 0, override: 'blackout', price1: 600 }] },
     ]
     const response = await POST(postRequest(payload))
     expect(response.status).toBe(200)
 
     const cacheRows = fakeClient.__table('availability_cache')
     expect(cacheRows).toHaveLength(1)
-    // Regression: date must be exactly 2026-07-12, not shifted by a day.
-    expect(cacheRows[0]).toMatchObject({ date: '2026-07-12', num_avail: 0 })
+    // Regression: date must be exactly 2026-07-12, not shifted by a day, with is_manual_block: true
+    expect(cacheRows[0]).toMatchObject({ date: '2026-07-12', num_avail: 0, is_manual_block: true })
+
+    // Verify payload sent to Beds24 includes override: 'blackout'
+    const beds24Calls = vi.mocked(fetchWithTokenRefresh).mock.calls
+    const postCall = beds24Calls.find((call) => call[1]?.method === 'POST')
+    expect(postCall).toBeDefined()
+    const sentBody = JSON.parse(postCall![1]!.body as string)
+    expect(sentBody[0].calendar[0]).toMatchObject({
+      numAvail: 0,
+      override: 'blackout',
+    })
+  })
+})
+
+describe('POST /api/dashboard/rooms — token resolution', () => {
+  it('falls back to resolveBeds24Tokens from DB when session has no beds24Token', async () => {
+    fakeClient = createFakeSupabaseClient({
+      availability_cache: [],
+      users: [
+        { id: 'user-1', beds24_token: 'db-access-token', beds24_refresh_token: 'db-refresh-token' },
+      ],
+    })
+    mockBeds24({ postCalendarEcho: [{ from: '2026-07-12', to: '2026-07-12', numAvail: 0 }] })
+
+    const payload = [
+      { roomId: BEDS24_ROOM_ID, calendar: [{ from: '2026-07-12', to: '2026-07-12', numAvail: 0, override: 'blackout' }] },
+    ]
+    const response = await POST(postRequest(payload))
+    expect(response.status).toBe(200)
+
+    const beds24Calls = vi.mocked(fetchWithTokenRefresh).mock.calls
+    const postCall = beds24Calls.find((call) => call[1]?.method === 'POST')
+    expect(postCall).toBeDefined()
+    expect(postCall![2]).toEqual({
+      accessToken: 'db-access-token',
+      refreshToken: 'db-refresh-token',
+    })
   })
 })
 
@@ -144,6 +186,140 @@ describe('GET /api/dashboard/rooms — overlay', () => {
 
     const july13 = body.prices.find((p: { date: string }) => p.date === '2026-07-13')
     expect(july13).toMatchObject({ numAvail: 1 })
+  })
+
+  it('requests includeNumAvail and includeOverrides from Beds24', async () => {
+    mockBeds24({ calendarEntries: [{ from: '2026-07-11', to: '2026-07-15', price1: 600 }] })
+    await GET(getRequest())
+    const beds24Calls = vi.mocked(fetchWithTokenRefresh).mock.calls
+    const calCall = beds24Calls.find((call) => (call[0] as string).includes('/inventory/rooms/calendar'))
+    expect(calCall).toBeDefined()
+    const calUrl = new URL(calCall![0] as string)
+    expect(calUrl.searchParams.get('includeNumAvail')).toBe('1')
+    expect(calUrl.searchParams.get('includeOverrides')).toBe('1')
+  })
+
+  it('treats Beds24 calendar rows with override:blackout as numAvail:0', async () => {
+    vi.mocked(fetchWithTokenRefresh).mockImplementation(async (url) => {
+      if ((url as string).includes('/inventory/rooms/calendar')) {
+        return jsonResponse({
+          success: true,
+          type: 'calendar',
+          count: 1,
+          data: [
+            {
+              roomId: BEDS24_ROOM_ID,
+              calendar: [
+                { from: '2026-07-11', to: '2026-07-11', price1: 600, override: 'blackout' },
+                { from: '2026-07-12', to: '2026-07-12', price1: 600, override: 'none' },
+              ],
+            },
+          ],
+        })
+      }
+      if ((url as string).includes('/inventory/rooms')) {
+        return jsonResponse(beds24RoomsInfoResponse())
+      }
+      return jsonResponse({ success: false }, 404)
+    })
+
+    const response = await GET(getRequest())
+    expect(response.status).toBe(200)
+    const body = await response.json()
+    const july11 = body.prices.find((p: { date: string }) => p.date === '2026-07-11')
+    expect(july11).toMatchObject({ date: '2026-07-11', numAvail: 0 })
+    const july12 = body.prices.find((p: { date: string }) => p.date === '2026-07-12')
+    expect(july12).toMatchObject({ date: '2026-07-12', numAvail: 1 })
+  })
+
+  it('treats Capitalized "Blackout", flat CalendarDay items, and numAvail <= 0 as blocked', async () => {
+    vi.mocked(fetchWithTokenRefresh).mockImplementation(async (url) => {
+      if ((url as string).includes('/inventory/rooms/calendar')) {
+        return jsonResponse({
+          success: true,
+          data: [
+            // Case with capital 'Blackout' and negative availability
+            { roomId: BEDS24_ROOM_ID, date: '2026-10-22', price1: 700, override: 'Blackout', numAvail: 0 },
+            { roomId: BEDS24_ROOM_ID, date: '2026-10-23', price1: 700, override: 'Blackout', numAvail: -1 },
+            { roomId: BEDS24_ROOM_ID, date: '2026-10-24', price1: 400, numAvail: 0 },
+            { roomId: BEDS24_ROOM_ID, date: '2026-10-25', price1: 500, numAvail: 1 },
+          ],
+        })
+      }
+      if ((url as string).includes('/inventory/rooms')) {
+        return jsonResponse(beds24RoomsInfoResponse())
+      }
+      return jsonResponse({ success: false }, 404)
+    })
+
+    const response = await GET(getRequest())
+    expect(response.status).toBe(200)
+    const body = await response.json()
+    const oct22 = body.prices.find((p: { date: string }) => p.date === '2026-10-22')
+    const oct23 = body.prices.find((p: { date: string }) => p.date === '2026-10-23')
+    const oct24 = body.prices.find((p: { date: string }) => p.date === '2026-10-24')
+    const oct25 = body.prices.find((p: { date: string }) => p.date === '2026-10-25')
+
+    expect(oct22).toMatchObject({ date: '2026-10-22', numAvail: 0 })
+    expect(oct23).toMatchObject({ date: '2026-10-23', numAvail: 0 })
+    expect(oct24).toMatchObject({ date: '2026-10-24', numAvail: 0 })
+    expect(oct25).toMatchObject({ date: '2026-10-25', numAvail: 1 })
+  })
+
+  it('marks dates as numAvail:0 when /inventory/rooms/availability returns false', async () => {
+    mockBeds24({
+      calendarEntries: [
+        { from: '2026-10-21', to: '2026-10-25', price1: 700 },
+      ],
+      availability: {
+        '2026-10-22': false,
+        '2026-10-23': false,
+        '2026-10-24': false,
+        '2026-10-25': true,
+      },
+    })
+
+    const response = await GET(getRequest())
+    expect(response.status).toBe(200)
+    const body = await response.json()
+    const oct22 = body.prices.find((p: { date: string }) => p.date === '2026-10-22')
+    const oct23 = body.prices.find((p: { date: string }) => p.date === '2026-10-23')
+    const oct24 = body.prices.find((p: { date: string }) => p.date === '2026-10-24')
+    const oct25 = body.prices.find((p: { date: string }) => p.date === '2026-10-25')
+
+    expect(oct22).toMatchObject({ date: '2026-10-22', numAvail: 0 })
+    expect(oct23).toMatchObject({ date: '2026-10-23', numAvail: 0 })
+    expect(oct24).toMatchObject({ date: '2026-10-24', numAvail: 0 })
+    expect(oct25).toMatchObject({ date: '2026-10-25', numAvail: 1 })
+  })
+
+  it('preserves Beds24 numAvail:0 even when availability_cache has stale num_avail:1', async () => {
+    // Regression for production bug: Beds24 has dates blocked, but availability_cache
+    // has rows with num_avail: 1.
+    mockBeds24({
+      calendarEntries: [
+        { from: '2026-10-22', to: '2026-10-23', price1: 700 },
+      ],
+      availability: {
+        '2026-10-22': false,
+        '2026-10-23': false,
+      },
+    })
+    fakeClient = createFakeSupabaseClient({
+      availability_cache: [
+        { user_id: 'user-1', room_id: String(BEDS24_ROOM_ID), date: '2026-10-22', num_avail: 1, is_manual_block: false },
+        { user_id: 'user-1', room_id: String(BEDS24_ROOM_ID), date: '2026-10-23', num_avail: 1, is_manual_block: false },
+      ],
+    })
+
+    const response = await GET(getRequest())
+    expect(response.status).toBe(200)
+    const body = await response.json()
+    const oct22 = body.prices.find((p: { date: string }) => p.date === '2026-10-22')
+    const oct23 = body.prices.find((p: { date: string }) => p.date === '2026-10-23')
+
+    expect(oct22).toMatchObject({ date: '2026-10-22', numAvail: 0 })
+    expect(oct23).toMatchObject({ date: '2026-10-23', numAvail: 0 })
   })
 
   it('injects a synthetic blocked entry for a date with no Beds24 price at all', async () => {
@@ -199,5 +375,68 @@ describe('Full round-trip — block then unblock', () => {
     expect(afterUnblockBody.prices.find((p: { date: string }) => p.date === '2026-07-12')).toMatchObject({
       numAvail: 1,
     })
+  })
+})
+
+describe('POST /api/dashboard/rooms — block verification', () => {
+  const blockPayload = [
+    { roomId: BEDS24_ROOM_ID, calendar: [{ from: '2026-10-24', to: '2026-10-24', numAvail: 0, override: 'blackout', price1: 700 }] },
+  ]
+
+  it('fails (and skips availability_cache) when Beds24 accepts the block but still reports the date bookable', async () => {
+    mockBeds24({ availability: { '2026-10-24': true } })
+
+    const response = await POST(postRequest(blockPayload))
+
+    expect(response.status).toBe(502)
+    const body = await response.json()
+    expect(body.error).toContain('24/10')
+    expect(body.unappliedBlocks).toEqual({ [String(BEDS24_ROOM_ID)]: ['2026-10-24'] })
+    expect(fakeClient.__table('availability_cache')).toHaveLength(0)
+  })
+
+  it('succeeds and caches the block once Beds24 reports the date closed', async () => {
+    mockBeds24({ availability: { '2026-10-24': false } })
+
+    const response = await POST(postRequest(blockPayload))
+
+    expect(response.status).toBe(200)
+    expect(fakeClient.__table('availability_cache')[0]).toMatchObject({ date: '2026-10-24', num_avail: 0, is_manual_block: true })
+  })
+
+  it('does not verify pure price updates', async () => {
+    mockBeds24({ availability: { '2026-10-24': true } })
+
+    const response = await POST(postRequest([
+      { roomId: BEDS24_ROOM_ID, calendar: [{ from: '2026-10-24', to: '2026-10-24', numAvail: 1, override: 'none', price1: 700 }] },
+    ]))
+
+    expect(response.status).toBe(200)
+    const getCalls = vi.mocked(fetchWithTokenRefresh).mock.calls.filter((call) => (call[1]?.method ?? 'GET') === 'GET')
+    expect(getCalls).toHaveLength(0)
+  })
+})
+
+describe('GET /api/dashboard/rooms — unsynced blocks', () => {
+  it('flags a Hostly manual block that Beds24 still reports as bookable', async () => {
+    mockBeds24({
+      calendarEntries: [{ from: '2026-10-22', to: '2026-10-24', price1: 700 }],
+      availability: { '2026-10-22': true, '2026-10-23': true, '2026-10-24': false },
+    })
+    fakeClient = createFakeSupabaseClient({
+      availability_cache: [
+        { user_id: 'user-1', room_id: String(BEDS24_ROOM_ID), date: '2026-10-22', num_avail: 0, is_manual_block: true },
+        { user_id: 'user-1', room_id: String(BEDS24_ROOM_ID), date: '2026-10-24', num_avail: 0, is_manual_block: true },
+      ],
+    })
+
+    const body = await (await GET(getRequest())).json()
+    const byDate = (date: string) => body.prices.find((p: { date: string }) => p.date === date)
+
+    expect(byDate('2026-10-22')).toMatchObject({ numAvail: 0, unsynced: true })
+    expect(byDate('2026-10-23')).toMatchObject({ numAvail: 1 })
+    expect(byDate('2026-10-23')).not.toHaveProperty('unsynced')
+    expect(byDate('2026-10-24')).toMatchObject({ numAvail: 0 })
+    expect(byDate('2026-10-24')).not.toHaveProperty('unsynced')
   })
 })

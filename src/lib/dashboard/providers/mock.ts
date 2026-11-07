@@ -30,6 +30,9 @@ const reservations: Reservation[] = [
     unitName: 'נוף הרים א',
     roomId: 'DEMO_ROOM_001',
     createdAt: '2025-12-20',
+    hasCleaning: true,
+    cleaningCost: 250,
+    cleanerName: 'מרים',
   },
   {
     id: 'res_1002',
@@ -43,6 +46,9 @@ const reservations: Reservation[] = [
     unitName: 'נוף הרים א',
     roomId: 'DEMO_ROOM_001',
     createdAt: '2025-12-28',
+    hasCleaning: true,
+    cleaningCost: 250,
+    cleanerName: 'מרים',
   },
   {
     id: 'res_1003',
@@ -56,6 +62,9 @@ const reservations: Reservation[] = [
     unitName: 'נוף הרים א',
     roomId: 'DEMO_ROOM_001',
     createdAt: '2026-01-05',
+    hasCleaning: true,
+    cleaningCost: 200,
+    cleanerName: 'שרה',
   },
 
   // פברואר 2026
@@ -71,6 +80,8 @@ const reservations: Reservation[] = [
     unitName: 'נוף הרים א',
     roomId: 'DEMO_ROOM_001',
     createdAt: '2026-01-15',
+    hasCleaning: true,
+    cleaningCost: 250,
   },
   {
     id: 'res_1005',
@@ -84,6 +95,8 @@ const reservations: Reservation[] = [
     unitName: 'נוף הרים א',
     roomId: 'DEMO_ROOM_001',
     createdAt: '2026-01-28',
+    hasCleaning: true,
+    cleaningCost: 200,
   },
   {
     id: 'res_1006',
@@ -97,6 +110,8 @@ const reservations: Reservation[] = [
     unitName: 'נוף הרים א',
     roomId: 'DEMO_ROOM_001',
     createdAt: '2026-02-03',
+    hasCleaning: true,
+    cleaningCost: 250,
   },
   {
     id: 'res_1007',
@@ -110,6 +125,8 @@ const reservations: Reservation[] = [
     unitName: 'נוף הרים א',
     roomId: 'DEMO_ROOM_001',
     createdAt: '2026-02-18',
+    hasCleaning: false,
+    cleaningCost: 0,
   },
 
   // מרץ 2026

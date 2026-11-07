@@ -2,6 +2,8 @@
 
 import { useState } from 'react'
 import { Key } from 'lucide-react'
+import { Button } from '@/components/ui'
+import { colors } from '@/lib/design-system'
 import { StepPanel } from './StepPanel'
 import { useStepAction } from './useStepAction'
 import { readData, type StepProps } from './stepProps'
@@ -23,9 +25,9 @@ export function FinalizeStep({ api, record, status, onChanged }: StepProps) {
           <p className="text-muted small">
             ממלא את מטמון הזמינות לשלושה חודשים, יוצר מפתח API ליומן הציבורי, ומסמן את הקליטה כהושלמה.
           </p>
-          <button type="button" className="btn btn-success fw-bold" disabled={running} onClick={finalize}>
+          <Button type="button" variant="primary" loading={running} onClick={finalize}>
             {running ? 'מפעיל...' : 'הפעל לקוח'}
-          </button>
+          </Button>
         </>
       ) : (
         <div className="d-flex flex-column gap-3">
@@ -34,11 +36,11 @@ export function FinalizeStep({ api, record, status, onChanged }: StepProps) {
             {data.cacheWarning && <div className="text-warning mt-1">אזהרה: {data.cacheWarning}</div>}
           </div>
           {apiKey ? (
-            <div className="p-3 rounded-3" style={{ background: '#fffbeb', border: '1px solid #fcd34d' }}>
+            <div className="p-3 rounded-3" style={{ background: colors.semantic.warningLight, border: `1px solid ${colors.semantic.warning}` }}>
               <div className="fw-semibold small mb-2"><Key size={14} className="ms-1" /> מפתח API – מוצג פעם אחת בלבד</div>
               <div className="input-group input-group-sm">
                 <input readOnly className="form-control" value={apiKey} dir="ltr" data-testid="api-key" />
-                <button type="button" className="btn btn-outline-warning" onClick={() => navigator.clipboard.writeText(apiKey)}>העתק</button>
+                <Button type="button" variant="outline" size="sm" onClick={() => navigator.clipboard.writeText(apiKey)}>העתק</Button>
               </div>
             </div>
           ) : (

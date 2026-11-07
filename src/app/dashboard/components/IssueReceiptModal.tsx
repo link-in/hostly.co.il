@@ -208,7 +208,7 @@ export default function IssueReceiptModal({
   const overlayStyle: React.CSSProperties = {
     position: 'fixed',
     inset: 0,
-    background: 'rgba(15, 23, 42, 0.72)',
+    background: 'rgba(15, 23, 42, 0.45)',
     zIndex: 1050,
     display: 'flex',
     alignItems: 'center',
@@ -223,10 +223,10 @@ export default function IssueReceiptModal({
     display: 'flex',
     flexDirection: 'column',
     borderRadius: 16,
-    background: 'linear-gradient(145deg, #1e293b 0%, #0f172a 100%)',
-    border: '1px solid rgba(249, 147, 251, 0.2)',
-    boxShadow: '0 20px 50px rgba(0,0,0,0.45)',
-    color: '#fff',
+    background: 'var(--hsurf)',
+    border: '1px solid var(--hborder)',
+    boxShadow: '0 20px 50px rgba(0,0,0,0.2)',
+    color: 'var(--htxt-1)',
     direction: 'rtl',
     overflow: 'hidden',
   }
@@ -241,7 +241,7 @@ export default function IssueReceiptModal({
   const labelStyle: React.CSSProperties = {
     display: 'block',
     fontSize: '0.8rem',
-    color: 'rgba(249,147,251,0.85)',
+    color: 'var(--htxt-2)',
     marginBottom: 4,
     fontWeight: 600,
   }
@@ -249,9 +249,9 @@ export default function IssueReceiptModal({
   const inputStyle: React.CSSProperties = {
     width: '100%',
     borderRadius: 8,
-    border: '1px solid rgba(255,255,255,0.15)',
-    background: 'rgba(0,0,0,0.25)',
-    color: '#fff',
+    border: '1px solid var(--hborder)',
+    background: 'var(--hsurf)',
+    color: 'var(--htxt-1)',
     padding: '0.55rem 0.75rem',
   }
 
@@ -268,18 +268,18 @@ export default function IssueReceiptModal({
           className="d-flex align-items-center justify-content-between flex-shrink-0"
           style={{
             padding: '1rem 1.25rem',
-            borderBottom: '1px solid rgba(255,255,255,0.1)',
+            borderBottom: '1px solid var(--hborder-light)',
           }}
         >
           <div className="d-flex align-items-center gap-2">
-            <FileText size={20} color="#f093fb" />
+            <FileText size={20} color="var(--hb)" />
             <h2 id="issue-receipt-title" className="h5 mb-0">
               הוצאת מסמך מס
             </h2>
           </div>
           <button
             type="button"
-            className="hostly-btn hostly-btn-sm hostly-btn-ghost"
+            className="hostly-btn hostly-btn-sm hostly-btn-on-light hostly-btn-ghost"
             onClick={onClose}
             aria-label="סגור"
           >
@@ -292,7 +292,7 @@ export default function IssueReceiptModal({
           className="hostly-modal-scroll"
           style={bodyScrollStyle}
         >
-          <p className="small mb-3" style={{ color: 'rgba(255,255,255,0.65)' }}>
+          <p className="small mb-3" style={{ color: 'var(--htxt-3)' }}>
             הזמנה #{reservation.id}
             {reservation.guestName ? ` · ${reservation.guestName}` : ''}
           </p>
@@ -300,9 +300,9 @@ export default function IssueReceiptModal({
             <div
               className="small mb-3 p-2 rounded"
               style={{
-                background: 'rgba(249,147,251,0.1)',
-                border: '1px solid rgba(249,147,251,0.25)',
-                color: 'rgba(255,255,255,0.8)',
+                background: 'var(--hb-50)',
+                border: '1px solid var(--hb-200)',
+                color: 'var(--htxt-2)',
               }}
             >
               {accountHint}
@@ -409,8 +409,9 @@ export default function IssueReceiptModal({
             <div
               className="mt-3 p-3 rounded"
               style={{
-                background: 'rgba(34,197,94,0.15)',
-                border: '1px solid rgba(74,222,128,0.35)',
+                background: 'rgba(34,197,94,0.1)',
+                border: '1px solid rgba(34,197,94,0.3)',
+                color: 'var(--htxt-1)',
               }}
             >
               {lastDocNumber && (
@@ -421,7 +422,7 @@ export default function IssueReceiptModal({
                   href={lastPdfUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="hostly-btn hostly-btn-sm hostly-btn-success"
+                  className="hostly-btn hostly-btn-sm hostly-btn-on-light hostly-btn-success"
                 >
                   <ExternalLink size={14} />
                   פתח PDF
@@ -433,7 +434,7 @@ export default function IssueReceiptModal({
           <div className="d-flex gap-2 mt-4 flex-wrap">
             <button
               type="submit"
-              className="hostly-btn hostly-btn-primary flex-grow-1"
+              className="hostly-btn hostly-btn-on-light hostly-btn-primary flex-grow-1"
               disabled={submitting}
             >
               {submitting ? (
@@ -450,7 +451,7 @@ export default function IssueReceiptModal({
             </button>
             <button
               type="button"
-              className="hostly-btn hostly-btn-ghost"
+              className="hostly-btn hostly-btn-on-light hostly-btn-ghost"
               onClick={onClose}
               disabled={submitting}
             >
@@ -458,14 +459,14 @@ export default function IssueReceiptModal({
             </button>
           </div>
 
-          <div className="mt-4 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-            <div className="small fw-semibold mb-2" style={{ color: 'rgba(249,147,251,0.85)' }}>
+          <div className="mt-4 pt-3" style={{ borderTop: '1px solid var(--hborder-light)' }}>
+            <div className="small fw-semibold mb-2" style={{ color: 'var(--htxt-2)' }}>
               מסמכים קודמים להזמנה
             </div>
             {historyLoading ? (
-              <div className="small text-white-50">טוען…</div>
+              <div className="small" style={{ color: 'var(--htxt-3)' }}>טוען…</div>
             ) : history.length === 0 ? (
-              <div className="small" style={{ color: 'rgba(255,255,255,0.5)' }}>
+              <div className="small" style={{ color: 'var(--htxt-3)' }}>
                 עדיין לא הונפקו מסמכים להזמנה זו
               </div>
             ) : (
@@ -474,7 +475,7 @@ export default function IssueReceiptModal({
                   <li
                     key={row.id}
                     className="d-flex justify-content-between align-items-center gap-2 py-2"
-                    style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}
+                    style={{ borderBottom: '1px solid var(--hborder-light)' }}
                   >
                     <span>
                       {DOC_LABELS[row.documentType] || row.documentType}
@@ -488,7 +489,7 @@ export default function IssueReceiptModal({
                         href={row.pdfUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        style={{ color: '#f093fb' }}
+                        style={{ color: 'var(--hb)' }}
                       >
                         PDF
                       </a>

@@ -16,6 +16,7 @@ vi.mock('@/lib/availability/cache', () => ({
 }))
 
 import {
+  getAccountPropertiesForClient,
   getOnboardingOverview,
   runAirbnbConnectStep,
   runAirbnbMultiplierStep,
@@ -182,6 +183,7 @@ describe('property step', () => {
 
   it('importing from Airbnb also completes the Airbnb connection step', async () => {
     const beds24 = useBeds24({
+      'GET /properties': { body: { data: [] } },
       'POST /channels/airbnb': { body: [{ success: true, propertyId: 401, roomId: 801 }] },
     })
 
@@ -192,6 +194,142 @@ describe('property step', () => {
     ])
     expect(user()).toMatchObject({ property_id: '401', room_id: '801:Loft' })
     expect(state().steps.airbnbConnect).toMatchObject({ status: 'done', data: { airbnbListingId: '555' } })
+  })
+
+  it('finds the imported property by diffing the account when the import response has no IDs', async () => {
+    let imported = false
+    useBeds24({
+      'GET /properties': () => ({
+        body: {
+          data: [
+            { id: 100, roomTypes: [{ id: 200 }] },
+            ...(imported ? [{ id: 402, roomTypes: [{ id: 802 }] }] : []),
+          ],
+        },
+      }),
+      'POST /channels/airbnb': () => {
+        imported = true
+        return { body: [{ success: true }] }
+      },
+    })
+
+    const result = await runPropertyStep(USER_ID, { mode: 'importAirbnb', airbnbUserId: '111', airbnbListingId: '555' })
+
+    expect(result.data).toMatchObject({ propertyId: '402', roomId: '802', source: 'airbnbImport' })
+    expect(user().property_id).toBe('402')
+  })
+
+  it('warns that the property may exist when the import cannot be matched', async () => {
+    const beds24 = useBeds24({
+      'GET /properties': { body: { data: [{ id: 100, roomTypes: [{ id: 200 }] }] } },
+      'POST /channels/airbnb': { body: [{ success: true }] },
+    })
+
+    await expect(
+      runPropertyStep(USER_ID, { mode: 'importAirbnb', airbnbUserId: '111', airbnbListingId: '555' }),
+    ).rejects.toThrow(/בדוק ב-Beds24 לפני ניסיון חוזר/)
+    expect(beds24.callsTo('POST', '/channels/airbnb')).toHaveLength(1)
+    expect(user().property_id).toBeNull()
+  })
+})
+
+describe('existing property in the client sub-account', () => {
+  const existingInput = { mode: 'existing' as const, propertyId: '501', roomId: '901' }
+  const subAccountProperties = {
+    body: { data: [{ id: 501, name: 'Dalit Loft', roomTypes: [{ id: 901, name: 'Loft room' }, { id: 902 }] }] },
+  }
+  const syncedAirbnbSettings = {
+    body: { data: [{ properties: [{ id: 501, multiplier: 1, roomTypes: [{ id: 901, airbnbListingId: '777' }] }] }] },
+  }
+
+  function useOwnTokens() {
+    Object.assign(user(), { beds24_token: 'sub-a', beds24_refresh_token: 'sub-r' })
+  }
+
+  it('lists the sub-account properties with the client tokens and flags the account in the overview', async () => {
+    useOwnTokens()
+    const beds24 = useBeds24({ 'GET /properties': subAccountProperties })
+
+    const properties = await getAccountPropertiesForClient(USER_ID)
+    const overview = await getOnboardingOverview(USER_ID)
+
+    expect(properties).toEqual([{
+      propertyId: '501',
+      name: 'Dalit Loft',
+      rooms: [{ roomId: '901', name: 'Loft room' }, { roomId: '902', name: 'חדר 902' }],
+    }])
+    expect(beds24.calls[0].userTokens).toEqual({ accessToken: 'sub-a', refreshToken: 'sub-r' })
+    expect(overview.usesOwnBeds24Account).toBe(true)
+  })
+
+  it('links the existing room without creating anything and detects the synced Airbnb listing', async () => {
+    useOwnTokens()
+    const beds24 = useBeds24({
+      'GET /properties': subAccountProperties,
+      'GET /channels/settings': syncedAirbnbSettings,
+    })
+
+    const result = await runPropertyStep(USER_ID, existingInput)
+
+    expect(result.data).toEqual({ propertyId: '501', roomId: '901', roomName: 'Loft room', source: 'existing' })
+    expect(user()).toMatchObject({ property_id: '501', room_id: '901:Loft room' })
+    expect(beds24.callsTo('GET', '/properties')[0].query).toMatchObject({ id: '501' })
+    expect(beds24.calls.filter((c) => c.method === 'POST')).toHaveLength(0)
+    expect(state().steps.airbnbConnect).toMatchObject({
+      status: 'done',
+      data: { airbnbListingId: '777', detectedFromBeds24: true },
+    })
+  })
+
+  it('leaves the Airbnb step open when the room is not synced', async () => {
+    useBeds24({
+      'GET /properties': subAccountProperties,
+      'GET /channels/settings': { body: { data: [] } },
+    })
+
+    await runPropertyStep(USER_ID, existingInput)
+
+    expect(state().steps.property?.status).toBe('done')
+    expect(state().steps.airbnbConnect).toBeUndefined()
+  })
+
+  it('still links the property when the Airbnb lookup fails', async () => {
+    useBeds24({ 'GET /properties': subAccountProperties })
+
+    await runPropertyStep(USER_ID, existingInput)
+
+    expect(state().steps.property?.status).toBe('done')
+    expect(state().steps.airbnbConnect).toBeUndefined()
+  })
+
+  it('rejects a room that does not belong to the account', async () => {
+    useBeds24({ 'GET /properties': subAccountProperties })
+
+    await expect(runPropertyStep(USER_ID, { ...existingInput, roomId: '999' })).rejects.toThrow(/לא נמצאו/)
+    expect(state().steps.property?.status).toBe('failed')
+    expect(user().property_id).toBeNull()
+  })
+
+  it('can finalize with existing prices by skipping the base price, then apply the multiplier', async () => {
+    useOwnTokens()
+    const beds24 = useBeds24({
+      ...happyBeds24Routes,
+      'GET /properties': subAccountProperties,
+      'GET /channels/settings': syncedAirbnbSettings,
+    })
+
+    await runPropertyStep(USER_ID, existingInput)
+    await skipStep(USER_ID, 'basePrice')
+    await runAirbnbMultiplierStep(USER_ID)
+    const finalize = await runFinalizeStep(USER_ID)
+
+    expect(state().steps.basePrice?.status).toBe('skipped')
+    expect(beds24.callsTo('POST', '/inventory/rooms/calendar')).toHaveLength(0)
+    expect(beds24.callsTo('POST', '/channels/settings')[0].body).toEqual([
+      { channel: 'airbnb', properties: [{ id: 501, multiplier: 1.21 }] },
+    ])
+    expect(finalize.apiKey).toBe('hk_test_key')
+    expect(user().onboarding_completed_at).toEqual(expect.any(String))
   })
 })
 

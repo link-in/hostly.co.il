@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { extractCreatedIds, parseCreatedPropertyRoomIds } from '@/lib/onboarding/beds24Response'
 import { hasBeds24Failure } from '@/lib/onboarding/beds24Client'
 import { Beds24RequestError } from '@/lib/onboarding/errors'
-import { buildPropertyPayload } from '@/lib/onboarding/steps/property'
+import { buildPropertyPayload, findNewProperty } from '@/lib/onboarding/steps/property'
 import { buildBasePricePayload, buildBasePriceRange } from '@/lib/onboarding/steps/pricing'
 import { toAirbnbListingSummary } from '@/lib/onboarding/steps/airbnb'
 import { readAirbnbRoomStatus } from '@/lib/onboarding/steps/channels'
@@ -68,6 +68,26 @@ describe('buildPropertyPayload', () => {
     expect(buildPropertyPayload({ name: 'Villa', propertyType: 'villa', maxPeople: 4, currency: 'ILS' })).toEqual([
       { name: 'Villa', propertyType: 'villa', currency: 'ILS', roomTypes: [{ name: 'Villa', qty: 1, maxPeople: 4 }] },
     ])
+  })
+})
+
+describe('findNewProperty', () => {
+  const existing = { propertyId: '1', roomIds: ['10'] }
+
+  it('returns the single added property and its first room', () => {
+    expect(findNewProperty([existing], [existing, { propertyId: '2', roomIds: ['20', '21'] }])).toEqual({
+      propertyId: '2',
+      roomId: '20',
+    })
+  })
+
+  it('returns undefined when nothing or more than one property was added', () => {
+    expect(findNewProperty([existing], [existing])).toBeUndefined()
+    expect(findNewProperty([], [existing, { propertyId: '2', roomIds: ['20'] }])).toBeUndefined()
+  })
+
+  it('ignores added properties that have no rooms yet', () => {
+    expect(findNewProperty([existing], [existing, { propertyId: '2', roomIds: [] }])).toBeUndefined()
   })
 })
 

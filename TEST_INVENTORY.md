@@ -37,6 +37,8 @@
 | 10b | `src/lib/linear/previewComment.test.ts` **(חדש)** | 10 | חילוץ מזהה משימת Linear מתיאור PR (`Fixes HOS-7`), בניית תגובת Preview בעברית, ומניעת כפילות של אותו קישור | משמש את `.github/workflows/linear-preview-comment.yml` |
 | 10c | `src/components/dashboardNav.test.ts` **(חדש)** | 9 | `isNavItemVisible` / `getVisibleNavItems` / `getVisibleNavSections`: צ'ק-אין דיגיטלי נשאר ברשימה אבל מסומן `hidden`, לא מופיע באף מקטע תפריט, ושאר הקישורים נשארים; החזרת הפריט כשמסירים את הדגל | HOS-12 — הסתרה זמנית מהתפריט בלי למחוק את הדף |
 | 10d | `src/lib/supabase/env.test.ts` **(חדש)** | 6 | `getSupabaseAnonEnv` זורק בלי URL/מפתח ומחזיר ערכים כשהם מוגדרים; ייבוא `server.ts` **לא** זורק בזמן טעינת מודול בלי env (רגרסיה ל-Vercel `collect page data`); `createServerClient` / `createServiceRoleClient` זורקים רק בקריאה | מונע כשל `next build` כש-Supabase env חסר בשלב איסוף נתוני עמוד |
+| 10e | `src/lib/availability/sync.test.ts` **(חדש)** | 18 | אימות שחסימה באמת נסגרה ב-Beds24: פענוח `/inventory/rooms/availability` ו-`/inventory/rooms/calendar` (כולל `Blackout` באותיות שונות ו-`numAvail <= 0`), `findStillOpenDates` (פתוח רק עם ראיה חיובית), `blockedDatesByRoom`, `bookableInBeds24` / `markUnsyncedBlocks`, `verifyDatesBlocked` (בדיקה חוזרת אחת, `null` כש-Beds24 לא זמין), `findUnappliedBlocks`, `pushBlackout` | HOS-31 — מונע הצגת "התאריכים נסגרו" כשהערוצים עדיין מוכרים את התאריך |
+| 10f | `src/lib/dashboard/unsyncedBlocks.test.ts` **(חדש)** | 3 | `formatShortDate`, `getUnsyncedBlockedDates` (ממוין, ייחודי, בלי תאריכי עבר), `dateFromKey` בלי הזזת UTC | עזרי צד-לקוח לבאנר "תאריכים שחסמת עדיין פתוחים" |
 
 ## שכבה 2 — אינטגרציה (Integration, Vitest + מוקים)
 
@@ -51,6 +53,8 @@
 | 15 | `src/app/api/cron/review-reminders/route.test.ts` **(חדש)** | 6 | שומר-הרשאה (401 בלי `CRON_SECRET`/עם סוד שגוי/כשלא מוגדר בסביבה כלל, 200 עם הסוד הנכון); סכימת סיכומים מכמה משתמשים; בידוד כשלון של משתמש אחד כך שהמשתמשים האחרים עדיין מעובדים | מוקים ל-`getUsersWithBeds24Access`, `processReviewRemindersForUser` ו-`getYesterdayInIsrael` |
 | 16 | `src/app/api/dashboard/review-reminders/test-send/route.test.ts` **(חדש)** | 5 | כפתור "שלח הודעת בדיקה" בפרופיל: 401 ללא סשן, 400 בלי מספר טלפון, שליחת תצוגה מקדימה למספר של המשתמש עצמו (לא לאורח אמיתי), בחירת ערוץ מפורש/נפילה ל-`direct` בערוץ לא תקין, 502 כשה-WhatsApp נכשל | מוקים ל-`next-auth` ול-`sendWhatsAppMessage`; אינו נוגע ב-Beds24/DB בכלל |
 | 17 | `src/app/api/dashboard/review-reminders/send-now/route.test.ts` **(חדש)** | 7 | כפתור "הפעל שליחה עבור אתמול" בפרופיל: 401 ללא סשן, 403 למשתמש דמו, 400 בלי חיבור Beds24, **ריצה מוצלחת עם access token בלבד בלי refresh token** (בדיקת רגרסיה לאותו באג), ריצה מול `processReviewRemindersForUser` עם משתמש הסשן ותאריך "אתמול" כברירת מחדל, תאריך מפורש תקין, נפילה ל"אתמול" בתאריך לא תקין | מוקים ל-`next-auth`, ל-`processReviewRemindersForUser` ול-`getYesterdayInIsrael`; מפעיל את אותה לוגיקה אמיתית שהקרון היומי מפעיל, עבור המשתמש המחובר בלבד |
+| 17b | `src/lib/availability/reconcile.test.ts` **(חדש)** | 8 | `groupManualBlocks`, `listManualBlocks` (רק `is_manual_block` בחלון התאריכים), הודעת WhatsApp לבעל הנכס, `reconcileRoomBlocks`: אין פעולה כשהכול סגור, סגירה מחדש + אימות + התראה כשיש סטייה, דיווח כשל כש-Beds24 דוחה, אין נגיעה כש-Beds24 לא זמין | מוקים ל-`@/lib/availability/sync` ול-`sendWhatsAppToAll`; Supabase דרך `createFakeSupabaseClient` |
+| 17c | `src/app/api/cron/block-sync/route.test.ts` **(חדש)** | 4 | שומר-הרשאה (`CRON_SECRET`), חלון תאריכים מהיום לשנה קדימה, סכימת תוצאות, בידוד חדר שנכשל | מוקים ל-`listManualBlocks` / `reconcileRoomBlocks` |
 
 ## שכבה 3 — E2E מדומה (Playwright)
 
@@ -64,6 +68,7 @@
 | 21 | `e2e/reservation-call-icon.spec.ts` **(חדש)** | 1 | בהצגת הזמנה מורחבת במובייל, כפתור השיחה העגול הוא סגול מותג (`#7133D9`) ולא ורוד ישן (`#f093fb`), ווואטסאפ נשאר ירוק | HOS-8; משתמש בהזמנת דמו `מור אלמוג` עם מספר טלפון |
 | 22 | `e2e/hide-digital-checkin-nav.spec.ts` **(חדש)** | 2 | בדסקטופ קישור צ'ק-אין דיגיטלי לא מופיע בסיידבר; במובייל הוא לא מופיע במגירת "עוד"; קישור "כל ההזמנות" נשאר | HOS-12; cookie דמו כמו שאר בדיקות הדשבורד |
 | 23 | `e2e/customers-light-theme.spec.ts` **(חדש)** | 3 | רשימת לקוחות: כותרת ושם אורח בטקסט כהה (`#2F3133`), מונה בסגול מותג על רקע בהיר, קישורי טלפון/אימייל בסגול מותג (`#7133D9`) ולא לבן/ורוד ישן; סינון לפי שם; אותו פלט בדסקטופ ובמובייל | HOS-11; מיירט `/api/dashboard/customers` עם שני לקוחות דמו |
+| 24 | `e2e/unsynced-blocks-banner.spec.ts` **(חדש)** | 1 | בעל נכס (לא דמו): ה-API מסמן תאריך `unsynced` → מוצג באנר "תאריכים שחסמת עדיין פתוחים להזמנה בערוצים" עם התאריך → "סגור שוב" שולח `blackout` רק לתאריך הזה → הבאנר נעלם | מיירט `**/api/dashboard/**` (כולל `room-list` שחייב מערך) |
 
 ---
 
@@ -74,6 +79,9 @@
 | `src/lib/availability/blocking.ts` | `src/lib/availability/blocking.test.ts` (יחידה) + `src/app/api/dashboard/rooms/route.test.ts` (אינטגרציה, דרך ה-route) |
 | `src/lib/dashboard/calendarDates.ts` | `src/lib/dashboard/calendarDates.test.ts` |
 | `src/app/api/dashboard/rooms/route.ts` | `src/app/api/dashboard/rooms/route.test.ts` |
+| `src/lib/availability/sync.ts` | `src/lib/availability/sync.test.ts` + `src/app/api/dashboard/rooms/route.test.ts` (אימות חסימה ב-POST, סימון `unsynced` ב-GET) |
+| `src/lib/availability/reconcile.ts` / `src/app/api/cron/block-sync/route.ts` | `src/lib/availability/reconcile.test.ts` + `src/app/api/cron/block-sync/route.test.ts` |
+| `src/app/dashboard/components/UnsyncedBlocksBanner.tsx` / `src/lib/dashboard/unsyncedBlocks.ts` | `e2e/unsynced-blocks-banner.spec.ts` + `src/lib/dashboard/unsyncedBlocks.test.ts` |
 | `src/app/dashboard/components/CalendarPricing.tsx` | `e2e/calendar-blocking.spec.ts` (זרימת המשתמש) + בעקיפין דרך `calendarDates.test.ts` (הלוגיקה שחולצה ממנו) |
 | `src/app/dashboard/DashboardClient.tsx` | `e2e/mobile-calendar-loader.spec.ts` (לודר כפול במובייל מול דסקטופ) |
 | `src/app/dashboard/components/ReservationsTable.tsx` | `e2e/reservation-call-icon.spec.ts` (צבע אייקון שיחה בהצגת הזמנות) |
