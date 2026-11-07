@@ -11,6 +11,7 @@
 import { createServiceRoleClient } from '@/lib/supabase/server'
 import { fetchWithTokenRefresh } from '@/lib/beds24/tokenManager'
 import { isCancelledBookingStatus } from '@/lib/bookings/normalizer'
+import { resolveNumAvail } from '@/lib/availability/syncRules'
 import crypto from 'crypto'
 
 const BEDS24_BASE_URL = process.env.BEDS24_API_BASE_URL ?? 'https://api.beds24.com/v2'
@@ -137,7 +138,8 @@ interface FlatRow {
   date: string
   price: number      // price1 (base)
   prices: PricesByGuest
-  numAvail: number
+  /** null when Beds24 did not return the field (older behaviour / param missing). */
+  numAvail: number | null
   minStay: number
 }
 
@@ -254,7 +256,7 @@ function flattenCalendarData(data: unknown): FlatRow[] {
           const date     = getString(row, ['date', 'day', 'startDate'])
           const price    = extractPrice(row)
           const prices   = extractPrices(row)
-          const numAvail = getNumber(row, ['numAvail', 'avail', 'available', 'availability', 'units']) ?? 1
+          const numAvail = getNumber(row, ['numAvail', 'avail', 'available', 'availability', 'units']) ?? null
           const minStay  = getNumber(row, ['minStay', 'minimumStay', 'min_stay']) ?? 1
           if (!date || price === undefined) return []
           return [{ date, price, prices, numAvail, minStay }]
@@ -266,7 +268,7 @@ function flattenCalendarData(data: unknown): FlatRow[] {
       const to       = getString(calendar, ['to', 'endDate'])
       const price    = extractPrice(calendar)
       const prices   = extractPrices(calendar)
-      const numAvail = getNumber(calendar, ['numAvail', 'avail', 'available', 'availability', 'units']) ?? 1
+      const numAvail = getNumber(calendar, ['numAvail', 'avail', 'available', 'availability', 'units']) ?? null
       const minStay  = getNumber(calendar, ['minStay', 'minimumStay', 'min_stay']) ?? 1
 
       if (!from || !to || price === undefined) return []
@@ -313,9 +315,10 @@ export async function refreshRoomCache(
   roomId: string,
   accessToken: string,
   refreshToken: string,
+  options: { months?: number } = {},
 ): Promise<{ upserted: number; error?: string }> {
   try {
-    const { startDate, endDate } = buildDateRange(3)
+    const { startDate, endDate } = buildDateRange(options.months ?? 3)
 
     const url = new URL(`${BEDS24_BASE_URL}/inventory/rooms/calendar`)
     url.searchParams.set('propertyId', propertyId)
@@ -324,6 +327,8 @@ export async function refreshRoomCache(
     url.searchParams.set('endDate', endDate)
     url.searchParams.set('includePrices', '1')
     url.searchParams.set('includeAvailability', '1')
+    // Without this flag Beds24 omits numAvail, so manual blocks would be invisible to us.
+    url.searchParams.set('includeNumAvail', 'true')
 
     const response = await fetchWithTokenRefresh(
       url.toString(),
@@ -408,9 +413,11 @@ export async function refreshRoomCache(
       property_id: propertyId,
       date: row.date,
       price: row.price,
-      num_avail: blockedDates.has(row.date) ? 0
-        : manuallyBlockedDates.has(row.date) ? 0
-        : row.numAvail,
+      num_avail: resolveNumAvail({
+        bookedNight: blockedDates.has(row.date),
+        beds24NumAvail: row.numAvail,
+        manuallyBlockedInCache: manuallyBlockedDates.has(row.date),
+      }),
       min_stay: row.minStay,
       cached_at: now,
       is_manual_block: false,

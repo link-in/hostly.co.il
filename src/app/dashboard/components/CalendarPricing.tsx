@@ -8,6 +8,7 @@ import { channelLinkLabel, channelApproveLabel } from '@/lib/dashboard/channelLi
 import { useHolidays } from '@/hooks/useHolidays'
 import HolidayIndicator from '@/components/HolidayIndicator'
 import { useSelectedRoom } from '@/lib/rooms/RoomContext'
+import { CalendarSyncButton } from './CalendarSyncButton'
 import { toast } from 'sonner'
 import { normalizeDate, toKey, isSameDay, addDays, buildDateRanges } from '@/lib/dashboard/calendarDates'
 import { buildBookingMap, isBookedOn, buildBookingSegments } from '@/lib/dashboard/bookingSegments'
@@ -568,6 +569,13 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated, onApproveReque
             )}
           </div>
           <div className="d-flex align-items-center gap-1">
+            <div className="me-2">
+              <CalendarSyncButton
+                roomId={selectedRoomId || prices.find((entry) => entry.roomId)?.roomId || undefined}
+                onSynced={onPricesUpdated}
+                disabled={disabled}
+              />
+            </div>
             <button
               type="button"
               className="btn btn-sm d-flex align-items-center justify-content-center"

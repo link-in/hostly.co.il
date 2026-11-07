@@ -1,20 +1,39 @@
 /**
  * POST /api/dashboard/cache/refresh
  *
- * Manually triggers an availability-cache refresh for the current user's room.
- * Useful for the first-time seeding before any Beds24 webhook has fired.
+ * Manually triggers an availability-cache refresh from Beds24 for the current user.
+ * Beds24 is the source of truth: prices and blocked days are re-read and written to the cache.
  *
  * Body (optional): { roomId?: string, propertyId?: string }
- * Falls back to the values stored in the user's profile.
+ * - roomId: refresh only this room (must belong to the user). Omit to refresh all of the user's rooms.
+ * - propertyId: overrides the property stored on the user profile.
  */
 
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
+import { z } from 'zod'
 import { authOptions } from '@/lib/auth/authOptions'
 import { createServiceRoleClient } from '@/lib/supabase/server'
-import { refreshRoomCache } from '@/lib/availability/cache'
+import { parseRoomIds, roomFieldIncludes } from '@/lib/rooms/roomIds'
+import { refreshRooms, summarizeRefresh } from '@/lib/availability/refreshRooms'
 
 export const dynamic = 'force-dynamic'
+
+const idField = z.union([z.string(), z.number()]).transform((v) => String(v).trim()).pipe(z.string().regex(/^\d+$/))
+
+const bodySchema = z.object({
+  roomId: idField.optional(),
+  propertyId: idField.optional(),
+})
+
+async function readBody(request: NextRequest) {
+  try {
+    return bodySchema.safeParse(await request.json())
+  } catch {
+    // Body is optional - an empty/invalid JSON body means "refresh everything".
+    return bodySchema.safeParse({})
+  }
+}
 
 export async function POST(request: NextRequest) {
   const session = await getServerSession(authOptions)
@@ -24,15 +43,9 @@ export async function POST(request: NextRequest) {
 
   const userId = session.user.id
 
-  // Allow body overrides, but fall back to the user's own profile values
-  let bodyRoomId: string | undefined
-  let bodyPropertyId: string | undefined
-  try {
-    const body = await request.json()
-    bodyRoomId = body?.roomId ? String(body.roomId) : undefined
-    bodyPropertyId = body?.propertyId ? String(body.propertyId) : undefined
-  } catch {
-    // Body is optional – ignore parse errors
+  const body = await readBody(request)
+  if (!body.success) {
+    return NextResponse.json({ error: 'roomId או propertyId לא תקינים' }, { status: 400 })
   }
 
   const supabase = createServiceRoleClient()
@@ -47,13 +60,16 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'User not found' }, { status: 404 })
   }
 
-  // room_id in DB may be comma-separated with optional names: "679503:Room A,679529:Room B"
-  // Use the first segment only when no explicit roomId was provided
-  const rawRoomId = bodyRoomId ?? user.room_id?.split(',')[0].split(':')[0].trim()
-  const roomId = rawRoomId?.trim() || null
-  const propertyId = bodyPropertyId ?? user.property_id
+  const userRoomIds = parseRoomIds(user.room_id)
+  const requestedRoomId = body.data.roomId
+  if (requestedRoomId && !roomFieldIncludes(user.room_id, requestedRoomId)) {
+    return NextResponse.json({ error: 'החדר אינו שייך למשתמש' }, { status: 403 })
+  }
 
-  if (!roomId || !propertyId) {
+  const roomIds = requestedRoomId ? [requestedRoomId] : userRoomIds
+  const propertyId = body.data.propertyId ?? user.property_id
+
+  if (roomIds.length === 0 || !propertyId) {
     return NextResponse.json(
       { error: 'No room_id or property_id configured for this user. Set them in your profile first.' },
       { status: 400 },
@@ -71,26 +87,22 @@ export async function POST(request: NextRequest) {
     )
   }
 
-  const result = await refreshRoomCache(
-    userId,
-    propertyId,
-    roomId,
-    accessToken,
-    refreshToken,
+  const rooms = await refreshRooms({ userId, propertyId, roomIds, accessToken, refreshToken })
+  const summary = summarizeRefresh(rooms)
+
+  const message = summary.success
+    ? `Cache refreshed – ${summary.totalDays} days written.`
+    : `Cache refresh failed for room(s): ${summary.failedRoomIds.join(', ')}`
+
+  return NextResponse.json(
+    {
+      success: summary.success,
+      rooms,
+      totalDays: summary.totalDays,
+      refreshedAt: new Date().toISOString(),
+      message,
+      ...(summary.success ? {} : { error: message }),
+    },
+    { status: summary.allFailed ? 502 : 200 },
   )
-
-  if (result.error) {
-    return NextResponse.json(
-      { success: false, error: result.error },
-      { status: 502 },
-    )
-  }
-
-  return NextResponse.json({
-    success: true,
-    upserted: result.upserted,
-    roomId,
-    propertyId,
-    message: `Cache refreshed – ${result.upserted} days written.`,
-  })
 }
