@@ -9,6 +9,7 @@ import { useHolidays } from '@/hooks/useHolidays'
 import HolidayIndicator from '@/components/HolidayIndicator'
 import { useSelectedRoom } from '@/lib/rooms/RoomContext'
 import { CalendarSyncButton } from './CalendarSyncButton'
+import { BulkMonthPriceForm } from './BulkMonthPriceForm'
 import { toast } from 'sonner'
 import { normalizeDate, toKey, isSameDay, addDays, buildDateRanges } from '@/lib/dashboard/calendarDates'
 import { buildBookingMap, isBookedOn, buildBookingSegments } from '@/lib/dashboard/bookingSegments'
@@ -943,6 +944,19 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated, onApproveReque
                 <span>{saving ? 'שומר...' : 'שחרר'}</span>
               </button>
             </div>
+            <BulkMonthPriceForm
+              month={currentMonth}
+              roomId={selectedRoomId || prices.find((entry) => entry.roomId)?.roomId || undefined}
+              disabled={disabled || saving}
+              onApplied={async (nights) => {
+                setPriceOverrides((prev) => {
+                  const next = { ...prev }
+                  nights.forEach((night) => { next[toKey(night.date)] = night.price })
+                  return next
+                })
+                await onPricesUpdated?.()
+              }}
+            />
             {/* ── Selected dates ── */}
             <div className="mt-3" style={{ background: '#F7F5FF', border: '1px solid #E7E1FF', borderRadius: 10, padding: '12px 14px' }}>
               <div className="d-flex align-items-center justify-content-between mb-2">
