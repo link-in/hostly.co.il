@@ -8,6 +8,7 @@ import {
   CircleHelp,
   ClipboardList,
   FileText,
+  Globe,
   KeyRound,
   LayoutTemplate,
   MessageSquare,
@@ -62,7 +63,7 @@ export const NAV_ITEMS: NavItem[] = [
   // HOS-22: אוחד לתוך עמוד הודעות WhatsApp. נשאר ברשימה עם hidden: true לצורך תאימות.
   { href: '/dashboard/arrival-message', label: 'הודעת יום הגעה', icon: BellRing, page: 'arrival-message', section: 'main', hidden: true },
   { href: '/dashboard/receipts', label: 'קבלות וחשבוניות', icon: FileText, page: 'receipts', section: 'main' },
-  { href: '/dashboard/price-check', label: 'בדיקת מחיר', icon: CircleHelp, page: 'price-check', section: 'main' },
+  { href: '/dashboard/price-check', label: 'בדיקת מחירים ברשת', icon: Globe, page: 'price-check', section: 'main' },
   { href: '/dashboard/pricing-demo', label: 'מחשבון מחירים', icon: Calculator, page: 'pricing-demo', section: 'main' },
   // מוצג כל עוד isSiteBuilderEnabled() — כיבוי: NEXT_PUBLIC_SITE_BUILDER_ENABLED=false (מסונן ב-isDashboardNavPageVisible)
   { href: '/dashboard/site-builder', label: 'בונה אתר הזמנות', icon: Wand2, page: 'site-builder', section: 'main' },

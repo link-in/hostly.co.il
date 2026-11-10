@@ -19,7 +19,7 @@ async function setupMocks(page: Page) {
     })
   })
 
-  await page.route('**/api/dashboard/price-check**', async (route) => {
+  await page.route('**/api/dashboard/price-check', async (route) => {
     const postData = route.request().postDataJSON()
     if (postData?.checkIn === '2026-12-01') {
       // Simulate unavailable dates
@@ -57,9 +57,75 @@ async function setupMocks(page: Page) {
       }),
     })
   })
+
+  await page.route('**/api/dashboard/price-check/online**', async (route) => {
+    const postData = route.request().postDataJSON()
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        checkIn: postData?.checkIn || '2026-06-01',
+        checkOut: postData?.checkOut || '2026-06-03',
+        numAdult: postData?.numAdult || 2,
+        numChild: postData?.numChild || 0,
+        nights: 2,
+        basePrice: 1000,
+        channels: [
+          {
+            channelKey: 'airbnb',
+            name: 'Airbnb',
+            url: `https://www.airbnb.co.il/rooms/12345?check_in=${postData?.checkIn || '2026-06-01'}&check_out=${postData?.checkOut || '2026-06-03'}&adults=2`,
+            status: 'success',
+            statusMessage: 'המחיר נסרק בהצלחה מאתר ההזמנות',
+            hostlyPrice: 1210,
+            beds24Price: 1210,
+            onlinePrice: 1210,
+            currency: 'ILS',
+            diff: 0,
+            diffPercent: 0,
+            matchStatus: 'matched',
+            matchMessage: 'תואם במדויק',
+            fetchedAt: new Date().toISOString(),
+          },
+          {
+            channelKey: 'booking',
+            name: 'Booking.com',
+            url: `https://www.booking.com/hotel/il/demo.html?checkin=${postData?.checkIn || '2026-06-01'}&checkout=${postData?.checkOut || '2026-06-03'}&group_adults=2`,
+            status: 'success',
+            statusMessage: 'המחיר נסרק בהצלחה מאתר ההזמנות',
+            hostlyPrice: 1210,
+            beds24Price: 1210,
+            onlinePrice: 1210,
+            currency: 'ILS',
+            diff: 0,
+            diffPercent: 0,
+            matchStatus: 'matched',
+            matchMessage: 'תואם במדויק',
+            fetchedAt: new Date().toISOString(),
+          },
+          {
+            channelKey: 'direct',
+            name: 'אתר הזמנות ישיר',
+            url: `https://example.com/sites/demo?checkIn=${postData?.checkIn || '2026-06-01'}&checkOut=${postData?.checkOut || '2026-06-03'}&adults=2`,
+            status: 'success',
+            statusMessage: 'המחיר נסרק בהצלחה מאתר ההזמנות הישיר',
+            hostlyPrice: 1000,
+            beds24Price: 1000,
+            onlinePrice: 1000,
+            currency: 'ILS',
+            diff: 0,
+            diffPercent: 0,
+            matchStatus: 'matched',
+            matchMessage: 'תואם במדויק',
+            fetchedAt: new Date().toISOString(),
+          },
+        ],
+      }),
+    })
+  })
 }
 
-test.describe('Price Check Page (HOS-30)', () => {
+test.describe('Price Check Page (HOS-30 / HOS-35)', () => {
   test.beforeEach(async ({ page, context, baseURL }) => {
     await signInAsUser(context, baseURL!, OWNER)
     await setupMocks(page)
@@ -153,6 +219,74 @@ test.describe('Price Check Page (HOS-30)', () => {
     await expect(directCard).toContainText('1,000')
 
     await page.screenshot({ path: '/opt/cursor/artifacts/price_check_results_available.png', fullPage: true })
+  })
+
+  test('renders multi-channel online comparison table with Hostly, Beds24, and Online prices (HOS-35)', async ({
+    page,
+  }) => {
+    const submitBtn = page.getByTestId('price-check-submit-btn')
+    await submitBtn.click()
+
+    // Comparison table becomes visible
+    await expect(page.getByTestId('price-comparison-table-card')).toBeVisible()
+    await expect(page.getByTestId('price-comparison-table')).toBeVisible()
+
+    // Rows for all 3 channels
+    await expect(page.getByTestId('table-row-airbnb')).toBeVisible()
+    await expect(page.getByTestId('table-row-booking')).toBeVisible()
+    await expect(page.getByTestId('table-row-direct')).toBeVisible()
+
+    // Hostly, Beds24 and Online price columns
+    await expect(page.getByTestId('hostly-price-airbnb')).toContainText('1,210')
+    await expect(page.getByTestId('beds24-price-airbnb')).toContainText('1,210')
+    await expect(page.getByTestId('online-price-airbnb')).toContainText('1,210')
+
+    await expect(page.getByTestId('hostly-price-booking')).toContainText('1,210')
+    await expect(page.getByTestId('beds24-price-booking')).toContainText('1,210')
+    await expect(page.getByTestId('online-price-booking')).toContainText('1,210')
+
+    await expect(page.getByTestId('hostly-price-direct')).toContainText('1,000')
+    await expect(page.getByTestId('beds24-price-direct')).toContainText('1,000')
+    await expect(page.getByTestId('online-price-direct')).toContainText('1,000')
+
+    // Match badges indicate exact match
+    await expect(page.getByTestId('match-badge-airbnb')).toContainText('תואם במדויק')
+    await expect(page.getByTestId('match-badge-booking')).toContainText('תואם במדויק')
+    await expect(page.getByTestId('match-badge-direct')).toContainText('תואם במדויק')
+
+    // Direct surf buttons are populated with parameterized URLs
+    const airbnbLink = page.getByTestId('direct-link-airbnb')
+    await expect(airbnbLink).toBeVisible()
+    await expect(airbnbLink).toHaveAttribute('href', /check_in=/)
+
+    const bookingLink = page.getByTestId('direct-link-booking')
+    await expect(bookingLink).toBeVisible()
+    await expect(bookingLink).toHaveAttribute('href', /checkin=/)
+
+    await page.screenshot({ path: '/opt/cursor/artifacts/price_check_comparison_table.png', fullPage: true })
+  })
+
+  test('allows configuring channel URLs and saving them', async ({ page }) => {
+    // Open settings
+    const settingsBtn = page.getByRole('button', { name: /הגדרת קישורי ערוצים/ })
+    await settingsBtn.click()
+
+    await expect(page.getByTestId('channel-url-settings-card')).toBeVisible()
+
+    // Inputs exist
+    const airbnbInput = page.getByTestId('airbnb-url-input')
+    const bookingInput = page.getByTestId('booking-url-input')
+    const directInput = page.getByTestId('direct-url-input')
+
+    await airbnbInput.fill('99887766')
+    await bookingInput.fill('my-hotel-slug')
+    await directInput.fill('my-direct-slug')
+
+    // Save
+    await page.getByTestId('save-urls-btn').click()
+
+    // Settings card closes on save
+    await expect(page.getByTestId('channel-url-settings-card')).not.toBeVisible()
   })
 
   test('displays clean unavailable warning state when dates are blocked', async ({ page }) => {

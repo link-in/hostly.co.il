@@ -22,6 +22,31 @@ export async function POST(request: Request) {
       )
     }
 
+    // Parse request body
+    const body = await request.json()
+    const { checkIn, checkOut, numAdult, numChild, roomId: roomIdOverride } = body
+
+    // Support demo mode without requiring real Beds24 credentials
+    if (session?.user?.isDemo) {
+      const inDate = new Date(checkIn || new Date())
+      const outDate = new Date(checkOut || new Date(Date.now() + 86400000))
+      const nights = Math.max(1, Math.ceil((outDate.getTime() - inDate.getTime()) / (1000 * 60 * 60 * 24)))
+      const pricePerNight = 500
+      const totalPrice = pricePerNight * nights
+      return NextResponse.json({
+        available: true,
+        price: totalPrice,
+        currency: 'ILS',
+        nights,
+        pricePerNight,
+        checkIn: checkIn || inDate.toISOString().split('T')[0],
+        checkOut: checkOut || outDate.toISOString().split('T')[0],
+        numAdult: Number(numAdult || 2),
+        numChild: Number(numChild || 0),
+        details: { demo: true },
+      })
+    }
+
     const propertyId = session?.user?.propertyId ?? process.env.BEDS24_PROPERTY_ID
 
     if (!propertyId) {
@@ -30,10 +55,6 @@ export async function POST(request: Request) {
         { status: 500 }
       )
     }
-
-    // Parse request body
-    const body = await request.json()
-    const { checkIn, checkOut, numAdult, numChild, roomId: roomIdOverride } = body
 
     // Allow client to pass roomId override (multi-room support), fallback to session
     const roomId = (roomIdOverride ?? session?.user?.roomId ?? process.env.BEDS24_ROOM_ID)

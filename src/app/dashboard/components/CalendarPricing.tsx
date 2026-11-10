@@ -1,5 +1,6 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react'
-import { Tag, Lock, Unlock, ExternalLink, Check } from 'lucide-react'
+import Link from 'next/link'
+import { Tag, Lock, Unlock, ExternalLink, Check, Globe } from 'lucide-react'
 import { createPortal } from 'react-dom'
 import type { Reservation, ReservationStatus, RoomPrice } from '@/lib/dashboard/types'
 import { formatCurrency, formatStatus } from '@/lib/dashboard/utils'
@@ -78,6 +79,22 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated, onApproveReque
   const [saving, setSaving] = useState(false)
   // Optimistic local-only availability overrides (dates blocked by the user in this session)
   const [manuallyBlockedDates, setManuallyBlockedDates] = useState<Set<string>>(new Set())
+
+  // Direct URL to Price Check for currently selected dates / room
+  const priceCheckUrl = useMemo(() => {
+    if (!selectedDates.length) {
+      return `/dashboard/price-check${selectedRoomId ? `?room=${encodeURIComponent(selectedRoomId)}` : ''}`
+    }
+    const sorted = [...selectedDates].sort((a, b) => a.getTime() - b.getTime())
+    const minDate = sorted[0]
+    const maxDate = sorted[sorted.length - 1]
+    const nextDay = new Date(maxDate)
+    nextDay.setDate(nextDay.getDate() + 1)
+    const checkIn = toKey(minDate)
+    const checkOut = toKey(nextDay)
+    const roomParam = selectedRoomId ? `&room=${encodeURIComponent(selectedRoomId)}` : ''
+    return `/dashboard/price-check?checkIn=${checkIn}&checkOut=${checkOut}${roomParam}&auto=true`
+  }, [selectedDates, selectedRoomId])
 
   // Reset local overrides and selection whenever the user switches to a different room
   const prevRoomRef = useRef<string | null>(null)
@@ -850,7 +867,19 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated, onApproveReque
       <div className="col-lg-4">
         <div className="card h-100" style={{ background: '#fff', border: '1px solid #CED7E0', borderRadius: '8px', boxShadow: 'none' }}>
           <div className="card-body">
-            <h3 className="h6 fw-semibold mb-3" style={{ color: '#2F3133' }}>שינוי מחיר לפי תאריך</h3>
+            <div className="d-flex align-items-center justify-content-between mb-3">
+              <h3 className="h6 fw-semibold mb-0" style={{ color: '#2F3133' }}>שינוי מחיר לפי תאריך</h3>
+              <Link
+                href={priceCheckUrl}
+                className="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1"
+                style={{ fontSize: '0.78rem', padding: '3px 8px', borderRadius: '6px' }}
+                title="מעבר לבדיקת מחירים מול ערוצי ההזמנות (Airbnb, Booking ואתר)"
+                data-testid="calendar-price-check-link"
+              >
+                <Globe size={13} />
+                <span>בדיקה ברשת</span>
+              </Link>
+            </div>
             <div className="small mb-3" style={{ color: '#6C7884' }}>
               בחר תאריכים בלוח משמאל — עדכן מחיר או סגור להזמנות. לחץ על תאריך חסום כדי לסמן אותו לפתיחה.
             </div>
@@ -888,7 +917,25 @@ const CalendarPricing = ({ reservations, prices, onPricesUpdated, onApproveReque
             ) : null}
             {saveSuccess ? (
               <div className="alert alert-success py-2 mb-3" role="alert">
-                {saveSuccess}
+                <div className="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                  <span>{saveSuccess}</span>
+                  <Link
+                    href={priceCheckUrl}
+                    className="btn btn-sm d-inline-flex align-items-center gap-1"
+                    style={{
+                      background: '#047857',
+                      color: '#fff',
+                      fontSize: '0.75rem',
+                      padding: '3px 8px',
+                      borderRadius: '6px',
+                      textDecoration: 'none',
+                    }}
+                    data-testid="verify-price-online-btn"
+                  >
+                    <Globe size={13} />
+                    <span>בדוק ברשת</span>
+                  </Link>
+                </div>
               </div>
             ) : null}
             <div className="d-flex gap-2">
