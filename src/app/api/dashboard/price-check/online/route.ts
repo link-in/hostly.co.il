@@ -5,6 +5,7 @@ import {
   onlinePriceCheckInputSchema,
   scanChannelOnlinePrice,
   calculateHostlyPrice,
+  buildChannelUrl,
   type OnlineChannelPriceResult,
   type PriceCheckDateParams,
 } from '@/lib/pricing/onlinePriceFetcher'
@@ -84,13 +85,11 @@ export async function POST(request: Request) {
       const bookingHostly = calculateHostlyPrice('booking', basePrice)
       const directHostly = calculateHostlyPrice('direct', basePrice)
 
-      const siteBase = process.env.NEXT_PUBLIC_BASE_URL || 'https://hostly.site'
-
       results = [
         {
           channelKey: 'airbnb',
           name: 'Airbnb',
-          url: `https://www.airbnb.co.il/rooms/demo-101?check_in=${checkIn}&check_out=${checkOut}&adults=${numAdult}${numChild > 0 ? `&children=${numChild}` : ''}`,
+          url: buildChannelUrl('airbnb', effectiveChannels.airbnb, params),
           status: 'success',
           statusMessage: 'המחיר נסרק בהצלחה מאתר Airbnb (הדגמה)',
           hostlyPrice: airbnbHostly,
@@ -106,7 +105,7 @@ export async function POST(request: Request) {
         {
           channelKey: 'booking',
           name: 'Booking.com',
-          url: `https://www.booking.com/hotel/il/demo-suites.html?checkin=${checkIn}&checkout=${checkOut}&group_adults=${numAdult}${numChild > 0 ? `&group_children=${numChild}` : ''}`,
+          url: buildChannelUrl('booking', effectiveChannels.booking, params),
           status: 'success',
           statusMessage: 'המחיר נסרק בהצלחה מ-Booking.com (הדגמה)',
           hostlyPrice: bookingHostly,
@@ -122,7 +121,7 @@ export async function POST(request: Request) {
         {
           channelKey: 'direct',
           name: 'אתר הזמנות ישיר',
-          url: `${siteBase}/sites/demo-property?checkIn=${checkIn}&checkOut=${checkOut}&adults=${numAdult}${numChild > 0 ? `&children=${numChild}` : ''}`,
+          url: buildChannelUrl('direct', effectiveChannels.direct, params),
           status: 'success',
           statusMessage: 'המחיר נסרק בהצלחה מאתר ההזמנות הישיר (הדגמה)',
           hostlyPrice: directHostly,

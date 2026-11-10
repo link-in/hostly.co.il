@@ -4,6 +4,7 @@ import {
   buildBookingUrl,
   buildDirectWebsiteUrl,
   buildChannelUrl,
+  extractAirbnbListingId,
   extractPriceFromHtml,
   detectBotProtection,
   calculatePriceMatch,
@@ -22,7 +23,7 @@ describe('onlinePriceFetcher URL builders', () => {
 
   it('builds Airbnb URL from numeric listing ID', () => {
     const url = buildAirbnbUrl('12345678', params)
-    expect(url).toContain('https://www.airbnb.co.il/rooms/12345678')
+    expect(url).toContain('https://www.airbnb.com/rooms/12345678')
     expect(url).toContain('check_in=2026-07-01')
     expect(url).toContain('check_out=2026-07-05')
     expect(url).toContain('adults=2')
@@ -36,26 +37,72 @@ describe('onlinePriceFetcher URL builders', () => {
     expect(url).toContain('adults=2')
   })
 
+  it('rewrites airbnb.co.il links (which redirect to the homepage) to airbnb.com', () => {
+    const url = buildAirbnbUrl(
+      'https://www.airbnb.co.il/rooms/1491057188555346537?check_in=2026-11-23&amp;check_out=2026-11-28&amp;adults=2',
+      params
+    )
+    const parsed = new URL(url)
+    expect(parsed.origin).toBe('https://www.airbnb.com')
+    expect(parsed.pathname).toBe('/rooms/1491057188555346537')
+    expect(parsed.searchParams.get('check_in')).toBe('2026-07-01')
+    expect(parsed.searchParams.get('check_out')).toBe('2026-07-05')
+    expect(url).not.toContain('amp;')
+  })
+
+  it('keeps 19-digit Airbnb listing IDs exact', () => {
+    expect(extractAirbnbListingId('1491057188555346537')).toBe('1491057188555346537')
+    expect(extractAirbnbListingId('https://www.airbnb.com/rooms/plus/123456')).toBe('123456')
+    expect(extractAirbnbListingId('not-a-listing')).toBeNull()
+  })
+
+  it('builds Airbnb search URL on airbnb.com when no listing is known', () => {
+    const url = buildAirbnbUrl('', params, 'mountain view dafna')
+    expect(url.startsWith('https://www.airbnb.com/s/mountain%20view%20dafna/homes?')).toBe(true)
+    expect(url).toContain('check_in=2026-07-01')
+  })
+
   it('builds Booking URL from slug or full URL', () => {
-    const url1 = buildBookingUrl('mountain-view-dafna', params)
-    expect(url1).toContain('booking.com/hotel/il/mountain-view-dafna.html')
+    const url1 = buildBookingUrl('my-hotel', params)
+    expect(url1).toContain('booking.com/hotel/il/my-hotel.html')
     expect(url1).toContain('checkin=2026-07-01')
     expect(url1).toContain('group_adults=2')
     expect(url1).toContain('group_children=1')
 
     const url2 = buildBookingUrl('https://www.booking.com/hotel/il/custom-hotel.html', params)
+    expect(url2).toContain('booking.com/hotel/il/custom-hotel.html')
     expect(url2).toContain('checkin=2026-07-01')
+  })
+
+  it('builds Booking hotel-ID URL via dest_type=hotel search', () => {
+    const parsed = new URL(buildBookingUrl('12345', params))
+    expect(parsed.pathname).toBe('/searchresults.html')
+    expect(parsed.searchParams.get('dest_id')).toBe('12345')
+    expect(parsed.searchParams.get('dest_type')).toBe('hotel')
+    expect(parsed.searchParams.get('checkout')).toBe('2026-07-05')
+  })
+
+  it('builds Booking search by property name when nothing is configured', () => {
+    const parsed = new URL(buildBookingUrl('', params, 'mountain view dafna'))
+    expect(parsed.searchParams.get('ss')).toBe('mountain view dafna')
+    expect(parsed.searchParams.get('group_adults')).toBe('2')
   })
 
   it('builds Direct Website URL correctly', () => {
     const url1 = buildDirectWebsiteUrl('dafna-view', params, 'https://example.com')
-    expect(url1).toContain('https://example.com/sites/dafna-view')
+    expect(url1.startsWith('https://dafna-view.hostly.co.il/?')).toBe(true)
     expect(url1).toContain('checkIn=2026-07-01')
     expect(url1).toContain('adults=2')
 
     const url2 = buildDirectWebsiteUrl('https://mycustomdomain.co.il/book', params)
     expect(url2).toContain('https://mycustomdomain.co.il/book')
     expect(url2).toContain('checkIn=2026-07-01')
+
+    expect(buildDirectWebsiteUrl('mycustomdomain.co.il', params)).toContain('https://mycustomdomain.co.il/?')
+  })
+
+  it('never uses the property name as a direct-site address', () => {
+    expect(buildChannelUrl('direct', '', params, 'נוף הרים בדפנה')).toBe('')
   })
 
   it('returns empty string for empty input', () => {
@@ -180,7 +227,7 @@ describe('scanChannelOnlinePrice', () => {
       fallbackQuery: 'נוף הרים בדפנה',
     })
     expect(res.status).toBe('not_found')
-    expect(res.url).toContain('https://www.airbnb.co.il/s/')
+    expect(res.url).toContain('https://www.airbnb.com/s/')
     expect(res.url).toContain('check_in=2026-08-01')
   })
 

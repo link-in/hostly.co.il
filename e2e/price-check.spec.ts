@@ -100,7 +100,7 @@ async function setupMocks(page: Page) {
           {
             channelKey: 'airbnb',
             name: 'Airbnb',
-            url: `https://www.airbnb.co.il/rooms/12345?check_in=${postData?.checkIn || '2026-06-01'}&check_out=${postData?.checkOut || '2026-06-03'}&adults=2`,
+            url: `https://www.airbnb.com/rooms/12345?check_in=${postData?.checkIn || '2026-06-01'}&check_out=${postData?.checkOut || '2026-06-03'}&adults=2`,
             status: 'success',
             statusMessage: 'המחיר נסרק בהצלחה מאתר ההזמנות',
             hostlyPrice: 1210,

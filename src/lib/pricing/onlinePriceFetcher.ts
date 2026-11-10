@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { buildSiteHost } from '@/lib/landingBuilder/siteAddress'
 import { AIRBNB_PRICE_MULTIPLIER, BOOKING_PRICE_MULTIPLIER, DIRECT_PRICE_MULTIPLIER } from './channelPricing'
 
 export interface PriceCheckDateParams {
@@ -64,6 +65,20 @@ export interface OnlinePriceCheckReport {
   channels: OnlineChannelPriceResult[]
 }
 
+/** airbnb.co.il answers every /rooms and /s path with a 302 to the airbnb.com homepage; airbnb.com localizes by Accept-Language. */
+const AIRBNB_ORIGIN = 'https://www.airbnb.com'
+
+/** Inputs pasted from HTML/markdown sources arrive with `&amp;` instead of `&`. */
+const decodeHtmlAmpersands = (value: string) => value.trim().replace(/&amp;/gi, '&')
+
+/** Accepts a listing ID or any airbnb.* /rooms/{id} URL. */
+export function extractAirbnbListingId(input: string): string | null {
+  const clean = decodeHtmlAmpersands(input)
+  if (/^\d+$/.test(clean)) return clean
+  const match = clean.match(/\/rooms\/(?:plus\/)?(\d+)/)
+  return match ? match[1] : null
+}
+
 /**
  * Builds parameterized URL for Airbnb listing.
  */
@@ -72,11 +87,11 @@ export function buildAirbnbUrl(
   params: PriceCheckDateParams,
   fallbackQuery?: string
 ): string {
-  const clean = listingOrUrl.trim()
+  const clean = decodeHtmlAmpersands(listingOrUrl)
   if (!clean) {
     if (fallbackQuery?.trim()) {
       try {
-        const parsed = new URL(`https://www.airbnb.co.il/s/${encodeURIComponent(fallbackQuery.trim())}/homes`)
+        const parsed = new URL(`${AIRBNB_ORIGIN}/s/${encodeURIComponent(fallbackQuery.trim())}/homes`)
         parsed.searchParams.set('check_in', params.checkIn)
         parsed.searchParams.set('check_out', params.checkOut)
         parsed.searchParams.set('adults', String(params.numAdult))
@@ -92,13 +107,13 @@ export function buildAirbnbUrl(
   }
 
   try {
-    const urlStr = clean.startsWith('http://') || clean.startsWith('https://')
-      ? clean
-      : /^\d+$/.test(clean)
-      ? `https://www.airbnb.co.il/rooms/${clean}`
-      : `https://www.airbnb.co.il/rooms/${clean.replace(/^[^\d]*/, '')}`
+    const listingId = extractAirbnbListingId(clean)
+    const isUrl = clean.startsWith('http://') || clean.startsWith('https://')
+    if (!listingId && !isUrl) return ''
 
-    const parsed = new URL(urlStr)
+    const parsed = listingId
+      ? new URL(`${AIRBNB_ORIGIN}/rooms/${listingId}`)
+      : new URL(clean)
     parsed.searchParams.set('check_in', params.checkIn)
     parsed.searchParams.set('check_out', params.checkOut)
     parsed.searchParams.set('adults', String(params.numAdult))
@@ -109,7 +124,7 @@ export function buildAirbnbUrl(
     }
     return parsed.toString()
   } catch {
-    return clean
+    return ''
   }
 }
 
@@ -121,30 +136,35 @@ export function buildBookingUrl(
   params: PriceCheckDateParams,
   fallbackQuery?: string
 ): string {
-  const clean = hotelOrUrl.trim()
-  if (!clean) {
-    if (fallbackQuery?.trim()) {
-      try {
-        const parsed = new URL('https://www.booking.com/searchresults.html')
-        parsed.searchParams.set('ss', fallbackQuery.trim())
-        parsed.searchParams.set('checkin', params.checkIn)
-        parsed.searchParams.set('checkout', params.checkOut)
-        parsed.searchParams.set('group_adults', String(params.numAdult))
-        if (params.numChild > 0) {
-          parsed.searchParams.set('group_children', String(params.numChild))
-        }
-        return parsed.toString()
-      } catch {
-        return ''
+  const clean = decodeHtmlAmpersands(hotelOrUrl)
+  const isNumericHotelId = /^\d+$/.test(clean)
+
+  if (!clean || isNumericHotelId) {
+    if (!isNumericHotelId && !fallbackQuery?.trim()) return ''
+    try {
+      // Booking.com has no public /hotel/ URL keyed by the numeric extranet hotel ID; dest_type=hotel resolves it.
+      const parsed = new URL('https://www.booking.com/searchresults.html')
+      if (isNumericHotelId) {
+        parsed.searchParams.set('dest_id', clean)
+        parsed.searchParams.set('dest_type', 'hotel')
+      } else {
+        parsed.searchParams.set('ss', fallbackQuery!.trim())
       }
+      parsed.searchParams.set('checkin', params.checkIn)
+      parsed.searchParams.set('checkout', params.checkOut)
+      parsed.searchParams.set('group_adults', String(params.numAdult))
+      parsed.searchParams.set('group_children', String(params.numChild))
+      parsed.searchParams.set('no_rooms', '1')
+      return parsed.toString()
+    } catch {
+      return ''
     }
-    return ''
   }
 
   try {
     const urlStr = clean.startsWith('http://') || clean.startsWith('https://')
       ? clean
-      : `https://www.booking.com/hotel/il/${clean.replace(/^\/+/, '')}.html`
+      : `https://www.booking.com/hotel/il/${clean.replace(/^\/+/, '').replace(/\.html$/, '')}.html`
 
     const parsed = new URL(urlStr)
     parsed.searchParams.set('checkin', params.checkIn)
@@ -157,7 +177,7 @@ export function buildBookingUrl(
     }
     return parsed.toString()
   } catch {
-    return clean
+    return ''
   }
 }
 
@@ -167,10 +187,9 @@ export function buildBookingUrl(
 export function buildDirectWebsiteUrl(
   siteOrUrl: string,
   params: PriceCheckDateParams,
-  baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://hostly.site',
-  fallbackSite?: string
+  baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://hostly.site'
 ): string {
-  const clean = (siteOrUrl || fallbackSite || '').trim()
+  const clean = decodeHtmlAmpersands(siteOrUrl || '')
   if (!clean) return ''
 
   try {
@@ -178,7 +197,9 @@ export function buildDirectWebsiteUrl(
       ? clean
       : clean.startsWith('/')
       ? `${baseUrl}${clean}`
-      : `${baseUrl}/sites/${clean}`
+      : clean.includes('.')
+      ? `https://${clean}`
+      : `https://${buildSiteHost(clean)}`
 
     const parsed = new URL(urlStr)
     parsed.searchParams.set('checkIn', params.checkIn)
@@ -191,7 +212,7 @@ export function buildDirectWebsiteUrl(
     }
     return parsed.toString()
   } catch {
-    return clean
+    return ''
   }
 }
 
@@ -211,7 +232,7 @@ export function buildChannelUrl(
     case 'booking':
       return buildBookingUrl(rawInput, params, fallbackQuery)
     case 'direct':
-      return buildDirectWebsiteUrl(rawInput, params, siteBaseUrl, fallbackQuery)
+      return buildDirectWebsiteUrl(rawInput, params, siteBaseUrl)
   }
 }
 

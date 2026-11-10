@@ -158,16 +158,15 @@ export default function PriceCheckClient() {
           setIsAutoDetected(data.isAutoDetected)
         }
 
+        // The server already applies the host's saved overrides, so it wins over the localStorage cache.
         const serverUrls = data.urls || {}
-        setChannelUrls((prev) => {
-          const merged: ChannelUrlConfig = {
-            airbnb: prev.airbnb?.trim() || serverUrls.airbnb || '',
-            booking: prev.booking?.trim() || serverUrls.booking || '',
-            direct: prev.direct?.trim() || serverUrls.direct || '',
-          }
-          setStoredChannelUrls(selectedRoomId, merged)
-          return merged
-        })
+        const merged: ChannelUrlConfig = {
+          airbnb: serverUrls.airbnb || '',
+          booking: serverUrls.booking || '',
+          direct: serverUrls.direct || '',
+        }
+        setStoredChannelUrls(selectedRoomId, merged)
+        setChannelUrls(merged)
       } catch (err) {
         console.warn('Failed to load server channel URLs:', err)
       }
@@ -237,7 +236,7 @@ export default function PriceCheckClient() {
           {
             channelKey: 'airbnb',
             name: 'Airbnb',
-            url: buildChannelUrl('airbnb', channelUrls.airbnb || '', { checkIn: checkInDate, checkOut: checkOutDate, numAdult: adults, numChild: children }),
+            url: buildChannelUrl('airbnb', channelUrls.airbnb || '', { checkIn: checkInDate, checkOut: checkOutDate, numAdult: adults, numChild: children }, propertyName),
             status: channelUrls.airbnb ? 'error' : 'no_url',
             statusMessage: channelUrls.airbnb ? 'שגיאה בסריקה' : 'לא הוגדר קישור',
             hostlyPrice: calculateHostlyPrice('airbnb', basePrice),
@@ -253,7 +252,7 @@ export default function PriceCheckClient() {
           {
             channelKey: 'booking',
             name: 'Booking.com',
-            url: buildChannelUrl('booking', channelUrls.booking || '', { checkIn: checkInDate, checkOut: checkOutDate, numAdult: adults, numChild: children }),
+            url: buildChannelUrl('booking', channelUrls.booking || '', { checkIn: checkInDate, checkOut: checkOutDate, numAdult: adults, numChild: children }, propertyName),
             status: channelUrls.booking ? 'error' : 'no_url',
             statusMessage: channelUrls.booking ? 'שגיאה בסריקה' : 'לא הוגדר קישור',
             hostlyPrice: calculateHostlyPrice('booking', basePrice),
@@ -269,7 +268,7 @@ export default function PriceCheckClient() {
           {
             channelKey: 'direct',
             name: 'אתר הזמנות ישיר',
-            url: buildChannelUrl('direct', channelUrls.direct || '', { checkIn: checkInDate, checkOut: checkOutDate, numAdult: adults, numChild: children }),
+            url: buildChannelUrl('direct', channelUrls.direct || '', { checkIn: checkInDate, checkOut: checkOutDate, numAdult: adults, numChild: children }, propertyName),
             status: channelUrls.direct ? 'error' : 'no_url',
             statusMessage: channelUrls.direct ? 'שגיאה בסריקה' : 'לא הוגדר קישור',
             hostlyPrice: calculateHostlyPrice('direct', basePrice),

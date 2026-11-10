@@ -29,6 +29,7 @@ export interface ResolveOptions {
  * 2. Beds24 channel settings API (`GET /channels/settings?propertyId=...&channel=airbnb`)
  * 3. Supabase `landing_pages` table (`subdomain`)
  * 4. User's `landing_page_url` and `display_name`
+ * 5. Beds24 `GET /properties` name, used as the OTA search query when no listing is known
  */
 export async function resolvePropertyChannels(
   options: ResolveOptions
@@ -48,12 +49,13 @@ export async function resolvePropertyChannels(
   }
 
   let propertyName = ''
+  let searchName = ''
 
   // 1. If demo mode, provide realistic mock identifiers
   if (isDemo) {
     return {
       urls: {
-        airbnb: 'demo-101',
+        airbnb: '10000001',
         booking: 'demo-suites',
         direct: 'demo-property',
       },
@@ -126,60 +128,70 @@ export async function resolvePropertyChannels(
     }
   }
 
-  // 4. Query Beds24 channels/settings for Airbnb listing ID if not yet resolved
-  if (!resolvedUrls.airbnb && propertyId) {
-    try {
-      const settingsUrl = new URL(`${getBaseUrl()}/channels/settings`)
-      settingsUrl.searchParams.set('propertyId', propertyId)
-      settingsUrl.searchParams.set('channel', 'airbnb')
-
-      const bedsResponse = await fetchWithTokenRefresh(
-        settingsUrl.toString(),
-        {},
-        userTokens,
-        userId
-      )
-
-      if (bedsResponse.ok) {
-        const json = await bedsResponse.json()
-        const data = Array.isArray(json?.data) ? json.data : []
-        const airbnbSetting = data.find((e: any) => !e.channel || e.channel === 'airbnb')
-        const prop = airbnbSetting?.properties?.find((p: any) => String(p.id) === String(propertyId))
-        const rooms = prop?.roomTypes || []
-
-        const targetRoom = roomId
-          ? rooms.find((r: any) => String(r.id) === String(roomId))
-          : rooms[0]
-
-        const listingId = targetRoom?.airbnbListingId || rooms[0]?.airbnbListingId
-        if (listingId) {
-          resolvedUrls.airbnb = String(listingId)
-          isAutoDetected.airbnb = true
-          console.log(`✅ [resolvePropertyChannels] Auto-detected Airbnb listing ID from Beds24: ${listingId}`)
-        }
-      }
-    } catch (err) {
-      console.warn('⚠️ [resolvePropertyChannels] Beds24 channel settings fetch error:', err)
+  if (propertyId) {
+    // Sequential so an expired token is refreshed once, not by two concurrent calls.
+    const listingId = resolvedUrls.airbnb ? null : await fetchAirbnbListingId(propertyId, roomId, userTokens, userId)
+    const beds24Name = await fetchBeds24PropertyName(propertyId, userTokens, userId)
+    if (listingId) {
+      resolvedUrls.airbnb = listingId
+      isAutoDetected.airbnb = true
     }
-  }
-
-  // 5. Intelligent property-specific heuristics for known properties (e.g. Dafna 306559)
-  if (!resolvedUrls.booking && propertyName) {
-    // If property name contains Dafna / נוף הרים
-    if (propertyName.includes('דפנה') || propertyName.includes('נוף הרים')) {
-      resolvedUrls.booking = 'mountain-view-dafna'
-      isAutoDetected.booking = true
-    }
-  }
-
-  if (!resolvedUrls.direct && (propertyName.includes('דפנה') || propertyName.includes('נוף הרים'))) {
-    resolvedUrls.direct = 'nof-harim-dafna'
-    isAutoDetected.direct = true
+    // Beds24 holds the name the OTAs publish (often English); the dashboard display name is usually Hebrew.
+    if (beds24Name) searchName = beds24Name
   }
 
   return {
     urls: resolvedUrls,
-    propertyName: propertyName || 'Hostly Property',
+    propertyName: searchName || propertyName || 'Hostly Property',
     isAutoDetected,
+  }
+}
+
+type Beds24Tokens = ResolveOptions['userTokens']
+
+async function fetchAirbnbListingId(
+  propertyId: string,
+  roomId: string | undefined,
+  userTokens: Beds24Tokens,
+  userId: string | undefined
+): Promise<string | null> {
+  try {
+    const settingsUrl = new URL(`${getBaseUrl()}/channels/settings`)
+    settingsUrl.searchParams.set('propertyId', propertyId)
+    settingsUrl.searchParams.set('channel', 'airbnb')
+
+    const response = await fetchWithTokenRefresh(settingsUrl.toString(), {}, userTokens, userId)
+    if (!response.ok) return null
+
+    const json = await response.json()
+    const data = Array.isArray(json?.data) ? json.data : []
+    const airbnbSetting = data.find((e: any) => !e.channel || e.channel === 'airbnb')
+    const prop = airbnbSetting?.properties?.find((p: any) => String(p.id) === String(propertyId))
+    const rooms = prop?.roomTypes || []
+    const targetRoom = roomId ? rooms.find((r: any) => String(r.id) === String(roomId)) : rooms[0]
+    const listingId = targetRoom?.airbnbListingId || rooms[0]?.airbnbListingId
+    return listingId ? String(listingId) : null
+  } catch (err) {
+    console.warn('⚠️ [resolvePropertyChannels] Beds24 channel settings fetch error:', err)
+    return null
+  }
+}
+
+async function fetchBeds24PropertyName(
+  propertyId: string,
+  userTokens: Beds24Tokens,
+  userId: string | undefined
+): Promise<string> {
+  try {
+    const url = new URL(`${getBaseUrl()}/properties`)
+    url.searchParams.set('id', propertyId)
+    const response = await fetchWithTokenRefresh(url.toString(), {}, userTokens, userId)
+    if (!response.ok) return ''
+    const json = await response.json()
+    const name = Array.isArray(json?.data) ? json.data[0]?.name : ''
+    return typeof name === 'string' ? name.trim() : ''
+  } catch (err) {
+    console.warn('⚠️ [resolvePropertyChannels] Beds24 property name fetch error:', err)
+    return ''
   }
 }
