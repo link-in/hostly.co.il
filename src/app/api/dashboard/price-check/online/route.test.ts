@@ -94,9 +94,9 @@ describe('POST /api/dashboard/price-check/online', () => {
         numChild: 0,
         basePrice: 1000,
         channels: {
-          airbnb: '',
-          booking: '',
-          direct: '',
+          airbnb: '12345678',
+          booking: 'custom-hotel',
+          direct: 'custom-site',
         },
       })
     )
@@ -104,10 +104,8 @@ describe('POST /api/dashboard/price-check/online', () => {
     expect(res.status).toBe(200)
     const data = await res.json()
     expect(data.channels).toHaveLength(3)
-    // When no URLs provided, status is no_url
-    for (const channel of data.channels) {
-      expect(channel.status).toBe('no_url')
-      expect(channel.onlinePrice).toBeNull()
-    }
+    const airbnb = data.channels.find((c: any) => c.channelKey === 'airbnb')
+    expect(airbnb.url).toContain('rooms/12345678')
+    expect(airbnb.url).toContain('check_in=2026-08-01')
   })
 })

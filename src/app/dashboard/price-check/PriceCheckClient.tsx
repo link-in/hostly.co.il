@@ -113,6 +113,8 @@ export default function PriceCheckClient() {
 
   // Channel URLs configuration state
   const [channelUrls, setChannelUrls] = useState<ChannelUrlConfig>({})
+  const [propertyName, setPropertyName] = useState<string>('')
+  const [isAutoDetected, setIsAutoDetected] = useState<{ airbnb?: boolean; booking?: boolean; direct?: boolean }>({})
   const [settingsOpen, setSettingsOpen] = useState<boolean>(false)
 
   // Redirect if not authenticated
@@ -129,10 +131,53 @@ export default function PriceCheckClient() {
     }
   }, [queryRoom, selectedRoomId, setSelectedRoom])
 
-  // Load stored channel URLs whenever selected room changes
+  // Load stored channel URLs whenever selected room changes and auto-fetch from server/Beds24
   useEffect(() => {
-    setChannelUrls(getStoredChannelUrls(selectedRoomId))
-  }, [selectedRoomId])
+    if (status !== 'authenticated') return
+    let isCancelled = false
+
+    // 1. Instant load from localStorage
+    const local = getStoredChannelUrls(selectedRoomId)
+    if (local && (local.airbnb || local.booking || local.direct)) {
+      setChannelUrls(local)
+    }
+
+    // 2. Fetch server-side auto-detected and saved channels
+    const fetchServerChannels = async () => {
+      try {
+        const query = selectedRoomId ? `?roomId=${encodeURIComponent(selectedRoomId)}` : ''
+        const res = await fetch(`/api/dashboard/price-check/channel-urls${query}`)
+        if (!res.ok) return
+        const data = await res.json()
+        if (isCancelled) return
+
+        if (data.propertyName) {
+          setPropertyName(data.propertyName)
+        }
+        if (data.isAutoDetected) {
+          setIsAutoDetected(data.isAutoDetected)
+        }
+
+        const serverUrls = data.urls || {}
+        setChannelUrls((prev) => {
+          const merged: ChannelUrlConfig = {
+            airbnb: prev.airbnb?.trim() || serverUrls.airbnb || '',
+            booking: prev.booking?.trim() || serverUrls.booking || '',
+            direct: prev.direct?.trim() || serverUrls.direct || '',
+          }
+          setStoredChannelUrls(selectedRoomId, merged)
+          return merged
+        })
+      } catch (err) {
+        console.warn('Failed to load server channel URLs:', err)
+      }
+    }
+
+    fetchServerChannels()
+    return () => {
+      isCancelled = true
+    }
+  }, [selectedRoomId, status])
 
   // Set default dates if none provided
   useEffect(() => {
@@ -294,8 +339,8 @@ export default function PriceCheckClient() {
           {
             channelKey: 'airbnb',
             name: 'Airbnb',
-            url: buildChannelUrl('airbnb', channelUrls.airbnb || '', { checkIn, checkOut, numAdult, numChild }),
-            status: 'no_url',
+            url: buildChannelUrl('airbnb', channelUrls.airbnb || '', { checkIn, checkOut, numAdult, numChild }, propertyName),
+            status: channelUrls.airbnb ? 'not_found' : 'no_url',
             statusMessage: 'ממתין לסריקה',
             hostlyPrice: calculateHostlyPrice('airbnb', data.price),
             beds24Price: calculateHostlyPrice('airbnb', data.price),
@@ -310,8 +355,8 @@ export default function PriceCheckClient() {
           {
             channelKey: 'booking',
             name: 'Booking.com',
-            url: buildChannelUrl('booking', channelUrls.booking || '', { checkIn, checkOut, numAdult, numChild }),
-            status: 'no_url',
+            url: buildChannelUrl('booking', channelUrls.booking || '', { checkIn, checkOut, numAdult, numChild }, propertyName),
+            status: channelUrls.booking ? 'not_found' : 'no_url',
             statusMessage: 'ממתין לסריקה',
             hostlyPrice: calculateHostlyPrice('booking', data.price),
             beds24Price: calculateHostlyPrice('booking', data.price),
@@ -326,8 +371,8 @@ export default function PriceCheckClient() {
           {
             channelKey: 'direct',
             name: 'אתר הזמנות ישיר',
-            url: buildChannelUrl('direct', channelUrls.direct || '', { checkIn, checkOut, numAdult, numChild }),
-            status: 'no_url',
+            url: buildChannelUrl('direct', channelUrls.direct || '', { checkIn, checkOut, numAdult, numChild }, propertyName),
+            status: channelUrls.direct ? 'not_found' : 'no_url',
             statusMessage: 'ממתין לסריקה',
             hostlyPrice: calculateHostlyPrice('direct', data.price),
             beds24Price: calculateHostlyPrice('direct', data.price),
@@ -362,10 +407,23 @@ export default function PriceCheckClient() {
     }
   }, [queryAuto, queryCheckIn, queryCheckOut, result, loading, handleCheckPrice])
 
-  const handleSaveChannelUrls = () => {
+  const handleSaveChannelUrls = async () => {
     setStoredChannelUrls(selectedRoomId, channelUrls)
     toast.success('קישורי הערוצים נשמרו בהצלחה!')
     setSettingsOpen(false)
+
+    try {
+      await fetch('/api/dashboard/price-check/channel-urls', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...channelUrls,
+          roomId: selectedRoomId,
+        }),
+      })
+    } catch (err) {
+      console.warn('Failed to save to server:', err)
+    }
 
     // If we have an existing available result, refresh the online scan with the new URLs
     if (result && result.available) {
@@ -428,6 +486,7 @@ export default function PriceCheckClient() {
           onSave={handleSaveChannelUrls}
           onClose={() => setSettingsOpen(false)}
           open={settingsOpen}
+          isAutoDetected={isAutoDetected}
         />
 
         {/* Search Parameters Card */}

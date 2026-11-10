@@ -175,12 +175,13 @@ describe('scanChannelOnlinePrice', () => {
     numChild: 0,
   }
 
-  it('returns no_url status when channel URL is empty', async () => {
-    const res = await scanChannelOnlinePrice('airbnb', '', params, 1000)
-    expect(res.status).toBe('no_url')
-    expect(res.onlinePrice).toBeNull()
-    expect(res.hostlyPrice).toBe(1210)
-    expect(res.matchStatus).toBe('unknown')
+  it('falls back to property search URL when channel URL is empty but fallbackQuery is given', async () => {
+    const res = await scanChannelOnlinePrice('airbnb', '', params, 1000, {
+      fallbackQuery: 'נוף הרים בדפנה',
+    })
+    expect(res.status).toBe('not_found')
+    expect(res.url).toContain('https://www.airbnb.co.il/s/')
+    expect(res.url).toContain('check_in=2026-08-01')
   })
 
   it('scrapes online price successfully when page contains price', async () => {

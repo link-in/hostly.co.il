@@ -8,6 +8,7 @@ import {
   type OnlineChannelPriceResult,
   type PriceCheckDateParams,
 } from '@/lib/pricing/onlinePriceFetcher'
+import { resolvePropertyChannels } from '@/lib/pricing/resolvePropertyChannels'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -47,6 +48,28 @@ export async function POST(request: Request) {
       checkOut,
       numAdult,
       numChild,
+    }
+
+    const propertyId = session?.user?.propertyId ?? process.env.BEDS24_PROPERTY_ID
+    const roomId = (parsed.data.roomId ?? session?.user?.roomId ?? process.env.BEDS24_ROOM_ID)
+      ?.split(',')[0].split(':')[0].trim()
+
+    const userTokens = session?.user?.beds24Token && session?.user?.beds24RefreshToken
+      ? { accessToken: session.user.beds24Token, refreshToken: session.user.beds24RefreshToken }
+      : undefined
+
+    const autoResolved = await resolvePropertyChannels({
+      userId: session.user.id,
+      propertyId,
+      roomId,
+      userTokens,
+      isDemo: Boolean(session.user.isDemo),
+    })
+
+    const effectiveChannels = {
+      airbnb: channels.airbnb?.trim() || autoResolved.urls.airbnb || '',
+      booking: channels.booking?.trim() || autoResolved.urls.booking || '',
+      direct: channels.direct?.trim() || autoResolved.urls.direct || '',
     }
 
     // Demo user simulation if no specific custom URLs were entered
@@ -114,11 +137,17 @@ export async function POST(request: Request) {
         },
       ]
     } else {
-      // Real scan in parallel
+      // Real scan in parallel with auto-detected channel URLs and fallback search
       const [airbnbResult, bookingResult, directResult] = await Promise.all([
-        scanChannelOnlinePrice('airbnb', channels.airbnb || '', params, basePrice),
-        scanChannelOnlinePrice('booking', channels.booking || '', params, basePrice),
-        scanChannelOnlinePrice('direct', channels.direct || '', params, basePrice),
+        scanChannelOnlinePrice('airbnb', effectiveChannels.airbnb, params, basePrice, {
+          fallbackQuery: autoResolved.propertyName,
+        }),
+        scanChannelOnlinePrice('booking', effectiveChannels.booking, params, basePrice, {
+          fallbackQuery: autoResolved.propertyName,
+        }),
+        scanChannelOnlinePrice('direct', effectiveChannels.direct, params, basePrice, {
+          fallbackQuery: autoResolved.propertyName,
+        }),
       ])
 
       results = [airbnbResult, bookingResult, directResult]

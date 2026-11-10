@@ -11,6 +11,11 @@ interface ChannelUrlSettingsProps {
   onSave: () => void
   onClose: () => void
   open: boolean
+  isAutoDetected?: {
+    airbnb?: boolean
+    booking?: boolean
+    direct?: boolean
+  }
 }
 
 export default function ChannelUrlSettings({
@@ -20,6 +25,7 @@ export default function ChannelUrlSettings({
   onSave,
   onClose,
   open,
+  isAutoDetected,
 }: ChannelUrlSettingsProps) {
   if (!open) return null
 
@@ -56,16 +62,23 @@ export default function ChannelUrlSettings({
 
       <div className="card-body p-3 p-md-4">
         <p className="text-muted small mb-3">
-          הזן מזהה נכס או קישור מלא לכל ערוץ. הסורק יגלוש לכתובת זו עם תאריכי השהייה והאורחים שנבחרו.
+          המערכת מזהה אוטומטית את קישורי הנכס מתוך הגדרות Beds24 ואתר ההזמנות שלכם. באפשרותכם לעדכן או לדרוס את הקישור לכל ערוץ כאן.
         </p>
 
         <div className="row g-3">
           {/* Airbnb */}
           <div className="col-12 col-md-4">
-            <label className="form-label small fw-semibold d-flex align-items-center gap-1.5" style={{ color: 'var(--htxt-1)' }}>
-              <img src="/airbnb-logo.png" alt="Airbnb" style={{ width: 18, height: 18, borderRadius: '50%' }} />
-              קישור / מזהה רישום Airbnb
-            </label>
+            <div className="d-flex align-items-center justify-content-between mb-1.5">
+              <label className="form-label small fw-semibold d-flex align-items-center gap-1.5 mb-0" style={{ color: 'var(--htxt-1)' }}>
+                <img src="/airbnb-logo.png" alt="Airbnb" style={{ width: 18, height: 18, borderRadius: '50%' }} />
+                קישור / מזהה רישום Airbnb
+              </label>
+              {isAutoDetected?.airbnb && (
+                <span className="badge rounded-pill" style={{ background: '#ecfdf5', color: '#047857', fontSize: '0.7rem' }}>
+                  זוהה אוטומטית
+                </span>
+              )}
+            </div>
             <input
               type="text"
               className="form-control"
@@ -82,10 +95,17 @@ export default function ChannelUrlSettings({
 
           {/* Booking.com */}
           <div className="col-12 col-md-4">
-            <label className="form-label small fw-semibold d-flex align-items-center gap-1.5" style={{ color: 'var(--htxt-1)' }}>
-              <img src="/booking-logo.png" alt="Booking.com" style={{ width: 18, height: 18, borderRadius: '50%' }} />
-              קישור / סלאג Booking.com
-            </label>
+            <div className="d-flex align-items-center justify-content-between mb-1.5">
+              <label className="form-label small fw-semibold d-flex align-items-center gap-1.5 mb-0" style={{ color: 'var(--htxt-1)' }}>
+                <img src="/booking-logo.png" alt="Booking.com" style={{ width: 18, height: 18, borderRadius: '50%' }} />
+                קישור / סלאג Booking.com
+              </label>
+              {isAutoDetected?.booking && (
+                <span className="badge rounded-pill" style={{ background: '#ecfdf5', color: '#047857', fontSize: '0.7rem' }}>
+                  זוהה אוטומטית
+                </span>
+              )}
+            </div>
             <input
               type="text"
               className="form-control"
@@ -102,10 +122,17 @@ export default function ChannelUrlSettings({
 
           {/* Direct Website */}
           <div className="col-12 col-md-4">
-            <label className="form-label small fw-semibold d-flex align-items-center gap-1.5" style={{ color: 'var(--htxt-1)' }}>
-              <Globe size={18} style={{ color: 'var(--hb)' }} />
-              אתר ישיר / סלאג אתר Hostly
-            </label>
+            <div className="d-flex align-items-center justify-content-between mb-1.5">
+              <label className="form-label small fw-semibold d-flex align-items-center gap-1.5 mb-0" style={{ color: 'var(--htxt-1)' }}>
+                <Globe size={18} style={{ color: 'var(--hb)' }} />
+                אתר ישיר / סלאג אתר Hostly
+              </label>
+              {isAutoDetected?.direct && (
+                <span className="badge rounded-pill" style={{ background: '#ecfdf5', color: '#047857', fontSize: '0.7rem' }}>
+                  זוהה אוטומטית
+                </span>
+              )}
+            </div>
             <input
               type="text"
               className="form-control"

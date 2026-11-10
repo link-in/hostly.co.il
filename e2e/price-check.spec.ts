@@ -58,6 +58,32 @@ async function setupMocks(page: Page) {
     })
   })
 
+  await page.route('**/api/dashboard/price-check/channel-urls**', async (route) => {
+    if (route.request().method() === 'POST') {
+      const postData = route.request().postDataJSON()
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ success: true, urls: postData }),
+      })
+      return
+    }
+
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        urls: {
+          airbnb: '12345',
+          booking: 'demo-hotel',
+          direct: 'demo-site',
+        },
+        propertyName: 'נוף הרים בדפנה',
+        isAutoDetected: { airbnb: true, booking: true, direct: true },
+      }),
+    })
+  })
+
   await page.route('**/api/dashboard/price-check/online**', async (route) => {
     const postData = route.request().postDataJSON()
     await route.fulfill({

@@ -67,9 +67,29 @@ export interface OnlinePriceCheckReport {
 /**
  * Builds parameterized URL for Airbnb listing.
  */
-export function buildAirbnbUrl(listingOrUrl: string, params: PriceCheckDateParams): string {
+export function buildAirbnbUrl(
+  listingOrUrl: string,
+  params: PriceCheckDateParams,
+  fallbackQuery?: string
+): string {
   const clean = listingOrUrl.trim()
-  if (!clean) return ''
+  if (!clean) {
+    if (fallbackQuery?.trim()) {
+      try {
+        const parsed = new URL(`https://www.airbnb.co.il/s/${encodeURIComponent(fallbackQuery.trim())}/homes`)
+        parsed.searchParams.set('check_in', params.checkIn)
+        parsed.searchParams.set('check_out', params.checkOut)
+        parsed.searchParams.set('adults', String(params.numAdult))
+        if (params.numChild > 0) {
+          parsed.searchParams.set('children', String(params.numChild))
+        }
+        return parsed.toString()
+      } catch {
+        return ''
+      }
+    }
+    return ''
+  }
 
   try {
     const urlStr = clean.startsWith('http://') || clean.startsWith('https://')
@@ -96,9 +116,30 @@ export function buildAirbnbUrl(listingOrUrl: string, params: PriceCheckDateParam
 /**
  * Builds parameterized URL for Booking.com property.
  */
-export function buildBookingUrl(hotelOrUrl: string, params: PriceCheckDateParams): string {
+export function buildBookingUrl(
+  hotelOrUrl: string,
+  params: PriceCheckDateParams,
+  fallbackQuery?: string
+): string {
   const clean = hotelOrUrl.trim()
-  if (!clean) return ''
+  if (!clean) {
+    if (fallbackQuery?.trim()) {
+      try {
+        const parsed = new URL('https://www.booking.com/searchresults.html')
+        parsed.searchParams.set('ss', fallbackQuery.trim())
+        parsed.searchParams.set('checkin', params.checkIn)
+        parsed.searchParams.set('checkout', params.checkOut)
+        parsed.searchParams.set('group_adults', String(params.numAdult))
+        if (params.numChild > 0) {
+          parsed.searchParams.set('group_children', String(params.numChild))
+        }
+        return parsed.toString()
+      } catch {
+        return ''
+      }
+    }
+    return ''
+  }
 
   try {
     const urlStr = clean.startsWith('http://') || clean.startsWith('https://')
@@ -126,9 +167,10 @@ export function buildBookingUrl(hotelOrUrl: string, params: PriceCheckDateParams
 export function buildDirectWebsiteUrl(
   siteOrUrl: string,
   params: PriceCheckDateParams,
-  baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://hostly.site'
+  baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://hostly.site',
+  fallbackSite?: string
 ): string {
-  const clean = siteOrUrl.trim()
+  const clean = (siteOrUrl || fallbackSite || '').trim()
   if (!clean) return ''
 
   try {
@@ -159,15 +201,17 @@ export function buildDirectWebsiteUrl(
 export function buildChannelUrl(
   channel: ChannelKey,
   rawInput: string,
-  params: PriceCheckDateParams
+  params: PriceCheckDateParams,
+  fallbackQuery?: string,
+  siteBaseUrl?: string
 ): string {
   switch (channel) {
     case 'airbnb':
-      return buildAirbnbUrl(rawInput, params)
+      return buildAirbnbUrl(rawInput, params, fallbackQuery)
     case 'booking':
-      return buildBookingUrl(rawInput, params)
+      return buildBookingUrl(rawInput, params, fallbackQuery)
     case 'direct':
-      return buildDirectWebsiteUrl(rawInput, params)
+      return buildDirectWebsiteUrl(rawInput, params, siteBaseUrl, fallbackQuery)
   }
 }
 
@@ -382,6 +426,8 @@ export const CHANNEL_META: Record<
 export interface FetchOnlinePriceOptions {
   fetchFn?: typeof fetch
   timeoutMs?: number
+  fallbackQuery?: string
+  siteBaseUrl?: string
 }
 
 /**
@@ -394,15 +440,15 @@ export async function scanChannelOnlinePrice(
   basePrice: number,
   options: FetchOnlinePriceOptions = {}
 ): Promise<OnlineChannelPriceResult> {
-  const { fetchFn = fetch, timeoutMs = 6000 } = options
+  const { fetchFn = fetch, timeoutMs = 6000, fallbackQuery, siteBaseUrl } = options
   const meta = CHANNEL_META[channel]
   const hostlyPrice = calculateHostlyPrice(channel, basePrice)
   const beds24Price = hostlyPrice // Beds24 syncs hostly-configured rate
   const now = new Date().toISOString()
 
-  const parameterizedUrl = buildChannelUrl(channel, rawUrlOrId, params)
+  const parameterizedUrl = buildChannelUrl(channel, rawUrlOrId, params, fallbackQuery, siteBaseUrl)
 
-  if (!rawUrlOrId.trim() || !parameterizedUrl) {
+  if (!parameterizedUrl) {
     return {
       channelKey: channel,
       name: meta.name,
@@ -417,6 +463,26 @@ export async function scanChannelOnlinePrice(
       diffPercent: null,
       matchStatus: 'unknown',
       matchMessage: 'לא הוגדר קישור',
+      fetchedAt: now,
+    }
+  }
+
+  // If this is a search query fallback rather than a direct listing ID
+  if (!rawUrlOrId.trim() && fallbackQuery) {
+    return {
+      channelKey: channel,
+      name: meta.name,
+      url: parameterizedUrl,
+      status: 'not_found',
+      statusMessage: `חיפוש לפי שם הנכס "${fallbackQuery}". לחץ על "גלוש לאתר" לאיתור המודעה.`,
+      hostlyPrice,
+      beds24Price,
+      onlinePrice: null,
+      currency: 'ILS',
+      diff: null,
+      diffPercent: null,
+      matchStatus: 'unknown',
+      matchMessage: 'חיפוש לפי שם נכס',
       fetchedAt: now,
     }
   }
