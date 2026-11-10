@@ -250,9 +250,9 @@ test.describe('Price Check Page (HOS-30 / HOS-35)', () => {
     await expect(page.getByTestId('online-price-direct')).toContainText('1,000')
 
     // Match badges indicate exact match
-    await expect(page.getByTestId('match-badge-airbnb')).toContainText('תואם במדויק')
-    await expect(page.getByTestId('match-badge-booking')).toContainText('תואם במדויק')
-    await expect(page.getByTestId('match-badge-direct')).toContainText('תואם במדויק')
+    await expect(page.getByTestId('table-row-airbnb').getByTestId('match-badge-airbnb')).toContainText('תואם במדויק')
+    await expect(page.getByTestId('table-row-booking').getByTestId('match-badge-booking')).toContainText('תואם במדויק')
+    await expect(page.getByTestId('table-row-direct').getByTestId('match-badge-direct')).toContainText('תואם במדויק')
 
     // Direct surf buttons are populated with parameterized URLs
     const airbnbLink = page.getByTestId('direct-link-airbnb')
@@ -287,6 +287,21 @@ test.describe('Price Check Page (HOS-30 / HOS-35)', () => {
 
     // Settings card closes on save
     await expect(page.getByTestId('channel-url-settings-card')).not.toBeVisible()
+  })
+
+  test('renders mobile comparison cards on mobile viewport (HOS-35)', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 667 })
+    const submitBtn = page.getByTestId('price-check-submit-btn')
+    await submitBtn.click()
+
+    await expect(page.getByTestId('price-comparison-table-card')).toBeVisible()
+    await expect(page.getByTestId('price-comparison-mobile-cards')).toBeVisible()
+    await expect(page.getByTestId('mobile-card-airbnb')).toBeVisible()
+    await expect(page.getByTestId('mobile-card-booking')).toBeVisible()
+    await expect(page.getByTestId('mobile-card-direct')).toBeVisible()
+    await expect(page.getByTestId('mobile-direct-link-airbnb')).toBeVisible()
+
+    await page.screenshot({ path: '/opt/cursor/artifacts/price_check_mobile_cards.png', fullPage: true })
   })
 
   test('displays clean unavailable warning state when dates are blocked', async ({ page }) => {

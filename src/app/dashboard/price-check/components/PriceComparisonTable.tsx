@@ -251,8 +251,138 @@ export default function PriceComparisonTable({
         </div>
       </div>
 
-      {/* Table */}
-      <div className="table-responsive">
+      {/* Mobile Channel Cards View (d-md-none) */}
+      <div className="d-md-none p-3 d-flex flex-column gap-3" data-testid="price-comparison-mobile-cards">
+        {channels.map((channel) => {
+          const logo = getChannelLogo(channel.channelKey)
+          const perNightHostly = nights > 0 ? channel.hostlyPrice / nights : channel.hostlyPrice
+          const perNightBeds24 = nights > 0 ? channel.beds24Price / nights : channel.beds24Price
+          const perNightOnline = channel.onlinePrice && nights > 0 ? channel.onlinePrice / nights : channel.onlinePrice
+
+          return (
+            <div
+              key={`mobile-${channel.channelKey}`}
+              className="p-3 rounded-3"
+              style={{
+                background: 'var(--hn-50)',
+                border: '1px solid var(--hborder)',
+              }}
+              data-testid={`mobile-card-${channel.channelKey}`}
+            >
+              {/* Top row: Logo, Name, Badge, and Rescan button */}
+              <div className="d-flex align-items-center justify-content-between mb-2.5">
+                <div className="d-flex align-items-center gap-2">
+                  {logo ? (
+                    <img
+                      src={logo}
+                      alt={channel.name}
+                      style={{ width: '26px', height: '26px', borderRadius: '50%', objectFit: 'cover' }}
+                    />
+                  ) : (
+                    <div
+                      className="d-flex align-items-center justify-content-center rounded-circle"
+                      style={{ width: '26px', height: '26px', background: 'var(--hb-100)', color: 'var(--hb)' }}
+                    >
+                      <Globe size={15} />
+                    </div>
+                  )}
+                  <div>
+                    <span className="fw-bold d-block" style={{ color: 'var(--htxt-1)', fontSize: '0.95rem', lineHeight: 1.2 }}>
+                      {channel.name}
+                    </span>
+                    <span className="text-muted" style={{ fontSize: '0.72rem' }}>
+                      {channel.channelKey !== 'direct' ? 'מכפיל 1.21 (+21%)' : 'בסיס ללא עמלה'}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="d-flex align-items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => onRescanChannel(channel.channelKey)}
+                    disabled={isScanning || !channel.url}
+                    className="btn btn-sm btn-light p-1"
+                    title="סרוק ערוץ זה מחדש"
+                    style={{ borderRadius: '6px', color: 'var(--htxt-2)' }}
+                  >
+                    <RefreshCw size={13} />
+                  </button>
+                </div>
+              </div>
+
+              {/* 3 Price Metrics */}
+              <div className="row g-2 text-center my-2 pt-2" style={{ borderTop: '1px solid var(--hborder-light)' }}>
+                <div className="col-4">
+                  <span className="text-muted d-block" style={{ fontSize: '0.72rem' }}>הוסטלי</span>
+                  <strong className="d-block" style={{ color: 'var(--htxt-1)', fontSize: '0.95rem' }}>
+                    {formatCurrency(channel.hostlyPrice)}
+                  </strong>
+                  <span className="text-muted d-block" style={{ fontSize: '0.68rem' }}>
+                    {formatCurrency(perNightHostly)}/ל
+                  </span>
+                </div>
+                <div className="col-4" style={{ borderRight: '1px solid var(--hborder-light)', borderLeft: '1px solid var(--hborder-light)' }}>
+                  <span className="text-muted d-block" style={{ fontSize: '0.72rem' }}>Beds24</span>
+                  <strong className="d-block" style={{ color: 'var(--htxt-1)', fontSize: '0.95rem' }}>
+                    {formatCurrency(channel.beds24Price)}
+                  </strong>
+                  <span className="text-muted d-block" style={{ fontSize: '0.68rem' }}>
+                    {formatCurrency(perNightBeds24)}/ל
+                  </span>
+                </div>
+                <div className="col-4">
+                  <span className="text-muted d-block" style={{ fontSize: '0.72rem' }}>באתר (אונליין)</span>
+                  {isScanning ? (
+                    <span className="text-muted" style={{ fontSize: '0.75rem' }}>בודק…</span>
+                  ) : channel.onlinePrice !== null ? (
+                    <>
+                      <strong className="d-block" style={{ color: 'var(--hb)', fontSize: '0.95rem' }}>
+                        {formatCurrency(channel.onlinePrice)}
+                      </strong>
+                      {perNightOnline && (
+                        <span className="text-muted d-block" style={{ fontSize: '0.68rem' }}>
+                          {formatCurrency(perNightOnline)}/ל
+                        </span>
+                      )}
+                    </>
+                  ) : (
+                    <span className="text-muted" style={{ fontSize: '0.72rem' }}>
+                      {channel.status === 'bot_protected' ? 'מוגן בוטים' : 'לא זוהה'}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Status and Action */}
+              <div className="d-flex flex-column gap-2 mt-2.5 pt-2" style={{ borderTop: '1px solid var(--hborder-light)' }}>
+                <div className="d-flex align-items-center justify-content-between">
+                  <span className="text-muted" style={{ fontSize: '0.75rem' }}>סטטוס התאמה:</span>
+                  {renderStatusBadge(channel)}
+                </div>
+
+                {channel.url ? (
+                  <a
+                    href={channel.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn btn-sm btn-outline-primary w-100 d-inline-flex align-items-center justify-content-center gap-1.5 py-1.5"
+                    style={{ fontSize: '0.85rem', borderRadius: '6px' }}
+                    data-testid={`mobile-direct-link-${channel.channelKey}`}
+                  >
+                    <span>גלוש לאתר עם הפרמטרים</span>
+                    <ExternalLink size={14} />
+                  </a>
+                ) : (
+                  <span className="text-muted small text-center">אין קישור מוגדר</span>
+                )}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      {/* Table (Desktop: d-none d-md-block) */}
+      <div className="d-none d-md-block table-responsive">
         <table
           className="table table-hover align-middle mb-0"
           data-testid="price-comparison-table"
