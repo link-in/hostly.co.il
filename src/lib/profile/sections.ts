@@ -7,7 +7,6 @@ export type ProfileSectionId =
   | 'notifications'
   | 'channels'
   | 'checkin'
-  | 'review'
   | 'receipts'
   | 'security'
   | 'subscription'
@@ -23,7 +22,6 @@ export const PROFILE_SECTIONS: readonly ProfileSectionMeta[] = [
   { id: 'notifications', label: 'התראות', description: 'לאן נשלחות התראות על הזמנות חדשות' },
   { id: 'channels', label: 'חיבור Airbnb', description: 'חיבור הנכס לחשבון Airbnb דרך Beds24' },
   { id: 'checkin', label: "צ'ק-אין דיגיטלי", description: 'מה האורח מקבל אחרי שמילא צ׳ק-אין' },
-  { id: 'review', label: 'בקשת ביקורת', description: "הודעה אוטומטית אחרי צ'ק-אאוט" },
   { id: 'receipts', label: 'קבלות וחשבוניות', description: 'חיבור לספק מסמכי המס שלך' },
   { id: 'security', label: 'אבטחה', description: 'שינוי סיסמה' },
   { id: 'subscription', label: 'מנוי', description: 'סטטוס המנוי והחיוב' },

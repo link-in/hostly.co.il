@@ -40,7 +40,7 @@ test('splits the page into separate section cards with a section nav', async ({ 
   for (const title of ['פרטים אישיים', 'התראות', "צ'ק-אין דיגיטלי", 'קבלות וחשבוניות', 'אבטחה', 'מנוי']) {
     await expect(page.getByRole('heading', { level: 2, name: title })).toBeVisible()
   }
-  await expect(nav.getByRole('link')).toHaveCount(8)
+  await expect(nav.getByRole('link')).toHaveCount(7)
 })
 
 test('clicking a nav item jumps to its section and marks it active', async ({ page }) => {

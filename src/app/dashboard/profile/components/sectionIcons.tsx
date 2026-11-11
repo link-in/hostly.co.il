@@ -5,7 +5,6 @@ import {
   FileText,
   Link2,
   ShieldCheck,
-  Star,
   UserRound,
   type LucideIcon,
 } from 'lucide-react'
@@ -16,7 +15,6 @@ export const SECTION_ICONS: Record<ProfileSectionId, LucideIcon> = {
   notifications: Bell,
   channels: Link2,
   checkin: ClipboardCheck,
-  review: Star,
   receipts: FileText,
   security: ShieldCheck,
   subscription: CreditCard,

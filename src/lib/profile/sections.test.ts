@@ -4,7 +4,7 @@ import { getVisibleSections, pickActiveSectionId, shouldShowSubscription } from 
 describe('getVisibleSections', () => {
   it('shows every section for an owner with a property', () => {
     const ids = getVisibleSections({ hasProperty: true, showSubscription: true }).map((s) => s.id)
-    expect(ids).toHaveLength(8)
+    expect(ids).toHaveLength(7)
   })
 
   it('hides Airbnb connection when there is no property', () => {

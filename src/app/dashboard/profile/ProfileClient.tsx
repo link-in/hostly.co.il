@@ -14,7 +14,6 @@ import { InlineAlert } from './components/InlineAlert'
 import { NotificationsSection } from './components/NotificationsSection'
 import { ProfileSectionNav } from './components/ProfileSectionNav'
 import { ReceiptsSection } from './components/ReceiptsSection'
-import { ReviewSection } from './components/ReviewSection'
 import { SaveBar } from './components/SaveBar'
 import { SecuritySection } from './components/SecuritySection'
 import { SubscriptionSection } from './components/SubscriptionSection'
@@ -62,7 +61,6 @@ const ProfileClient = () => {
             <NotificationsSection values={form.values} onChange={form.setField} />
             {visible.has('channels') ? <ChannelsSection /> : null}
             <CheckInSection values={form.values} onChange={form.setField} />
-            <ReviewSection values={form.values} onChange={form.setField} />
             <ReceiptsSection enabled />
             <SecuritySection password={form.password} onChange={form.setPasswordField} />
             {visible.has('subscription') ? <SubscriptionSection enabled /> : null}

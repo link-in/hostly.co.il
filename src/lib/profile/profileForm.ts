@@ -1,4 +1,7 @@
 /**
+ * הערה: הגדרות בקשת הביקורת מנוהלות באזור "הודעות WhatsApp" ולכן לא חלק מהטופס הזה
+ * (וגם לא נשלחות בשמירה, כדי לא לדרוס ערכים שנערכו שם).
+ *
  * לוגיקה טהורה של טופס "אזור אישי": ערכי התחלה מה-session, זיהוי שינויים,
  * ולידציה ובניית ה-payload לשרת. ללא תלות ב-React כדי שיהיה קל לבדוק.
  */
@@ -11,8 +14,6 @@ export interface ProfileFormValues {
   landingPageUrl: string
   phoneNumber: string
   secondaryPhoneNumber: string
-  googleReviewUrl: string
-  reviewMessageText: string
   wifiSsid: string
   wifiPassword: string
   propertyGuideUrl: string
@@ -34,8 +35,6 @@ export interface ProfileSourceUser {
   landingPageUrl?: string | null
   phoneNumber?: string | null
   secondaryPhoneNumber?: string | null
-  googleReviewUrl?: string | null
-  reviewMessageText?: string | null
   checkInSettings?: CheckInSettings | null
 }
 
@@ -55,8 +54,6 @@ export function profileFormFromUser(user: ProfileSourceUser | null | undefined):
     landingPageUrl: user?.landingPageUrl ?? '',
     phoneNumber: user?.phoneNumber ?? '',
     secondaryPhoneNumber: user?.secondaryPhoneNumber ?? '',
-    googleReviewUrl: user?.googleReviewUrl ?? '',
-    reviewMessageText: user?.reviewMessageText ?? '',
     wifiSsid: checkIn?.wifi_ssid ?? '',
     wifiPassword: checkIn?.wifi_password ?? '',
     propertyGuideUrl: checkIn?.property_guide_url ?? '',
@@ -135,8 +132,6 @@ export function buildUpdateProfileRequest(values: ProfileFormValues, password: P
     landingPageUrl: values.landingPageUrl.trim(),
     phoneNumber: values.phoneNumber.trim(),
     secondaryPhoneNumber: values.secondaryPhoneNumber.trim(),
-    googleReviewUrl: values.googleReviewUrl.trim(),
-    reviewMessageText: values.reviewMessageText.trim(),
     checkInSettings: buildCheckInSettings(values),
     ...(password.newPassword
       ? { currentPassword: password.currentPassword, newPassword: password.newPassword }
@@ -151,8 +146,6 @@ export function buildSessionPatch(values: ProfileFormValues) {
     landingPageUrl: values.landingPageUrl.trim(),
     phoneNumber: values.phoneNumber.trim(),
     secondaryPhoneNumber: values.secondaryPhoneNumber.trim(),
-    googleReviewUrl: values.googleReviewUrl.trim(),
-    reviewMessageText: values.reviewMessageText.trim(),
     checkInSettings: buildCheckInSettings(values),
   }
 }

@@ -99,6 +99,13 @@ describe('buildUpdateProfileRequest', () => {
     expect(body.checkInSettings.wifi_ssid).toBe('Hostly')
   })
 
+  it('does not send review-reminder settings (managed in the WhatsApp messages area)', () => {
+    const body = buildUpdateProfileRequest(values, EMPTY_PASSWORD_CHANGE)
+    expect(body).not.toHaveProperty('googleReviewUrl')
+    expect(body).not.toHaveProperty('reviewMessageText')
+    expect(buildSessionPatch(values)).not.toHaveProperty('googleReviewUrl')
+  })
+
   it('omits password fields when the password is not being changed', () => {
     expect(buildUpdateProfileRequest(values, EMPTY_PASSWORD_CHANGE)).not.toHaveProperty('newPassword')
   })
