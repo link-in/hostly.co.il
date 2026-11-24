@@ -19,6 +19,14 @@
     {
       "path": "/api/cron/block-sync",
       "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/cron/promotions-detect",
+      "schedule": "0 5 * * *"
+    },
+    {
+      "path": "/api/cron/promotions-monitor",
+      "schedule": "0 4 * * *"
     }
   ]
 }

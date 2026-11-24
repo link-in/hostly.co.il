@@ -11,6 +11,7 @@ import {
   Globe,
   KeyRound,
   LayoutTemplate,
+  Megaphone,
   MessageSquare,
   Shield,
   UserCog,
@@ -36,6 +37,7 @@ export type DashboardPage =
   | 'receipts'
   | 'arrival-message'
   | 'site-builder'
+  | 'promotions'
 
 type IconComponent = ComponentType<LucideProps>
 
@@ -55,6 +57,7 @@ export interface NavItem {
 
 export const NAV_ITEMS: NavItem[] = [
   { href: '/dashboard', label: 'ניהול זמינות/מחירים', icon: CalendarDays, page: 'dashboard', section: 'main' },
+  { href: '/dashboard/promotions', label: 'קמפיינים אוטומטיים', icon: Megaphone, page: 'promotions', section: 'main' },
   { href: '/dashboard/reservations', label: 'כל ההזמנות', icon: ClipboardList, page: 'reservations', section: 'main' },
   { href: '/dashboard/customers', label: 'מאגר לקוחות', icon: Users, page: 'customers', section: 'main' },
   // HOS-12: הסתרה זמנית של צ'ק-אין דיגיטלי מהתפריט. להחזיר — הסירו את hidden: true.

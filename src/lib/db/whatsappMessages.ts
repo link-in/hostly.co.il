@@ -19,6 +19,7 @@ export type WhatsAppMessageType =
   | 'manual_booking_guest'
   | 'manual_booking_owner_copy'
   | 'arrival_day_guest'
+  | 'promotion_owner'
   | 'system_alert'
   | 'other'
 
