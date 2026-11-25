@@ -32,6 +32,7 @@ const MESSAGE_TYPE_LABELS: Record<string, string> = {
   manual_booking_guest: 'הזמנה ידנית — אורח',
   manual_booking_owner_copy: 'הזמנה ידנית — העתק לבעלים',
   arrival_day_guest: 'הודעת הגעה — אורח',
+  promotion_owner: 'קמפיין פרסום — בעלים',
   other: 'אחר',
 }
 

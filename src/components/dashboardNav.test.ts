@@ -98,6 +98,11 @@ describe('getVisibleNavSections', () => {
     expect(siteBuilderItem?.section).toBe('main')
   })
 
+  it('lists automated campaigns right after the calendar, as a leading feature', () => {
+    const { mainItems } = getVisibleNavSections()
+    expect(mainItems.slice(0, 2).map((item) => item.href)).toEqual(['/dashboard', '/dashboard/promotions'])
+  })
+
   it('shows check-ins again when the hidden flag is removed', () => {
     const restored: NavItem[] = NAV_ITEMS.map((item) =>
       item.page === 'check-ins' ? { ...item, hidden: false } : item

@@ -43,6 +43,7 @@ export interface WhatsAppSendMeta {
     | 'manual_booking_guest'
     | 'manual_booking_owner_copy'
     | 'arrival_day_guest'
+    | 'promotion_owner'
     | 'system_alert'
     | 'other'
   recipientRole?: 'guest' | 'owner' | 'admin' | 'other'
